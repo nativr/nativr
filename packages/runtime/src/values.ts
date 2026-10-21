@@ -297,6 +297,7 @@ export interface BuiltinInvocation {
   evaluateDetailed(
     value: RValue,
     environment: REnvironment,
+    options?: { readonly controlScope?: "evaluation" },
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   assignBinding(environment: REnvironment, name: string, value: RValue): Promise<void>;
   /**

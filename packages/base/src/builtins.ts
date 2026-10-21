@@ -18001,7 +18001,9 @@ async function builtinEval(invocation: BuiltinInvocation): Promise<RValue> {
     invocation,
     "eval",
   );
-  const result = await invocation.evaluateDetailed(expression, environment);
+  const result = await invocation.evaluateDetailed(expression, environment, {
+    controlScope: "evaluation",
+  });
   invocation.setResultVisibility(result.visible ? "visible" : "invisible");
   return result.value;
 }
@@ -18056,13 +18058,36 @@ async function builtinTransform(invocation: BuiltinInvocation): Promise<RValue> 
 
   const source = transformSource(input, invocation);
   const environment = withEnvironment(input, dataArgument.promise.environment);
+  const additions = await invocation.evaluateDetailed(
+    {
+      type: "language",
+      expression: callAst(
+        "list",
+        dots.map((argument) => ({
+          ...(argument.name === undefined ? {} : { name: argument.name }),
+          value: promiseAst(argument.promise),
+          span: SYNTHETIC_SPAN,
+        })),
+      ),
+    },
+    environment,
+    { controlScope: "evaluation" },
+  );
   const evaluated: { readonly name: string; readonly value: RValue }[] = [];
-  for (const argument of dots) {
-    if (argument.name === undefined || argument.name.length === 0) continue;
-    evaluated.push({
-      name: argument.name,
-      value: await evaluateSubsetArgument(invocation, argument, environment),
-    });
+  if (isAttributedSequence(additions.value)) {
+    const value = additions.value;
+    const names = vectorNames(value) ?? [];
+    for (const [index, name] of names.entries()) {
+      invocation.context.checkpoint();
+      if (name.length === 0) continue;
+      evaluated.push({
+        name,
+        value:
+          value.type === "list" || value.type === "pairlist"
+            ? (value.values[index] ?? R_NULL)
+            : extractVectorElement(value, integerVector([index + 1]), invocation.context),
+      });
+    }
   }
 
   const columns = [...source.columns];
@@ -18763,7 +18788,9 @@ async function evaluateArgument(
     argument.promise.expression === null
       ? await invocation.force(argument.promise)
       : ({ type: "language", expression: argument.promise.expression } satisfies RLanguage);
-  const result = await invocation.evaluateDetailed(value, environment);
+  const result = await invocation.evaluateDetailed(value, environment, {
+    controlScope: "evaluation",
+  });
   invocation.setResultVisibility(result.visible ? "visible" : "invisible");
   return result.value;
 }

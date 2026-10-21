@@ -38,6 +38,32 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Evaluation control scopes and exit unwinding (profile 0.371)
+
+eval, evalq, local, with and within establish an evaluation return/cleanup scope. Their returns
+terminate that evaluation; nested owned closures keep their own targets. Return, on.exit, break and
+next resolve against the expression's environment, including forwarded and default promises. Reusing
+an owned environment in eval selects the active evaluation scope. Loop control crosses eval only
+when the loop environment matches. Missing control targets use observed native messages. An empty
+return is visibly NULL; explicit invisible values retain their visibility.
+
+Owned closure and evaluation cleanup captures its handler list before execution. add/after order,
+replacement and clearing are preserved. Ordinary handler errors and returns do not skip the
+remaining captured handlers; the last applicable exit transfer determines the result. Changes
+registered during cleanup do not alter that captured list. Resource exhaustion and cancellation
+remain terminal and cannot be suppressed by an exit return. Scans and evaluations retain work/depth
+limits.
+
+transform evaluates its additions together in one evaluation scope, including unnamed expressions
+and visible list lookup. A return skips later additions; named returned list/vector entries become
+updates, and unnamed returned entries are ignored. Cleanup runs after addition evaluation. This is
+owned behavioral evidence, not a claim for every S3 method or the entire transform surface.
+
+The public TypeScript API and Worker protocol are unchanged. Synthetic eval/library-wrapper stack
+frames, their reflective calls/functions, first-class special-form bindings (including return used
+through do.call), and every higher-level evaluation adapter remain incomplete. GNU R library bodies
+were not implementation inputs.
+
 ### Evaluation promise origins (profile 0.370)
 
 The owned-frame model records each active language-evaluation environment and its entry position.

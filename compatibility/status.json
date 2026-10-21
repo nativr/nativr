@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.370.0",
-  "capabilityManifestHash": "d98e0f089ffac5a3aec0f752beaf62f83d11a0dac2d82542b48b422cd927461f",
+  "semanticProfileVersion": "0.371.0",
+  "capabilityManifestHash": "4788e4ae8c93d69d1b832042ebebae45576637c0067784d9f16ad93399500409",
   "evidence": {
-    "checkedInConformanceCases": 1281,
-    "liveREligibleCases": 1212,
+    "checkedInConformanceCases": 1287,
+    "liveREligibleCases": 1218,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 186,
-    "recursiveBehaviorallyProvenBindings": 103,
+    "recursiveOracleV2Cases": 195,
+    "recursiveBehaviorallyProvenBindings": 109,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -107,10 +107,17 @@
           "embedded-exit-callback"
         ]
       },
-      { "binding": "base::eval", "cases": ["evaluation-origin-environments"] },
+      {
+        "binding": "base::eval",
+        "cases": ["evaluation-control-return-boundaries", "evaluation-origin-environments"]
+      },
       {
         "binding": "base::evalq",
         "cases": [
+          "evaluation-control-exit-errors-and-results",
+          "evaluation-control-forwarded-returns",
+          "evaluation-control-loop-environments",
+          "evaluation-control-return-boundaries",
           "evaluation-origin-environments",
           "evaluation-origin-identity-and-visibility",
           "evaluation-origin-restoration-and-defaults"
@@ -120,6 +127,7 @@
         "binding": "base::factor",
         "cases": ["factor-na-construction-labels-and-code-masks", "recursive-data-frame-object"]
       },
+      { "binding": "base::force", "cases": ["evaluation-control-forwarded-loops"] },
       {
         "binding": "base::formals",
         "cases": [
@@ -179,6 +187,7 @@
         "binding": "base::local",
         "cases": [
           "closure-formals-body-and-environment",
+          "evaluation-control-return-boundaries",
           "evaluation-origin-environments",
           "recursive-stdout-and-invisible-result"
         ]
@@ -226,6 +235,14 @@
       {
         "binding": "base::NextMethod",
         "cases": ["combine-next-method-primitive-fallback", "next-method-default-reentry"]
+      },
+      {
+        "binding": "base::on.exit",
+        "cases": [
+          "evaluation-control-exit-errors-and-results",
+          "evaluation-control-exit-order",
+          "evaluation-control-exit-registry"
+        ]
       },
       {
         "binding": "base::options",
@@ -373,6 +390,7 @@
           "table-zero-extent-dimnames-print-and-visibility"
         ]
       },
+      { "binding": "base::transform", "cases": ["evaluation-control-transform-scope"] },
       { "binding": "base::tryCatch", "cases": ["exiting-condition-handlers-and-unwind"] },
       { "binding": "base::unlist", "cases": ["unlist-shallow-values-types-and-names"] },
       { "binding": "base::unloadNamespace", "cases": ["unload-absent-namespace"] },
@@ -404,8 +422,11 @@
           "signalled-custom-warning-preserves-condition-and-call"
         ]
       },
+      { "binding": "base::with", "cases": ["evaluation-control-return-boundaries"] },
       { "binding": "base::withCallingHandlers", "cases": ["calling-handlers-and-restarts"] },
+      { "binding": "base::within", "cases": ["evaluation-control-return-boundaries"] },
       { "binding": "base::withRestarts", "cases": ["calling-handlers-and-restarts"] },
+      { "binding": "base::withVisible", "cases": ["evaluation-control-visibility"] },
       { "binding": "stats::setNames", "cases": ["names-replacement-coercion-and-metadata"] },
       {
         "binding": "utils::person",

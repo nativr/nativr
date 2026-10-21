@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-21 at verified semantic profile **0.370.0**. Canonical counts are generated in
+Last assessed 2026-10-21 at verified semantic profile **0.371.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -13,12 +13,12 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                      | Status                    |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Production check                   | Profile 0.370: 1,726 unit tests pass, 93 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
-| Conformance                        | 1,281 checked-in, 1,212 live GNU R 4.6.1, 186 recursive cases; 103 bindings linked with causal controls                                              | Passed                    |
+| Production check                   | Profile 0.371: 1,771 unit tests pass, 93 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
+| Conformance                        | 1,287 checked-in, 1,218 live GNU R 4.6.1, 195 recursive cases; 109 bindings linked with causal controls                                              | Passed                    |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                         | Passed                    |
 | Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open                      |
 | Packed consumer                    | Historical pack smoke pass; not refreshed in these increments                                                                                        | Revalidate before release |
-| Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 476.7/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
+| Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 477.0/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
 | CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                           | Open                      |
 
 **Readiness:** release verification is incomplete. Browser timing, the declared OS matrix, CI and
@@ -30,7 +30,7 @@ publication.
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | Domain evidence                                  | All **13** required domains remain incomplete; behavioral matrices need closure                                                                                                                                                                    | Not met                 |
-| Callable evidence/exclusions                     | 752/2,522 distinct names overlap; 103 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
+| Callable evidence/exclusions                     | 752/2,522 distinct names overlap; 109 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
 | Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 8 P5, 12 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
 | Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, coverage and status in order                                                                                                                              | Met for this checkpoint |
@@ -56,7 +56,7 @@ being adopted as a release gate.
 
 All 24 development/regression archives matched their pinned hashes and were attempted with the
 original package entrypoints, explicit RNG initialization and native repeatability observations. The
-[checkpoint](../compatibility/package-check-evidence/corpus-0.370.0.json) links all 24 redacted
+[checkpoint](../compatibility/package-check-evidence/corpus-0.371.0.json) links all 24 redacted
 reports with no checker aborts. Summaries contain allowlisted metadata, digests, capture statuses
 and counts; source, output and diagnostic strings are omitted. Formula was untouched.
 
@@ -76,6 +76,50 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Profile 0.371 verification (2026-10-21)
+
+Evaluation control scopes now isolate return and exit handlers for eval/evalq/local/with/within.
+Return, break, next and on.exit resolve against the expression environment, preserving forwarded
+promises and the distinction between reused and separate evaluation environments. Empty return is
+visibly NULL. Missing targets now use the observed native messages. Owned closures retain their own
+return targets, and matching-environment loop transfers pass through evaluation.
+
+Owned closure and evaluation cleanup share captured handler execution. Handler registration order,
+replacement/clearing, remaining handlers after ordinary errors or returns, result/visibility
+overrides and registry changes during cleanup have independent evidence. Resource exhaustion remains
+terminal and cannot be bypassed by a cleanup return; subsequent session evaluation succeeds.
+transform now evaluates additions together, including unnamed expressions and visible list lookup,
+so return skips later expressions and cleanup follows the complete addition evaluation.
+
+Forty-two independently authored parity cases pass under native GNU R and NativR. Separate tests
+cover a global eval return and resource-limit restoration. Six foundation groups and nine recursive
+cases add causal evidence. The full check passes 1771 tests with 93 opt-in skips;
+checked-in/live/recursive conformance passes 1287 / 1218 / 195, with 109 linked bindings. Fixed
+budgets pass: client 17.6/150 KiB gzip, Worker 477.0/512 KiB gzip, parser 671.9/1,536 KiB raw and
+elementary 311.2/384 KiB raw. Name overlap remains 752/2,522. After saving the evidence, all 18
+checkpoint-integrity tests also pass.
+
+An advisory paired evaluator comparison against a754902 produced median current/previous ratios:
+scalar-loop 0.99, closure-loop 1.00, exit-loop 1.02, eval-loop 1.05. Both sides share other modules
+at 0.371. This owned source-level check is not a browser, complete prior-release or package
+performance claim; the declared performance gates remain open.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.371 checkpoint](../compatibility/package-check-evidence/corpus-0.371.0.json). Stage statuses and
+tiers are unchanged from 0.370. withr's with_connection example now completes and matches the
+repeatable native observation; its matching script count rises from two to three while remaining P4.
+All 178 script input digests are unchanged; the other 177 capture/comparison outcomes are unchanged.
+Formula is untouched. Original entrypoints were used; substitute-runner results receive no P6/P7
+credit. Native filesystem checks used ordinary Windows permissions. E2e and pack smoke were not
+refreshed for this runtime-only increment. The public API and Worker protocol are unchanged. No
+downloads, pushes or publication occurred; no GNU R implementation bodies were inspected.
+
+Synthetic evaluation/library-wrapper frames and reflective stack metadata remain incomplete.
+First-class special-form bindings and further evaluation adapters still need closure. All thirteen
+semantic domains and overall release readiness remain unfinished; the full completion goal stays
+active.
 
 ### Profile 0.370 verification (2026-10-21)
 

@@ -341,12 +341,15 @@ interface ExitHandler {
 }
 
 interface FunctionControlFrame {
-  readonly kind: "function";
+  readonly kind: "function" | "evaluation";
   readonly target: symbol;
+  readonly environment: REnvironment;
   exitHandlers: ExitHandler[];
 }
 
-type ControlFrame = FunctionControlFrame | { readonly kind: "loop"; readonly target: symbol };
+type ControlFrame =
+  | FunctionControlFrame
+  | { readonly kind: "loop"; readonly target: symbol; readonly environment: REnvironment };
 
 interface ClosureCallFrame {
   readonly arguments: readonly {
@@ -1390,14 +1393,14 @@ export class Evaluator {
         case "RepeatExpression":
           return await this.#evaluateRepeat(node.body, environment, context);
         case "BreakExpression":
-          throw new BreakSignal(this.#nearestLoopTarget(node.span, "break"));
+          throw new BreakSignal(this.#nearestLoopTarget(environment, context, node.span));
         case "NextExpression":
-          throw new NextSignal(this.#nearestLoopTarget(node.span, "next"));
+          throw new NextSignal(this.#nearestLoopTarget(environment, context, node.span));
         case "ReturnExpression": {
-          const target = this.#nearestFunctionTarget(node.span);
+          const target = this.#nearestFunctionTarget(environment, context, node.span);
           const result =
             node.value === undefined
-              ? { value: R_NULL, visible: false }
+              ? { value: R_NULL, visible: true }
               : await this.#evaluateNode(node.value, environment, context);
           throw new ReturnSignal(target, result);
         }
@@ -1737,7 +1740,7 @@ export class Evaluator {
       });
     }
     const target = Symbol("for");
-    this.#controlFrames.push({ kind: "loop", target });
+    this.#controlFrames.push({ kind: "loop", target, environment });
     try {
       for (let index = 0; index < sequence.length; index += 1) {
         const value =
@@ -1765,7 +1768,7 @@ export class Evaluator {
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
     const target = Symbol("while");
-    this.#controlFrames.push({ kind: "loop", target });
+    this.#controlFrames.push({ kind: "loop", target, environment });
     try {
       while (
         conditionState(
@@ -1794,7 +1797,7 @@ export class Evaluator {
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
     const target = Symbol("repeat");
-    this.#controlFrames.push({ kind: "loop", target });
+    this.#controlFrames.push({ kind: "loop", target, environment });
     try {
       while (true) {
         try {
@@ -2597,8 +2600,8 @@ export class Evaluator {
           },
           evaluate: async (value, environment) =>
             this.#evaluateLanguageValue(value, environment, context),
-          evaluateDetailed: async (value, environment) =>
-            this.#evaluateLanguageValueResult(value, environment, context),
+          evaluateDetailed: async (value, environment, options) =>
+            this.#evaluateLanguageValueResult(value, environment, context, options?.controlScope),
           assignBinding: async (target, name, value) =>
             this.#assignBinding(target, name, value, context),
           signalCondition: async (classes, condition, muffleRestart) =>
@@ -2620,7 +2623,7 @@ export class Evaluator {
           muffleConditions: async (kind, classes, evaluate) =>
             this.#muffleConditions(kind, classes, evaluate, context),
           configureOnExit: (expression, environment, add, after) => {
-            this.#configureOnExit(expression, environment, add, after);
+            this.#configureOnExit(expression, environment, add, after, context);
           },
           isGlobalEnvironment: (environment) => environment === this.#globalEnvironment,
           currentEnvironment: () =>
@@ -3362,14 +3365,15 @@ export class Evaluator {
   ): Promise<EvaluationResult> {
     context.enterCall();
     const functionTarget = Symbol("function");
+    const frame = createEnvironment(closure.environment);
     const functionFrame: FunctionControlFrame = {
       kind: "function",
       target: functionTarget,
+      environment: frame,
       exitHandlers: [],
     };
     this.#controlFrames.push(functionFrame);
     try {
-      const frame = createEnvironment(closure.environment);
       const parameters = closure.parameters.map((parameter) => parameter.name);
       const options = { checkWork: () => context.checkpoint() };
       const result = partialMatchWarningsEnabled(this.#builtinState)
@@ -3429,44 +3433,28 @@ export class Evaluator {
         ...(call === undefined ? {} : { call }),
       });
       try {
-        let result: EvaluationResult | undefined;
-        let failed = false;
-        let failure: unknown;
+        let result: EvaluationResult;
         try {
           result = debugStep
             ? await this.#evaluateDebuggedBody(closure.body, frame, context)
             : await this.#evaluateNode(closure.body, frame, context);
         } catch (error) {
-          if (error instanceof ReturnSignal && error.target === functionTarget) {
-            result = error.result;
-          } else {
-            failed = true;
-            failure = error;
-          }
+          return await this.#completeControlFrame(functionFrame, { kind: "throw", error }, context);
         }
-        try {
-          for (const handler of functionFrame.exitHandlers) {
-            await this.#evaluateNode(handler.expression, handler.environment, context);
-          }
-        } catch (error) {
-          failed = true;
-          if (!(failure instanceof RResourceLimitError)) failure = error;
+        // Ordinary calls do not allocate cleanup state or add an extra async boundary.
+        return functionFrame.exitHandlers.length === 0
+          ? result
+          : await this.#completeControlFrame(functionFrame, { kind: "value", result }, context);
+      } catch (failure) {
+        if (failure instanceof NativRError && !this.#errorCallTraces.has(failure)) {
+          this.#errorCallTraces.set(
+            failure,
+            this.#closureCallFrames.flatMap((entry) =>
+              entry.call === undefined ? [] : [entry.call],
+            ),
+          );
         }
-        if (failed) {
-          if (failure instanceof NativRError && !this.#errorCallTraces.has(failure)) {
-            this.#errorCallTraces.set(
-              failure,
-              this.#closureCallFrames.flatMap((entry) =>
-                entry.call === undefined ? [] : [entry.call],
-              ),
-            );
-          }
-          throw failure;
-        }
-        if (result === undefined) {
-          throw new REvaluationError("NRE2140", "A function call completed without a result.");
-        }
-        return result;
+        throw failure;
       } finally {
         this.#closureCallFrames.pop();
       }
@@ -3476,13 +3464,55 @@ export class Evaluator {
     }
   }
 
+  async #completeControlFrame(
+    frame: FunctionControlFrame,
+    outcome:
+      | { readonly kind: "value"; readonly result: EvaluationResult }
+      | { readonly kind: "throw"; readonly error: unknown },
+    context: EvaluationContext,
+  ): Promise<EvaluationResult> {
+    let result: EvaluationResult | undefined;
+    let failed = false;
+    let failure: unknown;
+    const capture = (error: unknown): void => {
+      if (failure instanceof RResourceLimitError) return;
+      if (error instanceof ReturnSignal && error.target === frame.target) {
+        result = error.result;
+        failed = false;
+        failure = undefined;
+      } else {
+        failed = true;
+        failure = error;
+      }
+    };
+    if (outcome.kind === "value") result = outcome.result;
+    else capture(outcome.error);
+    // Changes to on.exit during cleanup affect its registry, not this captured execution list.
+    const handlers = frame.exitHandlers;
+    frame.exitHandlers = [];
+    for (const handler of handlers) {
+      if (failure instanceof RResourceLimitError) break;
+      try {
+        await this.#evaluateNode(handler.expression, handler.environment, context);
+      } catch (error) {
+        capture(error);
+      }
+    }
+    if (failed) throw failure;
+    if (result === undefined) {
+      throw new REvaluationError("NRE2140", "A function call completed without a result.");
+    }
+    return result;
+  }
+
   #configureOnExit(
     expression: AstNode | null,
     environment: REnvironment,
     add: boolean,
     after: boolean,
+    context: EvaluationContext,
   ): void {
-    const frame = this.#nearestFunctionFrame();
+    const frame = this.#nearestFunctionFrame(environment, context);
     if (frame === undefined) return;
     if (expression === null || expression.kind === "NullLiteral") {
       if (!add) frame.exitHandlers = [];
@@ -3498,10 +3528,15 @@ export class Evaluator {
     }
   }
 
-  #nearestFunctionFrame(): FunctionControlFrame | undefined {
+  #nearestFunctionFrame(
+    environment: REnvironment,
+    context: EvaluationContext,
+  ): FunctionControlFrame | undefined {
     for (let index = this.#controlFrames.length - 1; index >= 0; index -= 1) {
+      context.checkpoint();
       const frame = this.#controlFrames[index];
-      if (frame?.kind === "function") return frame;
+      if (frame !== undefined && frame.kind !== "loop" && frame.environment === environment)
+        return frame;
     }
     return undefined;
   }
@@ -5179,15 +5214,31 @@ export class Evaluator {
     value: RValue,
     environment: REnvironment,
     context: EvaluationContext,
+    controlScope?: "evaluation",
   ): Promise<EvaluationResult> {
     if (value.type !== "language" && value.type !== "expression" && value.type !== "symbol") {
       return { value, visible: true };
     }
     context.enterCall();
     this.#evaluationOrigins.push({ environment, frameCount: this.#closureCallFrames.length });
+    const frame: FunctionControlFrame | undefined =
+      controlScope === undefined
+        ? undefined
+        : { kind: "evaluation", target: Symbol("evaluation"), environment, exitHandlers: [] };
+    if (frame !== undefined) this.#controlFrames.push(frame);
     try {
-      return await this.#evaluateLanguageValueInEnvironment(value, environment, context);
+      let result: EvaluationResult;
+      try {
+        result = await this.#evaluateLanguageValueInEnvironment(value, environment, context);
+      } catch (error) {
+        if (frame === undefined) throw error;
+        return await this.#completeControlFrame(frame, { kind: "throw", error }, context);
+      }
+      return frame === undefined || frame.exitHandlers.length === 0
+        ? result
+        : await this.#completeControlFrame(frame, { kind: "value", result }, context);
     } finally {
+      if (frame !== undefined) this.#controlFrames.pop();
       this.#evaluationOrigins.pop();
       context.leaveCall();
     }
@@ -5376,21 +5427,29 @@ export class Evaluator {
     this.#baseEnvironment.lockedBindings.add(".GlobalEnv");
   }
 
-  #nearestLoopTarget(span: SourceSpan, keyword: "break" | "next"): symbol {
+  #nearestLoopTarget(
+    environment: REnvironment,
+    context: EvaluationContext,
+    span: SourceSpan,
+  ): symbol {
     for (let index = this.#controlFrames.length - 1; index >= 0; index -= 1) {
+      context.checkpoint();
       const frame = this.#controlFrames[index];
-      if (frame?.kind === "loop") return frame.target;
-      if (frame?.kind === "function") break;
+      if (frame?.kind === "loop" && frame.environment === environment) return frame.target;
     }
-    throw new REvaluationError("NRE2208", `No loop is available for '${keyword}'.`, { span });
+    throw new REvaluationError("NRE2208", "no loop for break/next, jumping to top level", { span });
   }
 
-  #nearestFunctionTarget(span: SourceSpan): symbol {
-    for (let index = this.#controlFrames.length - 1; index >= 0; index -= 1) {
-      const frame = this.#controlFrames[index];
-      if (frame?.kind === "function") return frame.target;
-    }
-    throw new REvaluationError("NRE2209", "No function is available to return from.", { span });
+  #nearestFunctionTarget(
+    environment: REnvironment,
+    context: EvaluationContext,
+    span: SourceSpan,
+  ): symbol {
+    const frame = this.#nearestFunctionFrame(environment, context);
+    if (frame !== undefined) return frame.target;
+    throw new REvaluationError("NRE2209", "no function to return from, jumping to top level", {
+      span,
+    });
   }
 
   #ensureActive(): void {

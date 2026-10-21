@@ -804,7 +804,7 @@ stack inspection remain open. All thirteen semantic domains and overall release 
 incomplete. The active goal now records five measurable completion criteria near the top of this
 continuation document; each must be evidenced before the goal is complete.
 
-### Immediate continuation after profile 0.370
+### Continuation recorded at profile 0.370 (superseded below)
 
 Fix evaluation control boundaries first. Owned native probes show that
 (function(){eval(quote(return(7L)));9L})() returns nine; NativR returns seven. The same difference
@@ -847,3 +847,82 @@ callable defaults, partial-sort permutations, method/tie behavior and broader di
 Independent datasets, isolated testing support, the complete domain/callable inventory, browser
 performance, reproducible CI and release gates are still required. Linux and holdout execution
 remain separately authorized gates. Continue useful local work without claiming full completion.
+
+### Profile 0.371 verification (2026-10-21)
+
+Evaluation control scopes now isolate return and exit handlers for eval/evalq/local/with/within.
+Return, break, next and on.exit resolve against the expression environment, preserving forwarded
+promises and the distinction between reused and separate evaluation environments. Empty return is
+visibly NULL. Missing targets now use the observed native messages. Owned closures retain their own
+return targets, and matching-environment loop transfers pass through evaluation.
+
+Owned closure and evaluation cleanup share captured handler execution. Handler registration order,
+replacement/clearing, remaining handlers after ordinary errors or returns, result/visibility
+overrides and registry changes during cleanup have independent evidence. Resource exhaustion remains
+terminal and cannot be bypassed by a cleanup return; subsequent session evaluation succeeds.
+transform now evaluates additions together, including unnamed expressions and visible list lookup,
+so return skips later expressions and cleanup follows the complete addition evaluation.
+
+Forty-two independently authored parity cases pass under native GNU R and NativR. Separate tests
+cover a global eval return and resource-limit restoration. Six foundation groups and nine recursive
+cases add causal evidence. The full check passes 1771 tests with 93 opt-in skips;
+checked-in/live/recursive conformance passes 1287 / 1218 / 195, with 109 linked bindings. Fixed
+budgets pass: client 17.6/150 KiB gzip, Worker 477.0/512 KiB gzip, parser 671.9/1,536 KiB raw and
+elementary 311.2/384 KiB raw. Name overlap remains 752/2,522. After saving the evidence, all 18
+checkpoint-integrity tests also pass.
+
+An advisory paired evaluator comparison against a754902 produced median current/previous ratios:
+scalar-loop 0.99, closure-loop 1.00, exit-loop 1.02, eval-loop 1.05. Both sides share other modules
+at 0.371. This owned source-level check is not a browser, complete prior-release or package
+performance claim; the declared performance gates remain open.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.371 checkpoint](../compatibility/package-check-evidence/corpus-0.371.0.json). Stage statuses and
+tiers are unchanged from 0.370. withr's with_connection example now completes and matches the
+repeatable native observation; its matching script count rises from two to three while remaining P4.
+All 178 script input digests are unchanged; the other 177 capture/comparison outcomes are unchanged.
+Formula is untouched. Original entrypoints were used; substitute-runner results receive no P6/P7
+credit. Native filesystem checks used ordinary Windows permissions. E2e and pack smoke were not
+refreshed for this runtime-only increment. The public API and Worker protocol are unchanged. No
+downloads, pushes or publication occurred; no GNU R implementation bodies were inspected.
+
+Synthetic evaluation/library-wrapper frames and reflective stack metadata remain incomplete.
+First-class special-form bindings and further evaluation adapters still need closure. All thirteen
+semantic domains and overall release readiness remain unfinished; the full completion goal stays
+active.
+
+### Immediate continuation after profile 0.371
+
+The reproduced evaluation return/exit-handler defects from 0.370 now pass. Continue the context
+model through the next reproduced adapters. An owned function that calls
+subset(data.frame(a=1:3),return(c(TRUE,FALSE,TRUE))) and then returns 9L yields nine natively;
+NativR reports no function to return from. The same happens for data-frame select=return(1L).
+Matrix/atomic subset return must still reach the owning function: native and NativR both return the
+logical predicate in the matrix probe. Matrix select has a separate evaluation scope, like
+data-frame select: native return is contained and its on.exit runs immediately; NativR currently
+errors on return and drops the cleanup. Matrix predicate cleanup instead belongs to the caller; both
+runtimes retain its later execution after the caller's remaining body. Source also needs
+per-expression evaluation scopes: source(textConnection("return(7L)\n9L"),local=new.env())$value is
+nine natively but currently errors. An on.exit inside a sourced expression runs before the next
+source expression natively; NativR drops the handler. A data-frame subset predicate's on.exit
+likewise needs to execute at the end of predicate evaluation. Add owned tests and recursive evidence
+for these distinctions using the shared control-scope mechanism; internal AST composition remains
+transparent. Source exprs= must also isolate each expression, retain an invisible return's
+visibility, and contain return under local=TRUE. These independently reproduced native controls
+confirm that the scope belongs around each evaluated source node rather than the entire source call.
+
+Then continue synthetic frames and reflective identity, using the absolute-count and primitive
+evaluation-function observations recorded above.
+
+First-class return remains missing: (function(){do.call("return",list(7L));9L})() returns seven
+natively; NativR reports that return is not a callable binding. First-class if is also unfinished.
+Close special-form callable classification and lazy invocation through a shared mechanism rather
+than package-specific exceptions. Preserve environment-directed control, call identity, defaults,
+promise memoization and resource/cancellation limits.
+
+Then continue constructed subset-call and raw hexadecimal function display, complex attribute paths,
+callable defaults, partial-sort/method/tie behavior and confirmed shared corpus blockers.
+Independent datasets, isolated testing support, complete domain/callable inventory, browser/OS
+performance, reproducible CI and release gates remain required. Linux and holdout execution still
+need separate authorization. Keep the full goal active while useful local work remains.

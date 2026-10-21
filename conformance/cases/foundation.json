@@ -17553,5 +17553,48 @@
     "expected": [true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+
+  {
+    "id": "evaluation-control-parity-1",
+    "code": "c((function(){f<-function(){eval(quote(return(7L)));9L};identical(f(),9L)})(),(function(){f<-function(){evalq(return(7L));9L};identical(f(),9L)})(),(function(){f<-function(){local(return(7L));9L};identical(f(),9L)})(),(function(){f<-function(){with(list(),return(7L));9L};identical(f(),9L)})(),(function(){f<-function(){result<-eval(expression(return(7L),stop(\"unreachable\")));c(result,9L)};identical(f(),c(7L,9L))})(),(function(){identical(evalq({inside<-evalq(return(7L));c(inside,9L)}),c(7L,9L))})(),(function(){identical(evalq({f<-function()return(7L);c(f(),9L)}),c(7L,9L))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-control-parity-2",
+    "code": "c((function(){g<-function(x)x;f<-function(){g(return(7L));9L};identical(f(),7L)})(),(function(){g<-function(x)evalq(x);f<-function(){g(return(7L));9L};identical(f(),7L)})(),(function(){f<-function(x=return(7L)){evalq(x,environment());9L};identical(f(),9L)})(),(function(){f<-function(x=return(7L)){evalq(x,new.env());9L};identical(f(),7L)})(),(function(){identical(withVisible(evalq(return(invisible(7L)))),list(value=7L,visible=FALSE))})(),(function(){identical(withVisible(evalq(return())),list(value=NULL,visible=TRUE))&&identical(withVisible((function()return())()),list(value=NULL,visible=TRUE))})(),(function(){e<-new.env();e$events<-character();f<-function(){on.exit(e$events<-c(e$events,\"owner\"));evalq(on.exit(e$events<-c(e$events,\"eval\")));e$events<-c(e$events,\"after\");invisible(NULL)};f();identical(e$events,c(\"eval\",\"after\",\"owner\"))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-control-parity-3",
+    "code": "c((function(){e<-new.env();e$events<-character();evalq({on.exit(e$events<-c(e$events,\"outer\"));evalq({on.exit(e$events<-c(e$events,\"inner\"));7L});e$events<-c(e$events,\"after\")});identical(e$events,c(\"inner\",\"after\",\"outer\"))})(),(function(){e<-new.env();e$events<-character();g<-function(x){x;e$events<-c(e$events,\"g.after\")};f<-function(){g(on.exit(e$events<-c(e$events,\"f.exit\")));e$events<-c(e$events,\"f.after\")};f();identical(e$events,c(\"g.after\",\"f.after\",\"f.exit\"))})(),(function(){e<-new.env();e$events<-integer();evalq({on.exit(e$events<-c(e$events,9L));on.exit(NULL);on.exit(e$events<-c(e$events,2L));on.exit(e$events<-c(e$events,3L),add=TRUE);on.exit(e$events<-c(e$events,1L),add=TRUE,after=FALSE)});identical(e$events,1:3)})(),(function(){identical(withVisible(evalq({on.exit(invisible(9L));7L})),list(value=7L,visible=TRUE))})(),(function(){identical(evalq({on.exit(return(9L));7L}),9L)})(),(function(){identical(withVisible(evalq({on.exit(return(invisible(9L)));7L})),list(value=9L,visible=FALSE))})(),(function(){identical(tryCatch(evalq({on.exit(return(9L));stop(\"body\")}),error=conditionMessage),9L)})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-control-parity-4",
+    "code": "c((function(){e<-new.env();e$events<-character();message<-tryCatch(evalq({on.exit({e$events<-c(e$events,\"one\");stop(\"exit\")});on.exit(e$events<-c(e$events,\"two\"),add=TRUE);stop(\"body\")}),error=conditionMessage);identical(message,\"exit\")&&identical(e$events,c(\"one\",\"two\"))})(),(function(){identical(tryCatch(evalq({on.exit(stop(\"one\"));on.exit(stop(\"two\"),add=TRUE);7L}),error=conditionMessage),\"two\")})(),(function(){identical(tryCatch(evalq({on.exit(stop(\"one\"));on.exit(return(9L),add=TRUE);7L}),error=conditionMessage),9L)})(),(function(){identical(tryCatch(evalq({on.exit(return(9L));on.exit(stop(\"two\"),add=TRUE);7L}),error=conditionMessage),\"two\")})(),(function(){e<-new.env();e$events<-character();evalq({on.exit({e$events<-c(e$events,\"one\");on.exit(e$events<-c(e$events,\"new\"),add=TRUE)});on.exit(e$events<-c(e$events,\"two\"),add=TRUE);7L});identical(e$events,c(\"one\",\"two\"))})(),(function(){e<-new.env();e$events<-character();evalq({on.exit({e$events<-c(e$events,\"one\");on.exit(NULL)});on.exit(e$events<-c(e$events,\"two\"),add=TRUE);7L});identical(e$events,c(\"one\",\"two\"))})(),(function(){e<-new.env();e$events<-character();f<-function(){on.exit({e$events<-c(e$events,\"one\");stop(\"exit\")});on.exit(e$events<-c(e$events,\"two\"),add=TRUE);stop(\"body\")};message<-tryCatch(f(),error=conditionMessage);identical(message,\"exit\")&&identical(e$events,c(\"one\",\"two\"))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-control-parity-5",
+    "code": "c((function(){f<-function(){on.exit(return(9L));7L};identical(f(),9L)})(),(function(){n<-0L;for(i in 1:3){evalq(break);n<-n+1L};identical(n,0L)})(),(function(){n<-0L;for(i in 1:3){evalq(next);n<-n+1L};identical(n,0L)&&identical(i,3L)})(),(function(){g<-function(x)force(x);n<-0L;for(i in 1:3){g(break);n<-n+1L};identical(n,0L)})(),(function(){g<-function(x)force(x);n<-0L;for(i in 1:3){g(next);n<-n+1L};identical(n,0L)&&identical(i,3L)})(),(function(){message<-tryCatch({for(i in 1:3)evalq(break,new.env())},error=conditionMessage);identical(message,\"no loop for break/next, jumping to top level\")})(),(function(){message<-tryCatch({for(i in 1:3)(function()break)()},error=conditionMessage);identical(message,\"no loop for break/next, jumping to top level\")})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "evaluation-control-parity-6",
+    "code": "c((function(){e<-new.env();e$events<-integer();for(i in 1:3){evalq({on.exit(e$events<-c(e$events,i));next})};identical(e$events,1:3)})(),(function(){x<-data.frame(a=1:2);identical(transform(x,a=return(c(3,4)),b=stop(\"unreachable\")),x)})(),(function(){identical(transform(data.frame(a=1:2),a=return(list(a=c(3,4)))),data.frame(a=c(3,4)))&&identical(transform(data.frame(a=1:2),return(c(a=3))),data.frame(a=c(3,3)))})(),(function(){e<-new.env();e$events<-character();result<-transform(data.frame(a=1:2),a={on.exit(e$events<-c(e$events,\"exit\"));e$events<-c(e$events,\"a\");a+1},b={e$events<-c(e$events,\"b\");a+2});identical(e$events,c(\"a\",\"b\",\"exit\"))&&identical(result,data.frame(a=c(2,3),b=c(3,4)))})(),(function(){identical(tryCatch(transform(data.frame(a=1:2),stop(\"unnamed\")),error=conditionMessage),\"unnamed\")})(),(function(){list<-function(...)stop(\"masked\");identical(tryCatch(transform(data.frame(a=1:2),a=a+1),error=conditionMessage),\"masked\")})(),(function(){identical(within(list(a=1L),{a<-2L;return(NULL);a<-3L}),list(a=2L))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]
