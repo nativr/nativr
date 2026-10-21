@@ -892,7 +892,7 @@ First-class special-form bindings and further evaluation adapters still need clo
 semantic domains and overall release readiness remain unfinished; the full completion goal stays
 active.
 
-### Immediate continuation after profile 0.371
+### Continuation recorded at profile 0.371 (superseded below)
 
 The reproduced evaluation return/exit-handler defects from 0.370 now pass. Continue the context
 model through the next reproduced adapters. An owned function that calls
@@ -924,5 +924,71 @@ promise memoization and resource/cancellation limits.
 Then continue constructed subset-call and raw hexadecimal function display, complex attribute paths,
 callable defaults, partial-sort/method/tie behavior and confirmed shared corpus blockers.
 Independent datasets, isolated testing support, complete domain/callable inventory, browser/OS
+performance, reproducible CI and release gates remain required. Linux and holdout execution still
+need separate authorization. Keep the full goal active while useful local work remains.
+
+### Profile 0.372 verification (2026-10-21)
+
+source now establishes a return/cleanup scope around each expression, for parsed input and exprs=.
+Return ends that expression while subsequent expressions continue; the final value and visibility
+are preserved. Cleanup runs before the next expression, remains separate from owner cleanup, and can
+replace the expression result. Ordinary errors stop later expressions after cleanup. Explicit
+environments and local=TRUE/FALSE retain mutations and environment-directed loop control.
+
+subset now scopes data-frame predicates and data-frame/matrix selections independently. Matrix,
+atomic and plain-list predicates force their original promises; their control transfers and exit
+handlers belong to the caller. Plain-list names no longer mask the caller's predicate bindings.
+Forwarded promises, result dimensions/names, reference identity and resource-limit recovery have
+owned evidence. No public API, Worker protocol, host capability or dependency direction changed.
+
+Thirty-three independent parity fixtures pass GNU R and NativR; two additional tests verify that
+cleanup returns cannot bypass resource exhaustion and that the session recovers. The focused scope
+suite passes 79 tests. Five foundation groups and six recursive cases add causal evidence. The full
+check passes 1807 tests with 93 opt-in skips; checked-in/live/recursive conformance passes 1292 /
+1223 / 201, with 111 linked bindings. After saving the checkpoint, all 19 checkpoint-integrity tests
+pass. Fixed budgets pass: client 17.6/150 KiB gzip, Worker 477.1/512 KiB gzip, parser 671.9/1,536
+KiB raw and elementary 311.2/384 KiB raw. Name overlap remains 752/2,522.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.372 checkpoint](../compatibility/package-check-evidence/corpus-0.372.0.json). All 178 script
+input digests and capture/comparison outcomes, stage statuses and tiers remain unchanged from 0.371.
+One native repeatability flag changed: withr's with_timezone example is repeatable in this run,
+after being nonrepeatable in 0.369–0.371. Its NativR execution still fails and mismatches the
+oracle; this run does not establish stable behavior across runs or grant any semantic improvement or
+tier credit. The other 177 repeatability flags are unchanged. Original entrypoints were used;
+substitute-runner results receive no P6/P7 credit. Native filesystem checks used ordinary Windows
+permissions. Formula is untouched. E2e and pack smoke were not refreshed for this base-runtime
+increment. No downloads, pushes or publication occurred; no GNU R implementation bodies were
+inspected.
+
+Synthetic evaluation/library-wrapper frames, reflective stack identity and first-class special forms
+remain incomplete. All thirteen domains and overall release readiness remain unfinished; the full
+completion goal stays active.
+
+### Immediate continuation after profile 0.372
+
+The reproduced source/subset control defects now pass. Continue the actual frame model for synthetic
+evaluation/library contexts and reflective identity, preserving the completed control scopes and
+promise origins. Independent metadata-only probes, with results assigned before printing, observe
+these native frame kinds: standalone eval and evalq each have closure,builtin at depth two; local
+has closure,closure,closure,builtin,closure,builtin at depth six; with(list(),...) has
+closure,closure,closure,builtin at depth four. In each, the first function is identical to the
+public adapter binding. NativR observes depth zero in these probes. Evalq reusing an owned
+function's environment has depth three natively (closure,closure,builtin), versus one in NativR.
+Public print adds its own closure frame when it forces an unassigned probe, so capture observations
+before printing. Do not replace the frame model with hard-coded count offsets; identities, calls,
+frame environments, parentage and forwarded/default promise origins must remain coherent. Only
+public metadata and owned calls are oracle inputs/outputs; library function bodies remain off
+limits.
+
+First-class special-form bindings also remain open: native get("return",baseenv()) is a primitive
+function of type special. NativR currently lacks that binding and do.call("return",list(7L)) fails.
+Use a shared callable/lazy-invocation mechanism and preserve environment-directed control and
+limits. First-class if remains open as well.
+
+Continue constructed subset-call/raw hexadecimal display, complex attribute paths, callable
+defaults, partial-sort/method/tie behavior and confirmed shared corpus blockers. Independently
+licensed offline datasets, isolated testing support, complete domain/callable inventory, browser/OS
 performance, reproducible CI and release gates remain required. Linux and holdout execution still
 need separate authorization. Keep the full goal active while useful local work remains.

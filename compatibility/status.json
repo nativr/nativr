@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.371.0",
-  "capabilityManifestHash": "4788e4ae8c93d69d1b832042ebebae45576637c0067784d9f16ad93399500409",
+  "semanticProfileVersion": "0.372.0",
+  "capabilityManifestHash": "622182cb5dae44159bd6ed3b91c656e4e892b404af723911a649e558d1b41862",
   "evidence": {
-    "checkedInConformanceCases": 1287,
-    "liveREligibleCases": 1218,
+    "checkedInConformanceCases": 1292,
+    "liveREligibleCases": 1223,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 195,
-    "recursiveBehaviorallyProvenBindings": 109,
+    "recursiveOracleV2Cases": 201,
+    "recursiveBehaviorallyProvenBindings": 111,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -310,6 +310,15 @@
           "generic-default-promises-sort-values-and-diagnostics"
         ]
       },
+      {
+        "binding": "base::source",
+        "cases": [
+          "evaluation-adapter-loop-environments",
+          "evaluation-adapter-source-cleanup",
+          "evaluation-adapter-source-identity",
+          "evaluation-adapter-source-returns"
+        ]
+      },
       { "binding": "base::split", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
       {
         "binding": "base::stop",
@@ -328,6 +337,14 @@
           "recursive-nested-attributes",
           "recursive-scalar-token-boundaries",
           "signalled-custom-error-preserves-condition-and-call"
+        ]
+      },
+      {
+        "binding": "base::subset",
+        "cases": [
+          "evaluation-adapter-loop-environments",
+          "evaluation-adapter-subset-cleanup",
+          "evaluation-adapter-subset-return-contexts"
         ]
       },
       {

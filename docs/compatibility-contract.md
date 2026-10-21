@@ -38,6 +38,29 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Source and subset evaluation scopes (profile 0.372)
+
+source establishes a return/cleanup scope for each evaluated expression, for both parsed input and
+exprs=. A return ends its current expression and later source expressions continue. The last
+expression's value and visibility are retained, and source itself remains invisible. Cleanup runs
+before the next expression and is separate from the owning closure's handlers. Return from cleanup
+can replace the expression result; an ordinary error runs cleanup and stops subsequent expressions.
+Environment mutations and returned reference identity/attributes are preserved. Loop transfer
+continues to use the evaluation environment, including local=TRUE and explicit environments.
+
+subset evaluates data-frame predicates and data-frame/matrix selections in separate return/cleanup
+scopes. A mask's cleanup finishes before the following stage. Matrix, atomic and plain-list
+predicates instead force their original promises in the caller environment; their returns and exit
+handlers belong to that environment. Forwarded promises retain their original control targets.
+Plain-list element names do not mask the caller's predicate bindings. Existing selection values,
+dimensions and names remain covered. Resource limits cannot be suppressed by cleanup returns;
+subsequent session evaluation restores normal operation.
+
+These boundaries have independently authored tests and recursive causal evidence. They do not
+complete source/subset S3 behavior, synthetic library frames or reflective stack metadata. The
+public API, Worker protocol and host capabilities are unchanged. No GNU R implementation bodies were
+used.
+
 ### Evaluation control scopes and exit unwinding (profile 0.371)
 
 eval, evalq, local, with and within establish an evaluation return/cleanup scope. Their returns

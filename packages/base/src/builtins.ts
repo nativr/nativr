@@ -17208,6 +17208,7 @@ async function builtinSource(invocation: BuiltinInvocation): Promise<RList> {
       const result = await invocation.evaluateDetailed(
         { type: "language", expression: node },
         environment,
+        { controlScope: "evaluation" },
       );
       lastValue = result.value;
       lastVisible = result.visible;
@@ -18507,7 +18508,8 @@ async function builtinSubset(invocation: BuiltinInvocation): Promise<RValue> {
   }
 
   const dimensions = vectorDimensions(input);
-  const rectangular = isDataFrame(input) || dimensions?.length === 2;
+  const dataFrame = isDataFrame(input);
+  const rectangular = dataFrame || dimensions?.length === 2;
   const subsetArgument = matched.get("subset");
   if (!rectangular && (subsetArgument === undefined || subsetArgument.promise.missing)) {
     throw new REvaluationError("NRE2103", "Argument 'subset' is missing in subset().");
@@ -18518,11 +18520,13 @@ async function builtinSubset(invocation: BuiltinInvocation): Promise<RValue> {
   const predicate =
     subsetArgument === undefined || subsetArgument.promise.missing
       ? logicalVector([true])
-      : await evaluateSubsetArgument(
-          invocation,
-          subsetArgument,
-          withEnvironment(input, callerEnvironment),
-        );
+      : dataFrame
+        ? await evaluateSubsetArgument(
+            invocation,
+            subsetArgument,
+            withEnvironment(input, callerEnvironment),
+          )
+        : await invocation.force(subsetArgument.promise);
   if (predicate.type !== "logical") {
     throw new RTypeMismatchError("NRT3226", "subset= must evaluate to a logical vector.");
   }
@@ -18745,7 +18749,8 @@ async function evaluateSubsetArgument(
     type: "language",
     expression: argument.promise.expression,
   } satisfies RLanguage;
-  return (await invocation.evaluateDetailed(language, environment)).value;
+  return (await invocation.evaluateDetailed(language, environment, { controlScope: "evaluation" }))
+    .value;
 }
 
 function subsetColumnNames(input: RVector | RPairlist): readonly string[] {
