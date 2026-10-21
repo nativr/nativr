@@ -1107,7 +1107,7 @@ recorded eval-frame cost against 0.372 remains open; this comparison does not es
 performance acceptance or relax a budget. All thirteen domains and overall release readiness remain
 unfinished; the full completion goal stays active.
 
-### Immediate continuation after profile 0.374
+### Continuation recorded at profile 0.374 (superseded below)
 
 The reproduced return/if defects now pass. Continue the shared callable/control mechanism for the
 remaining special forms. Eight independently authored probes establish concrete gaps: native
@@ -1126,6 +1126,101 @@ Further reflective adapter/stack-trace work remains. Profile the measured evalq 
 preserving the verified frame graph and defaults. Continue constructed subset-call/raw hexadecimal
 display, complex attributes, callable defaults, partial-sort/method/tie behavior and confirmed
 shared corpus blockers. Independently licensed offline datasets, isolated testing support, complete
+domain/callable inventory, browser/OS performance, reproducible CI and release gates remain
+required. Linux and holdout execution still need separate authorization. Keep the full goal active
+while useful local work remains.
+
+### Profile 0.375 verification (2026-10-21)
+
+for, while, repeat, break, next and braces now have first-class special-primitive bindings. Syntax
+and aliases share the existing environment-directed control machinery. Loop arity is checked before
+forcing arguments; tags are positional. Conditions and bodies are reevaluated each iteration while
+referenced promises keep their memoization and origin. While handles transfers from its condition
+and body. Loop results remain invisible NULL; empty braces now return visible NULL. Braces retain
+ordered evaluation, final visibility and identity. Ordinary callable lookup preserves replaced,
+active and lazy bindings.
+
+For converts factor labels before initialization, preserves their encoding and missing values, and
+does not dispatch conversion methods. A malformed factor leaves the previous binding intact. For
+then initializes the variable to NULL, including empty or subsequently invalid ordinary sequences.
+Pairlists/lists retain element identity and attributes; expression vectors supply quoted values;
+atomic elements lose container attributes. Active bindings observe initialization and each item.
+Locked-binding errors preserve sequence effects. Nested loops, evaluation contexts, forwarded
+promises, cleanup and finite resource limits retain the verified control boundaries.
+
+Fifty-one independently authored parity fixtures pass native GNU R and NativR. One additional test
+covers step/depth exhaustion and session recovery. The focused loop/control/frame suite passes 195
+tests. Ten foundation groups and ten recursive cases add causal evidence, including braces. The full
+check passes 1962 tests with 93 opt-in skips; checked-in/live/recursive conformance passes 1319 /
+1250 / 231, with 127 linked bindings. After saving the checkpoint, all 22 checkpoint-integrity tests
+pass. Fixed budgets pass: client 17.6/150 KiB gzip, Worker 479.9/512 KiB gzip, parser 671.9/1,536
+KiB raw and elementary 311.2/384 KiB raw. Name overlap is 767/2,522; this is not a completion
+percentage.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.375 checkpoint](../compatibility/package-check-evidence/corpus-0.375.0.json). All 178 script
+input digests and execution/comparison outcomes are unchanged from 0.374; stage statuses and tiers
+are also unchanged. The native repeatability flag for withr's with_timezone example changed from
+true to false. Its NativR execution still fails and mismatches the oracle; this fluctuating native
+observation provides no semantic improvement or tier credit. The other 177 repeatability flags are
+unchanged. The corpus retains two P7 packages (pkgconfig and abind), one P6, eight P5, twelve P4 and
+one P3, plus the untouched P0 holdout. Original entrypoints were used; substitute-runner results
+receive no P6/P7 credit. Native filesystem checks used ordinary Windows permissions. Formula is
+untouched. No public NativR API, Worker protocol, host capability or dependency direction changed.
+E2e and pack smoke were not refreshed for this base-runtime increment. No downloads, pushes or
+publication occurred; GNU R library implementation bodies were neither inspected nor captured.
+
+Three transfer fixtures and one active-binding fixture explicitly evaluate loops with evalq.
+Independent default-native-compilation probes differ: ordinary function for-loops with aliased
+break/next report no loop owner, and an active while binding is not read. Explicitly evaluated loops
+find the owner and read that binding once. NativR currently follows the interpreted path. This is an
+open bytecode-equivalence defect, not an exclusion or completed behavior. The final advisory paired
+source benchmark is within six percent of 0.374 on all six workloads after removing unnecessary
+standard-path call allocation. See
+[performance.md](performance.md#loop-invocation-measurement-at-profile-0375). The earlier eval-frame
+cost against 0.372, browser performance and all thirteen domain closures remain unfinished. The full
+completion goal stays active.
+
+### Immediate continuation after profile 0.375
+
+The recorded callable loop/block and interpreted-transfer defects now pass. Continue the confirmed
+character-to-logical gap: native as.logical of `c("tRuE"," TRUE ","true","False","T","f")` is
+`c(NA,NA,TRUE,FALSE,TRUE,NA)`; NativR differs. Conditional coercion already uses the accepted
+spellings, but general vector/option conversion still uses a permissive trim/case-fold helper. Probe
+each consumer before sharing a corrected parser; preserve warnings, names, types and missingness.
+Keep separate evidence for conversion and condition interpretation.
+
+Additional owned probes confirm the same string gap through as.vector(...,"logical"). Native
+storage.mode and mode replacement convert that vector to the same expected values; NativR lacks both
+replacement bindings. Invalid mixed-case na.rm in sum and recursive in anyNA produce native "NA in
+coercion to boolean"; NativR respectively accepts the value or emits a different diagnostic. These
+are reusable vector/scalar conversion gaps. A separate rep(each="tRuE") probe warns about coercion
+and retains one copy natively; NativR rejects it. Keep that numeric-conversion boundary distinct
+when planning the conversion matrix.
+
+Bytecode-equivalent control remains a required gap. These owned probes reproduce two observations
+under GNU R 4.6.1's default compilation, without reading or printing a library body:
+
+```r
+(function(){b<-get("break");n<-0L;for(i in 1:3){n<-n+1L;b()};n})()
+# Native error: no loop for break/next, jumping to top level. NativR returns 1L.
+(function(){e<-new.env();e$n<-0L;makeActiveBinding("while",function(){
+  e$n<-e$n+1L;get("while",baseenv())},environment());
+  i<-0L;while(i<3L)i<-i+1L;c(i,e$n)})()
+# Native c(3L,0L); NativR c(3L,1L).
+```
+
+Evaluating the loop expression explicitly with evalq yields 1L and c(3L,1L) respectively on both
+runtimes. Preserve that distinction in future compiler/control evidence; do not change the oracle
+compiler setting or treat compiled semantics as a platform exclusion. A causal matrix across
+ordinary, interpreted, warmed and explicitly compiled owned functions is needed before designing the
+corresponding execution policy.
+
+Further reflective adapter/stack-trace work remains. Profile evalq overhead while preserving the
+verified frame graph and defaults. Continue constructed subset-call/raw hexadecimal display, complex
+attributes, callable defaults, partial-sort/method/tie behavior and confirmed shared corpus
+blockers. Independently licensed offline datasets, isolated testing support, complete
 domain/callable inventory, browser/OS performance, reproducible CI and release gates remain
 required. Linux and holdout execution still need separate authorization. Keep the full goal active
 while useful local work remains.

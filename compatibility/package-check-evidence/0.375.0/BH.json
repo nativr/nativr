@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 2,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "a82e1dc10771f803e8fd3de286f6cc89ca19ce7685d78a5541f69869341b8ca2",
+  "redaction": {
+    "policy": "allowlisted-metadata-sha256-v2",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "BH", "version": "1.90.0-1" },
+  "provenance": {
+    "sourceSha256": "2e1fafb05938e81073561ae4892dc543ef15807e375e0ea8fa75e3ab79f0281b",
+    "artifactSha256": "3f70ea3572c3e20f712697d6d9fa2544dc72216d97a06d5f11c0af844d893fb8",
+    "capabilitySha256": "103c536c689edad3da9d7f978e0ae6e74da64cd0ae3de2478a3d5c5322d4733d",
+    "semanticProfile": "0.375.0",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": false,
+  "inventory": { "nestedTestFiles": 0 },
+  "documentationMetadata": {
+    "policy": "loaded-documentation-signatures-v2",
+    "sourceSha256": "28d17d153f11cf4ae2636249f0c31ae481c76d0298e1456d1bcda731efbf06f6",
+    "exportsStatus": "passed",
+    "actual": {
+      "status": "completed",
+      "exportCount": 0,
+      "signatures": {
+        "match": 0,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "expected": {
+      "status": "completed",
+      "exportCount": 0,
+      "signatures": {
+        "match": 0,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "functions": { "passed": 0, "failed": 0, "unexecuted": 0 },
+    "usageOutcomes": { "OK": 0, "NOTE": 0, "WARNING": 0, "ERROR": 0 }
+  },
+  "dependencies": [],
+  "firstBlocker": {
+    "stage": "provenance",
+    "code": "missing-oracle-observation",
+    "path": null,
+    "messageSha256": "c0ca72b7b251676e781b8709932e907803f9a3c85b3f6a2172b579d9ba9e804f"
+  },
+  "runnerDispatch": {
+    "examples": {
+      "outcome": "no-examples",
+      "firstBlocker": {
+        "code": "no-examples",
+        "path": null,
+        "messageSha256": "1fcf445446fe80cbca7d6d8dd083dc25b27e91b0b81180809f33904ad9a8f297"
+      }
+    },
+    "tests": { "outcome": "no-tests", "firstBlocker": null }
+  },
+  "observations": [],
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reasonSha256": "0312af7e14cc867a5c890b89532a0417aa767469482454231b79f3843169dee0",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "passed",
+      "reasonSha256": "8fd450bc4d91f0f301ff73fbbf900ea1c0ac272b147d2b3b7abec50eea40d656",
+      "discovered": 23,
+      "executed": 23
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reasonSha256": "db1b8406573e131bfca91f0c29b138b349c0cc561738d5d1805bd3daf03b19e4",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "unexecuted",
+      "reasonSha256": "668e1d008d79585d0ec926c4cad6b07c2f1b114c62059bbb882a558ea8da2b0b",
+      "discovered": 7,
+      "executed": 6
+    },
+    {
+      "id": "documentation",
+      "status": "passed",
+      "reasonSha256": "57b09490f1c6debb46aac797ebbc7bdc5f9aecef043b7c666aa64a6d524329d0",
+      "discovered": 6,
+      "executed": 6
+    },
+    {
+      "id": "installed-documentation",
+      "status": "inapplicable",
+      "reasonSha256": "4dd671d369dd77e5dec484581aee548cf3414398fb93196c4519c284c3943346",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reasonSha256": "faa48c0fe336e4da224a483f2f2ea0b9b275608edcd9758ece9022acf3e808c3",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reasonSha256": "e57542648bf3f7c5c3a126240ed0af656faf096afb83caeb1c93da1034f1f8d5",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "inapplicable",
+      "reasonSha256": "39ddd98f4e71c8fb70c4282eea14c2b9328421e54ed0aa549d64ba4900a1d1e4",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "package-tests",
+      "status": "unexecuted",
+      "reasonSha256": "309d465a73407a8ecdc3b2a29ca2cd83f5080b8d1da830d9e02ed41dbb6e7c03",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "test-output",
+      "status": "unexecuted",
+      "reasonSha256": "9fa2305d7eb407cd7e858d0e1fc2afc7a1a04d70ec6301d07e50e3eedd778a26",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "output-order",
+      "status": "unexecuted",
+      "reasonSha256": "9fa2305d7eb407cd7e858d0e1fc2afc7a1a04d70ec6301d07e50e3eedd778a26",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "conditions",
+      "status": "unexecuted",
+      "reasonSha256": "9fa2305d7eb407cd7e858d0e1fc2afc7a1a04d70ec6301d07e50e3eedd778a26",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "vignettes",
+      "status": "inapplicable",
+      "reasonSha256": "f6b0c8eab5478f238094a84c2f79a814990223c04e27a8707b4805efa6ed723e",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reasonSha256": "2f0257c2bfff6f5cbf56a7ca5bed2d962fcca9da96711692ddea6cef736190e4",
+      "discovered": 1,
+      "executed": 1
+    }
+  ],
+  "comparisons": {
+    "total": 0,
+    "outcomes": {},
+    "repeatability": { "repeatable": 0, "nonrepeatable": 0, "unobserved": 0 }
+  }
+}

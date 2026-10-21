@@ -1367,3 +1367,31 @@ budget changed and these results do not establish release performance acceptance
 cancellation, representative package workloads including numDeriv, and browser/OS measurements
 remain required. The 0.374 production build passes the existing size limits: client 17.6/150 KiB
 gzip, Worker 479.2/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw.
+
+## Loop invocation measurement at profile 0.375
+
+An advisory Windows x64 / Node 24.19.0 source benchmark compares the owned evaluator and base
+builtin implementations at commit `eb24727` (0.374) with the final 0.375 loop implementation.
+Unchanged leaf modules, the parser and reference operators are shared. Parsing is outside the
+measured region. Each workload receives eight warmups per implementation, then 24 paired samples
+with alternating execution order. Results are checked for equal values. These are medians in
+milliseconds, not browser or full prior-release measurements.
+
+| Workload     | Independently authored R input                                                    | 0.374 median | 0.375 median | Ratio |
+| ------------ | --------------------------------------------------------------------------------- | -----------: | -----------: | ----: |
+| scalar-loop  | `x<-0;for(i in 1:3000)x<-x+i;x`                                                   |      5.12300 |      5.25880 | 1.027 |
+| closure-loop | `f<-function(x)x*x+1;s<-0;for(i in 1:1500)s<-s+f(i);s`                            |      8.00675 |      8.31765 | 1.039 |
+| exit-loop    | `f<-function(x){on.exit(invisible(NULL));x*x+1};s<-0;for(i in 1:1500)s<-s+f(i);s` |     15.13005 |     15.41730 | 1.019 |
+| eval-loop    | `s<-0;for(i in 1:1500)s<-s+evalq(i+i);s`                                          |     24.97420 |     25.25065 | 1.011 |
+| if-loop      | `s<-0;for(i in 1:3000){if(i>1500)s<-s+i else s<-s-i};s`                           |     11.59715 |     12.24260 | 1.056 |
+| return-loop  | `f<-function(x){return(x*x+1)};s<-0;for(i in 1:1500)s<-s+f(i);s`                  |     15.58540 |     15.95520 | 1.024 |
+
+Standard control syntax now allocates a full call object only when generic/debugger dispatch needs
+it. Ordinary callable lookup, active bindings and lazy defaults remain observable. Loop assignment
+avoids an extra async forwarding step, and attribute-free atomic values avoid redundant copying. All
+six workloads are within six percent of the paired 0.374 baseline in this run. The earlier
+eval-frame slowdown against 0.372 remains open. No budget changed and these results do not establish
+release performance acceptance. Startup, cancellation, representative package workloads including
+numDeriv, and browser/OS measurements remain required. The 0.375 production build passes the
+existing size limits: client 17.6/150 KiB gzip, Worker 479.9/512 KiB gzip, parser 671.9/1,536 KiB
+raw and elementary Wasm 311.2/384 KiB raw.

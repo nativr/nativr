@@ -5,17 +5,18 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.374.0",
-  "capabilityManifestHash": "8a79cb9bb8c3ef46a62e7f4be945ec1fa4fde50e19beb51d2ae9f9f1f2f3d917",
+  "semanticProfileVersion": "0.375.0",
+  "capabilityManifestHash": "103c536c689edad3da9d7f978e0ae6e74da64cd0ae3de2478a3d5c5322d4733d",
   "evidence": {
-    "checkedInConformanceCases": 1309,
-    "liveREligibleCases": 1240,
+    "checkedInConformanceCases": 1319,
+    "liveREligibleCases": 1250,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 221,
-    "recursiveBehaviorallyProvenBindings": 121,
+    "recursiveOracleV2Cases": 231,
+    "recursiveBehaviorallyProvenBindings": 127,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
+      { "binding": "base::{", "cases": ["first-class-loop-blocks"] },
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
       {
         "binding": "base::all.equal",
@@ -62,6 +63,7 @@
           "owned-reflection-named-lookup"
         ]
       },
+      { "binding": "base::break", "cases": ["first-class-loop-transfer"] },
       {
         "binding": "base::c",
         "cases": ["combine-first-argument-s3-dispatch", "combine-next-method-primitive-fallback"]
@@ -143,6 +145,15 @@
       {
         "binding": "base::factor",
         "cases": ["factor-na-construction-labels-and-code-masks", "recursive-data-frame-object"]
+      },
+      {
+        "binding": "base::for",
+        "cases": [
+          "first-class-loop-constructed",
+          "first-class-loop-for",
+          "first-class-loop-for-bindings",
+          "first-class-loop-for-values"
+        ]
       },
       { "binding": "base::force", "cases": ["evaluation-control-forwarded-loops"] },
       {
@@ -264,6 +275,7 @@
         "cases": ["argument-default-promises-and-forwarded-missingness"]
       },
       { "binding": "base::new.env", "cases": ["shared-environment-identity"] },
+      { "binding": "base::next", "cases": ["first-class-loop-transfer"] },
       {
         "binding": "base::NextMethod",
         "cases": ["combine-next-method-primitive-fallback", "next-method-default-reentry"]
@@ -307,6 +319,10 @@
       { "binding": "base::print.proc_time", "cases": ["process-time-method-graphs"] },
       { "binding": "base::quote", "cases": ["pairlist-tags-language-and-missingness"] },
       { "binding": "base::rep", "cases": ["partial-argument-warning-builtins-and-match-call"] },
+      {
+        "binding": "base::repeat",
+        "cases": ["first-class-loop-constructed", "first-class-loop-repeat"]
+      },
       { "binding": "base::replicate", "cases": ["replicate-counts-frames-and-simplification"] },
       {
         "binding": "base::return",
@@ -501,6 +517,10 @@
         ]
       },
       {
+        "binding": "base::while",
+        "cases": ["first-class-loop-constructed", "first-class-loop-while"]
+      },
+      {
         "binding": "base::with",
         "cases": ["evaluation-call-frame-with-method-chain", "evaluation-control-return-boundaries"]
       },
@@ -523,8 +543,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 788,
-    "gnuRNameOverlaps": 761,
+    "registeredBindings": 794,
+    "gnuRNameOverlaps": 767,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

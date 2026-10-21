@@ -570,6 +570,20 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ...defineBuiltin("if", ["cond", "cons.expr", "alt.expr"], "behavioral", builtinIf, "special"),
     controlSyntax: "if",
   },
+  ...(["for", "while", "repeat", "break", "next", "{"] as const).map((name) => ({
+    ...defineBuiltin(
+      name,
+      [],
+      "behavioral",
+      async (invocation) => {
+        const result = await invocation.evaluateControl(name);
+        invocation.setResultVisibility(result.visible ? "visible" : "invisible");
+        return result.value;
+      },
+      "special",
+    ),
+    controlSyntax: name,
+  })),
   defineBuiltin("substitute", ["expr", "env"], "behavioral", builtinLanguageSubstitute, "special"),
   defineBuiltin("bquote", ["expr", "where", "splice"], "behavioral", builtinBquote, "special"),
   defineBuiltin(

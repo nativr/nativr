@@ -38,6 +38,34 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Callable loops, transfers and blocks (profile 0.375)
+
+for, while, repeat, break, next and braces are callable special primitives with unknown args/formals
+signatures. Syntax and aliases share the environment-directed control machinery. Loop arity is
+checked before forcing arguments; names do not reorder arguments. Loop conditions/bodies are
+reevaluated on each iteration, while referenced promises retain their own memoization and origin.
+While catches transfers from both its condition and body. Break/next require a loop in the invoking
+environment. Nested loops, evaluation contexts, forwarded promises and cleanup retain the recorded
+ownership boundaries. Finite step/depth limits remain enforced and sessions recover afterward.
+
+For validates its literal symbol before evaluating its sequence, converts factors without method
+dispatch, initializes its variable to NULL, then iterates. Empty sequences still initialize the
+binding. Malformed factors fail before initialization; invalid ordinary sequences fail afterward.
+Lists/pairlists retain element identity and attributes; expressions supply quoted values; atomic
+elements lose container attributes. Factor labels preserve missingness and character encoding.
+Active bindings observe initialization and each iteration; locked-binding failures retain ordering.
+Braces evaluate in order and retain the final value's visibility and identity; empty braces return
+visible NULL. Literal dots and explicit missing arguments keep their recorded diagnostics.
+
+Fifty-one independent native parity fixtures cover this increment, plus resource-limit recovery.
+Three transfer fixtures and one active-binding fixture explicitly use evalq for interpreted loops.
+Independent probes also expose an unfinished bytecode-equivalence gap: under native default
+compilation, aliases of break/next in ordinary function for-loops can report no loop owner, and
+active loop-binding lookup counts differ. NativR has no corresponding compilation path. These
+differences remain required compatibility work; interpreted fixtures do not establish compiled
+equivalence or a platform exclusion. GNU R implementation bodies are not inputs or outputs. The
+public NativR API, Worker protocol and dependency direction are unchanged.
+
 ### First-class return and conditional control (profile 0.374)
 
 return and if are callable special primitives with unknown args/formals signatures. Direct syntax,

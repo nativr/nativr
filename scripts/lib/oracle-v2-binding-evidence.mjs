@@ -1,4 +1,4 @@
-const shadowableName = /^[A-Za-z.][A-Za-z0-9._]*$/;
+const shadowableName = /^(?:[A-Za-z.][A-Za-z0-9._]*|\{)$/;
 
 export function collectOracleV2BindingEvidence(cases, capabilities, surface) {
   if (

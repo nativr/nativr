@@ -61,6 +61,8 @@ import {
   doubleVector,
   functionDebugRegistry,
   integerVector,
+  isFactor,
+  factorLevelVector,
   isAtomic,
   isDataFrame,
   isMissing,
@@ -986,8 +988,9 @@ export class Evaluator {
       context.checkpoint();
       switch (node.kind) {
         case "Program":
-        case "Block":
           return await this.#evaluateSequence(node.body, environment, context);
+        case "Block":
+          return await this.#evaluateSyntaxCall("{", node.body, node.span, environment, context);
         case "DoubleLiteral":
           context.allocate(1);
           return { value: doubleVector([node.value]), visible: true };
@@ -1403,15 +1406,33 @@ export class Evaluator {
             context,
           );
         case "ForExpression":
-          return await this.#evaluateFor(node, environment, context);
+          return await this.#evaluateSyntaxCall(
+            "for",
+            [node.variable, node.sequence, node.body],
+            node.span,
+            environment,
+            context,
+          );
         case "WhileExpression":
-          return await this.#evaluateWhile(node, environment, context);
+          return await this.#evaluateSyntaxCall(
+            "while",
+            [node.condition, node.body],
+            node.span,
+            environment,
+            context,
+          );
         case "RepeatExpression":
-          return await this.#evaluateRepeat(node.body, environment, context);
+          return await this.#evaluateSyntaxCall(
+            "repeat",
+            [node.body],
+            node.span,
+            environment,
+            context,
+          );
         case "BreakExpression":
-          throw new BreakSignal(this.#nearestLoopTarget(environment, context, node.span));
+          return await this.#evaluateSyntaxCall("break", [], node.span, environment, context);
         case "NextExpression":
-          throw new NextSignal(this.#nearestLoopTarget(environment, context, node.span));
+          return await this.#evaluateSyntaxCall("next", [], node.span, environment, context);
         case "ReturnExpression": {
           return await this.#evaluateSyntaxCall(
             "return",
@@ -1739,8 +1760,9 @@ export class Evaluator {
     body: readonly AstNode[],
     environment: REnvironment,
     context: EvaluationContext,
+    emptyVisible = false,
   ): Promise<EvaluationResult> {
-    let result: EvaluationResult = { value: R_NULL, visible: false };
+    let result: EvaluationResult = { value: R_NULL, visible: emptyVisible };
     for (const expression of body) {
       result = await this.#evaluateNode(expression, environment, context);
     }
@@ -1748,29 +1770,64 @@ export class Evaluator {
   }
 
   async #evaluateFor(
-    node: Extract<AstNode, { readonly kind: "ForExpression" }>,
+    variable: string,
+    sequenceExpression: () => Promise<RValue>,
+    body: () => Promise<EvaluationResult>,
     environment: REnvironment,
     context: EvaluationContext,
+    span: SourceSpan | undefined,
   ): Promise<EvaluationResult> {
-    const sequence = await this.#evaluateValue(node.sequence, environment, context);
+    let sequence = await sequenceExpression();
+    if (objectClasses(sequence)?.includes("factor")) {
+      if (!isFactor(sequence)) throw new RTypeMismatchError("NRT3008", "malformed factor");
+      const levels = factorLevelVector(sequence);
+      for (let index = 0; index < sequence.length; index += 1) {
+        context.checkpoint();
+        if (
+          !isMissing(sequence, index) &&
+          (sequence.values[index]! < 1 || sequence.values[index]! > levels.length)
+        ) {
+          throw new RTypeMismatchError("NRT3008", "malformed factor");
+        }
+      }
+      sequence = subsetVector(levels, integerVector(sequence.values, sequence.missing), context);
+    }
+    const assign = (value: RValue): Promise<void> => {
+      if (environment.lockedBindings.has(variable)) {
+        throw new REvaluationError(
+          "NRE2012",
+          `cannot change value of locked binding for '${variable}'`,
+        );
+      }
+      return this.#assignBinding(environment, variable, value, context);
+    };
+    await assign(R_NULL);
     if (sequence.type === "null") return { value: R_NULL, visible: false };
-    if (!isVector(sequence)) {
-      throw new RTypeMismatchError("NRT3115", "A for-loop sequence must be a vector or list.", {
-        span: node.sequence.span,
+    if (!isVector(sequence) && sequence.type !== "pairlist" && sequence.type !== "expression") {
+      throw new RTypeMismatchError("NRT3115", "invalid for() loop sequence", {
+        ...(span === undefined ? {} : { span }),
         details: { type: sequence.type },
       });
     }
+    const length = sequence.type === "expression" ? sequence.values.length : sequence.length;
     const target = Symbol("for");
     this.#controlFrames.push({ kind: "loop", target, environment });
     try {
-      for (let index = 0; index < sequence.length; index += 1) {
+      for (let index = 0; index < length; index += 1) {
+        context.checkpoint();
         const value =
-          sequence.type === "list"
-            ? (sequence.values[index] ?? R_NULL)
-            : extractVectorElement(sequence, integerVector([index + 1]), context);
-        await this.#assignBinding(environment, node.variable.name, value, context);
+          sequence.type === "expression"
+            ? quoteLanguageNode(sequence.values[index]!)
+            : sequence.type === "list" || sequence.type === "pairlist"
+              ? (sequence.values[index] ?? R_NULL)
+              : extractVectorElement(sequence, integerVector([index + 1]), context);
+        const element =
+          isAtomic(sequence) && isAtomic(value) && value.attributes.size > 0
+            ? { ...value, attributes: new Map() }
+            : value;
         try {
-          await this.#evaluateNode(node.body, environment, context);
+          await assign(element);
+          await body();
         } catch (error) {
           if (error instanceof BreakSignal && error.target === target) break;
           if (error instanceof NextSignal && error.target === target) continue;
@@ -1783,45 +1840,21 @@ export class Evaluator {
     return { value: R_NULL, visible: false };
   }
 
-  async #evaluateWhile(
-    node: Extract<AstNode, { readonly kind: "WhileExpression" }>,
+  async #evaluateLoop(
+    condition: (() => Promise<RValue>) | undefined,
+    body: () => Promise<EvaluationResult>,
     environment: REnvironment,
     context: EvaluationContext,
+    span: SourceSpan | undefined,
   ): Promise<EvaluationResult> {
-    const target = Symbol("while");
-    this.#controlFrames.push({ kind: "loop", target, environment });
-    try {
-      while (
-        conditionState(
-          await this.#evaluateValue(node.condition, environment, context),
-          node.condition.span,
-        )
-      ) {
-        try {
-          await this.#evaluateNode(node.body, environment, context);
-        } catch (error) {
-          if (error instanceof BreakSignal && error.target === target) break;
-          if (error instanceof NextSignal && error.target === target) continue;
-          throw error;
-        }
-      }
-    } finally {
-      this.#controlFrames.pop();
-    }
-    return { value: R_NULL, visible: false };
-  }
-
-  async #evaluateRepeat(
-    body: AstNode,
-    environment: REnvironment,
-    context: EvaluationContext,
-  ): Promise<EvaluationResult> {
-    const target = Symbol("repeat");
+    const target = Symbol(condition === undefined ? "repeat" : "while");
     this.#controlFrames.push({ kind: "loop", target, environment });
     try {
       while (true) {
+        context.checkpoint();
         try {
-          await this.#evaluateNode(body, environment, context);
+          if (condition !== undefined && !conditionState(await condition(), span)) break;
+          await body();
         } catch (error) {
           if (error instanceof BreakSignal && error.target === target) break;
           if (error instanceof NextSignal && error.target === target) continue;
@@ -2610,6 +2643,14 @@ export class Evaluator {
           returnFromCall: async (value) =>
             this.#returnFromEnvironment(
               value === undefined ? undefined : () => this.#forceDetailed(value, context),
+              callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
+              context,
+              call?.span,
+            ),
+          evaluateControl: async (name) =>
+            this.#evaluateBuiltinControl(
+              name,
+              args,
               callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
               context,
               call?.span,
@@ -5669,30 +5710,100 @@ export class Evaluator {
   #nearestLoopTarget(
     environment: REnvironment,
     context: EvaluationContext,
-    span: SourceSpan,
+    span: SourceSpan | undefined,
   ): symbol {
     for (let index = this.#controlFrames.length - 1; index >= 0; index -= 1) {
       context.checkpoint();
       const frame = this.#controlFrames[index];
       if (frame?.kind === "loop" && frame.environment === environment) return frame.target;
     }
-    throw new REvaluationError("NRE2208", "no loop for break/next, jumping to top level", { span });
+    throw new REvaluationError("NRE2208", "no loop for break/next, jumping to top level", {
+      ...(span === undefined ? {} : { span }),
+    });
+  }
+
+  #transferLoop(
+    name: "break" | "next",
+    environment: REnvironment,
+    context: EvaluationContext,
+    span: SourceSpan | undefined,
+  ): never {
+    const target = this.#nearestLoopTarget(environment, context, span);
+    throw name === "break" ? new BreakSignal(target) : new NextSignal(target);
+  }
+
+  async #evaluateBuiltinControl(
+    name: "for" | "while" | "repeat" | "break" | "next" | "{",
+    args: readonly BuiltinCallArgument[],
+    environment: REnvironment,
+    context: EvaluationContext,
+    span: SourceSpan | undefined,
+  ): Promise<EvaluationResult> {
+    const arity = name === "for" ? 3 : name === "while" ? 2 : name === "repeat" ? 1 : 0;
+    if (name !== "{" && args.length !== arity) {
+      throw new REvaluationError(
+        "NRE2102",
+        `${args.length} argument${args.length === 1 ? "" : "s"} passed to '${name}' which requires ${arity}`,
+      );
+    }
+    if (name === "break" || name === "next")
+      return this.#transferLoop(name, environment, context, span);
+    // Reevaluate the special call's syntax each iteration. Promises referenced by that syntax
+    // still retain their own memoization and origin; the outer argument is not a cached body.
+    const evaluate = (index: number): Promise<EvaluationResult> => {
+      const promise = args[index]!.promise;
+      return promise.expression === null
+        ? this.#forceDetailed(promise, context)
+        : this.#evaluateNode(promise.expression, promise.environment, context);
+    };
+    if (name === "{") {
+      let result: EvaluationResult = { value: R_NULL, visible: true };
+      for (let index = 0; index < args.length; index += 1) result = await evaluate(index);
+      return result;
+    }
+    if (name === "for") {
+      const variable = args[0]!.promise;
+      const expression = variable.expression;
+      let variableName: string;
+      if (expression?.kind === "Identifier") variableName = expression.name;
+      else if (variable.missing) variableName = "";
+      else if (expression?.kind === "UnsupportedExpression" && expression.feature === "dots")
+        variableName = "...";
+      else if (expression === null && variable.value?.type === "symbol")
+        variableName = variable.value.name;
+      else if (
+        expression?.kind === "ConstantExpression" &&
+        (expression.value as RValue).type === "symbol"
+      )
+        variableName = (expression.value as { name: string }).name;
+      else throw new REvaluationError("NRE2102", "non-symbol loop variable");
+      return this.#evaluateFor(
+        variableName,
+        async () => (await evaluate(1)).value,
+        () => evaluate(2),
+        environment,
+        context,
+        span,
+      );
+    }
+    return this.#evaluateLoop(
+      name === "while" ? async () => (await evaluate(0)).value : undefined,
+      () => evaluate(name === "while" ? 1 : 0),
+      environment,
+      context,
+      span,
+    );
   }
 
   async #evaluateSyntaxCall(
-    name: "if" | "return",
+    name: NonNullable<BuiltinDefinition["controlSyntax"]>,
     arguments_: readonly AstNode[],
     span: SourceSpan,
     environment: REnvironment,
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
-    const call: CallExpressionNode = {
-      kind: "CallExpression",
-      callee: { kind: "Identifier", name, span },
-      arguments: arguments_.map((value) => ({ value, span: value.span })),
-      span,
-    };
-    const callable = await this.#evaluateCallable(call.callee, environment, context);
+    const callee: AstNode = { kind: "Identifier", name, span };
+    const callable = await this.#evaluateCallable(callee, environment, context);
     const debug = functionDebugRegistry(this.#builtinState);
     if (
       callable.type === "builtin" &&
@@ -5700,6 +5811,32 @@ export class Evaluator {
       !debug.persistent.has(callable) &&
       !debug.once.has(callable)
     ) {
+      if (name === "{") return this.#evaluateSequence(arguments_, environment, context, true);
+      if (name === "break" || name === "next")
+        return this.#transferLoop(name, environment, context, span);
+      if (name === "for") {
+        const variable = arguments_[0];
+        if (variable?.kind !== "Identifier")
+          throw new REvaluationError("NRE2102", "non-symbol loop variable");
+        return this.#evaluateFor(
+          variable.name,
+          () => this.#evaluateValue(arguments_[1]!, environment, context),
+          () => this.#evaluateNode(arguments_[2]!, environment, context),
+          environment,
+          context,
+          span,
+        );
+      }
+      if (name === "while" || name === "repeat")
+        return this.#evaluateLoop(
+          name === "while"
+            ? () => this.#evaluateValue(arguments_[0]!, environment, context)
+            : undefined,
+          () => this.#evaluateNode(arguments_[name === "while" ? 1 : 0]!, environment, context),
+          environment,
+          context,
+          span,
+        );
       const argument = arguments_[0];
       if (name === "return") {
         return this.#returnFromEnvironment(
@@ -5726,6 +5863,12 @@ export class Evaluator {
         span,
       );
     }
+    const call: CallExpressionNode = {
+      kind: "CallExpression",
+      callee,
+      arguments: arguments_.map((value) => ({ value, span: value.span })),
+      span,
+    };
     return this.#invokeCallableResult(
       callable,
       this.#prepareArguments(

@@ -17753,5 +17753,76 @@
     "expected": [true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+
+  {
+    "id": "first-class-loop-metadata",
+    "code": "c((function(){names<-c(\"break\",\"next\",\"while\",\"for\",\"repeat\",\"{\");all(vapply(names,function(n){p<-get(n,baseenv());typeof(p)==\"special\"&&is.primitive(p)&&is.null(args(p))&&is.null(formals(p))},logical(1)))})())",
+    "expected": true,
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-transfer",
+    "code": "c((function(){b<-get(\"break\");n<-0L;evalq(for(i in 1:3){n<-n+1L;b()});identical(n,1L)})(),(function(){n<-get(\"next\");s<-0L;evalq(for(i in 1:3){if(i==2L)n();s<-s+i});identical(s,4L)})(),(function(){b<-get(\"break\");n<-get(\"next\");identical(c(tryCatch(b(stop(\"unused\")),error=conditionMessage),tryCatch(n(ignored=,stop(\"unused\")),error=conditionMessage)),c(\"1 argument passed to 'break' which requires 0\",\"2 arguments passed to 'next' which requires 0\"))})(),(function(){b<-get(\"break\");n<-get(\"next\");identical(c(tryCatch(b(),error=conditionMessage),tryCatch(n(),error=conditionMessage)),rep(\"no loop for break/next, jumping to top level\",2L))})(),(function(){b<-get(\"break\");f<-function()b();message<-NULL;for(i in 1:2){message<-tryCatch(f(),error=conditionMessage)};identical(i,2L)&&identical(message,\"no loop for break/next, jumping to top level\")})(),(function(){b<-get(\"break\");pass<-function(x)x;s<-0L;evalq(for(i in 1:3){s<-s+1L;pass(b())});identical(s,1L)})(),(function(){b<-get(\"break\");s<-0L;for(i in 1:3){s<-s+1L;evalq(b())};identical(s,1L)})(),(function(){b<-get(\"break\");identical(tryCatch(for(i in 1:2)lapply(1L,b),error=conditionMessage),\"2 arguments passed to 'break' which requires 0\")})())",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-while",
+    "code": "c((function(){w<-get(\"while\");i<-0L;s<-0L;w(i<3L,{i<-i+1L;s<-s+i});identical(c(i,s),c(3L,6L))})(),(function(){w<-get(\"while\");i<-0L;w(body=i<3L,cond=i<-i+1L);identical(i,3L)})(),(function(){w<-get(\"while\");identical(c(tryCatch(w(),error=conditionMessage),tryCatch(w(FALSE),error=conditionMessage),tryCatch(w(stop(\"unused\"),NULL,stop(\"extra\")),error=conditionMessage)),c(\"0 arguments passed to 'while' which requires 2\",\"1 argument passed to 'while' which requires 2\",\"3 arguments passed to 'while' which requires 2\"))})(),(function(){w<-get(\"while\");identical(withVisible(w(FALSE,)),list(value=NULL,visible=FALSE))&&identical(tryCatch(w(TRUE,),error=conditionMessage),\"argument is missing, with no default\")})(),(function(){i<-0L;while({i<-i+1L;break})i<-99L;identical(i,1L)})(),(function(){w<-get(\"while\");i<-0L;w({i<-i+1L;if(i<3L)next;i<4L},NULL);identical(i,4L)})(),(function(){w<-get(\"while\");e<-new.env();e$n<-0L;f<-function(body){i<-0L;w(i<3L,{i<-i+1L;body});i};v<-f(e$n<-e$n+1L);identical(c(v,e$n),c(3L,1L))})(),(function(){w<-get(\"while\");f<-function(...)w(...,NULL);identical(tryCatch(f(FALSE),error=conditionMessage),\"'...' used in an incorrect context\")})(),(function(){w<-get(\"while\");identical(c(tryCatch(w(NA,NULL),error=conditionMessage),tryCatch(w(1:2,NULL),error=conditionMessage)),c(\"missing value where TRUE/FALSE needed\",\"the condition has length > 1\"))})())",
+    "expected": [true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-repeat",
+    "code": "c((function(){p<-get(\"repeat\");i<-0L;p({i<-i+1L;if(i<3L)next;break});identical(i,3L)})(),(function(){p<-get(\"repeat\");identical(c(tryCatch(p(),error=conditionMessage),tryCatch(p(stop(\"unused\"),NULL),error=conditionMessage),tryCatch(p(body=),error=conditionMessage)),c(\"0 arguments passed to 'repeat' which requires 1\",\"2 arguments passed to 'repeat' which requires 1\",\"argument is missing, with no default\"))})(),(function(){p<-get(\"repeat\");b<-get(\"break\");n<-0L;for(i in 1:3)p({n<-n+1L;b()});identical(n,3L)})(),(function(){p<-get(\"repeat\");e<-new.env();e$n<-0L;f<-function(){on.exit(e$n<-e$n+1L);p(return(7L))};v<-f();identical(c(v,e$n),c(7L,1L))})())",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-for",
+    "code": "c((function(){p<-get(\"for\");e<-new.env();e$n<-0L;s<-0L;p(i,{e$n<-e$n+1L;1:3},s<-s+i);identical(c(s,e$n,i),c(6L,1L,3L))})(),(function(){p<-get(\"for\");s<-0L;p(body=i,var=1:3,seq=s<-s+i);identical(s,6L)})(),(function(){p<-get(\"for\");identical(c(tryCatch(p(),error=conditionMessage),tryCatch(p(i,stop(\"unused\"),NULL,stop(\"extra\")),error=conditionMessage)),c(\"0 arguments passed to 'for' which requires 3\",\"4 arguments passed to 'for' which requires 3\"))})(),(function(){p<-get(\"for\");identical(c(tryCatch(p(1L,stop(\"unused\"),NULL),error=conditionMessage),tryCatch(p(\"i\",stop(\"unused\"),NULL),error=conditionMessage)),rep(\"non-symbol loop variable\",2L))})(),(function(){p<-get(\"for\");i<-99L;p(i,NULL,stop(\"unused\"));a<-i;for(j in integer())stop(\"unused\");identical(list(a,j),list(NULL,NULL))})(),(function(){p<-get(\"for\");i<-99L;m<-tryCatch(p(i,quote(f()),NULL),error=conditionMessage);is.null(i)&&identical(m,\"invalid for() loop sequence\")})(),(function(){i<-99L;s<-0L;for(j in 1:2){s<-s+1L;for(i in {break;1:2})NULL};identical(c(i,s),c(99L,1L))})(),(function(){i<-99L;for(i in {i<-77L;integer()})NULL;is.null(i)})())",
+    "expected": [true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-for-values",
+    "code": "c((function(){p<-get(\"for\");x<-list();p(i,expression(a,1L),x[[length(x)+1L]]<-i);y<-list();p(i,pairlist(a=1L,b=2L),y[[length(y)+1L]]<-i);identical(x,list(quote(a),1L))&&identical(y,list(1L,2L))})(),(function(){p<-get(\"for\");e<-new.env();v<-structure(7L,note=\"owned\");x<-list();p(i,list(e,v),x[[length(x)+1L]]<-i);identical(x[[1L]],e)&&identical(x[[2L]],v)})(),(function(){x<-list();for(i in structure(1:2,names=c(\"a\",\"b\"),class=\"owned\",note=7L))x[[length(x)+1L]]<-i;identical(x,list(1L,2L))})(),(function(){p<-get(\"for\");x<-list();p(i,ordered(c(\"b\",\"a\",NA)),x[[length(x)+1L]]<-i);identical(x,list(\"b\",\"a\",NA_character_))})(),(function(){as.character.factor<-function(x)rep(\"wrong\",length(x));x<-list();for(i in factor(c(\"b\",\"a\")))x[[length(x)+1L]]<-i;identical(x,list(\"b\",\"a\"))})(),(function(){i<-99L;e<-0L;x<-structure(c(1L,4L),levels=c(\"a\",\"b\"),class=\"factor\");m<-tryCatch(for(i in x)e<-e+1L,error=conditionMessage);identical(list(i,e,m),list(99L,0L,\"malformed factor\"))})(),(function(){s<-rawToChar(as.raw(233));Encoding(s)<-\"latin1\";x<-structure(1L,levels=s,class=\"factor\");for(i in x)NULL;identical(Encoding(i),\"latin1\")&&identical(charToRaw(i),as.raw(233))})())",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-for-bindings",
+    "code": "c((function(){e<-new.env();e$v<-list();makeActiveBinding(\"i\",function(x){if(!missing(x))e$v[[length(e$v)+1L]]<-list(x);invisible(NULL)},environment());for(i in 1:2)NULL;identical(e$v,list(list(NULL),list(1L),list(2L)))})(),(function(){e<-new.env();e$v<-list();makeActiveBinding(\"i\",function(x){if(!missing(x))e$v[[length(e$v)+1L]]<-list(x);invisible(NULL)},environment());for(i in integer())NULL;identical(e$v,list(list(NULL)))})(),(function(){i<-9L;lockBinding(\"i\",environment());e<-0L;m<-tryCatch(for(i in {e<-1L;1:2})NULL,error=conditionMessage);identical(list(e,i,m),list(1L,9L,\"cannot change value of locked binding for 'i'\"))})(),(function(){p<-get(\"for\");p(,1:2,NULL);p(...,1:2,NULL);all(c(\"\",\"...\")%in%ls(all.names=TRUE))})())",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-blocks",
+    "code": "c((function(){b<-get(\"{\");identical(withVisible(b()),list(value=NULL,visible=TRUE))&&identical(withVisible({}),list(value=NULL,visible=TRUE))})(),(function(){b<-get(\"{\");e<-new.env();e$n<-0L;r<-withVisible(b(e$n<-e$n+1L,invisible(e)));identical(r,list(value=e,visible=FALSE))&&identical(e$n,1L)})(),(function(){f<-function(){b<-get(\"{\");b(1L,,3L)};identical(tryCatch(f(),error=function(e)c(conditionMessage(e),deparse1(conditionCall(e)))),c(\"argument is missing, with no default\",\"f()\"))})(),(function(){b<-get(\"{\");f<-function(...)b(...);identical(tryCatch(f(1L,2L),error=conditionMessage),\"'...' used in an incorrect context\")})())",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-constructed",
+    "code": "c((function(){s<-0L;do.call(\"for\",list(quote(i),1:3,quote(s<-s+i)));w<-withVisible(do.call(\"while\",list(FALSE,quote(stop(\"unused\")))));p<-withVisible(do.call(\"repeat\",list(quote(break))));identical(s,6L)&&identical(w,list(value=NULL,visible=FALSE))&&identical(p,w)})(),(function(){e<-new.env();e$x<-0L;r<-do.call(\"{\",list(quote(x<-1L),quote(x+6L)),envir=e);identical(c(r,e$x),c(7L,1L))})())",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "first-class-loop-shadowing",
+    "code": "c((function(){`break`<-function()NULL;`next`<-function()NULL;s<-0L;for(i in 1:3){break;next;s<-s+i};identical(s,6L)})(),(function(){`for`<-function(...)7L;`while`<-function(...)8L;`repeat`<-function(...)9L;v<-c(for(i in stop(\"unused\"))NULL,while(stop(\"unused\"))NULL,repeat stop(\"unused\"));`{`<-function(...)42L;identical(v,c(7L,8L,9L))&&identical({1L;2L},42L)})(),(function(){e<-new.env();e$n<-0L;makeActiveBinding(\"while\",function(){e$n<-e$n+1L;get(\"while\",baseenv())},environment());i<-0L;evalq(while(i<3L)i<-i+1L);identical(c(i,e$n),c(3L,1L))})(),(function(){f<-function(`while`=get(\"while\",baseenv())){`for`<-1L;`{`<-2L;s<-0L;for(i in 1:3){s<-s+i};while(s<7L)s<-s+1L;s};identical(f(),7L)})())",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]
