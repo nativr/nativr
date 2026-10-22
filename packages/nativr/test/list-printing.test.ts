@@ -91,7 +91,11 @@ it("bounds accumulated list output before traversing every child", async () => {
     limits: { maxSteps: 1500, maxOutputBytes: 80 },
   });
   try {
-    await limited.eval('wide <- rep(list("abcdef"), 1000); invisible(NULL)');
+    await limited.eval('wide <- vector("list", 1000); invisible(NULL)');
+    // Keep fixture construction within the same step budget used to test early output failure.
+    for (let start = 1; start <= 1000; start += 100) {
+      await limited.eval(`wide[${start}:${start + 99}] <- list("abcdef"); invisible(NULL)`);
+    }
     await expect(limited.eval("print(wide)")).rejects.toMatchObject({ code: "NRL4007" });
     expect(await limited.eval("1 + 1")).toBe(2);
   } finally {

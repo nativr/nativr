@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.376.0",
-      languageSubsetVersion: "0.376.0",
+      semanticProfileVersion: "0.377.0",
+      languageSubsetVersion: "0.377.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -14288,9 +14288,7 @@ NeedsCompilation: no
       message: "too many arguments",
     });
     await expect(runtime.eval("seq(1, along.with = c(1, 2))")).resolves.toEqual([1, 2]);
-    await expect(runtime.eval("rep(seq_len(0), length.out = 1)")).rejects.toMatchObject({
-      code: "NRE2106",
-    });
+    await expect(runtime.eval("rep(seq_len(0), length.out = 1)")).resolves.toEqual(NA);
     await expect(
       runtime.eval('identical(names(setNames(c(1, 2), "a")), c("a", NA_character_))'),
     ).resolves.toBe(true);

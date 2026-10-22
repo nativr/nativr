@@ -1268,7 +1268,7 @@ attribute model, full attribute validation, numeric coercion warnings/fallbacks,
 control, earlier eval-frame performance cost, browser timing and all thirteen domain closures remain
 unfinished. The full completion goal stays active.
 
-### Immediate continuation after profile 0.376
+### Continuation recorded at profile 0.376 (superseded below)
 
 The recorded logical-string and mode conversion gaps now pass their bounded matrices. Next,
 reproduce and close the numeric-coercion warning/fallback gap in rep(each="tRuE"): native warns and
@@ -1290,3 +1290,75 @@ eval-frame performance cost. Continue browser timing, domain/callable inventory,
 licensed datasets, isolated testing support and release gates from the original roadmap. Linux
 execution and Formula remain separately authorized gates; downloads still require approval. All five
 completion criteria remain open; no input is required for the next local semantic work.
+
+### Profile 0.377 verification (2026-10-22)
+
+Replication now dispatches from the first actual before forcing unused method arguments. Its default
+path preserves source-order forcing, matching, length-before-each validation, scalar fallbacks,
+count coercion and ordered warnings. Empty vectors fill with typed missing values; expressions,
+names, encodings and element identity are preserved within the recorded matrix. Final allocation is
+guarded before expansion, including large each with small explicit length. Date, POSIXct, difftime,
+factor and numeric_version methods use NextMethod and restore their specific attributes. POSIXlt
+replicates components with shared control promises, keeps balance state, uses its year component for
+row names and measures the longest component for length.
+
+All 67 independently authored native parity fixtures pass, plus one step/allocation recovery test.
+Sixteen foundation/recursive groups include causal controls. The error-catching method diagnostic
+group has no causal link; successful class-method groups establish those links independently. The
+full check passes 2086 tests with 93 opt-in skips; checked-in/live/recursive conformance passes 1354
+/ 1285 / 266, with 146 linked bindings. After saving the checkpoint, all 24 checkpoint-integrity
+tests pass. Fixed budgets pass: client 17.6/150 KiB gzip, Worker 483.1/512 KiB gzip, parser
+671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap is 780/2,522; this is not a
+completion percentage.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.377 checkpoint](../compatibility/package-check-evidence/corpus-0.377.0.json). All 178 script
+input hashes, execution/comparison outcomes and repeatability flags are unchanged from 0.376; all
+package stages and tiers are unchanged. pkgconfig and abind remain P7, numDeriv P6, eight packages
+P5, twelve P4 and BH P3. The untouched Formula holdout remains P0. The withr timezone example
+retains its recorded native repeatability failure and mismatch; no completion credit is inferred
+from unchanged failures. Original package entrypoints were used; no substitute testing runner
+receives P6/P7 credit. Native filesystem checks used ordinary Windows permissions. Formula remains
+untouched. No public NativR API, Worker protocol, dependency direction or host capability changed.
+E2e, pack smoke and performance measurements were not refreshed for this base-runtime increment. No
+downloads, pushes or publication occurred. GNU R implementation bodies were not used as development
+inputs.
+
+Exact warning conditionCall/library-frame attribution remains open, including NextMethod warnings.
+Full rep.int/rep_len parity, general S3 names dispatch, POSIXlt names-method bindings, malformed
+time objects, attributed class-result shapes and the as.POSIXct explicit-timezone attribute gap
+remain required work. General attributes, bytecode-equivalent control, earlier eval-frame
+performance cost, browser timing and all thirteen domain closures are also unfinished. The full goal
+stays active.
+
+### Immediate continuation after profile 0.377
+
+Next close rep.int and rep_len using independently authored native fixtures. Initial observations
+show both are closures with x/times or x/length.out formals; they force x before the control even
+when actuals are supplied in reverse named order, before dispatching global user class methods.
+Further probes show different lookup for locally scoped methods; establish the environment rules.
+Default ordinary vectors drop names/unrelated attributes, while class fallback can retain names,
+class and class-specific attributes. Preserve factor levels and expression elements as well.
+Negative fractions truncate to zero. Blank text differs from invalid text in coercion warnings.
+rep_len fills empty vectors and expressions, rejects positive length on NULL, and requires a scalar
+length. rep.int has distinct NULL, raw-control, vector-count and missing-argument diagnostics.
+Verify these cases against NativR, then implement the shared primitives with resource limits,
+foundation evidence and recursive causal controls. Do not copy native function bodies or include
+library-body-bearing condition calls in probe output.
+
+Keep exact replication warning-call attribution, general S3 names dispatch and POSIXlt method
+bindings in the semantic queue; retain the explicit-timezone constructor and general attribute model
+gaps. Preserve the native-compilation control differences recorded at 0.375 and outstanding
+eval-frame performance cost. Continue browser timing, domain/callable inventory, independently
+licensed datasets, isolated testing support and release gates from the roadmap. Linux execution and
+Formula remain separately authorized gates; downloads require approval. All five completion criteria
+remain open; no input is required for the next local semantic work.
+
+A separate 36-case owned reproduction matrix passes in native GNU R 4.6.1; 29 cases fail against
+NativR 0.377 and seven pass. This matrix is investigative evidence, not added passing conformance.
+Concrete examples include rep.int(1:2, -0.9), rep.int(1:2, list(1, 2)), rep.int(NULL, 0L),
+rep_len(integer(), 2L), rep_len(expression(x, y), 3L), rep_len(1:2, "3"), attribute stripping,
+missing-argument diagnostics and forcing a times error before global method dispatch. Closure
+signatures, raw/list controls, warning order and class-specific fallback complete the next bounded
+acceptance matrix before the usual full gates and corpus rerun.

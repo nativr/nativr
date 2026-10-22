@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.376.0",
-  "capabilityManifestHash": "f2103d82dd6a8d89c94ac9ad963f9c640f8105bfa5e079a006ebf2c4c9684a12",
+  "semanticProfileVersion": "0.377.0",
+  "capabilityManifestHash": "92885ffef18b4657471d32e612bdcf49bb08f935d4231a75b7ad518b1810bb88",
   "evidence": {
-    "checkedInConformanceCases": 1338,
-    "liveREligibleCases": 1269,
+    "checkedInConformanceCases": 1354,
+    "liveREligibleCases": 1285,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 250,
-    "recursiveBehaviorallyProvenBindings": 138,
+    "recursiveOracleV2Cases": 266,
+    "recursiveBehaviorallyProvenBindings": 146,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -239,7 +239,10 @@
           "first-class-control-special-ellipsis-policies"
         ]
       },
-      { "binding": "base::length", "cases": ["length-class-and-default-dispatch"] },
+      {
+        "binding": "base::length",
+        "cases": ["length-class-and-default-dispatch", "replication-posixlt-length"]
+      },
       { "binding": "base::lengths", "cases": ["simplification-lengths-and-integer-coercion"] },
       { "binding": "base::list", "cases": ["recursive-scalar-token-boundaries"] },
       {
@@ -306,6 +309,8 @@
           "logical-mode-symbol-mode"
         ]
       },
+      { "binding": "base::names", "cases": ["replication-posixlt-names"] },
+      { "binding": "base::names<-", "cases": ["replication-posixlt-names"] },
       { "binding": "base::new.env", "cases": ["shared-environment-identity"] },
       { "binding": "base::next", "cases": ["first-class-loop-transfer"] },
       {
@@ -350,7 +355,26 @@
       },
       { "binding": "base::print.proc_time", "cases": ["process-time-method-graphs"] },
       { "binding": "base::quote", "cases": ["pairlist-tags-language-and-missingness"] },
-      { "binding": "base::rep", "cases": ["partial-argument-warning-builtins-and-match-call"] },
+      {
+        "binding": "base::rep",
+        "cases": [
+          "partial-argument-warning-builtins-and-match-call",
+          "replication-attributes",
+          "replication-dispatch",
+          "replication-empty",
+          "replication-matching",
+          "replication-ordering",
+          "replication-scalar",
+          "replication-times",
+          "replication-values"
+        ]
+      },
+      { "binding": "base::rep.Date", "cases": ["replication-classes"] },
+      { "binding": "base::rep.difftime", "cases": ["replication-classes"] },
+      { "binding": "base::rep.factor", "cases": ["replication-factor"] },
+      { "binding": "base::rep.numeric_version", "cases": ["replication-classes"] },
+      { "binding": "base::rep.POSIXct", "cases": ["replication-classes"] },
+      { "binding": "base::rep.POSIXlt", "cases": ["replication-posixlt"] },
       {
         "binding": "base::repeat",
         "cases": ["first-class-loop-constructed", "first-class-loop-repeat"]
@@ -585,8 +609,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 801,
-    "gnuRNameOverlaps": 774,
+    "registeredBindings": 807,
+    "gnuRNameOverlaps": 780,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

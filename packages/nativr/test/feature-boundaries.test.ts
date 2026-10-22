@@ -48,7 +48,8 @@ describe("measured feature boundary coverage", () => {
       message: "too many arguments",
     });
     await expect(runtime.eval("rep(1:2, times = 1:3)")).rejects.toMatchObject({
-      code: "NRT3168",
+      code: "NRT3109",
+      message: "invalid 'times' argument",
     });
     await expect(runtime.eval("rep_len((1:3)[FALSE], 1)")).rejects.toMatchObject({
       code: "NRE2120",

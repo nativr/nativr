@@ -38,6 +38,43 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Replication controls and class methods (profile 0.377)
+
+rep is a special primitive with args(x, ...). It selects S3 dispatch from its first actual before
+forcing remaining arguments; dispatched results are visible. The default path forces actuals in
+source order, including ignored extras, then matches x/times/length.out/each. Missing controls use
+defaults; explicit missing first arguments and unmatched x retain their recorded diagnostics.
+Partial matches honor the warning option. length.out is converted/validated before each, and a valid
+explicit length bypasses times coercion after its expression has been forced.
+
+Scalar controls truncate fractions, use defaults for missing/nonfinite values, accept numeric
+strings, distinguish blank from invalid text, and preserve first-element and complex-coercion
+warning order. Scalar list/symbol controls fall back; raw controls retain the observed error. Times
+supports atomic, scalar-list and pairlist counts, per-element warning order, and count-vector length
+checks against the sequence expanded by each. Empty input bypasses times conversion after control
+validation. Empty vectors fill with typed missing values, raw with zeros, and lists or expressions
+with NULL. Explicit positive length on NULL warns and retains NULL. Final allocation is checked
+before expansion; large each with a small explicit length does not build an intermediate sequence.
+Step/allocation limits and recovery remain enforced.
+
+Default output preserves names, element identity, encoding/missingness and factor class/levels,
+while dropping unrelated container attributes. Expressions retain quoted values. Date, POSIXct,
+difftime, factor and numeric_version methods use NextMethod and restore their specific attributes;
+direct calls retain the recorded missing-generic diagnostics. POSIXlt replicates components
+independently, including ragged components, preserving field names, class, tzone and balance state.
+Control promises are shared, while each component emits its own warnings. POSIXlt row names belong
+to its year component, and its length is the longest component length. Name replacement retains the
+observed balance transition: TRUE to NA, then removal on subsequent edits.
+
+Sixty-seven independently authored native parity fixtures and a resource-recovery test cover this
+increment, with foundation and recursive causal evidence. Warning messages/order are covered; exact
+warning conditionCall/library-frame attribution remains unfinished (ordinary special calls and
+NextMethod calls differ). Complete rep.int/rep_len parity, general S3 names dispatch, missing
+POSIXlt names-method bindings, malformed external time objects and all class-result attribute shapes
+remain required work. Separate probes retain the as.POSIXct explicit-timezone attribute gap and
+earlier general attribute, bytecode-control, performance and platform gaps. These are not platform
+exclusions. The public NativR API, Worker protocol and dependency direction are unchanged.
+
 ### Logical coercion and mode conversion (profile 0.376)
 
 Logical strings accept exactly T/TRUE/True/true and F/FALSE/False/false, with no trimming or general

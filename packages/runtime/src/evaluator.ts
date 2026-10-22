@@ -5141,20 +5141,34 @@ export class Evaluator {
       recordErrorConditionCall(error, {
         kind: "CallExpression",
         callee: { kind: "Identifier", name: "NextMethod", span: SYNTHETIC_SPAN },
-        arguments: [
-          {
-            value: {
-              kind: "StringLiteral",
-              value: generic ?? method.generic,
-              span: SYNTHETIC_SPAN,
-            },
-            span: SYNTHETIC_SPAN,
-          },
-        ],
+        arguments:
+          generic === undefined
+            ? []
+            : [
+                {
+                  value: {
+                    kind: "StringLiteral",
+                    value: generic,
+                    span: SYNTHETIC_SPAN,
+                  },
+                  span: SYNTHETIC_SPAN,
+                },
+              ],
         span: SYNTHETIC_SPAN,
       });
       throw error;
     };
+    if (generic === undefined) {
+      const firstFormal =
+        definition.formals?.[0]?.name ?? definition.metadata.supportedArguments[0];
+      const argument =
+        args.find((entry) => entry.name === firstFormal) ??
+        args.find((entry) => entry.name === undefined);
+      if (argument === undefined) return fail("object not specified");
+      const input = await this.#force(argument.promise, context);
+      if (objectClasses(input) === undefined) return fail("object not specified");
+      return fail("generic function not specified");
+    }
     if (call?.callee.kind !== "Identifier")
       return fail("'NextMethod' called from an anonymous function");
     if (call.callee.name !== definition.name) return fail("wrong value for .Method");
