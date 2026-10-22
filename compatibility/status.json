@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.375.0",
-  "capabilityManifestHash": "103c536c689edad3da9d7f978e0ae6e74da64cd0ae3de2478a3d5c5322d4733d",
+  "semanticProfileVersion": "0.376.0",
+  "capabilityManifestHash": "f2103d82dd6a8d89c94ac9ad963f9c640f8105bfa5e079a006ebf2c4c9684a12",
   "evidence": {
-    "checkedInConformanceCases": 1319,
-    "liveREligibleCases": 1250,
+    "checkedInConformanceCases": 1338,
+    "liveREligibleCases": 1269,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 231,
-    "recursiveBehaviorallyProvenBindings": 127,
+    "recursiveOracleV2Cases": 250,
+    "recursiveBehaviorallyProvenBindings": 138,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -39,7 +39,8 @@
         "cases": [
           "call-head-constant-storage",
           "embedded-attributed-call-values",
-          "embedded-call-reference-identity"
+          "embedded-call-reference-identity",
+          "logical-mode-call"
         ]
       },
       {
@@ -47,13 +48,33 @@
         "cases": ["factor-na-label-coercion-grouping-and-matching"]
       },
       { "binding": "base::as.factor", "cases": ["factor-coercion-nondispatch-and-signatures"] },
+      {
+        "binding": "base::as.function",
+        "cases": ["logical-mode-function", "logical-mode-function-errors"]
+      },
+      {
+        "binding": "base::as.function.default",
+        "cases": ["logical-mode-function", "logical-mode-function-errors"]
+      },
       { "binding": "base::as.integer", "cases": ["simplification-lengths-and-integer-coercion"] },
       { "binding": "base::as.list", "cases": ["apply-class-conversion-and-extraction"] },
       { "binding": "base::as.list.Date", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.list.difftime", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.list.factor", "cases": ["factor-list-conversion-and-dispatch"] },
       { "binding": "base::as.list.POSIXct", "cases": ["time-class-list-conversion"] },
+      {
+        "binding": "base::as.logical",
+        "cases": [
+          "logical-mode-logical",
+          "logical-mode-logical-dispatch",
+          "logical-mode-logical-forcing"
+        ]
+      },
+      { "binding": "base::as.name", "cases": ["logical-mode-symbol"] },
       { "binding": "base::as.ordered", "cases": ["factor-coercion-nondispatch-and-signatures"] },
+      { "binding": "base::as.single", "cases": ["logical-mode-single"] },
+      { "binding": "base::as.single.default", "cases": ["logical-mode-single"] },
+      { "binding": "base::as.symbol", "cases": ["logical-mode-symbol"] },
       { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
       {
         "binding": "base::body",
@@ -274,6 +295,17 @@
         "binding": "base::missing",
         "cases": ["argument-default-promises-and-forwarded-missingness"]
       },
+      { "binding": "base::mode", "cases": ["logical-mode-mode-read"] },
+      {
+        "binding": "base::mode<-",
+        "cases": [
+          "logical-mode-function-mode",
+          "logical-mode-mode-input",
+          "logical-mode-mode-write",
+          "logical-mode-single-mode",
+          "logical-mode-symbol-mode"
+        ]
+      },
       { "binding": "base::new.env", "cases": ["shared-environment-identity"] },
       { "binding": "base::next", "cases": ["first-class-loop-transfer"] },
       {
@@ -389,6 +421,16 @@
           "signalled-error-after-stdout",
           "signalled-simple-error-preserves-explicit-call",
           "warning-precedes-signalled-error"
+        ]
+      },
+      { "binding": "base::storage.mode", "cases": ["logical-mode-mode-read"] },
+      {
+        "binding": "base::storage.mode<-",
+        "cases": [
+          "logical-mode-storage-forcing",
+          "logical-mode-storage-input",
+          "logical-mode-storage-write",
+          "logical-mode-symbol-mode"
         ]
       },
       {
@@ -543,8 +585,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 794,
-    "gnuRNameOverlaps": 767,
+    "registeredBindings": 801,
+    "gnuRNameOverlaps": 774,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

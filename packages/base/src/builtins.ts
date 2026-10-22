@@ -67,6 +67,7 @@ import {
   lookupBinding,
   logicalVector,
   logicalCondition,
+  parseLogicalString as parseRLogical,
   missingValue,
   objectAttributes,
   objectClasses,
@@ -2343,8 +2344,22 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("split", ["x", "f", "drop", "..."], "behavioral", builtinSplit),
   defineBuiltin("expression", ["..."], "behavioral", builtinExpression, "special"),
   defineBuiltin("as.expression", ["x"], "behavioral", builtinAsExpression),
-  defineBuiltin("as.name", ["x"], "behavioral", builtinAsName),
-  defineBuiltin("as.symbol", ["x"], "behavioral", builtinAsName),
+  withBuiltinFormals(defineBuiltin("as.name", ["x"], "behavioral", builtinAsName), [{ name: "x" }]),
+  withBuiltinFormals(defineBuiltin("as.symbol", ["x"], "behavioral", builtinAsName), [
+    { name: "x" },
+  ]),
+  withBuiltinFormals(
+    defineBuiltin("as.function", ["x", "..."], "behavioral", (invocation) =>
+      builtinAsFunction(invocation, true),
+    ),
+    [{ name: "x" }, { name: "..." }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("as.function.default", ["x", "envir", "..."], "behavioral", (invocation) =>
+      builtinAsFunction(invocation, false),
+    ),
+    [{ name: "x" }, { name: "envir", defaultValue: callAst("parent.frame", []) }, { name: "..." }],
+  ),
   defineBuiltin("call", ["name", "..."], "behavioral", builtinCall),
   defineBuiltin("as.call", ["x"], "behavioral", builtinAsCall),
   defineBuiltin("deparse", ["expr", "width.cutoff"], "behavioral", builtinDeparse),
@@ -2425,7 +2440,24 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("vector", ["mode", "length"], "behavioral", builtinVector),
   defineBuiltin("typeof", ["x"], "behavioral", builtinTypeof),
-  defineBuiltin("mode", ["x"], "shape", builtinMode),
+  withBuiltinFormals(defineBuiltin("mode", ["x"], "behavioral", builtinMode), [{ name: "x" }]),
+  withBuiltinFormals(defineBuiltin("storage.mode", ["x"], "behavioral", builtinStorageMode), [
+    { name: "x" },
+  ]),
+  defineBuiltin(
+    "storage.mode<-",
+    ["x", "value"],
+    "behavioral",
+    builtinStorageModeReplacement,
+    "primitive",
+  ),
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("mode<-", ["x", "value"], "behavioral", builtinModeReplacement),
+      [{ name: "x" }, { name: "value" }],
+    ),
+    reflectiveFrame: true,
+  },
   defineBuiltin("is.null", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.null", (value) => value.type === "null"),
   ),
@@ -2839,10 +2871,22 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ),
   ),
   defineBuiltin("is.vector", ["x", "mode"], "shape", builtinIsVector),
-  defineBuiltin("as.logical", ["x"], "behavioral", builtinAsLogical),
+  defineBuiltin("as.logical", ["x", "..."], "behavioral", builtinAsLogical),
   defineBuiltin("as.integer", ["x"], "behavioral", builtinAsInteger),
   defineBuiltin("as.double", ["x"], "behavioral", builtinAsDouble),
   defineBuiltin("as.numeric", ["x"], "behavioral", builtinAsDouble),
+  withBuiltinFormals(
+    defineBuiltin("as.single", ["x", "..."], "behavioral", (invocation) =>
+      builtinAsSingle(invocation, true),
+    ),
+    [{ name: "x" }, { name: "..." }],
+  ),
+  withBuiltinFormals(
+    defineBuiltin("as.single.default", ["x", "..."], "behavioral", (invocation) =>
+      builtinAsSingle(invocation, false),
+    ),
+    [{ name: "x" }, { name: "..." }],
+  ),
   defineBuiltin("as.character", ["x", "..."], "behavioral", builtinAsCharacter),
   defineBuiltin("as.vector", ["x", "mode"], "behavioral", builtinAsVector),
   defineBuiltin("as.array", ["x", "..."], "behavioral", builtinAsArray),
@@ -18995,13 +19039,75 @@ async function builtinAsExpression(invocation: BuiltinInvocation): Promise<RExpr
 }
 
 async function builtinAsName(invocation: BuiltinInvocation): Promise<RSymbol> {
-  const matched = await matchExact(invocation, ["x"]);
-  const input = required(matched, "x", "as.name");
-  const name = characterScalar(input, "x");
-  if (name.length === 0) {
-    throw new RTypeMismatchError("NRT3207", "as.name() requires a non-empty string.");
+  const bound = await matchBuiltinDefaults(invocation, [{ name: "x" }]);
+  const input = await bound.force("x");
+  if (input.type === "symbol") return input;
+  if (!isAtomic(input)) {
+    const message =
+      input.type === "null" || input.type === "list" || input.type === "pairlist"
+        ? `invalid type/length (symbol/${valueLength(input)}) in vector allocation`
+        : input.type === "language" || input.type === "expression"
+          ? `'${input.type === "expression" ? "list" : "language"}' object cannot be coerced to type 'symbol'`
+          : `cannot coerce type '${valueTypeName(input)}' to vector of type 'symbol'`;
+    throw new RTypeMismatchError("NRT3207", message);
   }
+  if (input.length === 0)
+    throw new RTypeMismatchError("NRT3207", `invalid data of mode '${input.type}' (too short)`);
+  const name = isMissing(input, 0) ? "NA" : stringAt(input, 0);
+  if (name.length === 0) {
+    throw new RTypeMismatchError("NRT3207", "attempt to use zero-length variable name");
+  }
+  invocation.context.allocate(1);
   return { type: "symbol", name };
+}
+
+async function builtinAsFunction(
+  invocation: BuiltinInvocation,
+  dispatch: boolean,
+): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, [
+    { name: "x" },
+    ...(dispatch ? [] : [{ name: "envir" }]),
+    { name: "..." },
+  ]);
+  const input = await bound.force("x");
+  if (dispatch && objectClasses(input) !== undefined) {
+    const result = await invocation.dispatchS3IfPresent("as.function", input, invocation.arguments);
+    if (result !== undefined) return result;
+  }
+  if (input.type === "closure" || input.type === "builtin") return input;
+  if (dispatch) return builtinAsFunction(invocation, false);
+  const environment = bound.supplied.has("envir")
+    ? await bound.force("envir")
+    : invocation.currentEnvironment();
+  if (input.type !== "list") throw new RTypeMismatchError("NRT3204", "list argument expected");
+  if (environment.type === "null")
+    throw new RTypeMismatchError("NRT3204", "use of NULL environment is defunct");
+  if (environment.type !== "environment")
+    throw new RTypeMismatchError("NRT3204", "invalid environment");
+  if (input.length === 0)
+    throw new RTypeMismatchError("NRT3204", "argument must have length at least 1");
+  const body = input.values[input.length - 1] ?? R_NULL;
+  if (!(
+    isAtomic(body) ||
+    ["null", "symbol", "language", "list", "pairlist", "expression"].includes(body.type)
+  ))
+    throw new RTypeMismatchError("NRT3204", "invalid body for function");
+  let parameters = listValue(input.values.slice(0, -1));
+  const names = input.attributes.get("names");
+  if (names?.type === "character")
+    parameters = withAttribute(
+      parameters,
+      "names",
+      characterVector(names.values.slice(0, -1), names.missing?.slice(0, -1)),
+    );
+  return {
+    type: "closure",
+    parameters: replacementParameters(parameters, invocation),
+    body: embeddedValueAst(body, () => invocation.context.checkpoint()),
+    environment,
+    attributes: new Map(),
+  };
 }
 
 async function builtinCall(invocation: BuiltinInvocation): Promise<RLanguage> {
@@ -19038,6 +19144,7 @@ async function builtinCall(invocation: BuiltinInvocation): Promise<RLanguage> {
 async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> {
   const matched = await matchExact(invocation, ["x"]);
   const input = required(matched, "x", "as.call");
+  if (input.type === "language") return input;
   const entries =
     input.type === "list"
       ? input.values.map((value) =>
@@ -19046,12 +19153,10 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
       : input.type === "expression"
         ? [...input.values]
         : undefined;
-  if (entries === undefined || entries.length === 0) {
-    throw new RTypeMismatchError(
-      "NRT3208",
-      "as.call() requires a non-empty list or expression vector.",
-    );
+  if (entries === undefined) {
+    throw new RTypeMismatchError("NRT3208", "invalid argument list");
   }
+  if (entries.length === 0) throw new RTypeMismatchError("NRT3208", "invalid length 0 argument");
   // Construction preserves the head object, including non-callable character vectors. Only
   // evaluation decides whether it is callable; call() separately requires a function name.
   const callee = entries[0] ?? nullAst();
@@ -20225,8 +20330,8 @@ function valueTypeName(value: RValue): string {
 }
 
 async function builtinMode(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const value = required(matched, "x", "mode");
+  const bound = await matchBuiltinDefaults(invocation, [{ name: "x" }]);
+  const value = await bound.force("x");
   let mode: string;
   switch (value.type) {
     case "null":
@@ -20258,6 +20363,181 @@ async function builtinMode(invocation: BuiltinInvocation): Promise<RValue> {
   }
   invocation.context.allocate(1);
   return characterVector([mode]);
+}
+
+function storageModeName(value: RValue): string {
+  return value.type === "closure" || value.type === "builtin" ? "function" : valueTypeName(value);
+}
+
+async function builtinStorageMode(invocation: BuiltinInvocation): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, [{ name: "x" }]);
+  const value = await bound.force("x");
+  invocation.context.allocate(1);
+  return characterVector([storageModeName(value)]);
+}
+
+async function retainModeAttributes(
+  value: RValue,
+  source: RValue,
+  primitive: boolean,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  const attributes = new Map(objectAttributes(source));
+  if (!primitive && value.type !== "symbol" && isAttributedRuntimeObject(value)) {
+    let target = { ...value, attributes: new Map<string, RValue>() } as AttributedRuntimeObject;
+    const dimensions = attributes.get("dim");
+    if (dimensions !== undefined)
+      target = replaceDimensionAttribute(target, dimensions, invocation) as AttributedRuntimeObject;
+    const names = attributes.get("names");
+    if (names !== undefined) {
+      const named = await replaceNamesAttribute(target, names, invocation, false);
+      const normalized = objectAttributes(named)?.get("names");
+      if (normalized !== undefined) attributes.set("names", normalized);
+    }
+  }
+  if (value.type === "environment") {
+    value.attributes.clear();
+    for (const [name, attribute] of attributes) value.attributes.set(name, attribute);
+    return value;
+  }
+  if (isAttributedRuntimeObject(value)) return { ...value, attributes };
+  if (attributes.size === 0) return value;
+  if (value.type === "symbol" && !primitive) {
+    throw new RTypeMismatchError("NRT3011", "cannot set an attribute on a 'symbol'");
+  }
+  throw new RUnsupportedFeatureError(
+    "NRU6250",
+    `Attributed '${valueTypeName(value)}' mode results require the general object-attribute model.`,
+  );
+}
+
+async function builtinStorageModeReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const values = await forceCoercionArguments(invocation);
+  if (values.length !== 2)
+    throw new REvaluationError(
+      "NRE2102",
+      `${values.length} argument${values.length === 1 ? "" : "s"} passed to 'storage.mode<-' which requires 2`,
+    );
+  validateCoercionArgumentName(invocation, 0, "x");
+  validateCoercionArgumentName(invocation, 1, "value");
+  const input = values[0]!,
+    supplied = values[1]!;
+  if (supplied.type !== "character" || supplied.length === 0 || isMissing(supplied, 0)) {
+    throw new RTypeMismatchError("NRT3194", "'value' must be non-null character string");
+  }
+  let mode = supplied.values[0]!;
+  if (mode === "real")
+    throw new REvaluationError("NRE2140", "use of 'real' is defunct: use 'double' instead");
+  if (mode === "single")
+    throw new REvaluationError("NRE2140", "use of 'single' is defunct: use mode<- instead");
+  if (mode === "numeric") mode = "double";
+  if (mode === "name") mode = "symbol";
+  if (
+    ![
+      "NULL",
+      "symbol",
+      "pairlist",
+      "closure",
+      "environment",
+      "promise",
+      "language",
+      "special",
+      "builtin",
+      "char",
+      "logical",
+      "integer",
+      "double",
+      "complex",
+      "character",
+      "...",
+      "any",
+      "expression",
+      "list",
+      "bytecode",
+      "externalptr",
+      "weakref",
+      "raw",
+      "S4",
+    ].includes(mode)
+  ) {
+    throw new REvaluationError("NRE2140", "invalid value");
+  }
+  if (valueTypeName(input) === mode) return input;
+  if (isFactor(input))
+    throw new REvaluationError("NRE2140", "invalid to change the storage mode of a factor");
+  let result: RValue;
+  if (mode === "logical") result = coerceValueToLogical(input, invocation);
+  else if (mode === "symbol") {
+    if (isAtomic(input) && input.length === 0)
+      throw new RTypeMismatchError(
+        "NRT3194",
+        `invalid data of mode '${valueTypeName(input)}' (too short)`,
+      );
+    result = await builtinAsName({
+      ...invocation,
+      arguments: [{ promise: createForcedPromise(input, invocation.currentEnvironment()) }],
+    });
+  } else if (
+    ["integer", "double", "complex", "character", "raw", "list", "pairlist", "expression"].includes(
+      mode,
+    )
+  ) {
+    result = await builtinAsVector({
+      ...invocation,
+      arguments: [
+        { promise: createForcedPromise(input, invocation.currentEnvironment()) },
+        { promise: createForcedPromise(characterVector([mode]), invocation.currentEnvironment()) },
+      ],
+    });
+  } else
+    throw new RTypeMismatchError(
+      "NRT3194",
+      `cannot coerce type '${valueTypeName(input)}' to vector of type '${mode}'`,
+    );
+  return retainModeAttributes(result, input, true, invocation);
+}
+
+async function builtinModeReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const input = await invocation.force(invocation.functionArgument("x")!);
+  const supplied = await invocation.force(invocation.functionArgument("value")!);
+  const length = valueLength(supplied);
+  if (length === 0) throw new RTypeMismatchError("NRT3194", "argument is of length zero");
+  if (length > 1) throw new RTypeMismatchError("NRT3194", "the condition has length > 1");
+  if (isAtomic(supplied) && isMissing(supplied, 0))
+    throw new RTypeMismatchError("NRT3194", "missing value where TRUE/FALSE needed");
+  const mode = isAtomic(supplied) ? stringAt(supplied, 0) : globListElementText(supplied);
+  if (storageModeName(input) === mode) return input;
+  if (isFactor(input))
+    throw new REvaluationError("NRE2140", "invalid to change the storage mode of a factor");
+  const name = `as.${mode}`;
+  const converter = await lookupCallableByName(
+    invocation,
+    name,
+    invocation.currentEnvironment(),
+    `object '${name}' of mode 'function' was not found`,
+  );
+  const result = await invocation.invokeLazy(converter, [
+    { promise: createForcedPromise(input, invocation.functionEnvironment()!) },
+  ]);
+  const retained = await retainModeAttributes(result, input, false, invocation);
+  if (mode !== "single" || objectAttributes(input)?.has("Csingle")) return retained;
+  if (!isAttributedRuntimeObject(retained))
+    throw new RTypeMismatchError(
+      "NRT3011",
+      `cannot set an attribute on a '${valueTypeName(retained)}'`,
+    );
+  return replaceRuntimeAttribute(retained, "Csingle", logicalVector([true]));
+}
+
+async function builtinAsSingle(invocation: BuiltinInvocation, dispatch: boolean): Promise<RValue> {
+  const bound = await matchBuiltinDefaults(invocation, [{ name: "x" }, { name: "..." }]);
+  const input = await bound.force("x");
+  if (dispatch && objectClasses(input) !== undefined) {
+    const result = await invocation.dispatchS3IfPresent("as.single", input, invocation.arguments);
+    if (result !== undefined) return result;
+  }
+  const atomic = asVectorAtomicSource(input, "double", invocation);
+  return withAttribute(coerceAtomicToDouble(atomic, invocation), "Csingle", logicalVector([true]));
 }
 
 async function builtinIsNumeric(
@@ -21700,14 +21980,74 @@ async function builtinIsVector(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinAsLogical(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const input = required(matched, "x", "as.logical");
-  if (input.type === "null") return logicalVector([]);
-  if (!isAtomic(input)) {
-    throw new RTypeMismatchError("NRT3194", "as.logical() requires NULL or an atomic vector.");
+  const values = await forceCoercionArguments(invocation);
+  const input = values[0] ?? R_NULL;
+  if (objectClasses(input) !== undefined) {
+    const dispatched = await invocation.dispatchS3IfPresent(
+      "as.logical",
+      input,
+      invocation.arguments,
+    );
+    if (dispatched !== undefined) return dispatched;
   }
+  validateCoercionArgumentName(invocation, 0, "x");
+  return coerceValueToLogical(input, invocation);
+}
 
-  return coerceAtomicToLogical(input, invocation);
+async function forceCoercionArguments(invocation: BuiltinInvocation): Promise<RValue[]> {
+  const values: RValue[] = [];
+  for (const [index, argument] of invocation.arguments.entries()) {
+    if (argument.promise.expression === null && argument.promise.missing) {
+      throw new REvaluationError("NRE2103", `argument ${index + 1} is empty`);
+    }
+    values.push(await invocation.force(argument.promise));
+  }
+  return values;
+}
+
+function validateCoercionArgumentName(
+  invocation: BuiltinInvocation,
+  index: number,
+  expected: string,
+): void {
+  const name = invocation.arguments[index]?.name;
+  if (name !== undefined && name !== expected) {
+    throw new REvaluationError(
+      "NRE2101",
+      `supplied argument name '${name}' does not match '${expected}'`,
+    );
+  }
+}
+
+function coerceValueToLogical(input: RValue, invocation: BuiltinInvocation): RLogicalVector {
+  if (input.type === "null") return logicalVector([]);
+  if (isAtomic(input)) return coerceAtomicToLogical(input, invocation);
+  if (input.type === "list" || input.type === "pairlist") {
+    const values = new Uint8Array(input.length),
+      missing = new Uint8Array(input.length);
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      const item = input.values[index]!;
+      const length =
+        item.type === "expression" ? item.values.length : isVector(item) ? item.length : -1;
+      if (length < 0 || length > 1)
+        throw new RTypeMismatchError(
+          "NRT3194",
+          "'list' object cannot be coerced to type 'logical'",
+        );
+      const state = isAtomic(item) && length === 1 ? logicalSummaryAtomicState(item, 0) : undefined;
+      if (state === undefined) missing[index] = 1;
+      else values[index] = state ? 1 : 0;
+    }
+    invocation.context.allocate(input.length);
+    return logicalVector(values, compactMask(missing));
+  }
+  throw new RTypeMismatchError(
+    "NRT3194",
+    input.type === "expression"
+      ? "'list' object cannot be coerced to type 'logical'"
+      : `cannot coerce type '${valueTypeName(input)}' to vector of type 'logical'`,
+  );
 }
 
 function coerceAtomicToLogical(input: AtomicVector, invocation: BuiltinInvocation): RLogicalVector {
@@ -22646,7 +22986,7 @@ function typeConvertCharacter(
         missing[index] = 1;
         continue;
       }
-      const parsed = parseRLogical(text);
+      const parsed = ["T", "TRUE", "F", "FALSE"].includes(text) ? parseRLogical(text) : undefined;
       if (parsed === undefined) {
         valid = false;
         break;
@@ -23506,6 +23846,7 @@ async function builtinProduct(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 function productRemoveMissing(value: RValue | undefined, invocation: BuiltinInvocation): boolean {
+  invocation.context.checkpoint();
   if (value === undefined) return false;
   if (!isAtomic(value)) {
     throw new RTypeMismatchError("NRT3103", "NA in coercion to boolean");
@@ -23519,11 +23860,11 @@ function productRemoveMissing(value: RValue | undefined, invocation: BuiltinInvo
   if (value.length === 0) {
     throw new RTypeMismatchError("NRT3103", "NA in coercion to boolean");
   }
-  const coerced = coerceAtomicToLogical(value, invocation);
-  if (isMissing(coerced, 0)) {
+  const state = logicalSummaryAtomicState(value, 0);
+  if (state === undefined) {
     throw new RTypeMismatchError("NRT3103", "NA in coercion to boolean");
   }
-  return coerced.values[0] === 1;
+  return state;
 }
 
 async function builtinMath(
@@ -24953,7 +25294,10 @@ async function builtinAnyNa(invocation: BuiltinInvocation): Promise<RValue> {
     );
     if (dispatched !== undefined) return dispatched;
   }
-  const recursive = logicalFlag(matched.get("recursive"), false, "recursive");
+  const recursive =
+    input.type === "list" || input.type === "pairlist"
+      ? productRemoveMissing(matched.get("recursive"), invocation)
+      : false;
   const result = anyMissingValue(input, recursive || isDataFrame(input), invocation);
   invocation.context.allocate(1);
   return logicalVector([result]);
@@ -59279,19 +59623,6 @@ function formatRNumber(value: number): string {
     /e([+-])(\d)$/u,
     (_match, sign: string, digit: string) => `e${sign}0${digit}`,
   );
-}
-
-function parseRLogical(input: string): boolean | undefined {
-  switch (input.trim().toUpperCase()) {
-    case "T":
-    case "TRUE":
-      return true;
-    case "F":
-    case "FALSE":
-      return false;
-    default:
-      return undefined;
-  }
 }
 
 function parseRNumber(input: string): { readonly valid: boolean; readonly value: number } {

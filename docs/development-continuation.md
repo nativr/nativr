@@ -4,7 +4,7 @@ Approved 2026-10-19. The target remains all five completion criteria in
 [gnu-r-compatibility.md](gnu-r-compatibility.md), including all thirteen semantic domains. This is
 an execution queue, not a claim of completion. Canonical counts live in `compatibility/status.json`.
 
-## Active completion goal (2026-10-21)
+## Active completion goal (2026-10-22)
 
 Continue until all five existing completion criteria are demonstrated. Track progress using
 executable evidence and explicit remaining work; callable overlap is not a completion percentage.
@@ -1182,7 +1182,7 @@ standard-path call allocation. See
 cost against 0.372, browser performance and all thirteen domain closures remain unfinished. The full
 completion goal stays active.
 
-### Immediate continuation after profile 0.375
+### Continuation recorded at profile 0.375 (superseded below)
 
 The recorded callable loop/block and interpreted-transfer defects now pass. Continue the confirmed
 character-to-logical gap: native as.logical of `c("tRuE"," TRUE ","true","False","T","f")` is
@@ -1224,3 +1224,69 @@ blockers. Independently licensed offline datasets, isolated testing support, com
 domain/callable inventory, browser/OS performance, reproducible CI and release gates remain
 required. Linux and holdout execution still need separate authorization. Keep the full goal active
 while useful local work remains.
+
+### Profile 0.376 verification (2026-10-22)
+
+Logical conversion now accepts the eight native spellings without whitespace folding or arbitrary
+case folding. Vector coercion, scalar flags and conditions share the parser while retaining their
+separate missing-value behavior; type.convert retains its narrower grammar. as.logical handles
+scalar list/pairlist elements, factor labels, S3 methods, primitive forcing order and diagnostics.
+Recursive anyNA validates its flag for list inputs and ignores its value for atomic inputs.
+
+mode/storage.mode getters and replacement functions now expose their recorded signatures, conversion
+lookup, factor restrictions, attributes, argument order and diagnostics. as.single uses double
+values with a Csingle marker. Symbol construction accepts atomic values without dispatch.
+as.function constructs owned closures with caller/explicit environments, lazy defaults, missing
+formal names, ellipsis and callable identity; its default method bypasses dispatch. as.call keeps
+existing calls and distinguishes invalid input from an empty argument list. Attribute validation
+prevents names from being restored onto a function result. Failed replacement retains its target.
+
+All 53 independently authored native parity fixtures pass, plus one explicit unsupported-boundary
+test. Nineteen foundation/recursive groups include causal controls for replacement bindings. The
+full check passes 2017 tests with 93 opt-in skips; checked-in/live/recursive conformance passes 1338
+/ 1269 / 250, with 138 linked bindings. After saving the checkpoint, all 23 checkpoint-integrity
+tests pass. Fixed budgets pass: client 17.6/150 KiB gzip, Worker 481.5/512 KiB gzip, parser
+671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap is 774/2,522; this is not a
+completion percentage.
+
+All 24 cached development/regression archives were digest-checked and rerun with applicable native
+repeatability in the
+[0.376 checkpoint](../compatibility/package-check-evidence/corpus-0.376.0.json). All 178 script
+input hashes, execution/comparison outcomes and repeatability flags are unchanged from 0.375; all
+package stages and tiers are unchanged. pkgconfig and abind remain P7, numDeriv P6, eight packages
+P5, twelve P4 and BH P3. The untouched Formula holdout remains P0. The withr timezone example
+retains its recorded native repeatability failure and mismatch; no completion credit is inferred
+from unchanged failures. Original package entrypoints were used; no substitute testing runner
+receives P6/P7 credit. Native filesystem checks used ordinary Windows permissions. Formula remains
+untouched. No public NativR API, Worker protocol, dependency direction or host capability changed.
+E2e, pack smoke and performance measurements were not refreshed for this base-runtime increment. No
+downloads, pushes or publication occurred. GNU R implementation bodies were neither inspected nor
+captured.
+
+Attributed symbol/expression conversion results explicitly report NRU6250. The general object
+attribute model, full attribute validation, numeric coercion warnings/fallbacks, bytecode-equivalent
+control, earlier eval-frame performance cost, browser timing and all thirteen domain closures remain
+unfinished. The full completion goal stays active.
+
+### Immediate continuation after profile 0.376
+
+The recorded logical-string and mode conversion gaps now pass their bounded matrices. Next,
+reproduce and close the numeric-coercion warning/fallback gap in rep(each="tRuE"): native warns and
+uses one copy while NativR rejects it. Cover scalar types, missing values, length, attributes,
+forcing and warning order before sharing a coercion primitive with other callers.
+
+Additional owned probes show that native missing/nonfinite each and length.out controls fall back;
+fractional controls truncate; invalid character controls warn; NULL/empty controls warn about the
+first element. Explicit length can fill an empty atomic vector with typed missing values (raw with
+zero bytes), while NULL retains NULL with a warning. Default replication drops arbitrary class
+attributes, supports expressions and rejects pairlists as defunct. A user rep method can run without
+forcing its unused times promise. NativR still differs on these cases. Preserve source-order
+forcing, length-before-each validation, warning order, names and element identity in the new matrix.
+
+Keep attributed symbol/expression results and full attribute assignment validation in the value
+model queue; do not silently discard attributes or broaden the public Worker snapshots incidentally.
+Retain the default-native-compilation control differences documented at 0.375, and the outstanding
+eval-frame performance cost. Continue browser timing, domain/callable inventory, independently
+licensed datasets, isolated testing support and release gates from the original roadmap. Linux
+execution and Formula remain separately authorized gates; downloads still require approval. All five
+completion criteria remain open; no input is required for the next local semantic work.

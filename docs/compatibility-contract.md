@@ -38,6 +38,39 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Logical coercion and mode conversion (profile 0.376)
+
+Logical strings accept exactly T/TRUE/True/true and F/FALSE/False/false, with no trimming or general
+case folding. Vector coercion, conditions and scalar boolean flags share this spelling rule while
+retaining their separate missing-value diagnostics. type.convert keeps its narrower uppercase
+grammar. as.logical drops container attributes, handles scalar list/pairlist entries and factor
+labels, rejects expression vectors and invalid list elements, forces primitive actuals in source
+order and supports S3 methods. List-recursive anyNA validates its flag; atomic anyNA ignores its
+value. Scalar boolean flags and scalar list factors use factor codes, unlike direct factor coercion.
+
+mode and storage.mode expose closure signatures and distinguish symbolic/language and numeric
+storage types. Their replacement functions preserve original attributes and factor restrictions.
+storage.mode replacement forces positional actuals before tag/arity checks, uses the first character
+mode, bypasses coercion methods and preserves its recorded defunct/invalid diagnostics. mode
+replacement matches closure arguments, resolves caller conversion functions, then restores original
+attributes. Built-in conversion runs with the library lookup frame. Single conversion uses double
+values with a Csingle marker, without rounding to float32. Original Csingle attributes survive mode
+replacement. Failed replacement leaves the assignment target unchanged.
+
+as.name/as.symbol accept the first atomic value or an existing symbol without S3 conversion.
+as.function constructs an owned closure from a named argument list and final body, captures the
+caller or explicit environment, preserves lazy defaults and ellipsis, dispatches methods and keeps
+existing callable identity. Its default method bypasses dispatch. No oracle implementation body is
+an input. as.call preserves existing calls and distinguishes invalid input from zero-length
+lists/expressions.
+
+Fifty-three independently authored parity fixtures cover these bounded behaviors, with foundation
+and recursive causal evidence. Attributed symbol/expression conversion results remain an explicit
+unsupported boundary (NRU6250); the general object-attribute model and full attribute validation are
+unfinished. Existing structure attribute-order differences, numeric coercion warning/fallback gaps
+and bytecode-equivalent control remain open. This increment does not establish complete mode,
+reflection or vector-domain compatibility. Public API and Worker protocol remain unchanged.
+
 ### Callable loops, transfers and blocks (profile 0.375)
 
 for, while, repeat, break, next and braces are callable special primitives with unknown args/formals

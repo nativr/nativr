@@ -147,3 +147,14 @@ presence, repeated-attachment count, detached presence, and unloaded presence. I
 base operations and local observer state. Only provenance, states, stage classification and raw
 report hashes are retained; no third-party implementation or printed function bodies are stored.
 Clean-base loading and full installation validation remain unexecuted, and P7 stays false.
+
+## Profile 0.376 checkpoint (2026-10-22)
+
+[corpus-0.376.0.json](corpus-0.376.0.json) binds all 24 cached development/regression reports to
+profile, archive, artifact and summary digests. Original entrypoints and native repeatability were
+used. All 178 script input hashes, execution/comparison outcomes and repeatability flags are
+unchanged from 0.375; all package stages and tiers are unchanged. pkgconfig and abind remain P7,
+numDeriv P6, eight packages P5, twelve P4 and BH P3. The untouched Formula holdout remains P0. The
+withr timezone example retains its recorded native repeatability failure and mismatch; no completion
+credit is inferred from unchanged failures. Formula and partition assignments are unchanged. Reports
+contain allowlisted metadata and digests, with no implementation bodies or raw package transcripts.

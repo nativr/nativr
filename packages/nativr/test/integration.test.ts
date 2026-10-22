@@ -13636,7 +13636,7 @@ NeedsCompilation: no
 
     await expect(
       runtime.eval('c(as.logical(c(0, 1, NA, NaN)), as.logical(c("TRUE", "f", "x")))'),
-    ).resolves.toEqual([false, true, NA, NA, true, false, NA]);
+    ).resolves.toEqual([false, true, NA, NA, true, NA, NA]);
     const integers = await runtime.evalDetailed('as.integer(c(1.9, -1.9, NA, NaN, Inf, "bad"))');
     expect(integers.value).toEqual([1, -1, NA, NA, NA, NA]);
     expect(integers.warnings).toMatchObject([{ code: "NRW1006" }, { code: "NRW1007" }]);
@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.375.0",
-      languageSubsetVersion: "0.375.0",
+      semanticProfileVersion: "0.376.0",
+      languageSubsetVersion: "0.376.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",

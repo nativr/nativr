@@ -3,6 +3,13 @@ import { languageAstEntries } from "./language.js";
 import { isAtomic, isMissing } from "./values.js";
 import type { RValue } from "./values.js";
 
+/** Observable character spellings accepted by logical coercion, without whitespace folding. */
+export function parseLogicalString(text: string): boolean | undefined {
+  if (text === "T" || text === "TRUE" || text === "True" || text === "true") return true;
+  if (text === "F" || text === "FALSE" || text === "False" || text === "false") return false;
+  return undefined;
+}
+
 /** Scalar conditional coercion; class conversion methods are not dispatched. */
 export function logicalCondition(value: RValue): boolean {
   const length =
@@ -35,10 +42,10 @@ export function logicalCondition(value: RValue): boolean {
     );
   }
   if (value.type === "character") {
-    const text = value.values[0];
-    if (text === "T" || text === "TRUE" || text === "True" || text === "true") return true;
-    if (text === "F" || text === "FALSE" || text === "False" || text === "false") return false;
-    return invalid("argument is not interpretable as logical");
+    return (
+      parseLogicalString(value.values[0] ?? "") ??
+      invalid("argument is not interpretable as logical")
+    );
   }
   if (value.type === "complex") {
     const real = value.real[0] ?? 0,
