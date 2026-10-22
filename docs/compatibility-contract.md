@@ -38,6 +38,32 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Difftime units access and replacement (profile 0.381)
+
+`units`, `units<-`, `units.difftime` and `units<-.difftime` are first-class closures with `(x)` /
+`(x, value)` formals. The generics retain closure argument matching, lazy replacement values,
+original expressions, method visibility and bounded S3/NextMethod behavior. With no actual arguments
+dispatch uses NULL; an explicitly missing actual dispatches as a name, while an omitted x with
+another supplied actual uses that actual for method selection.
+
+The accessor returns the exact or uniquely partially matched units attribute, including reference
+values. The replacement method consults the generic accessor once in library scope before forcing
+the replacement. Equal unit labels return the original value unchanged. Changed units require the
+exact secs/mins/hours/days/weeks labels; partial spellings and auto are rejected. Empty, multiple
+and missing labels retain distinct condition diagnostics. Conversion multiplies by the ratio of
+source and destination seconds, preserving the recorded floating-point operation order, missing
+values and bounded complex behavior. Nonempty results retain names, dimensions and unrelated
+attributes, normalize class to difftime and retain replacement-label attributes. Empty conversion
+retains dimension metadata and drops unrelated attributes. Aliases and embedded reference identity
+are preserved; conversion and recursive methods retain resource limits and session recovery.
+
+Owned native fixtures, foundation groups and recursive causal cases establish only these bounded
+observations. Classed unit labels and non-character source units explicitly raise NRU6255; native
+factor/index-like unit metadata and classed comparison dispatch remain unfinished. S4 dispatch,
+complete implicit-class fallback, body reflection, full diagnostic origins and the rest of the
+data/time and object-system matrices remain open. A passing units fixture does not establish
+complete package compatibility.
+
 ### First-class member replacement (profile 0.380)
 
 The base `$<-` binding is a special primitive with unknown `args()` metadata. It checks arity and

@@ -67,6 +67,7 @@ import {
   lookupBinding,
   logicalVector,
   logicalCondition,
+  matchArguments,
   parseLogicalString as parseRLogical,
   missingValue,
   objectAttributes,
@@ -4832,6 +4833,66 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   defineBuiltin("ave", ["x", "...", "FUN"], "behavioral", builtinAve),
   defineBuiltin("aggregate", ["x", "by", "FUN", "..."], "behavioral", builtinAggregate),
   defineBuiltin("as.Date", ["x", "origin"], "numeric", builtinAsDate),
+  {
+    ...withBuiltinFormals(
+      withUnsupportedBehavior(
+        defineBuiltin("units", ["x"], "behavioral", (invocation) =>
+          builtinUnitsGeneric(invocation, "units"),
+        ),
+        [
+          "S4 units-method dispatch",
+          "complete implicit S3 class fallback for double, integer/numeric and matrix/array storage classes",
+        ],
+      ),
+      [{ name: "x" }],
+    ),
+    reflectiveFrame: true,
+  },
+  {
+    ...withBuiltinFormals(
+      withUnsupportedBehavior(
+        defineBuiltin("units<-", ["x", "value"], "behavioral", (invocation) =>
+          builtinUnitsGeneric(invocation, "units<-"),
+        ),
+        [
+          "S4 units-method dispatch",
+          "complete implicit S3 class fallback for double, integer/numeric and matrix/array storage classes",
+        ],
+      ),
+      [{ name: "x" }, { name: "value" }],
+    ),
+    reflectiveFrame: true,
+  },
+  {
+    ...withBuiltinFormals(
+      withUnsupportedBehavior(
+        defineBuiltin("units.difftime", ["x"], "behavioral", builtinUnitsDifftime),
+        [],
+      ),
+      [{ name: "x" }],
+    ),
+    reflectiveFrame: true,
+    s3Method: { generic: "units", className: "difftime" },
+  },
+  {
+    ...withBuiltinFormals(
+      withUnsupportedBehavior(
+        defineBuiltin(
+          "units<-.difftime",
+          ["x", "value"],
+          "behavioral",
+          builtinUnitsDifftimeReplacement,
+        ),
+        [
+          "non-character source units and classed or non-atomic unit metadata",
+          "S4 units-method dispatch",
+        ],
+      ),
+      [{ name: "x" }, { name: "value" }],
+    ),
+    reflectiveFrame: true,
+    s3Method: { generic: "units<-", className: "difftime" },
+  },
   withBuiltinFormals(
     withUnsupportedBehavior(
       defineBuiltin("as.difftime", ["tim", "format", "units", "tz"], "numeric", builtinAsDifftime),
@@ -56895,6 +56956,144 @@ const DIFFTIME_UNITS = Object.freeze(["auto", "secs", "mins", "hours", "days", "
 
 type DifftimeUnit = (typeof DIFFTIME_UNITS)[number];
 type ConcreteDifftimeUnit = Exclude<DifftimeUnit, "auto">;
+
+async function builtinUnitsGeneric(
+  invocation: BuiltinInvocation,
+  generic: "units" | "units<-",
+): Promise<RValue> {
+  // The library frame has already matched and warned. Retain actual presence here: an explicit
+  // missing argument dispatches as a name; an omitted x falls back to the first supplied actual.
+  const matched = matchArguments(
+    invocation.arguments,
+    generic === "units" ? ["x"] : ["x", "value"],
+    { checkWork: () => invocation.context.checkpoint() },
+  );
+  const argument = matched.matched.get("x") ?? invocation.arguments[0];
+  const input =
+    argument === undefined
+      ? R_NULL
+      : argument.promise.missing && argument.promise.expression === null
+        ? ({ type: "symbol", name: "" } satisfies RSymbol)
+        : await invocation.force(argument.promise);
+  const result = await invocation.dispatchS3IfPresent(
+    generic,
+    input,
+    invocation.arguments,
+    true,
+    -1,
+  );
+  if (result !== undefined) return result;
+  const classes = unitsDispatchDiagnosticClasses(input);
+  const description =
+    classes.length === 1 ? classes[0]! : `c(${classes.map((name) => `'${name}'`).join(", ")})`;
+  throw new RTypeMismatchError(
+    "NRT3220",
+    `no applicable method for '${generic}' applied to an object of class "${description}"`,
+  );
+}
+
+function unitsDispatchDiagnosticClasses(value: RValue): readonly string[] {
+  const explicit = objectClasses(value);
+  if (explicit !== undefined) return explicit;
+  const storage =
+    value.type === "double" || value.type === "integer"
+      ? [value.type, "numeric"]
+      : isAttributedSequence(value)
+        ? [value.type]
+        : implicitClasses(value);
+  const dimensions = isAttributedSequence(value) ? vectorDimensions(value) : undefined;
+  return dimensions === undefined
+    ? storage
+    : [...(dimensions.length === 2 ? ["matrix", "array"] : ["array"]), ...storage];
+}
+
+async function unitsMethodArgument(invocation: BuiltinInvocation, name: string): Promise<RValue> {
+  const argument = invocation.functionArgument(name);
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", `argument "${name}" is missing, with no default`);
+  return invocation.force(argument);
+}
+
+async function builtinUnitsDifftime(invocation: BuiltinInvocation): Promise<RValue> {
+  return matchedObjectAttribute(
+    await unitsMethodArgument(invocation, "x"),
+    "units",
+    false,
+    invocation,
+  );
+}
+
+async function difftimeCurrentUnits(input: RValue, invocation: BuiltinInvocation): Promise<RValue> {
+  const callable = await invocation.namespaceBinding("base", "units");
+  if (callable === undefined) throw new Error("Missing base units generic.");
+  const environment = invocation.functionEnvironment()!;
+  const expression: AstNode = { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN };
+  return invocation.invokeLazy(
+    callable,
+    [{ promise: { ...createForcedPromise(input, environment), expression } }],
+    callAst("units", [{ value: expression, span: SYNTHETIC_SPAN }]),
+  );
+}
+
+async function builtinUnitsDifftimeReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const input = await unitsMethodArgument(invocation, "x");
+  const current = await difftimeCurrentUnits(input, invocation);
+  const replacement = await unitsMethodArgument(invocation, "value");
+  if (
+    (current.type !== "character" && current.type !== "null") ||
+    objectClasses(current) !== undefined ||
+    (replacement.type !== "null" && !isAtomic(replacement)) ||
+    objectClasses(replacement) !== undefined
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6255",
+      "units<-.difftime() currently requires unclassed character source units and unclassed atomic replacement metadata.",
+    );
+  }
+  // The equality guard precedes validation and retains the original object's identity and metadata.
+  if (logicalCondition(jsReferenceOperators.binary(invocation.context, "==", current, replacement)))
+    return input;
+  if (
+    replacement.type !== "character" ||
+    !DIFFTIME_UNITS.includes(replacement.values[0] as DifftimeUnit) ||
+    replacement.values[0] === "auto"
+  ) {
+    throw new REvaluationError("NRE2252", "invalid units specified");
+  }
+  if (
+    input.type !== "logical" &&
+    input.type !== "integer" &&
+    input.type !== "double" &&
+    input.type !== "complex"
+  ) {
+    throw new RTypeMismatchError("NRT3101", "non-numeric argument to binary operator");
+  }
+  const oldUnit = current.type === "character" ? current.values[0] : undefined;
+  const newUnit = replacement.values[0] as ConcreteDifftimeUnit;
+  const ratio =
+    oldUnit !== undefined && oldUnit !== "auto" && DIFFTIME_UNITS.includes(oldUnit as DifftimeUnit)
+      ? doubleVector([
+          difftimeUnitSeconds(oldUnit as ConcreteDifftimeUnit) / difftimeUnitSeconds(newUnit),
+        ])
+      : missingValue("double");
+  const converted = jsReferenceOperators.binary(
+    invocation.context,
+    "*",
+    withoutClasses(input),
+    ratio,
+  );
+  if (!isVector(converted)) throw new Error("Numeric unit conversion did not return a vector.");
+  let output = converted;
+  // Empty arithmetic drops arbitrary metadata, while observed empty arrays retain their shape.
+  if (output.length === 0 && vectorDimensions(input) !== undefined) {
+    for (const name of ["dim", "dimnames"]) {
+      invocation.context.checkpoint();
+      const attribute = input.attributes.get(name);
+      if (attribute !== undefined) output = withAttribute(output, name, attribute);
+    }
+  }
+  return withAttribute(withClasses(output, ["difftime"]), "units", replacement);
+}
 
 async function builtinAsDifftime(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchLazyArguments(invocation, ["tim", "format", "units", "tz"]);

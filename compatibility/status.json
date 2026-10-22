@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.380.0",
-  "capabilityManifestHash": "6bddb311df1581192eed2e82ef1060c29dbdf1f83bb485ae7d4b7f91548cd600",
+  "semanticProfileVersion": "0.381.0",
+  "capabilityManifestHash": "ad0efe75f2a0c7a38a2f050e9416408f37c816691e23640b3e7f5b0079b5318e",
   "evidence": {
-    "checkedInConformanceCases": 1384,
-    "liveREligibleCases": 1315,
+    "checkedInConformanceCases": 1396,
+    "liveREligibleCases": 1327,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 297,
-    "recursiveBehaviorallyProvenBindings": 153,
+    "recursiveOracleV2Cases": 310,
+    "recursiveBehaviorallyProvenBindings": 157,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -619,6 +619,31 @@
       },
       { "binding": "base::transform", "cases": ["evaluation-control-transform-scope"] },
       { "binding": "base::tryCatch", "cases": ["exiting-condition-handlers-and-unwind"] },
+      {
+        "binding": "base::units",
+        "cases": [
+          "difftime-units-dispatch",
+          "difftime-units-getter",
+          "difftime-units-missing-arguments"
+        ]
+      },
+      { "binding": "base::units.difftime", "cases": ["difftime-units-getter"] },
+      {
+        "binding": "base::units<-",
+        "cases": [
+          "difftime-units-conversion",
+          "difftime-units-dispatch",
+          "difftime-units-missing-arguments",
+          "difftime-units-numerics",
+          "difftime-units-retained-reference-graph",
+          "difftime-units-same-unit",
+          "difftime-units-visibility"
+        ]
+      },
+      {
+        "binding": "base::units<-.difftime",
+        "cases": ["difftime-units-conversion", "difftime-units-scope"]
+      },
       { "binding": "base::unlist", "cases": ["unlist-shallow-values-types-and-names"] },
       { "binding": "base::unloadNamespace", "cases": ["unload-absent-namespace"] },
       { "binding": "base::UseMethod", "cases": ["replication-family-shared-s3"] },
@@ -677,22 +702,22 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 810,
-    "gnuRNameOverlaps": 783,
+    "registeredBindings": 814,
+    "gnuRNameOverlaps": 787,
     "referenceCoreCallableNames": 2522
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "998b6e614d9a520592ccd0f0097b53d15bd1fcb03ef72453154e82790cc4aa59",
+    "sha256": "3421bc98b50d571481bb4d4638d7414bf886a5f412949c333b3521f7a140f081",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 810,
-    "qualifiedOverlaps": 782,
+    "registeredBindings": 814,
+    "qualifiedOverlaps": 786,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 583,
-    "classificationPendingBindings": 1970,
-    "recursiveLinkedBindings": 153,
+    "classifiedBindings": 587,
+    "classificationPendingBindings": 1966,
+    "recursiveLinkedBindings": 157,
     "bindingsWithDeclaredMatrixEvidence": 6,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,

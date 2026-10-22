@@ -1,5 +1,13 @@
 # Performance and bundle discipline
 
+## Current bundle observation (profile 0.381, 2026-10-22)
+
+The difftime units increment passes the unchanged size limits: client 17.6/150 KiB gzip, Worker
+485.8/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw. Conversion
+uses shared checkpointed arithmetic and allocation accounting; session-limit/recovery fixtures pass.
+Browser timing measurements below remain at 0.380. No new latency claim or budget change follows
+from this semantic increment.
+
 ## Current Windows browser observation (profile 0.380, 2026-10-22)
 
 All nine maintained e2e tests pass across the cached Chromium, Firefox and WebKit revisions, with

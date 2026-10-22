@@ -1571,3 +1571,35 @@ native fixtures, all five concrete units, attributes, argument matching, visibil
 dispatch; then rerun prettyunits and the required semantic gates. Continue numeric predicates,
 remaining domain evidence, independently sourced datasets and isolated testing support. Linux,
 Formula, new downloads and remote publication retain their existing authorization boundaries.
+
+### Profile 0.381 verification (2026-10-22)
+
+Implemented units/units<- and their difftime methods through shared argument, S3, attribute and
+arithmetic paths. All 132 owned native parity fixtures and a resource-limit/recovery test pass.
+Evidence covers all 25 concrete conversions, ratio-first scaling, empty and complex values,
+attributes/reference identity, visibility, lazy dispatch, omitted actuals and NextMethod. Eleven
+native gap probes retain classed/malformed unit metadata and implicit storage-class dispatch work;
+this is bounded evidence, not complete difftime or S3 compatibility.
+
+The full check passes 2,463 unit tests with 93 opt-in skips, both TypeScript gates, 53 inventory
+validators and 37 browser-report validators. Checked-in/live/recursive conformance passes 1,396 /
+1,327 / 310 with 157 causal-linked bindings. The subsequent partial-checkpoint integrity suite
+passes 28 tests. Client and Worker gzip sizes are 17.6/150 and 485.8/512 KiB; parser and elementary
+Wasm remain 671.9/1,536 and 311.2/384 KiB raw. The inventory classifies 587 of 2,553 bindings; 1,966
+remain pending and all thirteen domains remain incomplete. Name overlap 787/2,522 is not a
+completion percentage.
+
+The [affected-package checkpoint](../compatibility/package-check-evidence/corpus-0.381.0.json)
+reruns prettyunits with its pinned archive, original entrypoints and native repeatability. All nine
+input hashes are unchanged and observations repeat. pretty_dt and vague_dt now match; time_ago
+completes with a mismatch. Seven of eight examples execute, six match, and pretty_p_value becomes
+the first P5 blocker. prettyunits remains P4; the other 23 non-holdout entries retain complete 0.380
+evidence. Pins, partitions and Formula are unchanged. Browser, performance and offline pack evidence
+remain at 0.380; no public API or Worker protocol changed.
+
+Next measurable increment: reproduce and close the bounded is.finite/is.infinite/is.nan primitive
+matrix with shared forcing, S3 dispatch, attributes, resource limits and recursive causal evidence;
+then rerun prettyunits and required semantic gates. Preserve mixed-component complex NA and POSIXlt
+method gaps explicitly. Continue the full five-criterion goal, including independent datasets,
+isolated testing support, remaining domain matrices and platform verification. No additional input
+is needed for this local work. Linux, Formula, downloads and remote actions retain their boundaries.

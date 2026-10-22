@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.380.0",
+  "semanticProfileVersion": "0.381.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "0a24210b99b8a9b405bb53e284ab147889c092847b58fc0d041cc82931e53413",
+    "capabilities": "afb582d317efa7a07f2c91616912eec38a9bbe0ae944b32a10916b043f697c9a",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "aada5dc56bfabe171721caa69f7df224577a7fd2682f68258f3645ae1b6ff93c",
-    "oracleV2": "1eaaab2d1d031b17760cd0874aa7052735242ca0a3bb97a6f11ed5ab1ed0c991",
+    "foundation": "6dc2631dc260d908accfb5df7d9b385ed608ec7b874ac1fa58d22a5d01b652c6",
+    "oracleV2": "54ee2165cb8465df4128fdf4d42cb1fd56ae4bdd72afc147687eef032797530d",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "f0b5d555714a84b69381e8b205e5f271337af2cb3502ed1625b912378ca2dd5a"
+    "annotations": "298afd7b315aaad3bab23cd5f8b90e483dd9c71f045412edb5e961c8a9e5d157"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -47,12 +47,12 @@
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 810,
-    "qualifiedOverlaps": 782,
+    "registeredBindings": 814,
+    "qualifiedOverlaps": 786,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 583,
-    "classificationPendingBindings": 1970,
-    "recursiveLinkedBindings": 153,
+    "classifiedBindings": 587,
+    "classificationPendingBindings": 1966,
+    "recursiveLinkedBindings": 157,
     "bindingsWithDeclaredMatrixEvidence": 6,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
@@ -153,42 +153,42 @@
       "label": "Calls and promises",
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
-      "assignedBindings": 124,
-      "recursiveLinkedBindings": 39,
+      "assignedBindings": 128,
+      "recursiveLinkedBindings": 43,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 122,
+          "pendingBindings": 126,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 122,
+          "pendingBindings": 126,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "errors",
-          "pendingBindings": 122,
+          "pendingBindings": 126,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 122,
+          "pendingBindings": 126,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 122,
+          "pendingBindings": 126,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 122,
+          "pendingBindings": 126,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "identity",
-          "pendingBindings": 123,
+          "pendingBindings": 127,
           "partialDeclaredBindings": 1
         }
       ]
@@ -333,42 +333,42 @@
       "label": "Object systems",
       "requirement": "Full S3/group generics, S4 classes/generics/method selection/slots, and compatible external object packages.",
       "completion": "incomplete",
-      "assignedBindings": 254,
-      "recursiveLinkedBindings": 42,
+      "assignedBindings": 258,
+      "recursiveLinkedBindings": 46,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 250,
+          "pendingBindings": 254,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 250,
+          "pendingBindings": 254,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "errors",
-          "pendingBindings": 250,
+          "pendingBindings": 254,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 250,
+          "pendingBindings": 254,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 252,
+          "pendingBindings": 256,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 251,
+          "pendingBindings": 255,
           "partialDeclaredBindings": 3
         },
         {
           "dimension": "identity",
-          "pendingBindings": 253,
+          "pendingBindings": 257,
           "partialDeclaredBindings": 1
         }
       ]
@@ -468,42 +468,42 @@
       "label": "Data and time",
       "requirement": "Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats.",
       "completion": "incomplete",
-      "assignedBindings": 32,
-      "recursiveLinkedBindings": 30,
+      "assignedBindings": 36,
+      "recursiveLinkedBindings": 34,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 30,
+          "pendingBindings": 34,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 30,
+          "pendingBindings": 34,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "errors",
-          "pendingBindings": 30,
+          "pendingBindings": 34,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 30,
+          "pendingBindings": 34,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 32,
+          "pendingBindings": 36,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 31,
+          "pendingBindings": 35,
           "partialDeclaredBindings": 1
         },
         {
           "dimension": "identity",
-          "pendingBindings": 31,
+          "pendingBindings": 35,
           "partialDeclaredBindings": 1
         }
       ]
@@ -19451,11 +19451,22 @@
         "type": "closure",
         "formals": ["x"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "difftime-units-dispatch",
+        "difftime-units-getter",
+        "difftime-units-missing-arguments"
+      ],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
     },
     {
       "binding": "base::units.difftime",
@@ -19463,11 +19474,18 @@
         "type": "closure",
         "formals": ["x"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": ["difftime-units-getter"],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
     },
     {
       "binding": "base::units<-",
@@ -19475,11 +19493,26 @@
         "type": "closure",
         "formals": ["x", "value"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "difftime-units-conversion",
+        "difftime-units-dispatch",
+        "difftime-units-missing-arguments",
+        "difftime-units-numerics",
+        "difftime-units-retained-reference-graph",
+        "difftime-units-same-unit",
+        "difftime-units-visibility"
+      ],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
     },
     {
       "binding": "base::units<-.difftime",
@@ -19487,11 +19520,18 @@
         "type": "closure",
         "formals": ["x", "value"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": ["difftime-units-conversion", "difftime-units-scope"],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
     },
     {
       "binding": "base::unix.time",

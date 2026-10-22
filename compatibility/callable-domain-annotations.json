@@ -4851,6 +4851,34 @@
       "remainingGaps": [
         "Missing actuals now retain missing symbols in bounded replacement evidence; the complete quotation, attributes, dots and reflection matrix remains incomplete."
       ]
+    },
+    {
+      "binding": "base::units",
+      "domains": ["data-time", "object-systems", "calls-promises"],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
+    },
+    {
+      "binding": "base::units<-",
+      "domains": ["data-time", "object-systems", "calls-promises"],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
+    },
+    {
+      "binding": "base::units.difftime",
+      "domains": ["data-time", "object-systems", "calls-promises"],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
+    },
+    {
+      "binding": "base::units<-.difftime",
+      "domains": ["data-time", "object-systems", "calls-promises"],
+      "remainingGaps": [
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+      ]
     }
   ]
 }
