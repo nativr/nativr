@@ -1,0 +1,675 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-callable-purpose-review",
+  "date": "2026-10-22",
+  "reference": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "packages": ["base", "stats"],
+    "source": "Installed public Rd titles and aliases joined to the existing observable export inventory",
+    "fieldsRead": ["public-Rd-help-name", "public-Rd-title", "public-Rd-alias"],
+    "referenceInventorySha256": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e"
+  },
+  "scope": "Purpose assignments only; no implementation bodies, examples, behavior observations, runtime registrations, behavioral matrices or platform exclusions",
+  "counts": {
+    "bindings": 119,
+    "families": 26,
+    "publicHelpTopics": 32
+  },
+  "sourceMetadata": [
+    {
+      "package": "base",
+      "helpName": "DateTimeClasses.Rd",
+      "title": "Date-Time Classes",
+      "aliases": [
+        "DateTimeClasses",
+        "POSIXct",
+        "POSIXlt",
+        "POSIXt",
+        "print.POSIXct",
+        "print.POSIXlt",
+        "summary.POSIXct",
+        "summary.POSIXlt",
+        "+.POSIXt",
+        "-.POSIXt",
+        "Ops.POSIXt",
+        "Math.POSIXt",
+        "Summary.POSIXct",
+        "Math.POSIXlt",
+        "Summary.POSIXlt",
+        "$<-.POSIXlt",
+        "[.POSIXct",
+        "[<-.POSIXct",
+        "[[.POSIXct",
+        "[.POSIXlt",
+        "[<-.POSIXlt",
+        "[[.POSIXlt",
+        "[[<-.POSIXlt",
+        "as.data.frame.POSIXlt",
+        "as.list.POSIXct",
+        "as.list.POSIXlt",
+        ".leap.seconds",
+        "anyNA.POSIXlt",
+        "is.finite.POSIXlt",
+        "is.infinite.POSIXlt",
+        "is.na.POSIXlt",
+        "is.nan.POSIXlt",
+        "c.POSIXct",
+        "c.POSIXlt",
+        "as.matrix.POSIXlt",
+        "length.POSIXlt",
+        "length<-.POSIXct",
+        "length<-.POSIXlt",
+        "mean.POSIXct",
+        "mean.POSIXlt",
+        "str.POSIXt",
+        "duplicated.POSIXlt",
+        "unique.POSIXlt",
+        "split.POSIXct",
+        "names.POSIXlt",
+        "names<-.POSIXlt",
+        "date-time"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "Dates.Rd",
+      "title": "Date Class",
+      "aliases": [
+        "Date",
+        "Dates",
+        "print.Date",
+        "summary.Date",
+        "Math.Date",
+        "Summary.Date",
+        "[.Date",
+        "[<-.Date",
+        "length<-.Date",
+        "[[.Date",
+        "as.list.Date",
+        "c.Date",
+        "mean.Date",
+        "split.Date"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "Ops.Date.Rd",
+      "title": "Operators on the Date Class",
+      "aliases": ["+.Date", "-.Date", "Ops.Date"]
+    },
+    {
+      "package": "base",
+      "helpName": "Sys.setFileTime.Rd",
+      "title": "Set File Time",
+      "aliases": ["Sys.setFileTime"]
+    },
+    {
+      "package": "base",
+      "helpName": "Sys.time.Rd",
+      "title": "Get Current Date and Time",
+      "aliases": ["Sys.time", "Sys.Date"]
+    },
+    {
+      "package": "base",
+      "helpName": "all.equal.Rd",
+      "title": "Test if Two Objects are (Nearly) Equal",
+      "aliases": [
+        "all.equal",
+        "all.equal.default",
+        "all.equal.numeric",
+        "all.equal.character",
+        "all.equal.environment",
+        "all.equal.envRefClass",
+        "all.equal.factor",
+        "all.equal.formula",
+        "all.equal.function",
+        "all.equal.list",
+        "all.equal.language",
+        "all.equal.POSIXt",
+        "all.equal.raw",
+        "attr.all.equal"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "as.Date.Rd",
+      "title": "Date Conversion Functions to and from Character",
+      "aliases": [
+        "format.Date",
+        "as.character.Date",
+        "as.Date",
+        "as.Date.character",
+        "as.Date.default",
+        "as.Date.factor",
+        "as.Date.POSIXct",
+        "as.Date.POSIXlt",
+        "as.Date.date",
+        "as.Date.dates",
+        "as.Date.numeric"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "as.POSIXlt.Rd",
+      "title": "Date-time Conversion Functions",
+      "aliases": [
+        "as.POSIXct",
+        "as.POSIXct.default",
+        "as.POSIXct.POSIXlt",
+        "as.POSIXct.date",
+        "as.POSIXct.dates",
+        "as.POSIXct.Date",
+        "as.POSIXct.numeric",
+        "as.POSIXlt",
+        "as.POSIXlt.Date",
+        "as.POSIXlt.date",
+        "as.POSIXlt.dates",
+        "as.POSIXlt.POSIXct",
+        "as.POSIXlt.factor",
+        "as.POSIXlt.character",
+        "as.POSIXlt.default",
+        "as.POSIXlt.numeric",
+        "as.double.POSIXlt"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "balancePOSIXlt.Rd",
+      "title": "Balancing Ragged and Out-of-range #1POSIXltPOSIXlt Date-Times",
+      "aliases": ["balancePOSIXlt", "unCfillPOSIXlt"]
+    },
+    {
+      "package": "base",
+      "helpName": "cut.POSIXt.Rd",
+      "title": "Convert a Date or Date-Time Object to a Factor",
+      "aliases": ["cut.POSIXt", "cut.Date"]
+    },
+    {
+      "package": "base",
+      "helpName": "date.Rd",
+      "title": "System Date and Time",
+      "aliases": ["date"]
+    },
+    {
+      "package": "base",
+      "helpName": "diff.Rd",
+      "title": "Lagged Differences",
+      "aliases": ["diff", "diff.default", "diff.POSIXt", "diff.Date"]
+    },
+    {
+      "package": "base",
+      "helpName": "difftime.Rd",
+      "title": "Time Intervals / Differences",
+      "aliases": [
+        "difftime",
+        "as.difftime",
+        "*.difftime",
+        "/.difftime",
+        "Math.difftime",
+        "Ops.difftime",
+        "Summary.difftime",
+        "[.difftime",
+        "[<-.difftime",
+        "as.double.difftime",
+        "as.list.difftime",
+        "c.difftime",
+        "diff.difftime",
+        "format.difftime",
+        "is.numeric.difftime",
+        "length<-.difftime",
+        "mean.difftime",
+        "print.difftime",
+        "rep.difftime",
+        "units.difftime",
+        "units<-.difftime",
+        "time interval",
+        "summary.difftime"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "mtfrm.Rd",
+      "title": "Auxiliary Function for Matching",
+      "aliases": ["mtfrm", "mtfrm.default", "mtfrm.Date", "mtfrm.POSIXct", "mtfrm.POSIXlt"]
+    },
+    {
+      "package": "base",
+      "helpName": "range.Rd",
+      "title": "Range of Values",
+      "aliases": ["range", "range.default", "range.Date", "range.POSIXct", ".rangeNum"]
+    },
+    {
+      "package": "base",
+      "helpName": "round.POSIXt.Rd",
+      "title": "Round / Truncate Date-Time Objects",
+      "aliases": ["round.POSIXt", "trunc.POSIXt", "round.Date", "trunc.Date"]
+    },
+    {
+      "package": "base",
+      "helpName": "seq.Date.Rd",
+      "title": "Generate Regular Sequences of Dates",
+      "aliases": ["seq.Date"]
+    },
+    {
+      "package": "base",
+      "helpName": "seq.POSIXt.Rd",
+      "title": "Generate Regular Sequences of Times",
+      "aliases": ["seq.POSIXt"]
+    },
+    {
+      "package": "base",
+      "helpName": "sort.Rd",
+      "title": "Sorting or Ordering Vectors",
+      "aliases": ["sort", "sort.default", "sort.POSIXlt", "sort.int"]
+    },
+    {
+      "package": "base",
+      "helpName": "strptime.Rd",
+      "title": "Date-time Conversion Functions to and from Character",
+      "aliases": ["format.POSIXct", "format.POSIXlt", "strftime", "strptime", "as.character.POSIXt"]
+    },
+    {
+      "package": "base",
+      "helpName": "timezones.Rd",
+      "title": "Time Zones",
+      "aliases": [
+        "Sys.timezone",
+        "OlsonNames",
+        "timezone",
+        "timezones",
+        "time zone",
+        "time zones",
+        "TZ",
+        "TZDIR",
+        ".sys.timezone"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "vector.Rd",
+      "title": "Vectors - Creation, Coercion, etc",
+      "aliases": [
+        "vector",
+        "as.vector",
+        "as.vector.data.frame",
+        "as.vector.factor",
+        "as.vector.POSIXlt",
+        "is.vector",
+        "atomic"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "weekday.POSIXt.Rd",
+      "title": "Extract Parts of a #1POSIXtPOSIXt or Date Object",
+      "aliases": [
+        "weekdays",
+        "weekdays.POSIXt",
+        "weekdays.Date",
+        "months",
+        "months.POSIXt",
+        "months.Date",
+        "quarters",
+        "quarters.POSIXt",
+        "quarters.Date",
+        "julian",
+        "julian.POSIXt",
+        "julian.Date"
+      ]
+    },
+    {
+      "package": "base",
+      "helpName": "xtfrm.Rd",
+      "title": "Auxiliary Function for Sorting and Ranking",
+      "aliases": [
+        "xtfrm",
+        "xtfrm.default",
+        "xtfrm.factor",
+        "xtfrm.AsIs",
+        "xtfrm.Date",
+        "xtfrm.POSIXct",
+        "xtfrm.POSIXlt",
+        "xtfrm.difftime",
+        "xtfrm.data.frame"
+      ]
+    },
+    {
+      "package": "stats",
+      "helpName": "lag.Rd",
+      "title": "Lag a Time Series",
+      "aliases": ["lag", "lag.default"]
+    },
+    {
+      "package": "stats",
+      "helpName": "print.ts.Rd",
+      "title": "Printing and Formatting of Time-Series Objects",
+      "aliases": [".preformat.ts", "print.ts"]
+    },
+    {
+      "package": "stats",
+      "helpName": "start.Rd",
+      "title": "Encode the Terminal Times of Time Series",
+      "aliases": ["start", "end"]
+    },
+    {
+      "package": "stats",
+      "helpName": "time.Rd",
+      "title": "Sampling Times of Time Series",
+      "aliases": ["time", "cycle", "frequency", "deltat", "time.default"]
+    },
+    {
+      "package": "stats",
+      "helpName": "ts.Rd",
+      "title": "Time-Series Objects",
+      "aliases": [
+        "ts",
+        "as.ts",
+        "as.ts.default",
+        "is.ts",
+        "Ops.ts",
+        "cbind.ts",
+        "is.mts",
+        "[.ts",
+        "t.ts",
+        "head.ts",
+        "tail.ts"
+      ]
+    },
+    {
+      "package": "stats",
+      "helpName": "ts.union.Rd",
+      "title": "Bind Two or More Time Series",
+      "aliases": ["ts.union", "ts.intersect"]
+    },
+    {
+      "package": "stats",
+      "helpName": "tsp.Rd",
+      "title": "tsp Attribute of Time-Series-Like Objects",
+      "aliases": ["tsp", "tsp<-", "hasTsp"]
+    },
+    {
+      "package": "stats",
+      "helpName": "window.Rd",
+      "title": "Time (Series) Windows",
+      "aliases": ["window", "window.default", "window.ts", "window<-", "window<-.ts"]
+    }
+  ],
+  "groups": [
+    {
+      "id": "date-class-methods",
+      "domains": ["data-time", "object-systems"],
+      "purpose": "Methods and representation helpers for the Date class.",
+      "sourceHelp": ["Dates.Rd"],
+      "bindings": [
+        "base::print.Date",
+        "base::summary.Date",
+        "base::Math.Date",
+        "base::Summary.Date",
+        "base::[<-.Date",
+        "base::length<-.Date",
+        "base::c.Date",
+        "base::split.Date"
+      ]
+    },
+    {
+      "id": "date-time-class-methods",
+      "domains": ["data-time", "object-systems"],
+      "purpose": "Methods and direct representation helpers for POSIX date-time classes.",
+      "sourceHelp": ["DateTimeClasses.Rd"],
+      "bindings": [
+        "base::print.POSIXct",
+        "base::print.POSIXlt",
+        "base::summary.POSIXct",
+        "base::summary.POSIXlt",
+        "base::+.POSIXt",
+        "base::-.POSIXt",
+        "base::Ops.POSIXt",
+        "base::Math.POSIXt",
+        "base::Summary.POSIXct",
+        "base::Summary.POSIXlt",
+        "base::$<-.POSIXlt",
+        "base::[<-.POSIXct",
+        "base::[.POSIXlt",
+        "base::[<-.POSIXlt",
+        "base::[[.POSIXlt",
+        "base::[[<-.POSIXlt",
+        "base::as.data.frame.POSIXlt",
+        "base::as.list.POSIXlt",
+        "base::anyNA.POSIXlt",
+        "base::is.na.POSIXlt",
+        "base::c.POSIXct",
+        "base::c.POSIXlt",
+        "base::as.matrix.POSIXlt",
+        "base::length.POSIXlt",
+        "base::length<-.POSIXct",
+        "base::length<-.POSIXlt",
+        "base::mean.POSIXlt",
+        "base::duplicated.POSIXlt",
+        "base::unique.POSIXlt",
+        "base::split.POSIXct"
+      ]
+    },
+    {
+      "id": "date-operators",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "purpose": "Operators on Date objects.",
+      "sourceHelp": ["Ops.Date.Rd"],
+      "bindings": ["base::+.Date", "base::-.Date", "base::Ops.Date"]
+    },
+    {
+      "id": "date-conversion",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Date conversions and character representation.",
+      "sourceHelp": ["as.Date.Rd"],
+      "bindings": [
+        "base::format.Date",
+        "base::as.character.Date",
+        "base::as.Date.character",
+        "base::as.Date.default",
+        "base::as.Date.factor",
+        "base::as.Date.POSIXct",
+        "base::as.Date.POSIXlt",
+        "base::as.Date.numeric"
+      ]
+    },
+    {
+      "id": "date-time-conversion",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Conversions among date-time representations.",
+      "sourceHelp": ["as.POSIXlt.Rd"],
+      "bindings": [
+        "base::as.POSIXct.Date",
+        "base::as.POSIXlt.Date",
+        "base::as.POSIXlt.POSIXct",
+        "base::as.POSIXlt.factor",
+        "base::as.POSIXlt.character",
+        "base::as.POSIXlt.default",
+        "base::as.POSIXlt.numeric",
+        "base::as.double.POSIXlt"
+      ]
+    },
+    {
+      "id": "date-time-character-formatting",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Date-time character conversion and formatting methods.",
+      "sourceHelp": ["strptime.Rd"],
+      "bindings": ["base::format.POSIXct", "base::format.POSIXlt", "base::as.character.POSIXt"]
+    },
+    {
+      "id": "posixlt-balancing",
+      "domains": ["data-time", "vector-semantics"],
+      "purpose": "Balancing ragged and out-of-range POSIXlt representations.",
+      "sourceHelp": ["balancePOSIXlt.Rd"],
+      "bindings": ["base::balancePOSIXlt", "base::unCfillPOSIXlt"]
+    },
+    {
+      "id": "date-time-binning",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Convert dates or date-times to factor bins.",
+      "sourceHelp": ["cut.POSIXt.Rd"],
+      "bindings": ["base::cut.POSIXt", "base::cut.Date"]
+    },
+    {
+      "id": "time-interval-methods",
+      "domains": ["data-time", "object-systems"],
+      "purpose": "Methods for time intervals and differences.",
+      "sourceHelp": ["difftime.Rd"],
+      "bindings": [
+        "base::*.difftime",
+        "base::/.difftime",
+        "base::Math.difftime",
+        "base::Ops.difftime",
+        "base::Summary.difftime",
+        "base::[<-.difftime",
+        "base::as.double.difftime",
+        "base::c.difftime",
+        "base::diff.difftime",
+        "base::format.difftime",
+        "base::length<-.difftime",
+        "base::print.difftime",
+        "base::summary.difftime"
+      ]
+    },
+    {
+      "id": "date-time-rounding",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "purpose": "Round or truncate Date/POSIX date-time objects.",
+      "sourceHelp": ["round.POSIXt.Rd"],
+      "bindings": [
+        "base::round.POSIXt",
+        "base::trunc.POSIXt",
+        "base::round.Date",
+        "base::trunc.Date"
+      ]
+    },
+    {
+      "id": "calendar-sequences",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Generate regular sequences of dates or date-times.",
+      "sourceHelp": ["seq.Date.Rd", "seq.POSIXt.Rd"],
+      "bindings": ["base::seq.Date", "base::seq.POSIXt"]
+    },
+    {
+      "id": "calendar-parts",
+      "domains": ["data-time", "object-systems"],
+      "purpose": "Extract calendar components or Julian-day representations.",
+      "sourceHelp": ["weekday.POSIXt.Rd"],
+      "bindings": [
+        "base::months",
+        "base::months.POSIXt",
+        "base::months.Date",
+        "base::quarters",
+        "base::quarters.POSIXt",
+        "base::quarters.Date",
+        "base::julian",
+        "base::julian.POSIXt",
+        "base::julian.Date"
+      ]
+    },
+    {
+      "id": "date-time-comparison",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Near-equality comparison for POSIX time objects.",
+      "sourceHelp": ["all.equal.Rd"],
+      "bindings": ["base::all.equal.POSIXt"]
+    },
+    {
+      "id": "date-time-vector-conversion",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "POSIXlt vector coercion method.",
+      "sourceHelp": ["vector.Rd"],
+      "bindings": ["base::as.vector.POSIXlt"]
+    },
+    {
+      "id": "calendar-differences",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "purpose": "Lagged differences for Date/POSIX time objects.",
+      "sourceHelp": ["diff.Rd"],
+      "bindings": ["base::diff.POSIXt", "base::diff.Date"]
+    },
+    {
+      "id": "date-time-matching",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Date-time auxiliary representations for matching.",
+      "sourceHelp": ["mtfrm.Rd"],
+      "bindings": ["base::mtfrm.Date", "base::mtfrm.POSIXct", "base::mtfrm.POSIXlt"]
+    },
+    {
+      "id": "date-time-range",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "purpose": "Range methods for dates and date-times.",
+      "sourceHelp": ["range.Rd"],
+      "bindings": ["base::range.Date", "base::range.POSIXct"]
+    },
+    {
+      "id": "date-time-ordering",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Date/time sorting and ranking transformations.",
+      "sourceHelp": ["sort.Rd", "xtfrm.Rd"],
+      "bindings": [
+        "base::sort.POSIXlt",
+        "base::xtfrm.Date",
+        "base::xtfrm.POSIXct",
+        "base::xtfrm.POSIXlt",
+        "base::xtfrm.difftime"
+      ]
+    },
+    {
+      "id": "system-date-display",
+      "domains": ["data-time", "io-platform"],
+      "purpose": "Current system date/time retrieval or display.",
+      "sourceHelp": ["date.Rd", "Sys.time.Rd"],
+      "bindings": ["base::date"]
+    },
+    {
+      "id": "timezone-catalog",
+      "domains": ["data-time", "io-platform"],
+      "purpose": "Timezone identification and catalog helpers.",
+      "sourceHelp": ["timezones.Rd"],
+      "bindings": ["base::Sys.timezone", "base::OlsonNames"]
+    },
+    {
+      "id": "file-timestamps",
+      "domains": ["data-time", "io-platform"],
+      "purpose": "Set file timestamps.",
+      "sourceHelp": ["Sys.setFileTime.Rd"],
+      "bindings": ["base::Sys.setFileTime"]
+    },
+    {
+      "id": "time-series-representation",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Time-series objects and their direct representation methods.",
+      "sourceHelp": ["ts.Rd"],
+      "bindings": ["stats::is.ts", "stats::is.mts"]
+    },
+    {
+      "id": "time-series-formatting",
+      "domains": ["data-time"],
+      "purpose": "Printing and formatting time-series representations.",
+      "sourceHelp": ["print.ts.Rd"],
+      "bindings": ["stats::.preformat.ts"]
+    },
+    {
+      "id": "time-series-alignment",
+      "domains": ["data-time", "vector-semantics"],
+      "purpose": "Bind time series using shared or combined sampling ranges.",
+      "sourceHelp": ["ts.union.Rd"],
+      "bindings": ["stats::ts.union", "stats::ts.intersect"]
+    },
+    {
+      "id": "time-series-sampling-metadata",
+      "domains": ["data-time", "vector-semantics"],
+      "purpose": "Read or update time-series sampling and endpoint metadata.",
+      "sourceHelp": ["tsp.Rd", "time.Rd", "start.Rd", "lag.Rd"],
+      "bindings": ["stats::tsp", "stats::tsp<-", "stats::hasTsp"]
+    },
+    {
+      "id": "time-series-windows",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "purpose": "Select or replace windows in time-series representations.",
+      "sourceHelp": ["window.Rd"],
+      "bindings": ["stats::window<-"]
+    }
+  ]
+}

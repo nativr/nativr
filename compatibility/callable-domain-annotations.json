@@ -11183,6 +11183,958 @@
           ]
         }
       ]
+    },
+    {
+      "binding": "base::-.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Date arithmetic/comparison, units, recycling, missing values, class dispatch, attribute retention and invalid-operand diagnostics require binding-specific behavioral evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::-.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[[.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[[<-.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[<-.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[<-.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[<-.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::[<-.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::*.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::/.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::+.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Date arithmetic/comparison, units, recycling, missing values, class dispatch, attribute retention and invalid-operand diagnostics require binding-specific behavioral evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::+.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::$<-.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::all.equal.POSIXt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Tolerance, timezone/class/attribute comparisons, missing values and diagnostic results remain unaudited for this unregistered method.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::anyNA.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.character.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.character.POSIXt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Format directives, locale/encoding, timezone/DST labels, fractional seconds, missing values, class dispatch and output metadata remain unfinished for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.data.frame.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.Date.character",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.Date.default",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.Date.factor",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.Date.numeric",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.Date.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.Date.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.double.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.double.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.list.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.matrix.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXct.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXlt.character",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXlt.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXlt.default",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXlt.factor",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXlt.numeric",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXlt.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date-time coercion, calendar normalization, origins, recycling, named timezones/DST, class dispatch and metadata/error behavior require binding-specific evidence; registered sibling methods do not establish these bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::as.vector.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Requested modes, components, missing values, names/attributes, class dispatch and invalid-mode behavior remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::balancePOSIXlt",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Component normalization, ragged lengths, caching/representation metadata, missing/nonfinite values, timezone interactions, identity and invalid-input behavior remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::c.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::c.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::c.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::c.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::cut.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Calendar break generation, interval closure, labels/levels, timezone transitions, empty/missing values and class/attribute propagation require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::cut.POSIXt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Calendar break generation, interval closure, labels/levels, timezone transitions, empty/missing values and class/attribute propagation require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::date",
+      "domains": ["data-time", "io-platform"],
+      "remainingGaps": [
+        "Explicit host-clock capability, formatting/timezone/locale behavior, determinism, visibility and host-denial diagnostics require browser-specific evidence; purpose alone does not establish a platform exclusion.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::diff.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Lag/order controls, output units, short/empty inputs, missing values, timezone interactions and class/attribute behavior require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::diff.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::diff.POSIXt",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Lag/order controls, output units, short/empty inputs, missing values, timezone interactions and class/attribute behavior require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::duplicated.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::format.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Date conversion formats, origins, locale/timezone boundaries, missing values, class dispatch, names/attributes and diagnostics remain unaudited for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::format.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::format.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Format directives, locale/encoding, timezone/DST labels, fractional seconds, missing values, class dispatch and output metadata remain unfinished for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::format.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Format directives, locale/encoding, timezone/DST labels, fractional seconds, missing values, class dispatch and output metadata remain unfinished for these unregistered methods.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::is.na.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::julian",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::julian.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::julian.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::length.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::length<-.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::length<-.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::length<-.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::length<-.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Math.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Math.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Math.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::mean.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::months",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::months.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::months.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::mtfrm.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Matching transformations, timezone/class distinctions, missing/nonfinite values, names/attributes and consistency with equality remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::mtfrm.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Matching transformations, timezone/class distinctions, missing/nonfinite values, names/attributes and consistency with equality remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::mtfrm.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Matching transformations, timezone/class distinctions, missing/nonfinite values, names/attributes and consistency with equality remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::OlsonNames",
+      "domains": ["data-time", "io-platform"],
+      "remainingGaps": [
+        "Timezone database provenance, host-zone discovery, aliases/DST, missing or unavailable host capabilities and browser adaptation boundaries remain unaudited; no platform exclusion is established.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Ops.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Date arithmetic/comparison, units, recycling, missing values, class dispatch, attribute retention and invalid-operand diagnostics require binding-specific behavioral evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Ops.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Ops.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::print.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::print.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::print.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::print.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::quarters",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::quarters.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::quarters.POSIXt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Calendar component/origin definitions, locale-dependent labels, timezone transitions, missing values, names and method dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::range.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Multiple/empty inputs, finite and missing-value controls, timezone/class handling, metadata and warnings require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::range.POSIXct",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Multiple/empty inputs, finite and missing-value controls, timezone/class handling, metadata and warnings require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::round.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Calendar rounding units, ties, fractional/negative values, timezone/DST transitions, missingness and class/attribute behavior require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::round.POSIXt",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Calendar rounding units, ties, fractional/negative values, timezone/DST transitions, missingness and class/attribute behavior require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::seq.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Calendar steps, endpoints/lengths, timezone/DST transitions, negative/zero steps, missing controls, class metadata and allocation limits remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::seq.POSIXt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Calendar steps, endpoints/lengths, timezone/DST transitions, negative/zero steps, missing controls, class metadata and allocation limits remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::sort.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Ordering controls, timezone/unit equivalence, ties, missing/nonfinite values, class dispatch and output metadata remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::split.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::split.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::summary.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Summary.Date",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-class method dispatch, calendar boundaries, missing values, class/attribute retention, display and summary behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::summary.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Summary.difftime",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Interval units, arithmetic/recycling, class dispatch, extraction/replacement, coercion, display, missing values and attribute/error behavior remain unaudited for these unregistered bindings; sibling units evidence does not establish them.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::summary.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Summary.POSIXct",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::summary.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Summary.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Sys.setFileTime",
+      "domains": ["data-time", "io-platform"],
+      "remainingGaps": [
+        "Timestamp conversion/precision, filesystem capability boundaries, path/vector handling, permissions/errors and side effects remain unaudited; this purpose assignment is not a browser platform exclusion.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::Sys.timezone",
+      "domains": ["data-time", "io-platform"],
+      "remainingGaps": [
+        "Timezone database provenance, host-zone discovery, aliases/DST, missing or unavailable host capabilities and browser adaptation boundaries remain unaudited; no platform exclusion is established.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::trunc.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Calendar rounding units, ties, fractional/negative values, timezone/DST transitions, missingness and class/attribute behavior require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::trunc.POSIXt",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Calendar rounding units, ties, fractional/negative values, timezone/DST transitions, missingness and class/attribute behavior require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::unCfillPOSIXlt",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Component normalization, ragged lengths, caching/representation metadata, missing/nonfinite values, timezone interactions, identity and invalid-input behavior remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::unique.POSIXlt",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Date-time class method dispatch, ragged components, missing values, timezones, class/attribute retention, extraction/replacement, display and summaries remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::xtfrm.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Ordering controls, timezone/unit equivalence, ties, missing/nonfinite values, class dispatch and output metadata remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::xtfrm.difftime",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Ordering controls, timezone/unit equivalence, ties, missing/nonfinite values, class dispatch and output metadata remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::xtfrm.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Ordering controls, timezone/unit equivalence, ties, missing/nonfinite values, class dispatch and output metadata remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "base::xtfrm.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Ordering controls, timezone/unit equivalence, ties, missing/nonfinite values, class dispatch and output metadata remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::.preformat.ts",
+      "domains": ["data-time"],
+      "remainingGaps": [
+        "Sampling-period labels, precision/layout controls, multivariate shape, missing values, locale/display behavior and output attributes remain unaudited.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::hasTsp",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Start/end/frequency invariants, replacement validation, fractional sampling, missing values, attributes and identity behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::is.mts",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Time-series class/shape recognition, sampling metadata, coercion, extraction, names/dimensions, missing values and dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::is.ts",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Time-series class/shape recognition, sampling metadata, coercion, extraction, names/dimensions, missing values and dispatch require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::ts.intersect",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling-grid alignment, frequency compatibility, missing padding, empty intersections, names/dimensions and invalid-input diagnostics require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::ts.union",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling-grid alignment, frequency compatibility, missing padding, empty intersections, names/dimensions and invalid-input diagnostics require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::tsp",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Start/end/frequency invariants, replacement validation, fractional sampling, missing values, attributes and identity behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::tsp<-",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Start/end/frequency invariants, replacement validation, fractional sampling, missing values, attributes and identity behavior remain unaudited for these unregistered bindings.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
+    },
+    {
+      "binding": "stats::window<-",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Window boundaries, sampling frequency, extension/recycling, replacement, multivariate shapes, metadata and diagnostics require binding-specific evidence.",
+        "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
+      ]
     }
   ]
 }

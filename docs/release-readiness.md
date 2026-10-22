@@ -29,7 +29,7 @@ packaging remain open. The approved roadmap does not authorize push or publicati
 
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,234 assigned, 1,319 pending; all 823 registered bindings assigned; 90 partial dimensions on fifteen bindings; matrices need closure                                                   | Not met                 |
+| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,353 assigned, 1,200 pending; all 823 registered bindings assigned; 90 partial dimensions on fifteen bindings; matrices need closure                                                   | Not met                 |
 | Callable evidence/exclusions                     | 796/2,522 distinct names overlap; 169 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
 | Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 9 P5, 11 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
@@ -90,6 +90,14 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Date/time inventory review (2026-10-22)
+
+Public documentation titles and aliases classify 119 additional unregistered date/time and
+time-series representation bindings in 26 families. The current inventory has 1,353 assigned and
+1,200 pending bindings. All 823 runtime registrations, 169 causal links, 90 partial dimensions,
+corpus tiers and profile 0.385 are unchanged. Every domain remains incomplete. The review preserves
+all prior assignments and adds no executable evidence or platform exclusions.
 
 ### Profile 0.385 verification (2026-10-22)
 

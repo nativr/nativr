@@ -17,7 +17,7 @@ name in one namespace does not establish the binding in another namespace.
 All 169 bindings with existing causal links have explicit domain assignments. Reviewed purpose
 assignments add 430 bindings from graphics, graphics devices and object-system methods, and 572
 previously unclassified owned registrations. The bounded formatC increment adds one assignment. The
-classified total is 1,234, including all 823 registered bindings. Another 1,319 reference bindings
+classified total is 1,353, including all 823 registered bindings. Another 1,200 reference bindings
 remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
 Fifteen bindings have 90 reviewed, partial behavioral-dimension declarations. Each declaration
@@ -61,6 +61,18 @@ Smirnov distributions, multivariate counts, coincidence probabilities and Wishar
 Parameter rules, tails/log scales, vector and matrix shapes, numerical accuracy, RNG state/draw
 ordering, errors and metadata remain explicit work. Documentation establishes purpose; none of these
 65 bindings receives a runtime registration, causal link, behavioral dimension or exclusion.
+
+### Date and time reference callables
+
+The [date/time purpose review](../compatibility/callable-purpose-evidence/data-time-4.6.1.json)
+assigns 119 unregistered reference bindings in 26 families, using 32 public help topics. It covers
+Date/POSIX/difftime methods, calendar sequences and components, timezone and timestamp helpers, and
+time-series representation, alignment and sampling metadata. These assignments add no behavior
+evidence, registrations, exclusions or complete dimensions. All prior assignments are preserved.
+
+Calendar/DST/locale behavior, storage and attributes, class dispatch, missing values, arithmetic,
+display, host capabilities and complete behavioral matrices remain explicit work. Internal-only or
+ambiguous helpers, deprecated frame conversions and unrelated fitting/graphics remain pending.
 
 ### Owned registered callables
 

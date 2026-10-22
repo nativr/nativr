@@ -1784,3 +1784,17 @@ matrix/array storage chains, explicit-class precedence and method metadata with 
 fixtures and causal controls. Keep internal/group-generic dispatch rules distinct and preserve the
 original input identity. Continue the wider semantic-domain, dataset, testing-runner and platform
 work under the existing boundaries; no new user input is required for this local step.
+
+### Date/time purpose inventory increment (2026-10-22)
+
+Classified 119 previously pending reference bindings from 32 public GNU R 4.6.1 help titles and
+alias lists. Twenty-six families cover Date/POSIX/difftime methods, calendar helpers, direct
+timezone/timestamp APIs and time-series representation. Exact provenance is retained in the
+[purpose review](../compatibility/callable-purpose-evidence/data-time-4.6.1.json); existing
+annotations remain unchanged. No implementation bodies or examples were development inputs.
+
+The inventory now has 1,353 assigned and 1,200 pending bindings. Runtime registrations, causal
+links, matrix dimensions, profile 0.385 and corpus tiers are unchanged. All domains and callable
+matrices remain incomplete. The active semantic step is the bounded implicit S3 class-chain fix.
+All 53 inventory validators and generated inventory/status checks pass; independent review confirms
+the exact documentation aliases and preservation of every previous annotation.
