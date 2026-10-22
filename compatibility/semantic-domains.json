@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "targetRVersion": "4.6.1",
+  "domains": [
+    {
+      "id": "language-syntax",
+      "label": "Language syntax",
+      "requirement": "Every GNU R expression and assignment form normalizes without losing semantics."
+    },
+    {
+      "id": "value-types",
+      "label": "Value types",
+      "requirement": "NULL, logical, integer, double, complex, character, raw, list, pairlist, expression, symbol, language, environment, closure, builtin/special, promise, external pointer, weak reference, and S4 shapes."
+    },
+    {
+      "id": "calls-promises",
+      "label": "Calls and promises",
+      "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility."
+    },
+    {
+      "id": "environments",
+      "label": "Environments",
+      "requirement": "Lexical lookup, superassignment, locks, active bindings, namespaces, search path, and parent manipulation."
+    },
+    {
+      "id": "vector-semantics",
+      "label": "Vector semantics",
+      "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type."
+    },
+    {
+      "id": "conditions",
+      "label": "Conditions",
+      "requirement": "Errors, warnings, messages, handlers, restarts, calls, traceback, and warning policy."
+    },
+    {
+      "id": "object-systems",
+      "label": "Object systems",
+      "requirement": "Full S3/group generics, S4 classes/generics/method selection/slots, and compatible external object packages."
+    },
+    {
+      "id": "core-namespaces",
+      "label": "Core namespaces",
+      "requirement": "Behavioral coverage for base, stats, methods, utils, grDevices, graphics, and datasets."
+    },
+    {
+      "id": "numeric-runtime",
+      "label": "Numeric runtime",
+      "requirement": "Complex arithmetic, special functions, linear algebra, FFT, distributions, optimizers, integration, and deterministic tolerances."
+    },
+    {
+      "id": "data-time",
+      "label": "Data and time",
+      "requirement": "Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats."
+    },
+    {
+      "id": "io-platform",
+      "label": "I/O and platform",
+      "requirement": "Files, URLs, compression, processes, environment variables, capabilities, and browser-safe host adapters."
+    },
+    {
+      "id": "package-execution",
+      "label": "Package execution",
+      "requirement": "Namespace loading, lazy data, S3/S4 registration, bytecode-equivalent semantics, package resources, and R CMD check behavior."
+    },
+    {
+      "id": "graphics",
+      "label": "Graphics",
+      "requirement": "Devices, graphics state, base graphics, colors, fonts, and browser rendering equivalence."
+    }
+  ]
+}

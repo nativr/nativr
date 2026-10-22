@@ -29,11 +29,11 @@ publication.
 
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Domain evidence                                  | All **13** required domains remain incomplete; behavioral matrices need closure                                                                                                                                                                    | Not met                 |
+| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 151 assigned, 2,402 classification-pending; behavioral matrices need closure                                                                                                            | Not met                 |
 | Callable evidence/exclusions                     | 782/2,522 distinct names overlap; 151 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
 | Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 8 P5, 12 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
-| Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, coverage and status in order                                                                                                                              | Met for this checkpoint |
+| Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, name coverage, callable inventory and status in order                                                                                                     | Met for this checkpoint |
 
 There is no defensible completion date or percentage yet. Finishing requires semantic-domain
 closure, broad package evidence and platform verification. See the maintained
@@ -76,6 +76,17 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Callable/domain inventory v1 (2026-10-22, profile 0.379 unchanged)
+
+The [inventory](callable-domain-inventory.md) records 2,553 qualified bindings, including 2,525
+reference exports and 28 registrations absent from the export snapshot. All 151 causal-linked
+bindings have reviewed domain assignments; 2,402 remain classification-pending. All thirteen domains
+and every callable remain incomplete. No behavioral-matrix completion or platform exclusion is
+inferred. The full check passes 2,222 unit tests (93 opt-in skips) and 53 independent inventory
+validator fixtures. The required inventory check and canonical status reject stale inputs or
+reports, and status records the inventory digest. This reporting increment does not change runtime
+semantics or the recorded native/corpus evidence.
 
 ### Test types and packed declarations (2026-10-22, profile 0.379 unchanged)
 

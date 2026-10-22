@@ -1,0 +1,1071 @@
+{
+  "schemaVersion": 1,
+  "targetRVersion": "4.6.1",
+  "entries": [
+    {
+      "binding": "base::.subset",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::.subset2",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::Map",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::NextMethod",
+      "domains": ["object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "Omitted/default arguments and general dots continuation remain unfinished."
+      ]
+    },
+    {
+      "binding": "base::Summary.data.frame",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::Summary.ordered",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::UseMethod",
+      "domains": ["object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::addNA",
+      "domains": ["data-time"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::all.equal",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::args",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.call",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.character",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.factor",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.function",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.function.default",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.integer",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.list",
+      "domains": ["value-types", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.list.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.list.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.list.difftime",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.list.factor",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.logical",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.name",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.ordered",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.single",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.single.default",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::as.symbol",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::attr",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::body",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::break",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::c",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::call",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::cat",
+      "domains": ["io-platform"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::computeRestarts",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::conditionCall",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::conditionMessage",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::data.frame",
+      "domains": ["data-time"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::deparse",
+      "domains": ["calls-promises", "io-platform"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::detach",
+      "domains": ["core-namespaces", "environments", "package-execution"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::do.call",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::eval",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::eval.parent",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::evalq",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::factor",
+      "domains": ["data-time"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::for",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::force",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::formals",
+      "domains": ["calls-promises", "value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::format",
+      "domains": ["io-platform", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::format.default",
+      "domains": ["io-platform", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::getHook",
+      "domains": ["environments", "package-execution"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::getOption",
+      "domains": ["environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::if",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::invisible",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::invokeRestart",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::is.numeric.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::is.numeric.POSIXt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::is.numeric.difftime",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::is.ordered",
+      "domains": ["data-time", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::lapply",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::length",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::lengths",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::list",
+      "domains": ["value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::local",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::makeActiveBinding",
+      "domains": ["environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mapply",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::match",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::match.arg",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::match.call",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::match.fun",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::matrix",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mean.Date",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mean.POSIXct",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mean.default",
+      "domains": ["numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mean.difftime",
+      "domains": ["data-time", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::message",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::missing",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mode",
+      "domains": ["value-types", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::mode<-",
+      "domains": ["value-types", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::names",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "The names/member-replacement contract retains active-binding callback, nested extraction, first-class replacement and broader malformed-object gaps."
+      ]
+    },
+    {
+      "binding": "base::names.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "The names/member-replacement contract retains active-binding callback, nested extraction, first-class replacement and broader malformed-object gaps."
+      ]
+    },
+    {
+      "binding": "base::names<-",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "The names/member-replacement contract retains active-binding callback, nested extraction, first-class replacement and broader malformed-object gaps."
+      ]
+    },
+    {
+      "binding": "base::names<-.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "The names/member-replacement contract retains active-binding callback, nested extraction, first-class replacement and broader malformed-object gaps."
+      ]
+    },
+    {
+      "binding": "base::new.env",
+      "domains": ["environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::next",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::on.exit",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::options",
+      "domains": ["environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::packageStartupMessage",
+      "domains": ["conditions", "package-execution"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::pairlist",
+      "domains": ["value-types"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::parent.frame",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::print",
+      "domains": ["io-platform", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::print.factor",
+      "domains": ["data-time", "io-platform", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::print.proc_time",
+      "domains": ["io-platform", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::quote",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "Replication retains compiled-versus-interpreted lookup/frame differences, unbound symbols and broader diagnostic/call-origin gaps."
+      ]
+    },
+    {
+      "binding": "base::rep.Date",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep.POSIXct",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep.POSIXlt",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep.difftime",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep.factor",
+      "domains": ["data-time", "object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep.int",
+      "domains": ["calls-promises", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "Replication retains compiled-versus-interpreted lookup/frame differences, unbound symbols and broader diagnostic/call-origin gaps."
+      ]
+    },
+    {
+      "binding": "base::rep.numeric_version",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::rep_len",
+      "domains": ["calls-promises", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "Replication retains compiled-versus-interpreted lookup/frame differences, unbound symbols and broader diagnostic/call-origin gaps."
+      ]
+    },
+    {
+      "binding": "base::repeat",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::replicate",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::return",
+      "domains": ["calls-promises", "language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sapply",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::setHook",
+      "domains": ["environments", "package-execution"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::simpleError",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::simpleWarning",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::simplify2array",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sort",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sort.default",
+      "domains": ["object-systems", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sort.int",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::source",
+      "domains": ["io-platform"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::split",
+      "domains": ["data-time", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::stop",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::storage.mode",
+      "domains": ["value-types", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::storage.mode<-",
+      "domains": ["value-types", "vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::structure",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::subset",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::substitute",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::summary.proc_time",
+      "domains": ["io-platform", "numeric-runtime", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::suppressMessages",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::suppressPackageStartupMessages",
+      "domains": ["conditions", "package-execution"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::suppressWarnings",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.call",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.calls",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.frame",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.frames",
+      "domains": ["calls-promises", "environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.function",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.nframe",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.parent",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::sys.parents",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::table",
+      "domains": ["data-time"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::transform",
+      "domains": ["data-time"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::tryCatch",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::unlist",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::unloadNamespace",
+      "domains": ["core-namespaces", "environments", "package-execution"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::vapply",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::warning",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::warningCondition",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::while",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::with",
+      "domains": ["environments", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::with.default",
+      "domains": ["environments", "object-systems"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::withCallingHandlers",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::withRestarts",
+      "domains": ["conditions"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::withVisible",
+      "domains": ["calls-promises"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::within",
+      "domains": ["environments"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "base::{",
+      "domains": ["language-syntax"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "stats::setNames",
+      "domains": ["vector-semantics"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    },
+    {
+      "binding": "utils::person",
+      "domains": ["core-namespaces"],
+      "remainingGaps": [
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ]
+    }
+  ]
+}

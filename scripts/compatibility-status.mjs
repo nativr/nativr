@@ -7,6 +7,12 @@ import { format } from "prettier";
 
 import prettierOptions from "../prettier.config.mjs";
 import { collectOracleV2BindingEvidence } from "./lib/oracle-v2-binding-evidence.mjs";
+import { readCallableDomainSources } from "./lib/callable-domain-inputs.mjs";
+import {
+  buildCallableDomainInventory,
+  checkCallableDomainInventory,
+  serializeCallableDomainInventory,
+} from "./lib/callable-domain-inventory.mjs";
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const statusPath = path.join(root, "compatibility", "status.json");
@@ -35,6 +41,16 @@ const oracleV2 = JSON.parse(
   await readFile(path.join(root, "conformance", "cases", "oracle-v2.json"), "utf8"),
 );
 const recursiveBindingEvidence = collectOracleV2BindingEvidence(oracleV2, capabilities, surface);
+const inventoryPath = "compatibility/callable-domain-inventory.json";
+const inventoryText = await readFile(path.join(root, inventoryPath), "utf8");
+const inventory = buildCallableDomainInventory(await readCallableDomainSources(root));
+checkCallableDomainInventory(
+  inventoryText,
+  await format(serializeCallableDomainInventory(inventory), {
+    ...prettierOptions,
+    filepath: inventoryPath,
+  }),
+);
 const manifestCanonical = JSON.stringify(capabilities);
 const tierNumber = (tier) => Number(tier.slice(1));
 const packageCounts = Object.fromEntries(
@@ -67,6 +83,12 @@ const status = {
     registeredBindings: names.totals.nativrRegisteredNames,
     gnuRNameOverlaps: names.totals.overlappingNames,
     referenceCoreCallableNames: names.totals.referenceCoreCallableNames,
+  },
+  callableInventory: {
+    report: inventoryPath,
+    sha256: createHash("sha256").update(inventoryText, "utf8").digest("hex"),
+    ...inventory.totals,
+    note: "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete.",
   },
   packageCorpus: {
     total: corpus.packages.length,

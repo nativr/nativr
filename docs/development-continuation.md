@@ -93,9 +93,9 @@ Use Node 24 and pnpm 11.17.0. On this host GNU R 4.6.1 is installed per-user; us
 Use LC_ALL/LC_CTYPE/LANG=C for reproducible Windows fixture runs. Never run build/typecheck while
 another process consumes dist. Reuse existing artifacts; do not trigger implicit downloads.
 
-For semantic increments: build serially; regenerate capabilities, name coverage, then status; run
-`pnpm check`, `pnpm conformance`, `pnpm conformance:r` and `pnpm conformance:r:v2`. Run affected
-cached package checks with repeatability observations. Worker/playground changes need
+For semantic increments: build serially; regenerate capabilities, name coverage, callable inventory,
+then status; run `pnpm check`, `pnpm conformance`, `pnpm conformance:r` and `pnpm conformance:r:v2`.
+Run affected cached package checks with repeatability observations. Worker/playground changes need
 `pnpm test:e2e`; packaging changes need `pnpm pack:smoke`. Record real skips/failures explicitly.
 
 Initial verification: HEAD 455e76a, profile 0.355; 24 archive digests match. Five focused files
@@ -1479,3 +1479,19 @@ Strict packed-consumer checking reproduced the missing workspace declarations an
 fix. Offline browser-consumer and package-tools CLI smoke checks pass. All four runtime JavaScript
 hashes match the verified 0.379 build, so no semantic-profile bump or repeated native/corpus run is
 needed for this typing/packaging increment. Continue the callable/domain inventory next.
+
+### Callable/domain inventory v1 (2026-10-22)
+
+The machine-checked [qualified inventory](callable-domain-inventory.md) now covers all 2,553
+bindings in the union of the reference exports and runtime registrations. All 151 causal-linked
+bindings have domain assignments and explicit remaining gaps. Another 2,402 bindings need
+classification. All thirteen domains remain incomplete; empty behavioral matrices stay pending.
+Fifty-three owned validator fixtures pass, and inventory validation is required by pnpm check and
+canonical status. Source hashes and case links are declarations, not a substitute for recorded
+passing oracle gates. The integrated full check passes 2,222 unit tests with 93 opt-in skips, plus
+those 53 validator tests.
+
+Next measurable inventory step: classify remaining core-namespace exports by semantic purpose,
+retaining absent runtime registrations and explicit gaps, then audit bounded matrix declarations
+against maintained tests and passing evidence. Continue shared semantic blockers, dataset/testing
+support and browser/platform gates. Linux and Formula remain separately authorized boundaries.

@@ -666,6 +666,23 @@
     "gnuRNameOverlaps": 782,
     "referenceCoreCallableNames": 2522
   },
+  "callableInventory": {
+    "report": "compatibility/callable-domain-inventory.json",
+    "sha256": "1d9b63b3e55e843c4e21368cf1f2df9a786036a1d77ad9c994658c1e7d31fc71",
+    "callableBindings": 2553,
+    "referenceCallableBindings": 2525,
+    "referenceCallableNames": 2522,
+    "registeredBindings": 809,
+    "qualifiedOverlaps": 781,
+    "registeredOutsideExportSnapshot": 28,
+    "classifiedBindings": 151,
+    "classificationPendingBindings": 2402,
+    "recursiveLinkedBindings": 151,
+    "bindingsWithDeclaredMatrixEvidence": 0,
+    "incompleteBindings": 2553,
+    "incompleteDomains": 13,
+    "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."
+  },
   "packageCorpus": {
     "total": 25,
     "partitions": { "development": 2, "regression": 22, "holdout": 1 },

@@ -11,6 +11,8 @@ for (const command of [
   ["features:check"],
   ["corpus:check"],
   ["compatibility:check"],
+  ["inventory:test"],
+  ["inventory:check"],
   ["lint"],
   ["boundaries"],
   ["typecheck"],
