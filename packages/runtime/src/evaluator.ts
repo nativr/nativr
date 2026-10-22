@@ -4237,14 +4237,19 @@ export class Evaluator {
     const arguments_ = callFrame?.arguments ?? [];
     let dispatchObject = object;
     if (dispatchObject === undefined) {
-      const first = callFrame?.matchedByPosition.get(0) ?? arguments_[0];
-      if (first === undefined) {
+      if (callFrame === undefined) {
         throw new REvaluationError(
           "NRE2214",
           "UseMethod() requires an object or a generic call argument.",
         );
       }
-      dispatchObject = await this.#force(first.promise, context);
+      const first = callFrame.matchedByPosition.get(0) ?? arguments_[0];
+      dispatchObject =
+        first === undefined
+          ? R_NULL
+          : first.promise.missing && first.promise.expression === null
+            ? { type: "symbol", name: "" }
+            : await this.#force(first.promise, context);
     }
     return this.#invokeS3Method(
       generic,

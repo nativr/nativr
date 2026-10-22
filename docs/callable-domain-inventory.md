@@ -9,7 +9,7 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.387, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.388, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
 overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
@@ -104,6 +104,11 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+Omitted-selector evidence adds ten links to five existing UseMethod dimensions. Zero-actual NULL
+selection and literal-missing name selection preserve supplied actuals, method defaults, forcing and
+reference guards. Existing errors/visibility boundaries remain open. Counts stay at 107 partial
+dimensions on nineteen bindings; no full callable or domain completion is inferred.
 
 Explicit-selector forwarding adds seventeen evidence links to nine existing UseMethod/NextMethod
 dimensions, preserving all prior evidence and the total of 107 partial dimensions on nineteen

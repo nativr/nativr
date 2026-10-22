@@ -1857,3 +1857,40 @@ and literal missing arguments. Preserve original promises, method defaults, loca
 behavior and references. Admit only independently verified NULL or missing-symbol dispatch cases;
 keep forwarded-missing diagnostics, nonlocal return and visibility separate. Continue all wider
 completion work under the existing boundaries. No user input is needed for this local step.
+
+### Omitted UseMethod selector increment (profile 0.388)
+
+The omitted-selector baseline reproduced all nine proposed selection mismatches; twelve preservation
+guards already passed. The bounded runtime fix selects NULL for a generic with no supplied actuals
+and an empty-name symbol for a literal missing selected actual. Original actuals, method defaults,
+missing flags, matched-first-formal priority, forcing and references remain intact. The existing
+no-closure guard and forwarded-missing errors remain unchanged. All 21 focused tests and 681 related
+regressions pass, including the prior explicit-selector and class-chain cases.
+
+Four foundation groups and four exact recursive graphs extend evidence. Independent native
+validation passes 38 checks, including eight strict causal controls and one reference invariant. Ten
+links merge into five existing UseMethod dimensions: totals remain 107 partial dimensions on
+nineteen bindings and 169 causal-linked bindings. Two neighboring native observations receive no
+passing credit. Nonlocal return, visibility and the full S3 matrix remain unfinished; no domain or
+callable is declared complete.
+
+The full check passes 3,044 tests with 94 opt-in skips. Checked-in/live/recursive conformance passes
+1,462 / 1,389 / 377, with 55 NativR-only live skips. The complete 24-package checkpoint retains all
+178 input hashes, execution/comparison outcomes and stage statuses from 0.387, with unchanged tiers.
+Repeatability flags match for 177 observations; withr with_timezone changes from false to true in
+this run, but still fails in NativR. This single observation does not establish stable native
+repeatability or a compatibility improvement. The
+[Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.388.0.json) passes
+9/9, including NULL/literal-missing dispatch, method defaults and missing flags through the Worker
+without evaluation network traffic. Required examples take 12.6 / 15.6 / 66.7 seconds within the
+unchanged timeout; this is not release-performance acceptance. Worker gzip is 491.4/512 KiB, and all
+caps pass. Performance and pack evidence remain at 0.380. Public API/protocol, holdout, Linux,
+download and remote-action boundaries remain unchanged.
+
+Next measurable increment: promote the repeated offline abind/numDeriv evidence procedure into
+maintained tooling with explicit cached inputs, pin/profile/artifact checks, repeatability, raw
+output quarantine and safe redacted reports. Distinguish valid blocked package evidence from
+infrastructure failures. Then advance the isolated clean-room runner using a separate versioned
+assisted-report contract that cannot confer original P6/P7 credit. Continue bounded S3 control-flow
+and all wider domain work afterward. Local configuration/tooling work needs no new approval;
+downloads, Linux execution, holdout evaluation and remote actions retain their existing boundaries.

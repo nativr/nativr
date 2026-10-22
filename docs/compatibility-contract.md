@@ -38,6 +38,33 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Omitted UseMethod selectors inside generics (profile 0.388)
+
+Inside an owned generic closure, omitted-selector dispatch uses the original supplied actual matched
+to the first formal, or otherwise the first supplied actual. If there are no actuals, selection uses
+`NULL` and the method still receives an empty argument list. Unused, already forced or locally
+rebound generic defaults do not become supplied arguments. The selected method can use its own
+default while retaining the observed missing flag. Empty dots and zero-formal generics follow the
+same bounded rule.
+
+A literally missing selected actual, such as `g(x=)`, selects on the existing empty-name symbol and
+reaches a `name` method. The original missing promise remains intact for method matching, missing
+flags and defaults. An expression forwarding a missing outer formal is forced normally and retains
+its missing-argument error; it is not converted into a dispatch symbol.
+
+The existing first-formal matching priority, first-actual fallback, dots order, one-time forcing and
+original environment identity survive generic-local rebinding. These guards are independently
+observed and retained alongside nine corrected selection cases. Four foundation groups and four
+exact recursive graphs add bounded evidence, including strict causal controls. No new promise,
+argument-array copy, input-sized allocation or public API is introduced.
+
+The existing no-closure-call-frame guard remains unchanged. Top-level and unusual nested contexts,
+full nonlocal return, visibility, arbitrary missing/default/dots reconstruction, local free-variable
+forwarding, condition origins, S4/group behavior and direct builtin-method continuation remain
+unfinished. The
+[neighboring observations](../conformance/probes/usemethod-omitted-neighboring-gaps.R) receive no
+passing compatibility credit. This increment does not establish complete `UseMethod`.
+
 ### Explicit UseMethod selectors and original arguments (profile 0.387)
 
 A supplied `UseMethod` selector chooses the method and class history while the method receives the
@@ -59,10 +86,10 @@ retains the existing class-search, metadata and call-depth limits.
 
 Evidence covers twenty-one independent native fixtures, four foundation groups and five exact
 recursive graphs with strict causal controls. Generic bodies in this bounded set end directly with
-`UseMethod`; complete nonlocal-return and visibility behavior are not established. Omitted
-selectors, arbitrary selector objects, invalid/explicitly missing selectors, broad default/dots
-reconstruction, full condition attribution, S4/group interactions and direct-method continuation
-remain unfinished. The
+`UseMethod`; complete nonlocal-return and visibility behavior are not established. Omitted selectors
+gain the bounded evidence above in 0.388. Arbitrary selector objects, invalid/explicitly missing
+selectors, broad default/dots reconstruction, full condition attribution, S4/group interactions and
+direct-method continuation remain unfinished. The
 [neighboring observations](../conformance/probes/usemethod-selector-neighboring-gaps.R) grant no
 compatibility credit and do not imply every recorded control currently fails.
 

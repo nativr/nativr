@@ -200,11 +200,24 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-selector-nextmethod-forwarding"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-zero-actual-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-literal-missing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-original-actuals-and-forcing"
             }
           ],
           "remainingGaps": [
             "Selected scalar, array and explicit-class method selection is covered; arbitrary objects and the complete generic-call matrix remain unfinished.",
-            "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished."
+            "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished.",
+            "Selected omitted-selector calls inside owned generics choose NULL when no actual was supplied and name for a literal missing selected actual; existing matched-first-formal and first-supplied fallback behavior remains observed. Arbitrary objects, generic-call contexts and complete S3 dispatch remain unfinished."
           ]
         },
         {
@@ -225,11 +238,20 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-selector-missing-default-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-zero-actual-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-literal-missing-values"
             }
           ],
           "remainingGaps": [
             "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished.",
-            "A supplied NULL selector and selected zero-actual, literal-missing and forwarded-missing flags are observed without injecting the selector as an argument; omitted-selector, invalid/explicitly missing selector, broader default and diagnostic boundaries remain unfinished."
+            "A supplied NULL selector and selected zero-actual, literal-missing and forwarded-missing flags are observed without injecting the selector as an argument; omitted-selector, invalid/explicitly missing selector, broader default and diagnostic boundaries remain unfinished.",
+            "Selected zero-formal/empty-dots calls, forced or unforced generic defaults, local rebinding and literal-missing actuals retain the original argument list; outside-generic invocation, complete missing/default behavior and full diagnostic origins remain unfinished."
           ]
         },
         {
@@ -254,11 +276,20 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-selector-nextmethod-forwarding"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-zero-actual-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-literal-missing-values"
             }
           ],
           "remainingGaps": [
             "Selected .Class suffix/previous history, .Method/.Generic/.Group and unchanged public class labels are observed; arbitrary metadata mutation and full call/environment attribution remain unfinished.",
-            "Selected source expressions, match.call/sys.call argument metadata and selector-derived .Class history survive original-actual forwarding; arbitrary call attributes, metadata mutation and full call/environment attribution remain unfinished."
+            "Selected source expressions, match.call/sys.call argument metadata and selector-derived .Class history survive original-actual forwarding; arbitrary call attributes, metadata mutation and full call/environment attribution remain unfinished.",
+            "Selected NULL/name methods retain the observed .Class/.Method metadata, and initial default dispatch retains NULL .Class; complete call/environment metadata and arbitrary metadata mutation remain unfinished."
           ]
         },
         {
@@ -279,11 +310,20 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-selector-nextmethod-forwarding"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-zero-actual-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-original-actuals-and-forcing"
             }
           ],
           "remainingGaps": [
             "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished.",
-            "Selected selector/name/original forcing order, unused original laziness, second-promise reuse, method-default selection and changed-method-argument continuation are observed; arbitrary control flow, visibility, dots reconstruction and missing/default forcing remain unfinished."
+            "Selected selector/name/original forcing order, unused original laziness, second-promise reuse, method-default selection and changed-method-argument continuation are observed; arbitrary control flow, visibility, dots reconstruction and missing/default forcing remain unfinished.",
+            "Selected generic-default forcing does not invent a supplied actual; method defaults, local rebinding order and memoized original promises retain their observed behavior. General promise/control-flow behavior, nonlocal return, visibility and full condition attribution remain unfinished."
           ]
         },
         {
@@ -296,11 +336,16 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-selector-original-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-omitted-original-reference-graph"
             }
           ],
           "remainingGaps": [
             "Owned implicit and explicitly selected numeric methods preserve tested returned environment references; arbitrary selector/reference combinations and complete identity behavior remain unfinished.",
-            "An explicit integer selector preserves the original environment reference through the selected method and NextMethod; replacing the method formal forwards the second environment reference while retaining the selector chain. Arbitrary returned objects and complete identity behavior remain unfinished."
+            "An explicit integer selector preserves the original environment reference through the selected method and NextMethod; replacing the method formal forwards the second environment reference while retaining the selector chain. Arbitrary returned objects and complete identity behavior remain unfinished.",
+            "An owned generic's local rebinding preserves the original environment as the selected method argument and returned alias; arbitrary reference types, active bindings and complete identity behavior remain unfinished."
           ]
         }
       ]

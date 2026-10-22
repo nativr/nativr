@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 2,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "d21ca40452db104e177f5eeff98515d6605d831797633c08e28cfa73914317bf",
+  "redaction": {
+    "policy": "allowlisted-metadata-sha256-v2",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "rstudioapi", "version": "0.19.0" },
+  "provenance": {
+    "sourceSha256": "f1e3bb445a90aadc07b043493022d120493eba7ff30c0b3055442d8b77d8069a",
+    "artifactSha256": "d3834a7e3c17f04c0808e50afe5fa80575fe87f3ed0ab8fc5c69fbb1ab645ab0",
+    "capabilitySha256": "f915f1842277416e4e531834afb7a76bdfb23d713035525261694ed530d9fdc7",
+    "semanticProfile": "0.388.0",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": false,
+  "inventory": { "nestedTestFiles": 0 },
+  "documentationMetadata": {
+    "policy": "loaded-documentation-signatures-v2",
+    "sourceSha256": "63412081fd4088a83895ab400c22b17d5d7ba68147e53fe5850d9e4bb6a7a9bd",
+    "exportsStatus": "passed",
+    "actual": {
+      "status": "completed",
+      "exportCount": 130,
+      "signatures": {
+        "match": 130,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "expected": {
+      "status": "completed",
+      "exportCount": 130,
+      "signatures": {
+        "match": 130,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "functions": { "passed": 130, "failed": 0, "unexecuted": 0 },
+    "usageOutcomes": { "OK": 101, "NOTE": 0, "WARNING": 0, "ERROR": 0 }
+  },
+  "dependencies": [
+    {
+      "name": "testthat",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "knitr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "rmarkdown",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "clipr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "covr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "curl",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "jsonlite",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "R6",
+      "actualVersion": "4.6.1",
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "withr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    }
+  ],
+  "firstBlocker": {
+    "stage": "installed-documentation",
+    "code": "stage-unexecuted",
+    "path": null,
+    "messageSha256": "b9e3ba4775d9196f36ec9eae1a4ea22e87ed4bbe37190071a1cb930a020144e1"
+  },
+  "runnerDispatch": {
+    "examples": { "outcome": "completed", "firstBlocker": null },
+    "tests": { "outcome": "no-tests", "firstBlocker": null }
+  },
+  "observations": [
+    {
+      "kind": "example",
+      "path": "man/callFun.Rd",
+      "inputSha256": "419535df3ae34a64478ea6173a0fd7707d73020ff18579475fa117323f1ec500",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/hasFun.Rd",
+      "inputSha256": "8d7d1f665074cdef91ceaa38b4db77bbebfd2752dccfcd350ae675a7731ba5b4",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/highlightUi.Rd",
+      "inputSha256": "140ea446a44a52ebe13755ab7ed6d570d1b9f303e10002035e6bcb7b963d95f3",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/isAvailable.Rd",
+      "inputSha256": "d9bf4e6ce9d21cf2354e65cbef3a74eb8ad12b8d0270b2f46b6d5a87852902e2",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/showDialog.Rd",
+      "inputSha256": "6cdccc185a1bc8c6b2415f69236fe75d86b5180c79641f229549dbbac460058d",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    }
+  ],
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reasonSha256": "0312af7e14cc867a5c890b89532a0417aa767469482454231b79f3843169dee0",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "passed",
+      "reasonSha256": "8fd450bc4d91f0f301ff73fbbf900ea1c0ac272b147d2b3b7abec50eea40d656",
+      "discovered": 77,
+      "executed": 77
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reasonSha256": "12e34ea50c744c888da8eabb9bbd2c98ccaff49fa9dcaa5bba789ed65b9bf89c",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "passed",
+      "reasonSha256": "ef36b9180ecc40b3f0344487ecaa6e735807b4e2014f23509c5fcfab26e31cbb",
+      "discovered": 77,
+      "executed": 77
+    },
+    {
+      "id": "documentation",
+      "status": "passed",
+      "reasonSha256": "57b09490f1c6debb46aac797ebbc7bdc5f9aecef043b7c666aa64a6d524329d0",
+      "discovered": 437,
+      "executed": 437
+    },
+    {
+      "id": "installed-documentation",
+      "status": "unexecuted",
+      "reasonSha256": "b9e3ba4775d9196f36ec9eae1a4ea22e87ed4bbe37190071a1cb930a020144e1",
+      "discovered": 14,
+      "executed": 13
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reasonSha256": "faa48c0fe336e4da224a483f2f2ea0b9b275608edcd9758ece9022acf3e808c3",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reasonSha256": "e57542648bf3f7c5c3a126240ed0af656faf096afb83caeb1c93da1034f1f8d5",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "passed",
+      "reasonSha256": "39ddd98f4e71c8fb70c4282eea14c2b9328421e54ed0aa549d64ba4900a1d1e4",
+      "discovered": 5,
+      "executed": 5
+    },
+    {
+      "id": "package-tests",
+      "status": "unexecuted",
+      "reasonSha256": "309d465a73407a8ecdc3b2a29ca2cd83f5080b8d1da830d9e02ed41dbb6e7c03",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "test-output",
+      "status": "passed",
+      "reasonSha256": "4a6c85c164099f1aa10ee20b3ba63eef6c88eae50caf2475fbd3fefea8a8c83a",
+      "discovered": 5,
+      "executed": 5
+    },
+    {
+      "id": "output-order",
+      "status": "passed",
+      "reasonSha256": "9e16ecb6c1e43037c1a3a9a857a42b014080bb79b7916893fae837cc5829e849",
+      "discovered": 5,
+      "executed": 5
+    },
+    {
+      "id": "conditions",
+      "status": "passed",
+      "reasonSha256": "a400da7a1de0e10aa1ad723a3dddd7ed234085e162f08d070c8c3da57eb5749e",
+      "discovered": 5,
+      "executed": 5
+    },
+    {
+      "id": "vignettes",
+      "status": "failed",
+      "reasonSha256": "6807a8634ec24820dba6d789aff0e1002b5d0ddfcbe4c87699df6d974a55c694",
+      "discovered": 21,
+      "executed": 15
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reasonSha256": "2f0257c2bfff6f5cbf56a7ca5bed2d962fcca9da96711692ddea6cef736190e4",
+      "discovered": 101,
+      "executed": 101
+    }
+  ],
+  "comparisons": {
+    "total": 5,
+    "outcomes": { "match": 5 },
+    "repeatability": { "repeatable": 5, "nonrepeatable": 0, "unobserved": 0 }
+  }
+}
