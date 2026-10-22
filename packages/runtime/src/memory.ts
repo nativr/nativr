@@ -259,7 +259,8 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
         case "expression":
           return (
             atomicVectorBytes(item.values.length, 8) +
-            item.values.reduce((n, node) => n + visitAst(node), 0)
+            item.values.reduce((n, node) => n + visitAst(node), 0) +
+            attributeBytes(item.attributes)
           );
         case "formula": {
           const termNodes: AstNode[] = item.terms.map((name) => ({
@@ -338,6 +339,8 @@ export function censusRuntimeMemory(
   checkpoint: () => void,
 ): RuntimeMemoryCensus {
   const seen = new WeakSet<object>();
+  const seenSyntax = new WeakSet<object>();
+  const pendingSyntax: Iterator<unknown>[] = [];
   let nodeCells = 0;
   let vectorBytes = 0;
   let visits = 0;
@@ -443,6 +446,8 @@ export function censusRuntimeMemory(
         return;
       case "expression":
         vectorBytes += value.values.length * 8;
+        visitAttributes(value.attributes);
+        pendingSyntax.push(value.values.values());
         return;
       case "dots":
         vectorBytes += value.arguments.length * 8;
@@ -473,5 +478,31 @@ export function censusRuntimeMemory(
   };
 
   for (const root of roots) visitUnknown(root);
+  // Expression cells may retain runtime objects inside ConstantExpression nodes. Walk owned
+  // syntax iteratively, ignoring spans and diagnostic display trees. Queue newly found
+  // expressions instead of recursing through chains of embedded expression values.
+  while (pendingSyntax.length > 0) {
+    accountVisit();
+    const entry = pendingSyntax[pendingSyntax.length - 1]!.next();
+    if (entry.done) {
+      pendingSyntax.pop();
+      continue;
+    }
+    const value = entry.value;
+    if (typeof value !== "object" || value === null || seenSyntax.has(value)) continue;
+    seenSyntax.add(value);
+    if (Array.isArray(value)) {
+      pendingSyntax.push(value.values());
+    } else if ("kind" in value && value.kind === "ConstantExpression" && "value" in value) {
+      visitValue(value.value as RValue);
+    } else {
+      pendingSyntax.push(
+        Object.entries(value as Record<string, unknown>)
+          .filter(([name]) => name !== "span" && name !== "display" && name !== "bytes")
+          .map(([, child]) => child)
+          .values(),
+      );
+    }
+  }
   return Object.freeze({ nodeCells, vectorCells: Math.ceil(vectorBytes / 8) });
 }

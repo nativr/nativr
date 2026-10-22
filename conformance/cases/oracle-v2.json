@@ -2905,5 +2905,125 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "expression-owned-construction-evaluation-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::expression", "base::eval"],
+    "code": "local({\n  state<-new.env(parent=baseenv());state$events<-integer()\n  program<-base::expression(first={events<-c(events,1L);5L},second={events<-c(events,2L);invisible(9L)})\n  evaluated<-withVisible(eval(program,state))\n  list(named=expression(a=1L,b=owned+2L),duplicate=expression(a=1L,a=2L),\n       empty=expression(),unforced=expression(a=stop(\"owned unforced\")),\n       evaluated=evaluated,events=state$events,\n       tagBindings=c(exists(\"first\",state,inherits=FALSE),exists(\"second\",state,inherits=FALSE)))\n})",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-owned-metadata-reference-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::names<-", "base::attr<-"],
+    "code": "local({\n  owner<-new.env(parent=emptyenv());owner$token<-9L\n  original<-base::expression(1L,2L,3L)\n  names(original)<-c(\"a\",NA_character_,\"\");attr(original,\"owner\")<-owner;attr(original,\"note\")<-\"old\"\n  changed<-original;names(changed)<-\"renamed\";attr(changed,\"note\")<-\"new\"\n  list(original=original,changed=changed,originalOwner=attr(original,\"owner\"),\n       changedOwner=attr(changed,\"owner\"),reference=owner)\n})",
+    "graphAssertions": {
+      "sameNode": [
+        [["originalOwner"], ["reference"]],
+        [["changedOwner"], ["reference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-owned-selector-replacement-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.list"],
+    "code": "local({\n  owner<-new.env(parent=emptyenv());owner$token<-11L\n  original<-base::expression(a=1L,b=owned+2L,c=3L);attr(original,\"owner\")<-owner;attr(original,\"note\")<-\"keep\"\n  replaced<-original;replaced[[2L]]<-quote(updated(4L))\n  selected<-original[c(3L,1L)];missing<-original[c(1L,NA_integer_)]\n  deleted<-original;deleted[[2L]]<-NULL\n  bracket<-original;bracket[1:2]<-base::expression(5L,6L)\n  list(original=original,replaced=replaced,selected=selected,missing=missing,empty=original[integer()],\n       deleted=deleted,bracket=bracket,cells=as.list(replaced),\n       replacedOwner=attr(replaced,\"owner\"),deletedOwner=attr(deleted,\"owner\"),reference=owner)\n})",
+    "graphAssertions": {
+      "sameNode": [
+        [["replacedOwner"], ["reference"]],
+        [["deletedOwner"], ["reference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-owned-conversion-unlist-reference-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.expression", "base::as.list", "base::unlist"],
+    "code": "local({\n  owner<-new.env(parent=emptyenv());owner$token<-13L\n  cell<-structure(1L,note=\"scalar\")\n  source<-list(a=owner,b=quote(owned+2L),c=cell);attr(source,\"note\")<-\"container\";attr(source,\"owner\")<-owner\n  converted<-as.expression(source)\n  atomic<-structure(c(first=7L,second=8L),note=\"atomic\")\n  direct<-base::expression(a=1L,b=owned+2L);attr(direct,\"note\")<-\"direct\"\n  list(source=source,converted=converted,listView=as.list(converted),\n       flattened=unlist(list(outer=converted,tail=owner)),atomic=as.expression(atomic),\n       direct=unlist(direct),convertedOwner=attr(converted,\"owner\"),reference=owner)\n})",
+    "graphAssertions": {
+      "sameNode": [
+        [["source", "a"], ["reference"]],
+        [["converted", "a"], ["reference"]],
+        [["listView", "a"], ["reference"]],
+        [["flattened", "outer.a"], ["reference"]],
+        [["flattened", "tail"], ["reference"]],
+        [["convertedOwner"], ["reference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-owned-replacement-admission-graph",
+    "policy": "exact",
+    "code": "list(\n\"double-integer-cell-env\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[[1L]]<-e;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to environment) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-null-cell-env\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=NULL);before<-x;diagnostic<-tryCatch({x[[1L]]<-e;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to environment) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-env-cell-env\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-as.expression(list(a=e));before<-x;diagnostic<-tryCatch({x[[1L]]<-other;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to environment) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-env-list-wrapper\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[[1L]]<-list(e);NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to list) in [[ assignment\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-env-expression-wrapper\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;x[[1L]]<-as.expression(list(e));list(value=x,source=before,diagnostic=NULL,owner=e,other=other,referenceCell=x[[1L]][[1L]])}),\n\"double-closure\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[[1L]]<-f;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to closure) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-closure-list-wrapper\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[[1L]]<-list(f);NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to list) in [[ assignment\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-builtin\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[[1L]]<-sum;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to builtin) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"double-symbol\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;x[[1L]]<-quote(owned);list(value=x,source=before,diagnostic=NULL,owner=e,other=other,referenceCell=NULL)}),\n\"double-call\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;x[[1L]]<-quote(owned(2L));list(value=x,source=before,diagnostic=NULL,owner=e,other=other,referenceCell=NULL)}),\n\"double-atomic-vector\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;x[[1L]]<-c(2L,3L);list(value=x,source=before,diagnostic=NULL,owner=e,other=other,referenceCell=NULL)}),\n\"single-env\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[1L]<-e;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to environment) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)}),\n\"single-env-list-wrapper\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;x[1L]<-list(e);list(value=x,source=before,diagnostic=NULL,owner=e,other=other,referenceCell=x[[1L]])}),\n\"single-closure\"=local({e<-new.env(parent=emptyenv());e$token<-1L;other<-new.env(parent=emptyenv());other$token<-2L;f<-local({n<-3L;function()n});x<-expression(a=1L);before<-x;diagnostic<-tryCatch({x[1L]<-f;NULL},error=function(err){if(!identical(conditionMessage(err),\"incompatible types (from expression to closure) in subassignment type fix\"))stop(err);conditionMessage(err)});list(value=x,source=before,diagnostic=diagnostic,owner=e,other=other,referenceCell=NULL)})\n)",
+    "graphAssertions": {
+      "sameNode": [
+        [
+          ["double-env-cell-env", "value", "a"],
+          ["double-env-cell-env", "owner"]
+        ],
+        [
+          ["double-env-expression-wrapper", "referenceCell"],
+          ["double-env-expression-wrapper", "owner"]
+        ],
+        [
+          ["single-env-list-wrapper", "value", "a"],
+          ["single-env-list-wrapper", "owner"]
+        ]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-owned-storage-mode-metadata-graph",
+    "policy": "exact",
+    "code": "local({x<-structure(\"owned\",note=\"original\");before<-x;storage.mode(x)<-\"expression\";list(value=x,original=before,kind=typeof(x),note=attr(x,\"note\"))})",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

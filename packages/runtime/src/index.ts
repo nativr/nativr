@@ -6,7 +6,15 @@ export {
   partialMatchWarning,
   partialMatchWarningsEnabled,
 } from "./arguments.js";
-export { embeddedValueAst } from "./language-subset.js";
+export { embeddedValueAst, quoteLanguageNode } from "./language-subset.js";
+export {
+  subsetExpression,
+  extractExpressionElement,
+  extractExpressionMember,
+  replaceExpressionSubset,
+  replaceExpressionElement,
+  replaceExpressionMember,
+} from "./expression-subset.js";
 export { translatePosixCharacterClasses } from "./regex.js";
 export { logicalCondition, parseLogicalString } from "./logical-condition.js";
 export {
@@ -85,6 +93,7 @@ export {
   dataFrameRowCount,
   dataFrameValue,
   doubleVector,
+  expressionValue,
   factorLevels,
   factorLevelVector,
   factorLabelAt,
@@ -151,6 +160,7 @@ export type {
   ElementaryUnaryFunction,
   ElementaryBinaryFunction,
   RAttributes,
+  RAttributedSequence,
   RActiveBinding,
   RBuiltin,
   RBinding,

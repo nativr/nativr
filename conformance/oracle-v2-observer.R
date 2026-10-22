@@ -106,7 +106,8 @@ nativr_oracle_observe_graph <- function(value, max_depth = 64L, max_bindings = 1
       } else {
         lapply(seq_len(length(plain)), function(index) plain[[index]])
       }
-      node$elements <- lapply(items, function(item) walk(item, depth + 1L))
+      # Element edges are ordered arrays; names are represented separately by tags and attributes.
+      node$elements <- unname(lapply(items, function(item) walk(item, depth + 1L)))
       source_names <- if (stored) names(plain) else names(x)
       node$tags <- if (is.null(source_names)) rep(list(NULL), length(items)) else lapply(source_names, function(tag) {
         if (is.na(tag)) NULL else if (Encoding(tag) == "bytes") character_bytes(tag) else tag

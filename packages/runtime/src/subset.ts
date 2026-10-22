@@ -11,6 +11,7 @@ import {
   dataFrameRowCount,
   dataFrameValue,
   doubleVector,
+  expressionValue,
   factorLevels,
   factorLabelAt,
   integerVector,
@@ -641,15 +642,17 @@ export function prepareListMemberTarget(
     return { target: output, coercedAtomic: true };
   }
   if (target.type === "expression") {
-    // General attributed expression storage remains outside the current runtime value model.
     context.allocate(target.values.length);
     return {
-      target: listValue(
-        target.values.map((node) => {
-          context.checkpoint();
-          return quoteNode(node);
-        }),
-      ),
+      target: {
+        ...listValue(
+          target.values.map((node) => {
+            context.checkpoint();
+            return quoteNode(node);
+          }),
+        ),
+        attributes: new Map(target.attributes),
+      },
       coercedAtomic: false,
     };
   }
@@ -2250,10 +2253,8 @@ function normalizeDataFrameColumn(
     const rows = dataFrameRowCount(target);
     if (replacement.values.length === rows) return replacement;
     if (replacement.values.length === 1 && rows > 1) {
-      return {
-        type: "expression",
-        values: Object.freeze(Array.from({ length: rows }, () => replacement.values[0]!)),
-      };
+      context.allocate(rows);
+      return expressionValue(Array.from({ length: rows }, () => replacement.values[0]!));
     }
     throw new REvaluationError("NRE2116", "Data-frame columns have incompatible row counts.", {
       details: { rows, columns: target.length, replacementLength: replacement.values.length },

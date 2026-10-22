@@ -53,3 +53,42 @@ it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
     expect(result.stdout.replaceAll("\r\n", "\n").trimEnd()).toBe(expected.join("\n"));
   },
 );
+
+const metadataProbe = `local({
+  owner<-new.env(parent=emptyenv());owner$token<-7L
+  x<-as.expression(list(first=owner,second=2L));attr(x,"owner")<-owner
+  observed<-nativr_oracle_observe_graph(x);node<-observed$graph[[observed$root]]
+  copied<-x;names(copied)<-c("same","same")
+  duplicated<-nativr_oracle_observe_graph(copied)$graph[[1L]]
+  names(copied)<-c(NA_character_,"")
+  missing<-nativr_oracle_observe_graph(copied)$graph[[1L]]
+  c(is.list(node$elements)&&is.null(names(node$elements)),
+    identical(node$tags,list("first","second")),
+    identical(lapply(node$attributes,function(item)item$name),list("names","owner")),
+    identical(node$elements[[1L]],node$attributes[[2L]]$node),
+    identical(observed$graph[[node$elements[[1L]]]]$typeof,"environment"),
+    identical(observed$graph[[node$elements[[2L]]]]$values[[1L]]$value,2L),
+    is.null(names(duplicated$elements))&&identical(duplicated$tags,list("same","same")),
+    is.null(names(missing$elements))&&identical(missing$tags,list(NULL,"")))
+})`;
+
+it("keeps named expression edges ordered and metadata/reference edges separate", async () => {
+  const r = await createR({ execution: "inline", assets });
+  try {
+    expect(await r.eval(`${observer}\n${metadataProbe}`)).toEqual(Array(8).fill(true));
+  } finally {
+    await r.dispose();
+  }
+});
+
+it.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
+  "verifies named expression edge arrays and metadata with the native observer",
+  async () => {
+    const result = await capturePackageOracleScript({
+      source: `${observer}\ncat(${metadataProbe},sep="\\n")`,
+      rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+    });
+    expect(result.status, result.stderr).toBe("completed");
+    expect(result.stdout.replaceAll("\r\n", "\n").trimEnd()).toBe(Array(8).fill("TRUE").join("\n"));
+  },
+);

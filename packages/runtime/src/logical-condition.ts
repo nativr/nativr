@@ -19,15 +19,13 @@ export function logicalCondition(value: RValue): boolean {
         ? value.length
         : value.type === "environment"
           ? value.bindings.size
-          : value.type === "expression"
-            ? value.values.length
-            : value.type === "language"
-              ? (languageAstEntries(value.expression)?.nodes.length ?? 1)
-              : value.type === "formula"
-                ? value.response === undefined
-                  ? 2
-                  : 3
-                : 1;
+          : value.type === "language"
+            ? (languageAstEntries(value.expression)?.nodes.length ?? 1)
+            : value.type === "formula"
+              ? value.response === undefined
+                ? 2
+                : 3
+              : 1;
   const invalid = (message: string): never => {
     throw new RTypeMismatchError("NRT3399", message);
   };

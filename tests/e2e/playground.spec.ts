@@ -1393,6 +1393,40 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText("true");
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
+
+  // Owned native expression assertion: named-expression-eval-no-name-assignment.
+  await page
+    .locator("#source")
+    .fill(
+      'local({e<-new.env(parent=baseenv());e$owned<-10L;x<-expression(a=owned+1L,b=owned+2L);v<-eval(x,e);identical(v,12L)&&!exists("a",e,inherits=FALSE)&&!exists("b",e,inherits=FALSE)&&identical(e$owned,10L)})',
+    );
+  await profiledRun(page, "required-137");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native expression assertion: environment-attribute-reference.
+  await page
+    .locator("#source")
+    .fill(
+      'local({e<-new.env(parent=emptyenv());e$token<-1L;x<-expression(a=1L);attr(x,"owner")<-e;y<-x;attr(y,"note")<-"new";e$token<-2L;identical(attr(x,"owner"),e)&&identical(attr(y,"owner"),e)&&identical(attr(y,"owner")$token,2L)&&is.null(attr(x,"note"))})',
+    );
+  await profiledRun(page, "required-138");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native expression assertion: double-bracket-replacement-copy.
+  await page
+    .locator("#source")
+    .fill(
+      'local({x<-expression(a=1L,b=2L);attr(x,"note")<-"owned";y<-x;y[[1L]]<-quote(owned+3L);identical(x[[1L]],1L)&&identical(y[[1L]],quote(owned+3L))&&identical(names(y),c("a","b"))&&identical(attr(y,"note"),"owned")})',
+    );
+  await profiledRun(page, "required-139");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

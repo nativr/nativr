@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.393.0",
+  "semanticProfileVersion": "0.394.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "98a14ab64eb028009599b5f89c735d80f31b9c8c6809479f8d1033fffa128b07",
+    "capabilities": "0a69098d19d293d5ce770e056c63bb264c36bae31e9a5dd12c69577705d79cea",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "0dfe435d87d84fa9269fe9e8f2f50dc9776a069b5ac0d1432036a228ab237ec2",
-    "oracleV2": "e0e606f5cd70c686f924cbefe06715780e2b47b0b3428f527ff4cbd24a61e3c2",
+    "foundation": "31087fcef49160718107d6ed4511176f88fb87c7aa5b4a629c4a7374ddd27bcf",
+    "oracleV2": "64e784c9d234830377a08585cd2276fbf88050b6a45a08ffb36c9ee944b62b0b",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "f783a8082d32f02edd2a18ec83a993ae7a5a6d8e9de2de7ed6825ed4bac9c3b5"
+    "annotations": "a230c1d53654aa130a890d9a15a6174b6fb8b389fb3f53278ca9a766d73aa1b5"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -52,8 +52,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 169,
-    "bindingsWithDeclaredMatrixEvidence": 20,
+    "recursiveLinkedBindings": 172,
+    "bindingsWithDeclaredMatrixEvidence": 25,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -64,17 +64,17 @@
       "requirement": "Every GNU R expression and assignment form normalizes without losing semantics.",
       "completion": "incomplete",
       "assignedBindings": 30,
-      "recursiveLinkedBindings": 8,
+      "recursiveLinkedBindings": 9,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "errors",
@@ -83,8 +83,8 @@
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "visibility",
@@ -93,8 +93,8 @@
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "identity",
@@ -109,12 +109,12 @@
       "requirement": "NULL, logical, integer, double, complex, character, raw, list, pairlist, expression, symbol, language, environment, closure, builtin/special, promise, external pointer, weak reference, and S4 shapes.",
       "completion": "incomplete",
       "assignedBindings": 147,
-      "recursiveLinkedBindings": 17,
+      "recursiveLinkedBindings": 18,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 147,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 145,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
@@ -128,8 +128,8 @@
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 147,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 145,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
@@ -143,8 +143,8 @@
         },
         {
           "dimension": "identity",
-          "pendingBindings": 147,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 145,
+          "partialDeclaredBindings": 2
         }
       ]
     },
@@ -154,17 +154,17 @@
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
       "assignedBindings": 164,
-      "recursiveLinkedBindings": 55,
+      "recursiveLinkedBindings": 56,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 151,
-          "partialDeclaredBindings": 13
+          "pendingBindings": 149,
+          "partialDeclaredBindings": 15
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 152,
-          "partialDeclaredBindings": 12
+          "pendingBindings": 151,
+          "partialDeclaredBindings": 13
         },
         {
           "dimension": "errors",
@@ -173,18 +173,18 @@
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 151,
-          "partialDeclaredBindings": 13
+          "pendingBindings": 150,
+          "partialDeclaredBindings": 14
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 157,
-          "partialDeclaredBindings": 7
+          "pendingBindings": 156,
+          "partialDeclaredBindings": 8
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 152,
-          "partialDeclaredBindings": 12
+          "pendingBindings": 150,
+          "partialDeclaredBindings": 14
         },
         {
           "dimension": "identity",
@@ -203,8 +203,8 @@
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 203,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 202,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "boundaries",
@@ -223,13 +223,13 @@
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 203,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 202,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 203,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 202,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "identity",
@@ -244,12 +244,12 @@
       "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type.",
       "completion": "incomplete",
       "assignedBindings": 420,
-      "recursiveLinkedBindings": 62,
+      "recursiveLinkedBindings": 64,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 411,
-          "partialDeclaredBindings": 9
+          "pendingBindings": 408,
+          "partialDeclaredBindings": 12
         },
         {
           "dimension": "boundaries",
@@ -263,8 +263,8 @@
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 411,
-          "partialDeclaredBindings": 9
+          "pendingBindings": 408,
+          "partialDeclaredBindings": 12
         },
         {
           "dimension": "visibility",
@@ -278,8 +278,8 @@
         },
         {
           "dimension": "identity",
-          "pendingBindings": 416,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 413,
+          "partialDeclaredBindings": 7
         }
       ]
     },
@@ -7060,9 +7060,50 @@
         "domains": ["value-types", "vector-semantics"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": ["expression-owned-conversion-unlist-reference-graph"],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned list conversion retains container/cell attributes and environment references; atomic conversion drops container metadata. Full storage/coercion, language graphs and dispatch remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned list conversion retains container/cell attributes and environment references; atomic conversion drops container metadata. Full storage/coercion, language graphs and dispatch remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned list conversion retains container/cell attributes and environment references; atomic conversion drops container metadata. Full storage/coercion, language graphs and dispatch remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
-        "The complete conversion/storage matrix, missing-value preservation, attributes, length/error boundaries and dispatch behavior remain unfinished.",
-        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+        "The complete conversion/storage matrix, missing-value preservation, attributes, length/error boundaries and dispatch behavior remain unfinished."
       ]
     },
     {
@@ -7187,7 +7228,52 @@
         "domains": ["value-types", "vector-semantics"]
       },
       "completion": "incomplete",
-      "recursiveCaseIds": ["apply-class-conversion-and-extraction"],
+      "recursiveCaseIds": [
+        "apply-class-conversion-and-extraction",
+        "expression-owned-conversion-unlist-reference-graph",
+        "expression-owned-selector-replacement-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned expression conversion retains names, attributes and opaque environment aliases without evaluation. All storage classes, methods, malformed objects and arbitrary graph shapes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned expression conversion retains names, attributes and opaque environment aliases without evaluation. All storage classes, methods, malformed objects and arbitrary graph shapes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned expression conversion retains names, attributes and opaque environment aliases without evaluation. All storage classes, methods, malformed objects and arbitrary graph shapes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
       ]
@@ -8007,9 +8093,50 @@
         "domains": ["vector-semantics"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": ["expression-owned-metadata-reference-graph"],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-metadata-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned expression attribute replacement leaves the source unchanged and retains shared environment-valued metadata. General attributes<-, structural constraints and all storage/method routes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-metadata-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned expression attribute replacement leaves the source unchanged and retains shared environment-valued metadata. General attributes<-, structural constraints and all storage/method routes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-metadata-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned expression attribute replacement leaves the source unchanged and retains shared environment-valued metadata. General attributes<-, structural constraints and all storage/method routes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
-        "Index/replacement/coercion, structural attributes, empty and malformed objects, dispatch and identity behavior remain incompletely evidenced.",
-        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+        "Index/replacement/coercion, structural attributes, empty and malformed objects, dispatch and identity behavior remain incompletely evidenced."
       ]
     },
     {
@@ -10793,7 +10920,49 @@
         "evaluation-call-frame-fresh-environment-parents",
         "evaluation-call-frame-missing-expressions",
         "evaluation-control-return-boundaries",
-        "evaluation-origin-environments"
+        "evaluation-origin-environments",
+        "expression-owned-construction-evaluation-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        }
       ],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
@@ -10944,9 +11113,63 @@
         "domains": ["calls-promises", "language-syntax"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": ["expression-owned-construction-evaluation-graph"],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned empty/named/duplicate constructors retain quoted syntax, do not force cells and do not assign argument tags. Missing cells, complete source metadata and arbitrary constructor contexts remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned empty/named/duplicate constructors retain quoted syntax, do not force cells and do not assign argument tags. Missing cells, complete source metadata and arbitrary constructor contexts remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned empty/named/duplicate constructors retain quoted syntax, do not force cells and do not assign argument tags. Missing cells, complete source metadata and arbitrary constructor contexts remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-construction-evaluation-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned empty/named/duplicate constructors retain quoted syntax, do not force cells and do not assign argument tags. Missing cells, complete source metadata and arbitrary constructor contexts remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
-        "AST/source metadata, argument matching and forcing, quoted/evaluated forms and error/visibility behavior remain incompletely evidenced.",
-        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+        "AST/source metadata, argument matching and forcing, quoted/evaluated forms and error/visibility behavior remain incompletely evidenced."
       ]
     },
     {
@@ -16646,6 +16869,7 @@
       },
       "completion": "incomplete",
       "recursiveCaseIds": [
+        "expression-owned-metadata-reference-graph",
         "names-dispatch-next-method",
         "names-dispatch-setter",
         "replication-posixlt-names"
@@ -16655,6 +16879,10 @@
           "dimension": "attributes",
           "status": "partial-declared",
           "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-metadata-reference-graph"
+            },
             {
               "suite": "oracle-v2",
               "caseId": "names-dispatch-next-method"
@@ -16669,7 +16897,8 @@
             }
           ],
           "remainingGaps": [
-            "Observed owned-method attributes, class-preserving fallback, POSIXlt year names and balanced transitions do not establish every attribute/container combination."
+            "Observed owned-method attributes, class-preserving fallback, POSIXlt year names and balanced transitions do not establish every attribute/container combination.",
+            "Owned expression names retain empty/missing entries and short-name padding while preserving unrelated attributes. Overlong-name diagnostic parity, encoded names and all dispatch/storage combinations remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
           ]
         },
         {
@@ -16678,10 +16907,15 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "expression-owned-metadata-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "replication-posixlt-names"
             }
           ],
           "remainingGaps": [
+            "Owned expression names retain empty/missing entries and short-name padding while preserving unrelated attributes. Overlong-name diagnostic parity, encoded names and all dispatch/storage combinations remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
             "The observed POSIXlt setter pads a short names vector with NA and removes names with NULL; this does not establish empty, long or malformed names behavior for every container."
           ]
         },
@@ -16708,6 +16942,10 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "expression-owned-metadata-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "names-dispatch-next-method"
             },
             {
@@ -16716,7 +16954,8 @@
             }
           ],
           "remainingGaps": [
-            "Owned class/default/registered dispatch, tagged arguments and primitive NextMethod fallback are covered; other container kinds and dispatch combinations remain unaudited."
+            "Owned class/default/registered dispatch, tagged arguments and primitive NextMethod fallback are covered; other container kinds and dispatch combinations remain unaudited.",
+            "Owned expression names retain empty/missing entries and short-name padding while preserving unrelated attributes. Overlong-name diagnostic parity, encoded names and all dispatch/storage combinations remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
           ]
         },
         {
@@ -23990,6 +24229,7 @@
       },
       "completion": "incomplete",
       "recursiveCaseIds": [
+        "expression-owned-conversion-unlist-reference-graph",
         "unlist-recursive-control-observations",
         "unlist-recursive-expression-boundaries",
         "unlist-recursive-hierarchical-names",
@@ -24001,6 +24241,10 @@
           "dimension": "attributes",
           "status": "partial-declared",
           "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            },
             {
               "suite": "oracle-v2",
               "caseId": "unlist-recursive-expression-boundaries"
@@ -24015,7 +24259,8 @@
             }
           ],
           "remainingGaps": [
-            "Selected hierarchical names, missing names versus literal NA, retained opaque attributes and dropped scalar/container attributes are specified. Full name encodings/bytes, malformed names and expression attributes remain unfinished."
+            "Owned nested named expressions contribute hierarchical names and retain opaque environment aliases; direct expression input remains unchanged. Complete expression containers, encoded names, dispatch and cyclic/resource behavior remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
+            "Selected hierarchical names, missing names versus literal NA, retained opaque attributes and dropped scalar/container attributes are specified. Full name encodings/bytes, malformed names and general expression metadata propagation remain unfinished."
           ]
         },
         {
@@ -24028,7 +24273,7 @@
             }
           ],
           "remainingGaps": [
-            "Selected empty containers, empty type precedence and root-versus-nested expression boundaries are specified. Named expression representation and exhaustive nesting, cyclic and resource boundaries remain unfinished."
+            "Selected empty containers, empty type precedence and root-versus-nested expression boundaries are specified. Exhaustive nesting, arbitrary expression metadata, cyclic and resource boundaries remain unfinished."
           ]
         },
         {
@@ -24050,6 +24295,10 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "unlist-recursive-expression-boundaries"
             },
             {
@@ -24058,13 +24307,18 @@
             }
           ],
           "remainingGaps": [
-            "Explicit graph checks cover selected environment and closure-environment alias edges. The observer does not deduplicate other value kinds; general promise, arbitrary object and cyclic identity behavior remain unfinished."
+            "Explicit graph checks cover selected environment and closure-environment alias edges. The observer does not deduplicate other value kinds; general promise, arbitrary object and cyclic identity behavior remain unfinished.",
+            "Owned nested named expressions contribute hierarchical names and retain opaque environment aliases; direct expression input remains unchanged. Complete expression containers, encoded names, dispatch and cyclic/resource behavior remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
           ]
         },
         {
           "dimension": "ordinary",
           "status": "partial-declared",
           "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-owned-conversion-unlist-reference-graph"
+            },
             {
               "suite": "oracle-v2",
               "caseId": "unlist-recursive-expression-boundaries"
@@ -24079,6 +24333,7 @@
             }
           ],
           "remainingGaps": [
+            "Owned nested named expressions contribute hierarchical names and retain opaque environment aliases; direct expression input remains unchanged. Complete expression containers, encoded names, dispatch and cyclic/resource behavior remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
             "The listed cases specify selected recursive heterogeneous leaves and preserved ordinary atomic, factor, shallow and direct non-list routes. Arbitrary expression containers and complete dispatch/storage combinations remain unfinished."
           ]
         },
@@ -24111,7 +24366,7 @@
       ],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
-        "The bounded recursive heterogeneous-leaf cases do not establish complete unlist behavior. Named expression entries and attributes, arbitrary embedded expression containers, full name encoding/byte composition, malformed names, complete S3/S4 and condition origins, and exhaustive deep/cyclic/resource behavior remain unfinished. The existing structure source-attribute insertion-order discrepancy is retained as a separate constructor gap; the revised unlist assertion checks input nonmutation without claiming that order fixed."
+        "The bounded recursive heterogeneous-leaf cases do not establish complete unlist behavior. Arbitrary embedded expression containers beyond the bounded profile 0.394 cases, full name encoding/byte composition, malformed names, complete S3/S4 and condition origins, and exhaustive deep/cyclic/resource behavior remain unfinished. The existing structure source-attribute insertion-order discrepancy is retained as a separate constructor gap; the revised unlist assertion checks input nonmutation without claiming that order fixed."
       ]
     },
     {

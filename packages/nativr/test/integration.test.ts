@@ -13895,12 +13895,13 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.393.0",
-      languageSubsetVersion: "0.393.0",
+      semanticProfileVersion: "0.394.0",
+      languageSubsetVersion: "0.394.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       recursiveUnlistHeterogeneousLeaves: "supported",
+      expressionNamesAndAttributes: "supported",
       formula: "supported",
       pipe: "supported",
       namespaceExportPattern: "supported",
@@ -20776,7 +20777,11 @@ NeedsCompilation: no
       sources: ["x", "1 + y"],
     });
     await expect(runtime.eval("x <- 4\ny <- 2\neval(expression(x, 1 + y))")).resolves.toBe(3);
-    await expect(runtime.eval("eval(expression(answer = 42))\nanswer")).resolves.toBe(42);
+    await expect(
+      runtime.eval(
+        'local({value<-eval(expression(answer=42));identical(value,42)&&!exists("answer",inherits=FALSE)})',
+      ),
+    ).resolves.toBe(true);
     await expect(
       runtime.eval(
         "e <- expression(x, 1 + y)\nc(typeof(e), mode(e), length(e), lengths(e), is.expression(e), is.language(e), is.vector(e), is.recursive(e))",

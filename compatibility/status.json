@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.393.0",
-  "capabilityManifestHash": "8e1cdb406d7a8cebb3096e445cacdaf48317ce7c915f65e2b76765e00586a4aa",
+  "semanticProfileVersion": "0.394.0",
+  "capabilityManifestHash": "d505f5b3cf4e4d85dd0017d97f1684ab2a5c3f92ee8cec8a651fb7486fcfe37d",
   "evidence": {
-    "checkedInConformanceCases": 1480,
-    "liveREligibleCases": 1407,
+    "checkedInConformanceCases": 1486,
+    "liveREligibleCases": 1413,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 395,
-    "recursiveBehaviorallyProvenBindings": 169,
+    "recursiveOracleV2Cases": 401,
+    "recursiveBehaviorallyProvenBindings": 172,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -61,6 +61,10 @@
         "binding": "base::as.character",
         "cases": ["factor-na-label-coercion-grouping-and-matching"]
       },
+      {
+        "binding": "base::as.expression",
+        "cases": ["expression-owned-conversion-unlist-reference-graph"]
+      },
       { "binding": "base::as.factor", "cases": ["factor-coercion-nondispatch-and-signatures"] },
       {
         "binding": "base::as.function",
@@ -71,7 +75,14 @@
         "cases": ["logical-mode-function", "logical-mode-function-errors"]
       },
       { "binding": "base::as.integer", "cases": ["simplification-lengths-and-integer-coercion"] },
-      { "binding": "base::as.list", "cases": ["apply-class-conversion-and-extraction"] },
+      {
+        "binding": "base::as.list",
+        "cases": [
+          "apply-class-conversion-and-extraction",
+          "expression-owned-conversion-unlist-reference-graph",
+          "expression-owned-selector-replacement-graph"
+        ]
+      },
       { "binding": "base::as.list.Date", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.list.difftime", "cases": ["time-class-list-conversion"] },
       { "binding": "base::as.list.factor", "cases": ["factor-list-conversion-and-dispatch"] },
@@ -129,6 +140,7 @@
       { "binding": "base::as.single.default", "cases": ["logical-mode-single"] },
       { "binding": "base::as.symbol", "cases": ["logical-mode-symbol"] },
       { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
+      { "binding": "base::attr<-", "cases": ["expression-owned-metadata-reference-graph"] },
       {
         "binding": "base::body",
         "cases": [
@@ -194,7 +206,8 @@
           "evaluation-call-frame-fresh-environment-parents",
           "evaluation-call-frame-missing-expressions",
           "evaluation-control-return-boundaries",
-          "evaluation-origin-environments"
+          "evaluation-origin-environments",
+          "expression-owned-construction-evaluation-graph"
         ]
       },
       { "binding": "base::eval.parent", "cases": ["evaluation-call-frame-local-chain"] },
@@ -215,6 +228,10 @@
           "evaluation-origin-restoration-and-defaults",
           "first-class-control-return-scopes"
         ]
+      },
+      {
+        "binding": "base::expression",
+        "cases": ["expression-owned-construction-evaluation-graph"]
       },
       {
         "binding": "base::factor",
@@ -446,6 +463,7 @@
       {
         "binding": "base::names<-",
         "cases": [
+          "expression-owned-metadata-reference-graph",
           "names-dispatch-next-method",
           "names-dispatch-setter",
           "replication-posixlt-names"
@@ -779,6 +797,7 @@
       {
         "binding": "base::unlist",
         "cases": [
+          "expression-owned-conversion-unlist-reference-graph",
           "unlist-recursive-control-observations",
           "unlist-recursive-expression-boundaries",
           "unlist-recursive-hierarchical-names",
@@ -882,7 +901,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "e1ff0d2b816e1f3fdd1b8467c29934da628bda1fd3f6c2ddc5f616a5260bf5b1",
+    "sha256": "cd4b2b33edfd9e747a3408de72c850dccdaecc6225a95bc4f69d1cbf65dbaaf0",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -891,8 +910,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 169,
-    "bindingsWithDeclaredMatrixEvidence": 20,
+    "recursiveLinkedBindings": 172,
+    "bindingsWithDeclaredMatrixEvidence": 25,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

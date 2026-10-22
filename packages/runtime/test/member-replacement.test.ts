@@ -10,6 +10,7 @@ import {
   characterVector,
   complexVector,
   doubleVector,
+  expressionValue,
   integerVector,
   isMissing,
   listValue,
@@ -92,7 +93,7 @@ describe("default member replacement storage", () => {
         span,
       },
     ];
-    const result = prepare({ type: "expression", values: nodes });
+    const result = prepare(expressionValue(nodes));
     expect(result.coercedAtomic).toBe(false);
     expect(result.target.values[0]).toEqual({ type: "symbol", name: "unbound" });
     expect(result.target.values[1]).toEqual(integerVector([2]));

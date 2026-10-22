@@ -38,6 +38,58 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Expression names and attributes (profile 0.394)
+
+Expression storage carries an immutable cell array and attribute map. Constructor argument tags
+become names without evaluating cells or turning those tags into assignments. The bounded fixtures
+cover duplicate, empty and missing names, name padding/removal, ordinary attributes, environment
+references, copy-on-modify behavior, and explicit class/dimension storage. General `attributes<-`
+remains unsupported; its two native observations are retained as gaps.
+
+`as.list(expression)` and `as.expression(list)` preserve container attributes and referenced values.
+`as.expression(atomic)` drops container attributes, including names. Selected `[` and `[[` routes
+reuse owned list indexing without evaluating syntax cells; replacement preserves source values and
+embedded environment/closure identity. Complete multidimensional expression indexing is outside this
+boundary. Named expressions nested in recursive `unlist` contribute hierarchical names; root
+expressions remain unchanged. Equality compares metadata and quoted cell values, including opaque
+reference identity, rather than relying on display text.
+
+A separate native fixture verifies `storage.mode(x) <- "expression"` for an attributed character
+value: the result retains its ordinary attribute and the original value remains unchanged. This
+bounded replacement route differs from the direct `as.expression(atomic)` conversion above.
+
+Separate native probes distinguish replacement admission from retained references: the sampled
+direct environment/closure assignments fail for `[` and `[[`, ordinary builtins fail for `[[`, and
+list RHS values have the observed distinct `[[` diagnostic. A `[[` expression wrapper remains a
+nested expression cell; `[` list wrappers may contain shared environments. Existing-name `$`
+replacement retains expression storage and supports the observed reference values. These probes do
+not settle every RHS storage type, malformed index or diagnostic-precedence combination.
+
+The public expression snapshot and Worker protocol remain sources-only. They omit expression
+names/attributes and do not provide a lossless metadata round trip. Serialized expression loading,
+full source-reference/parse-data behavior, arbitrary language graphs, general S3/S4 semantics and
+metadata propagation through every transformation remain unfinished. Migrating internal expression
+constructors does not establish the semantics of `rep`, `length<-`, `head`, `tail`, `append` or
+every coercion. The independent native fixture for `structure` attribute ordering remains a separate
+gap. Shallow `unlist` expression-name propagation and expression matrix implicit S3 chains also
+remain unfinished. Object-size and resident-memory accounting include expression attributes and
+retained cell values, with bounded traversal of embedded expression chains and cycle/reference
+controls.
+
+Oracle v2 keeps expression elements in an ordered array, with tags and attributes recorded
+separately. Its observer removes the incidental names of the element transport list; it preserves
+the observed expression names and reference graph. This corrects the transport shape for named
+expressions without weakening graph assertions or changing the public protocol.
+
+The
+[verification record](../compatibility/platform-evidence/expression-metadata-windows-0.394.0.json)
+records 3,352 passing production tests, 1,486 checked-in cases, 1,413 live GNU R cases and 401
+recursive cases. All twelve browser tests pass; the selected four-package refresh preserves all 49
+observations and prior tiers. Six new foundation groups and six recursive groups retain the frozen
+45-assertion acceptance set and separately validated replacement-admission/storage-mode controls.
+The final package-checkpoint tests and all-source types are recorded separately from the full
+production gate. All thirteen semantic domains remain incomplete.
+
 ### Nested package-test execution evidence (runtime profile 0.393 unchanged)
 
 The host checker applies `nested-execution-closure-v1`: its package-test inventory includes nested R
@@ -90,14 +142,15 @@ bounded preservation observations. Profile 0.393 passes the full production chec
 [verification record](../compatibility/platform-evidence/unlist-recursive-windows-0.393.0.json)
 identifies the exact inputs, five NativR-only resource guards and remaining gaps.
 
-Named expression entries and attributes, and the existing `structure` source-attribute insertion
-order discrepancy, remain explicit gaps in
-[`unlist-recursive-gaps.R`](../conformance/probes/unlist-recursive-gaps.R), outside the 42 accepted
-fixtures. Arbitrary embedded expression containers, full name encodings and byte composition,
-malformed names, exhaustive deep/cyclic/resource behavior, complete S3/S4 dispatch and condition
-origins remain unfinished. NativR-only resource/recovery checks do not supply native parity credit.
-No callable or semantic domain is complete, and no package compatibility improvement is inferred
-from these owned cases.
+The original named-expression assertion in
+[`unlist-recursive-gaps.R`](../conformance/probes/unlist-recursive-gaps.R) also passes as a separate
+profile 0.394 regression. Its existing `structure` source-attribute insertion-order discrepancy
+remains unfinished; neither original belongs to the 42 profile 0.393 acceptance fixtures. Arbitrary
+embedded expression containers, full name encodings and byte composition, malformed names,
+exhaustive deep/cyclic/resource behavior, complete S3/S4 dispatch and condition origins remain
+unfinished. NativR-only resource/recovery checks do not supply native parity credit. No callable or
+semantic domain is complete, and no package compatibility improvement is inferred from these owned
+cases.
 
 The extended recursive path also applies a NativR-only resource boundary to name construction.
 Cumulative inherited byte copies, temporary composed/numbered UTF-8 prefixes and final name byte
@@ -494,8 +547,9 @@ model. Growth, conversion and recursive dispatch retain allocation, cancellation
 Ninety-two independently authored GNU R parity fixtures, shared-storage unit tests and session
 recovery tests cover this increment. Nine foundation groups and ten recursive groups include causal
 controls and an explicit shared-environment graph. Metadata and diagnostic-only groups claim no
-causal coverage. This bounded matrix does not establish full replacement compatibility.
-Named/attributed expressions and attributed language remain open, with owned reproductions in
+causal coverage. This bounded matrix does not establish full replacement compatibility. Profile
+0.394 adds bounded named/attributed expression replacement cases. General expression replacement and
+attributed language remain open, with owned reproductions in
 [dollar-member-gaps.R](../conformance/probes/dollar-member-gaps.R). Final deletion from an
 attributed pairlist also remains incomplete: native R can attach its attributes to NULL, which the
 immutable NULL model does not reproduce. Active-binding callback counts, nested extraction dispatch,
@@ -625,11 +679,12 @@ an input. as.call preserves existing calls and distinguishes invalid input from 
 lists/expressions.
 
 Fifty-three independently authored parity fixtures cover these bounded behaviors, with foundation
-and recursive causal evidence. Attributed symbol/expression conversion results remain an explicit
-unsupported boundary (NRU6250); the general object-attribute model and full attribute validation are
-unfinished. Existing structure attribute-order differences, numeric coercion warning/fallback gaps
-and bytecode-equivalent control remain open. This increment does not establish complete mode,
-reflection or vector-domain compatibility. Public API and Worker protocol remain unchanged.
+and recursive causal evidence. Attributed symbol conversion remains an explicit unsupported boundary
+(NRU6250). Profile 0.394 separately verifies attributed expression storage-mode replacement; the
+general object-attribute model and full attribute validation are unfinished. Existing structure
+attribute-order differences, numeric coercion warning/fallback gaps and bytecode-equivalent control
+remain open. This increment does not establish complete mode, reflection or vector-domain
+compatibility. Public API and Worker protocol remain unchanged.
 
 ### Callable loops, transfers and blocks (profile 0.375)
 
@@ -4459,11 +4514,11 @@ Independent recursive cases `apply-simplification-shapes`, `apply-simplification
 `unlist-shallow-values-types-and-names`, `unlist-name-encoding`,
 `unlist-controls-global-dispatch-and-formals`, `simplification-dimension-gates-and-axis-packing`,
 and `simplification-lengths-and-integer-coercion` compare actual values, attributes, errors, and
-method traces against GNU R 4.6.1. Expression-vector names/attributes and expression-array storage
-remain outside the current value representation. Broader recursive unlist mixed-language/name
-behavior, malformed custom length results, attributes supplied by a custom dimension concatenation
-method, class-preserving c.POSIXct for POSIXct-only dimension classes, and simplification in the
-other apply helpers remain incomplete.
+method traces against GNU R 4.6.1. Profile 0.394 adds bounded expression names/attributes and
+dimension storage; complete expression-array selection remains unfinished. Broader recursive unlist
+mixed-language/name behavior, malformed custom length results, attributes supplied by a custom
+dimension concatenation method, class-preserving c.POSIXct for POSIXct-only dimension classes, and
+simplification in the other apply helpers remain incomplete.
 
 ### Mapped and replicated results (profile 0.350)
 

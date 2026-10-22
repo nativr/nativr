@@ -6,6 +6,7 @@ import {
   complexVector,
   deparseAst,
   doubleVector,
+  expressionValue,
   integerVector,
   listValue,
   logicalVector,
@@ -379,12 +380,9 @@ export function snapshotToValue(
         expression: parseSnapshotExpression(snapshot.source, parseSource),
       };
     case "expression":
-      return {
-        type: "expression",
-        values: Object.freeze(
-          snapshot.sources.map((source) => parseSnapshotExpression(source, parseSource)),
-        ),
-      };
+      return expressionValue(
+        snapshot.sources.map((source) => parseSnapshotExpression(source, parseSource)),
+      );
   }
 }
 

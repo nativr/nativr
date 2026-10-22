@@ -6,11 +6,13 @@ import {
   complexVector,
   createEnvironment,
   doubleVector,
+  expressionValue,
   integerVector,
   listValue,
   logicalVector,
   pairlistValue,
   withDimensions,
+  withAttribute,
   withNames,
 } from "@nativr/runtime";
 import { describe, expect, it } from "vitest";
@@ -272,6 +274,27 @@ describe("public value conversion boundary", () => {
     expect(inputToSnapshot(value)).toEqual(snapshot);
     expectErrorCode(() => snapshotToValue(snapshot), "NRT3206");
     expect(snapshotTransferables(snapshot)).toEqual([]);
+  });
+
+  it("keeps expression metadata outside the existing sources-only snapshot contract", () => {
+    const span = {
+      start: { offset: 0, line: 1, column: 1 },
+      end: { offset: 1, line: 1, column: 2 },
+    };
+    const node = { kind: "IntegerLiteral" as const, value: 1, span };
+    const source = withAttribute(
+      withNames(expressionValue([node]), ["owned"]),
+      "note",
+      characterVector(["keep"]),
+    );
+    const snapshot = valueToSnapshot(source);
+    expect(snapshot).toEqual({ version: 1, type: "expression", sources: ["1L"] });
+    const restored = snapshotToValue(snapshot, () => ({ kind: "Program", body: [node], span }));
+    expect(restored.type).toBe("expression");
+    if (restored.type !== "expression") throw new Error("Expected expression storage.");
+    expect(restored.length).toBe(1);
+    expect(restored.attributes.size).toBe(0);
+    expect(source.attributes.size).toBe(2);
   });
 
   it("decodes friendly scalar, vector, list, logical, and missing values", () => {

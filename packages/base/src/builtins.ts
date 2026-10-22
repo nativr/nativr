@@ -56,6 +56,10 @@ import {
   extractVectorElement,
   extractListMember,
   embeddedValueAst,
+  expressionValue,
+  quoteLanguageNode,
+  subsetExpression,
+  extractExpressionElement,
   functionDebugRegistry,
   integerVector,
   isAtomic,
@@ -473,7 +477,8 @@ const R_BASE_PRIMITIVE_NAMES = new Set([
 ]);
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
 type AttributedSequence = RVector | RPairlist;
-type AttributedRuntimeObject = AttributedSequence | REnvironment | RClosure;
+type MetadataSequence = AttributedSequence | RExpression;
+type AttributedRuntimeObject = MetadataSequence | REnvironment | RClosure;
 const SHELL_QUOTE_TYPES = ["sh", "csh", "cmd", "cmd2"] as const;
 type ShellQuoteType = (typeof SHELL_QUOTE_TYPES)[number];
 
@@ -481,8 +486,12 @@ function isAttributedSequence(value: RValue): value is AttributedSequence {
   return isVector(value) || value.type === "pairlist";
 }
 
+function isMetadataSequence(value: RValue): value is MetadataSequence {
+  return isAttributedSequence(value) || value.type === "expression";
+}
+
 function isAttributedRuntimeObject(value: RValue): value is AttributedRuntimeObject {
-  return isAttributedSequence(value) || value.type === "environment" || value.type === "closure";
+  return isMetadataSequence(value) || value.type === "environment" || value.type === "closure";
 }
 
 function replaceRuntimeAttribute(
@@ -493,7 +502,7 @@ function replaceRuntimeAttribute(
   if (name.length === 0) {
     throw new RTypeMismatchError("NRT3011", "Attribute names must be non-empty.");
   }
-  if (isAttributedSequence(value)) {
+  if (isMetadataSequence(value)) {
     return replacement.type === "null"
       ? withoutAttribute(value, name)
       : withAttribute(value, name, replacement);
@@ -2848,7 +2857,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("is.matrix", ["x"], "behavioral", (invocation) =>
     builtinTypePredicate(invocation, "is.matrix", (value) => {
-      const dimensions = isVector(value) ? vectorDimensions(value) : undefined;
+      const dimensions =
+        isVector(value) || value.type === "expression" ? vectorDimensions(value) : undefined;
       return dimensions?.length === 2;
     }),
   ),
@@ -2856,7 +2866,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinTypePredicate(
       invocation,
       "is.array",
-      (value) => isVector(value) && vectorDimensions(value) !== undefined,
+      (value) =>
+        (isVector(value) || value.type === "expression") && vectorDimensions(value) !== undefined,
     ),
   ),
   defineBuiltin("is.data.frame", ["x"], "behavioral", (invocation) =>
@@ -13897,10 +13908,7 @@ async function builtinDget(invocation: BuiltinInvocation): Promise<RValue> {
     throw new REvaluationError("NRE2195", `Virtual text file '${path}' is empty.`);
   }
   invocation.context.allocate(program.body.length);
-  return invocation.evaluate(
-    { type: "expression", values: Object.freeze([...program.body]) },
-    invocation.currentEnvironment(),
-  );
+  return invocation.evaluate(expressionValue(program.body), invocation.currentEnvironment());
 }
 
 async function builtinUnserialize(invocation: BuiltinInvocation): Promise<RValue> {
@@ -17025,9 +17033,18 @@ function identicalValue(
       const other = right as RExpression;
       return (
         left.values.length === other.values.length &&
+        attributesEqual(left.attributes, other.attributes, options, checkpoint) &&
         left.values.every((value, index) => {
           const otherValue = other.values[index];
-          return otherValue !== undefined && deparseAst(value) === deparseAst(otherValue);
+          return (
+            otherValue !== undefined &&
+            identicalValue(
+              quoteLanguageNode(value),
+              quoteLanguageNode(otherValue),
+              options,
+              checkpoint,
+            )
+          );
         })
       );
     }
@@ -17293,11 +17310,11 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
 
   const maxExpressions = parseExpressionLimit(matched.get("n"));
   if (maxExpressions === 0) {
-    return { type: "expression", values: Object.freeze([]) };
+    return expressionValue([]);
   }
   const program = invocation.parse(parseTextSource(text), maxExpressions);
   invocation.context.allocate(program.body.length);
-  return { type: "expression", values: Object.freeze([...program.body]) };
+  return expressionValue(program.body);
 }
 
 async function builtinSourceFileCopy(invocation: BuiltinInvocation): Promise<REnvironment> {
@@ -17551,7 +17568,7 @@ async function builtinStr2Expression(invocation: BuiltinInvocation): Promise<REx
   }
   const program = invocation.parse(parseTextSource(text));
   invocation.context.allocate(program.body.length);
-  return { type: "expression", values: Object.freeze([...program.body]) };
+  return expressionValue(program.body);
 }
 
 async function builtinStr2Lang(invocation: BuiltinInvocation): Promise<RValue> {
@@ -18884,6 +18901,18 @@ async function builtinInternalSubset(
     }
     return R_NULL;
   }
+  if (target.type === "expression") {
+    if (indices.length > 1) {
+      throw new RUnsupportedFeatureError(
+        "NRU6260",
+        "Multidimensional expression selection remains unsupported.",
+      );
+    }
+    if (!single) return subsetExpression(target, indices[0], invocation.context);
+    if (indices.length !== 1 || indices[0] === undefined)
+      throw new REvaluationError("NRE2204", `${call}() requires one non-missing subscript.`);
+    return extractExpressionElement(target, indices[0], invocation.context, exact);
+  }
   if (!isVector(target) && target.type !== "pairlist") {
     throw new RTypeMismatchError(
       "NRT3306",
@@ -19144,10 +19173,7 @@ function splitSubset(
 ): RValue {
   if (input.type === "null") return R_NULL;
   if (input.type === "expression") {
-    return {
-      type: "expression",
-      values: Object.freeze(indices.map((index) => input.values[index] ?? nullAst())),
-    };
+    return expressionValue(indices.map((index) => input.values[index] ?? nullAst()));
   }
   const subscript = integerVector(indices.map((index) => index + 1));
   if (isDataFrame(input)) {
@@ -19221,38 +19247,47 @@ async function evaluateArgument(
 }
 
 function builtinExpression(invocation: BuiltinInvocation): RExpression {
+  invocation.context.allocate(invocation.arguments.length);
   const values = invocation.arguments.map((argument) => {
+    invocation.context.checkpoint();
     const expression = argument.promise.expression;
     if (expression === null || argument.promise.missing) {
       throw new REvaluationError("NRE2103", "Missing arguments are not supported in expression().");
     }
-    if (argument.name === undefined) return expression;
-    return {
-      kind: "AssignmentExpression",
-      operator: "=",
-      target: { kind: "Identifier", name: argument.name, span: expression.span },
-      value: expression,
-      span: expression.span,
-    } satisfies AstNode;
+    return expression;
   });
+  const output = expressionValue(values);
+  if (!invocation.arguments.some((argument) => argument.name !== undefined)) return output;
   invocation.context.allocate(values.length);
-  return { type: "expression", values: Object.freeze(values) };
+  return withAttribute(
+    output,
+    "names",
+    characterVector(invocation.arguments.map((argument) => argument.name ?? "")),
+  );
 }
 
 async function builtinAsExpression(invocation: BuiltinInvocation): Promise<RExpression> {
   const matched = await matchExact(invocation, ["x"]);
   const input = required(matched, "x", "as.expression");
   if (input.type === "expression") return input;
+  const length =
+    input.type === "null" ? 0 : input.type === "list" || isAtomic(input) ? input.length : 1;
+  invocation.context.allocate(length);
   const values =
     input.type === "null"
       ? []
       : input.type === "list"
-        ? input.values.map((entry) => valueToAst(entry))
+        ? input.values.map((entry) => {
+            invocation.context.checkpoint();
+            return embeddedValueAst(entry, () => invocation.context.checkpoint());
+          })
         : isAtomic(input)
-          ? Array.from({ length: input.length }, (_, index) => atomicElementAst(input, index))
+          ? Array.from({ length: input.length }, (_, index) => {
+              invocation.context.checkpoint();
+              return atomicElementAst(input, index);
+            })
           : [valueToAst(input)];
-  invocation.context.allocate(values.length);
-  return { type: "expression", values: Object.freeze(values) };
+  return expressionValue(values, input.type === "list" ? input.attributes : undefined);
 }
 
 async function builtinAsName(invocation: BuiltinInvocation): Promise<RSymbol> {
@@ -19457,7 +19492,7 @@ function builtinDeparseLines(
   }
   let source: string;
   if (input.type === "expression") {
-    source = `expression(${input.values.map((node) => deparseAst(node, checkWork)).join(", ")})`;
+    source = deparseAst(expressionDisplayAst(input, checkWork), checkWork);
   } else if (input.type === "language") {
     return deparseAstLines(input.expression, {
       widthCutoff,
@@ -19478,6 +19513,23 @@ function builtinDeparseLines(
     source = deparseAst(valueToAst(input, checkWork), checkWork);
   }
   return [source];
+}
+
+function expressionDisplayAst(input: RExpression, checkWork?: () => void): CallExpressionNode {
+  const names = input.attributes.get("names");
+  return callAst(
+    "expression",
+    input.values.map((value, index) => {
+      checkWork?.();
+      const name =
+        names?.type === "character"
+          ? isMissing(names, index)
+            ? "NA"
+            : names.values[index]
+          : undefined;
+      return { ...(name === undefined || name === "" ? {} : { name }), value, span: value.span };
+    }),
+  );
 }
 
 async function builtinDeparse1(invocation: BuiltinInvocation): Promise<RValue> {
@@ -20317,10 +20369,7 @@ async function builtinLengthReplacement(invocation: BuiltinInvocation): Promise<
   }
   if (input.type === "expression") {
     invocation.context.allocate(length);
-    return {
-      type: "expression",
-      values: Object.freeze(Array.from({ length }, (_, index) => input.values[index] ?? nullAst())),
-    };
+    return expressionValue(Array.from({ length }, (_, index) => input.values[index] ?? nullAst()));
   }
   if (input.type === "list" || input.type === "pairlist") {
     invocation.context.allocate(length);
@@ -20503,10 +20552,7 @@ async function builtinVector(invocation: BuiltinInvocation): Promise<RValue> {
     case "pairlist":
       return pairlistValue(Array.from({ length }, () => R_NULL));
     case "expression":
-      return {
-        type: "expression",
-        values: Object.freeze(Array.from({ length }, nullAst)),
-      };
+      return expressionValue(Array.from({ length }, nullAst));
     default:
       throw new REvaluationError("NRE2139", `vector() cannot make a vector of mode '${mode}'.`);
   }
@@ -22181,7 +22227,9 @@ async function builtinIsVector(invocation: BuiltinInvocation): Promise<RValue> {
   } else if (value.type === "environment") {
     result = requestedMode === "environment";
   } else if (value.type === "expression") {
-    result = requestedMode === "any" || requestedMode === "expression";
+    result =
+      (requestedMode === "any" || requestedMode === "expression") &&
+      [...value.attributes.keys()].every((name) => name === "names");
   } else if (isVector(value)) {
     const hasDisallowedAttributes = [...value.attributes.keys()].some((name) => name !== "names");
     if (!hasDisallowedAttributes) {
@@ -23629,7 +23677,7 @@ function asVectorExpression(input: RValue, invocation: BuiltinInvocation): RExpr
     );
   }
   invocation.context.allocate(values.length);
-  return { type: "expression", values: Object.freeze(values) };
+  return expressionValue(values);
 }
 
 function asVectorPairlist(
@@ -25890,7 +25938,11 @@ async function asListDefault(value: RValue, invocation: BuiltinInvocation): Prom
   }
   if (value.type === "expression") {
     invocation.context.allocate(value.values.length);
-    return listValue(value.values.map(quoteAst));
+    const values = value.values.map((node) => {
+      invocation.context.checkpoint();
+      return quoteLanguageNode(node);
+    });
+    return { ...listValue(values), attributes: new Map(value.attributes) };
   }
   if (value.type === "environment")
     return builtinAsListEnvironment({
@@ -26154,7 +26206,7 @@ function planRecursiveUnlist(
   };
   const createNode = (value: RValue, reserved = false): RecursiveUnlistNode => {
     if (!reserved) reserveNode();
-    const sequence = isAtomic(value) || value.type === "list" || value.type === "pairlist";
+    const sequence = isMetadataSequence(value);
     const names = sequence && useNames ? sequenceNamesAttribute(value) : undefined;
     const container =
       value.type === "list" || value.type === "pairlist" || value.type === "expression";
@@ -26561,12 +26613,9 @@ function shallowUnlist(
     } else values.push(value);
   }
   if (expressionResult) {
-    return {
-      type: "expression",
-      values: Object.freeze(
-        values.map((value) => valueToAst(value, () => invocation.context.checkpoint())),
-      ),
-    };
+    return expressionValue(
+      values.map((value) => valueToAst(value, () => invocation.context.checkpoint())),
+    );
   }
   const result = listValue(values);
   return namesAttribute === undefined ? result : withAttribute(result, "names", namesAttribute);
@@ -26738,7 +26787,7 @@ async function builtinNames(invocation: BuiltinInvocation, dispatch = true): Pro
     invocation.context.allocate(names.length);
     return characterVector(names);
   }
-  if (!isVector(value) && value.type !== "pairlist") return R_NULL;
+  if (!isMetadataSequence(value)) return R_NULL;
   const namesAttribute = sequenceNamesAttribute(value);
   if (namesAttribute !== undefined) {
     invocation.context.allocate(namesAttribute.length);
@@ -27128,6 +27177,13 @@ function replaceNamesAttribute(
   lookupEnvironment?: REnvironment,
 ): Promise<AttributedSequence>;
 function replaceNamesAttribute(
+  value: MetadataSequence,
+  replacement: RValue,
+  invocation: BuiltinInvocation,
+  dispatch?: boolean,
+  lookupEnvironment?: REnvironment,
+): Promise<MetadataSequence>;
+function replaceNamesAttribute(
   value: RValue,
   replacement: RValue,
   invocation: BuiltinInvocation,
@@ -27175,9 +27231,8 @@ async function replaceNamesAttribute(
     if (replacement.type === "null") return R_NULL;
     throw new RTypeMismatchError("NRT3198", "attempt to set an attribute on NULL");
   }
-  if (!isAttributedSequence(value)) {
+  if (!isMetadataSequence(value))
     throw new RTypeMismatchError("NRT3198", "names() applied to a non-vector");
-  }
   const oneDimensional = vectorDimensions(value)?.length === 1;
   if (replacement.type === "null") {
     return withoutAttribute(value, oneDimensional ? "dimnames" : "names");
@@ -27507,7 +27562,7 @@ async function builtinDimNames(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "dimnames");
   if (value.type === "null") return R_NULL;
-  if (!isAttributedSequence(value)) {
+  if (!isMetadataSequence(value)) {
     throw new RTypeMismatchError(
       "NRT3153",
       "dimnames() requires a vector, pairlist, matrix, or array.",
@@ -27525,7 +27580,7 @@ async function builtinDimNamesReplacement(invocation: BuiltinInvocation): Promis
 }
 
 function replaceDimensionNamesAttribute(value: RValue, replacement: RValue): RValue {
-  if (!isAttributedSequence(value)) {
+  if (!isMetadataSequence(value)) {
     throw new RTypeMismatchError(
       "NRT3153",
       "dimnames<- requires a vector, pairlist, matrix, or array.",
@@ -27540,7 +27595,7 @@ function replaceDimensionNamesAttribute(value: RValue, replacement: RValue): RVa
   return output;
 }
 
-function validatedDimensionNames(value: AttributedSequence): RList | undefined {
+function validatedDimensionNames(value: MetadataSequence): RList | undefined {
   const attribute = value.attributes.get("dimnames");
   if (attribute === undefined) return undefined;
   const dimensions = vectorDimensions(value);
@@ -27558,7 +27613,7 @@ function validatedDimensionNames(value: AttributedSequence): RList | undefined {
   return attribute;
 }
 
-function effectiveSequenceNames(value: AttributedSequence): readonly string[] | undefined {
+function effectiveSequenceNames(value: MetadataSequence): readonly string[] | undefined {
   const names = vectorNames(value);
   if (names !== undefined) return names;
   if (vectorDimensions(value)?.length !== 1) return undefined;
@@ -27566,7 +27621,7 @@ function effectiveSequenceNames(value: AttributedSequence): readonly string[] | 
   return axis?.type === "character" ? axis.values : undefined;
 }
 
-function sequenceNamesAttribute(value: AttributedSequence): RCharacterVector | undefined {
+function sequenceNamesAttribute(value: MetadataSequence): RCharacterVector | undefined {
   const names = value.attributes.get("names");
   if (names?.type === "character") return names;
   if (vectorDimensions(value)?.length !== 1) return undefined;
@@ -28127,7 +28182,7 @@ function replicationResult(
       invocation.context.checkpoint();
       return input.values[sourceAt(index)] ?? nullAst();
     });
-    return { type: "expression", values: Object.freeze(values) };
+    return expressionValue(values);
   }
   const positions = new Int32Array(length);
   for (let index = 0; index < length; index += 1) {
@@ -28648,14 +28703,11 @@ async function builtinAppend(invocation: BuiltinInvocation): Promise<RValue> {
     }
     const inserted = values.type === "expression" ? values.values : [];
     invocation.context.allocate(input.values.length + inserted.length);
-    return {
-      type: "expression",
-      values: Object.freeze([
-        ...input.values.slice(0, after),
-        ...inserted,
-        ...input.values.slice(after),
-      ]),
-    };
+    return expressionValue([
+      ...input.values.slice(0, after),
+      ...inserted,
+      ...input.values.slice(after),
+    ]);
   }
   if (values.type === "expression") {
     throw new RTypeMismatchError(
@@ -32185,10 +32237,7 @@ async function loadPackageDataset(
     const directory = invocation.packageResourcePath(located.package, "data");
     if (directory !== undefined) invocation.state.set(PACKAGE_DATA_DIRECTORY_STATE_KEY, directory);
     try {
-      await invocation.evaluate(
-        { type: "expression", values: Object.freeze([...program.body]) },
-        target,
-      );
+      await invocation.evaluate(expressionValue(program.body), target);
     } finally {
       if (previousDirectory === undefined)
         invocation.state.delete(PACKAGE_DATA_DIRECTORY_STATE_KEY);
@@ -34142,10 +34191,7 @@ async function builtinExample(invocation: BuiltinInvocation): Promise<RValue> {
   const evaluated =
     program.body.length === 0
       ? { value: R_NULL, visible: false }
-      : await invocation.evaluateDetailed(
-          { type: "expression", values: Object.freeze([...program.body]) },
-          environment,
-        );
+      : await invocation.evaluateDetailed(expressionValue(program.body), environment);
   invocation.context.allocate(3);
   invocation.setResultVisibility("invisible");
   return listValue([evaluated.value, logicalVector([evaluated.visible])], ["value", "visible"]);
@@ -34563,7 +34609,7 @@ async function builtinHead(invocation: BuiltinInvocation): Promise<RValue> {
   const requested = headTailRequest(matched.get("n"));
   if (input.type === "expression") {
     const count = headCount(input.values.length, requested);
-    return { type: "expression", values: Object.freeze(input.values.slice(0, count)) };
+    return expressionValue(input.values.slice(0, count));
   }
   if (!isAttributedSequence(input)) {
     throw new RTypeMismatchError(
@@ -34593,10 +34639,7 @@ async function builtinTail(invocation: BuiltinInvocation): Promise<RValue> {
   const requested = headTailRequest(matched.get("n"));
   if (input.type === "expression") {
     const range = tailRange(input.values.length, requested);
-    return {
-      type: "expression",
-      values: Object.freeze(input.values.slice(range.start, range.start + range.count)),
-    };
+    return expressionValue(input.values.slice(range.start, range.start + range.count));
   }
   if (!isAttributedSequence(input)) {
     throw new RTypeMismatchError(
@@ -34880,7 +34923,7 @@ function formatPrintedValue(value: RValue, options: PrintOptions): string {
   if (value.type === "symbol") return value.name;
   if (value.type === "language") return deparseAst(value.expression);
   if (value.type === "expression") {
-    return `expression(${value.values.map((entry) => deparseAst(entry)).join(", ")})`;
+    return deparseAst(expressionDisplayAst(value));
   }
   if (value.type === "formula") {
     const left = value.response === undefined ? "" : `${value.response} `;
@@ -37854,7 +37897,7 @@ function attachDimensionNames<T extends AttributedSequence>(
 async function builtinDim(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "dim");
-  if (!isAttributedSequence(value)) return R_NULL;
+  if (!isMetadataSequence(value)) return R_NULL;
   if (isDataFrame(value)) return integerVector([dataFrameRowCount(value), value.length]);
   const dimensions = vectorDimensions(value);
   return dimensions === undefined ? R_NULL : integerVector(dimensions);
@@ -48055,7 +48098,7 @@ function replaceDimensionAttribute(
   replacement: RValue,
   invocation: BuiltinInvocation,
 ): RValue {
-  if (!isAttributedSequence(value)) {
+  if (!isMetadataSequence(value)) {
     throw new RTypeMismatchError("NRT3201", "dim<- requires an atomic vector, list, or pairlist.");
   }
   if (replacement.type === "null") {
@@ -60687,7 +60730,7 @@ async function builtinIsObject(invocation: BuiltinInvocation): Promise<RValue> {
 async function builtinUnclass(invocation: BuiltinInvocation): Promise<RValue> {
   const matched = await matchExact(invocation, ["x"]);
   const value = required(matched, "x", "unclass");
-  if (!isVector(value)) {
+  if (!isVector(value) && value.type !== "expression") {
     throw new RUnsupportedFeatureError(
       "NRU6116",
       `unclass() currently supports classed vectors and lists, not '${value.type}'.`,
@@ -61448,14 +61491,14 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
   if (data === undefined) {
     throw new REvaluationError("NRE2100", "Missing required argument '.Data' in structure().");
   }
-  if (!isAttributedSequence(data)) {
+  if (!isMetadataSequence(data)) {
     throw new RTypeMismatchError(
       "NRT3137",
       "structure() currently requires an atomic vector, list, or pairlist as .Data.",
     );
   }
 
-  let output: AttributedSequence = data;
+  let output: MetadataSequence = data;
   for (const [name, attribute] of matched) {
     switch (name) {
       case "names":
@@ -61734,16 +61777,17 @@ function implicitClasses(value: RValue): readonly string[] {
   if (value.type === "formula") return ["formula"];
   if (value.type === "symbol") return ["name"];
   if (value.type === "language") return ["call"];
-  if (value.type === "expression") return ["expression"];
   if (value.type === "null") return ["NULL"];
   const explicit = objectClasses(value);
   if (explicit !== undefined) return explicit;
-  if (!isAttributedSequence(value)) {
+  if (!isMetadataSequence(value)) {
     return [value.type === "closure" || value.type === "builtin" ? "function" : value.type];
   }
   const dimensions = vectorDimensions(value);
   if (dimensions !== undefined) return dimensions.length === 2 ? ["matrix", "array"] : ["array"];
   switch (value.type) {
+    case "expression":
+      return ["expression"];
     case "double":
       return ["numeric"];
     case "integer":

@@ -1,0 +1,856 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-expression-metadata-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.394.0",
+  "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+  "sourceState": "Verified uncommitted candidate over sourceCommit; source digests identify the recorded state",
+  "platform": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "oracleVersion": "4.6.1",
+    "oracleLocale": "C",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Bounded expression metadata, constructor/evaluation behavior, conversions including one character storage.mode route, selection/replacement admission, reference/resource handling and ordered Oracle v2 edges",
+  "provenance": {
+    "sources": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "a230c1d53654aa130a890d9a15a6174b6fb8b389fb3f53278ca9a766d73aa1b5"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "cd4b2b33edfd9e747a3408de72c850dccdaecc6225a95bc4f69d1cbf65dbaaf0"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "ba351dc6044a6c4b3405f983f3aa07b1cf783c033454f4d471f03475919ddfa5"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "18d31efdba7268a0b16e1642f5fd7e7f1266c044c75c219def3056147b620fdc"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "31087fcef49160718107d6ed4511176f88fb87c7aa5b4a629c4a7374ddd27bcf"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "64e784c9d234830377a08585cd2276fbf88050b6a45a08ffb36c9ee944b62b0b"
+      },
+      {
+        "path": "conformance/oracle-v2-observer.R",
+        "sha256": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306"
+      },
+      {
+        "path": "conformance/probes/unlist-recursive-gaps.R",
+        "sha256": "efbd28106e492b176801ee20f994a57cfb13fc0a4db0f156eedc797f6d0a0e01"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "94edee2ffb6f9413156b4683e98a6ccd11e6182e995ff67163ebf6674eed4e15"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "0a69098d19d293d5ce770e056c63bb264c36bae31e9a5dd12c69577705d79cea"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "5948594431ba2fbc5a92345deac0d6e3629f559fe545aeba563656afabb61114"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "60dc5c9a52f32e7344aafe73fedd09c9aac6638c0a1638660ce84b5dd22672f8"
+      },
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "2ff8b6834f8cbaa439226e50696a7d37a42b1d1fe4becc731f6e29a601118ce7"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "f5d5a4e210a13ed2a4676372680e8ba27eead7c381c911432e7a9c9e5a22fcea"
+      },
+      {
+        "path": "packages/nativr/src/conversion.ts",
+        "sha256": "c0afc0a6b1653d609e8c187d0d7a45bb67ac0468656bac001a3a7b9d108c58bf"
+      },
+      {
+        "path": "packages/nativr/test/conversion.test.ts",
+        "sha256": "43ea7bffd5bb5077c340031eb6217b46b0bd163cbb8ddbdb7c78613f81adab74"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "5c9cf3f65dd844d691f314a46ed81769453645ed47d2efaecc678813a74a10f5"
+      },
+      {
+        "path": "packages/nativr/test/logical-mode-conversion.test.ts",
+        "sha256": "f4812c8587217ee7d60a9a3182cc5a9dbc65965ffef912d820002b3fe11aa594"
+      },
+      {
+        "path": "packages/nativr/test/oracle-expression-observation.test.ts",
+        "sha256": "337dcaf26fcd3b18b7968daffa4e3f1c82a41434caa912c884e21013769ec01b"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "975b64ba1d03444636c9646b914a85c55c7e7cec156c76112cecd7e8dbc5696e"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "9409cd32953a009c0868568ee1d8aa65f43577255b430dacc9e2cbaf4e6304c1"
+      },
+      {
+        "path": "packages/runtime/src/index.ts",
+        "sha256": "87ba14d55263872f9cb133393b2a33dbbc8a075c77341a54350cb7c2f652b27a"
+      },
+      {
+        "path": "packages/runtime/src/logical-condition.ts",
+        "sha256": "0ed71e51ac41c04fd8231e09a616193583d4de4d02fc7e3375d9f6bd3d3ebdfd"
+      },
+      {
+        "path": "packages/runtime/src/memory.ts",
+        "sha256": "9b3ec4461160c2d3d33a1098ee89ee2a188417f7a444bd9b88f4cbf8fe4f0fce"
+      },
+      {
+        "path": "packages/runtime/src/subset.ts",
+        "sha256": "acd74198d196a9adce3342ed60326c82b3b9588ecdec460117f9d412d298188c"
+      },
+      {
+        "path": "packages/runtime/src/values.ts",
+        "sha256": "9551833ead4ff89c74d459f9f00b3c1349691c180595202c42d3c7b280497340"
+      },
+      {
+        "path": "packages/runtime/test/member-replacement.test.ts",
+        "sha256": "07b4c2695929636cb4b8d691f975a4fa53224aa4b706dc88ab30a106209d0bef"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "15f58c294c46f6deaf493959fe780ce87ab0122a79764d6b7efb8c5f3b8344ba"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "b265aabb445da583b9d34f150faea6da17a4ceecf8106db2517cdfae07488d38"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.394.0/abind.json",
+        "sha256": "dcf775493d9c00ce443b6b0b749a57a3f10a3316acc15cda19280d63a9bf4cf7"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.394.0/evaluate.json",
+        "sha256": "c9a77dcc634d0e047c8ed612ccdd3e272dc690336711afe39060e2071941c66e"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.394.0/numDeriv.json",
+        "sha256": "ab7d703a2ca6ba094d0e7eaf3be764a02946b99d1ba3f77612220340fe5a4fea"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.394.0/withr.json",
+        "sha256": "b8406f940b332da077cac5c7af91164071b1e81c90b930064bad8d6520613e12"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.394.0.json",
+        "sha256": "eba35679e65943c6784e06e401ee00175cef37d6f139a2fc97f1a36d6a051d2f"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.394.0.json",
+        "sha256": "4044d16401710fe51500565c05a84ba2250e369871f4b347f15bb014f1c47be0"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.394.0.json",
+        "sha256": "8b078f4bb0c0caf7582fff612aa4fdcd3c3ce70067bb1bed05ea5d002b33cb2f"
+      },
+      {
+        "path": "conformance/probes/expression-attributes-gaps.R",
+        "sha256": "1eb50726dba56d9f704e1c614f6e8b5e889ed82e787f3783408247ea4b38fffa"
+      },
+      {
+        "path": "packages/nativr/test/expression-attributes.test.ts",
+        "sha256": "bd7cab0b1d061a5d74324650e62cfd6faaea73448905d5098ba3a26db92697c8"
+      },
+      {
+        "path": "packages/nativr/test/expression-replacement-admission.test.ts",
+        "sha256": "ddf69c466fb29832ddd2e659c989f54fbc9e6c1b3f2ebaff81c45c6937ad86bf"
+      },
+      {
+        "path": "packages/runtime/src/expression-subset.ts",
+        "sha256": "6bd1bc4cc252e4a8cbab80da6d5d39f54d4728700da1de652cf99bef1e5d0791"
+      },
+      {
+        "path": "packages/runtime/test/expression-subset.test.ts",
+        "sha256": "9008b7c22024c0958cb6826a2b7ec9e78830f331e00603f07db2908a3ae72c63"
+      }
+    ],
+    "recorderSha256": "470b0a8f6adafb307b58d15f57bd16bb8751c55436fd38f4c1c145725091db36",
+    "sourceVerifierSha256": "2f389029a811fc73336221755b3360e6b471c0b7387aca63b2c02af5157d4657",
+    "nativeEvidence": [
+      {
+        "path": ".tmp/expression-attributes-next/candidate-matrix.json",
+        "sha256": "703328c539f2c97015dd193aafdc3eaf3c08bc97588e538f743fa481d62fa41e"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/native-receipt.json",
+        "sha256": "553404dd4e20065f5b7ead0aa8a6105320b177b2d4acf6866686c3dbc6a6016f"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/accepted-matrix.json",
+        "sha256": "e77f7799b0ec096de0cfd72d4efb9e250ea5ede9f9e8c8893300148f23686dd4"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/native-acceptance.json",
+        "sha256": "43efb2c15976ca2eb14b47be1db2265d8dd4037c34d0d971e2109fd153e91ccb"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/runtime-baseline.json",
+        "sha256": "45680eae811e2d86725d67379d411e6a0015b85d4a5265bef8f76f2a71443385"
+      }
+    ],
+    "nativeReceipts": [
+      {
+        "path": ".tmp/expression-attributes-next/evidence-0394/native-validation-attempt1.json",
+        "sha256": "747f0ea105ed939bf35a5bcbe521e123f672fc6b81efb128eeef6e2fd1c78ed6"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/evidence-0394/native-validation.json",
+        "sha256": "d143b055df831da8f7e91e6e1760a4d0f14cae1ab820d0998b8b5bd99c557131"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/evidence-0394/admission-native-validation.json",
+        "sha256": "dd935307453b2d74c851866b436c0bf5598da48d0de0993e20f6ac5900297252"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/evidence-0394/replacement-admission-native.json",
+        "sha256": "dec9b7b2f0804f09b129adef9a5cdd01aad875183caafe9c4a528967fa2afe8e"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/evidence-0394/adjacent-validation.json",
+        "sha256": "cae716432fde6268a6fbfed605664cc391c685464b8aca646097c5f962f76de1"
+      },
+      {
+        "path": ".tmp/expression-attributes-next/evidence-0394/storage-mode-native-validation.json",
+        "sha256": "401c6857bd7f82ad79612ca1c30bd5a3a4a2fe4b62e258b02342f7fd113a659d"
+      }
+    ],
+    "mainNativeInputs": {
+      "accepted-matrix.json": "ab8dd87196eb6d4f939867b0c27b150ff9e110216c93c34b7b756c181ef5b732",
+      "acceptance-provenance.json": "0cdd9a57cbba0d6b6a1b8b590745c59af32743c4fae6e019c560aec80c37267e",
+      "foundation.json": "6b76365c941009c921f8b655f1540048169c74c8d905b9906a373f7e599184b9",
+      "oracle-v2.json": "3594ee1d108c8e55b7b823735a4e7ab3898b466db79a8264f3e62f4ccf3dac88",
+      "native-checks.json": "8af1b30d82278757e2a3392fd4e87a73749380cba9151f73ee192873ff860ab8",
+      "provenance.json": "c6b43cff51e49fcda024327d51fbe04f4fe70da5b1f9e0e600dc9f867f353c72",
+      "prepare.mjs": "5abfe8fbbeb43f426b6db21ab49401563578d6e182d0726ebefe66650a371da5",
+      "validate-native.mjs": "0e3bc842fedae24aed34194458836966f009f3383dc1d1203e86f832c59d7878",
+      "supplemental-native-cases.json": "ff3284a58bd2d92f05766f6e3abf10296661d95dd43eff0d5d2fe9341c9f4712",
+      "../accepted-matrix.json": "e77f7799b0ec096de0cfd72d4efb9e250ea5ede9f9e8c8893300148f23686dd4",
+      "../native-acceptance.json": "43efb2c15976ca2eb14b47be1db2265d8dd4037c34d0d971e2109fd153e91ccb",
+      "production/observer": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306",
+      "production/adapter": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+      "production/binding-helper": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46",
+      "production/observer-test": "337dcaf26fcd3b18b7968daffa4e3f1c82a41434caa912c884e21013769ec01b",
+      "metadata/capabilities": "98a14ab64eb028009599b5f89c735d80f31b9c8c6809479f8d1033fffa128b07",
+      "metadata/surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
+      "oracle/executable": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+    },
+    "admissionNativeInputs": {
+      "admission-checks.json": "da0cb84d0e8228a830366c77d4f01064a2929c4eaae469caab59926c534cb4f0",
+      "admission-foundation.json": "4b87f0dd7b465bb674765b96c986f5b4841b0f94bcc1564174946ea692a735e0",
+      "admission-oracle-v2.json": "35d6ba39eb21461a22d3d4f6dd7e8eea4532befb0315bd6f28f2f0af24080aed",
+      "admission-matrix.json": "caeabc150a0005c67c3145d367c5d079a84be53e85e5d8dddc17ac24299ba354",
+      "admission-provenance.json": "e414c81c28d3656fb0d76ace8027d7360373b36851d5c557831ee9b92b8c2b44",
+      "admission-unexpected-control.json": "79271c7e467c0a18b1e1ca61cb2c813263a38c2597e4902eddcb072c87461756",
+      "validate-admission.mjs": "1338071e108ce6991c41dc3e2e8132ab6c885c860f309f064b0720b4dbc69c57",
+      "replacement-admission-matrix.json": "0f1314ba391568c5ab273a65be4c584fc8eaf869fa5275701e66faf1c043b0b9",
+      "replacement-admission-native.json": "dec9b7b2f0804f09b129adef9a5cdd01aad875183caafe9c4a528967fa2afe8e",
+      "prepare-admission.mjs": "c1ecdc3e91eb6610d4436acc9fcd4b4789cc2ac348a7afa3000cab4a23271e7b",
+      "observer": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306",
+      "adapter": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+      "oracle": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+    },
+    "storageModeNativeInputs": {
+      "storage-mode-followup.mjs": "11aa51ad33d6c692f8e4f0b3b09bb2bc0f5e810ed9d6f03788c0567301345568",
+      "storage-mode-matrix.json": "846faf80ada28a6474c937f1575c184a12c38f8556af8d972d6de9aa3b96813b",
+      "storage-mode-foundation.json": "d420723915314b7525aa8e64971e14a93935bb9dff09d3f554255c4860756523",
+      "storage-mode-oracle-v2.json": "9b725e796cc5284884650f24ba046837b0a6e61fb3bce33fdfff048fb7f401f7",
+      "storage-mode-checks.json": "fbf9b98018e444c205f0e34bd52e8033850b8be6675de637c08582bccdbf150a",
+      "storage-mode-provenance.json": "e92af6d5a7b53ae2d2deb22aaf7d2c59a1458265b227c59ee7b2c55d5e00a02f",
+      "adapter": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+      "observer": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306",
+      "oracle": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+    },
+    "metadataQualification": "Native assembly used the metadata profiles recorded in its input hashes; those historical metadata hashes are not represented as a built 0.394 runtime identity."
+  },
+  "acceptance": {
+    "originalNativeSurvey": { "assertions": 46, "passed": 44, "rejectedAssumptions": 2 },
+    "nativePool": 47,
+    "baseline0393": { "passed": 7, "mismatched": 12, "controlledErrors": 28 },
+    "selected": {
+      "cases": 45,
+      "exactAcceptedStrings": true,
+      "unchangedOriginalPassing": 42,
+      "unchangedNativeFollowups": 3,
+      "caseHashes": [
+        {
+          "id": "empty-expression",
+          "codeSha256": "489ad2312c147785c1ccba119acc890006b78022af2379e4f890a13d8a933e5b"
+        },
+        {
+          "id": "ordinary-cells",
+          "codeSha256": "88bb2d744e38ea34e3334c6f67b3c3111d2c5f332231b21ecf5033997a0bd320"
+        },
+        {
+          "id": "named-cells-not-assignments",
+          "codeSha256": "d78923b58cfe327966280d90491e4c9baaa954d9626f88b3680db1d51f74dbb5"
+        },
+        {
+          "id": "mixed-named-unnamed-cells",
+          "codeSha256": "49439f73985b2d87ae50e34d7b0787933537af1673519de230b83511b617a7af"
+        },
+        {
+          "id": "duplicate-constructor-names",
+          "codeSha256": "3cd28128b2f7e77a3b5298869c7071c11ef1d3e2b0b0adf8c8e84443bfa921b7"
+        },
+        {
+          "id": "non-syntactic-constructor-names",
+          "codeSha256": "266b4adcda4a983692c1227004727ffafdcb8a35678f386758c8a862d54f0865"
+        },
+        {
+          "id": "constructor-does-not-force",
+          "codeSha256": "92798b74cceacd1f1b530a84a3fc3c96aee72be153ba10c4288f400d76802690"
+        },
+        {
+          "id": "names-replacement-copy",
+          "codeSha256": "bd45ba0ee5624faff13db03dfa9de474f115131bafb9d46c737d583a7e06b0ce"
+        },
+        {
+          "id": "missing-and-empty-names",
+          "codeSha256": "7f40e7b04f57248846acf5a2cfc6b03dbb401a6ef6bcf110302fa006fd82b2dc"
+        },
+        {
+          "id": "short-names-pad-missing",
+          "codeSha256": "92972f2ffd8d3874c8742bfa4bf4eb252cc30eba93dac16175231e686edb2114"
+        },
+        {
+          "id": "empty-names-pad-missing",
+          "codeSha256": "087efe1e7edae10e5dc80096457955324422725990be1cf8f21a0f1e0f0b0e0c"
+        },
+        {
+          "id": "numeric-names-coercion",
+          "codeSha256": "5c89e01f0926db565a5c3dd6f0af637df16fc499ab750cee7ca0f419b819bbd6"
+        },
+        {
+          "id": "remove-names",
+          "codeSha256": "5a2faa6fdade8104ae4c281051f35e23ddad0fe622f9c925883d9ac983dc2d1d"
+        },
+        {
+          "id": "overlong-names-error-nonmutation",
+          "codeSha256": "a904a7171f8bea674d18d49be079bff706ef9340a495cab4d52b8b745a62b358"
+        },
+        {
+          "id": "arbitrary-attributes",
+          "codeSha256": "8cb216a2b6c2f862a1520a63f49fff3dce68417b73edd4d8f6f89dfade1acc2f"
+        },
+        {
+          "id": "environment-attribute-reference",
+          "codeSha256": "a6c6b2c2c285ad297c309c32fdf7c5b762b3295c4f89d8900a257fa307459df9"
+        },
+        {
+          "id": "attribute-replacement-copy",
+          "codeSha256": "6d15cc7f702a0e2640de20a7a1b481ec24464be974fed3444627d9a1ba3347e0"
+        },
+        {
+          "id": "attribute-partial-lookup",
+          "codeSha256": "42d2d9b60ea78da14596c7c4c2af4af84eda4f54f86c2312cbabacabef331902"
+        },
+        {
+          "id": "class-preserves-expression-storage",
+          "codeSha256": "d1891f5519b98093487db398f210865902deccfc19b9c7cadd997299fe537ce6"
+        },
+        {
+          "id": "dimension-attribute-storage",
+          "codeSha256": "93332d5b6ddb3b0b851ef9743d13308d0508bd7a3fca5996b0e01ad3da9a5d98"
+        },
+        {
+          "id": "single-bracket-reorders-names",
+          "codeSha256": "756dd69cae585742afd41c0ca08eeafcca13ec820ba317f06f9e4cb5688aaa70"
+        },
+        {
+          "id": "subset-drops-arbitrary-attributes",
+          "codeSha256": "0a4e1519b22d811c53980f6e955e514b4e423a591206888d07bb9fa938a3da75"
+        },
+        {
+          "id": "empty-subset-typed",
+          "codeSha256": "e6db0d2d46033170f5a1dbc7ff452d1e919f7847d33e957b9ebda8a527c051c3"
+        },
+        {
+          "id": "missing-index-null-cell",
+          "codeSha256": "5f29b72fa8175745b8ccaaddd798b95c03aa85462684b543bf3a1263fcc07e08"
+        },
+        {
+          "id": "double-bracket-name-exact",
+          "codeSha256": "83720324660207ce4e47461b4eea9fcf6734d236bda36cdb293072279091fc77"
+        },
+        {
+          "id": "double-bracket-replacement-copy",
+          "codeSha256": "b6f82a69e6327e04d867b6e1765cc3030e5929454305c78ffb6c718a64fd5154"
+        },
+        {
+          "id": "bracket-replacement-expression",
+          "codeSha256": "c35cb01d18e319ed7aff379a958530951b5b3deec19304b444a5d4ccd3cbaf07"
+        },
+        {
+          "id": "double-bracket-null-deletion",
+          "codeSha256": "6f23cc38d18f97d64e81ecc31f3d6ccace23bac5e5fca2ac1ee41db1eafdf11c"
+        },
+        {
+          "id": "as-list-retains-names",
+          "codeSha256": "72f66b72f92c363be0324582f66aabfedafe0363c9179e4acc9ddf80292c169a"
+        },
+        {
+          "id": "as-expression-same-attributed-value",
+          "codeSha256": "96bab21d72e642c940893ea5985f96d19a5f160dd1f0807f96970774f3af1f1a"
+        },
+        {
+          "id": "list-to-expression-names-reference",
+          "codeSha256": "0a6996b624a82a4639e8c202ebcb825b2cf3c699a41d15c2d513bb3c31e6fc08"
+        },
+        {
+          "id": "list-cell-attributes-preserved",
+          "codeSha256": "b9606f8a4ea4262498770db5087bfafc29bbbf60b80a65d6fe078a47309583ff"
+        },
+        {
+          "id": "unlist-expression-input-unchanged",
+          "codeSha256": "aa5b3731bf88a02181023bdafdffd335fc6a4bf9933b7af86bd3ffdb7c2d843a"
+        },
+        {
+          "id": "unlist-named-expression-in-list",
+          "codeSha256": "e657b90ddc4f1d8cf1fb39a8ffdfcc71ab47f394341badef0408ec6132bbe462"
+        },
+        {
+          "id": "unlist-expression-atomic-result",
+          "codeSha256": "7c4c9e7f1bf093c6d25a96b8f0ac76e6beea4b6cff711564f8a610b1045688ac"
+        },
+        {
+          "id": "unlist-no-names-preserves-reference",
+          "codeSha256": "27bb2ae7dddde07e7a7e29bd43ab2b7c4c9b145f889678102739114f2ab9de83"
+        },
+        {
+          "id": "named-expression-eval-no-name-assignment",
+          "codeSha256": "73318589858713968e701fca52bea4ea6016517a1e610ad889379839653bddcd"
+        },
+        {
+          "id": "eval-sideeffects-once-in-order",
+          "codeSha256": "2d62f474006a119330006f747b7ce412c6ce3a42b6d6e958371cc2b8cfd28b3e"
+        },
+        {
+          "id": "eval-final-invisibility",
+          "codeSha256": "22d69897de73876da57961e30a128b45e121ba6de2f2535f94383b2cf7164974"
+        },
+        {
+          "id": "print-named-expression",
+          "codeSha256": "0d51fe2e2dbaaff4621144ee7901e76a0525c5ff6757595026851ea5c1fedd8b"
+        },
+        {
+          "id": "print-invisible-expression-return",
+          "codeSha256": "45072c5637b2f80663c3820436c7b06bd086d290280b0b3b58d218f347247510"
+        },
+        {
+          "id": "deparse-named-expression",
+          "codeSha256": "27c648aec064c7de64fce2578fc13cc5d15a258d52b87bca3207a20b911ac6a0"
+        },
+        {
+          "id": "as-list-preserves-attributes-and-reference",
+          "codeSha256": "35fda58fff079084699520e91590284c81ac4500f5bca7605d18df5821456783"
+        },
+        {
+          "id": "atomic-as-expression-strips-all-attributes",
+          "codeSha256": "15341f69c3a67c5f609d52b032fb5e26c9c5e6112c4920747ecfd73338b006ff"
+        },
+        {
+          "id": "list-as-expression-preserves-attributes-reference",
+          "codeSha256": "797a612453d56f1a2f8f03f058849f646116bc23c022fd5dfdb5abff91d8d154"
+        }
+      ]
+    },
+    "worker": [
+      {
+        "id": "named-expression-eval-no-name-assignment",
+        "profileSite": "required-137",
+        "codeSha256": "73318589858713968e701fca52bea4ea6016517a1e610ad889379839653bddcd",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "environment-attribute-reference",
+        "profileSite": "required-138",
+        "codeSha256": "a6c6b2c2c285ad297c309c32fdf7c5b762b3295c4f89d8900a257fa307459df9",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "double-bracket-replacement-copy",
+        "profileSite": "required-139",
+        "codeSha256": "b6f82a69e6327e04d867b6e1765cc3030e5929454305c78ffb6c718a64fd5154",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "historical": {
+      "id": "named-expression",
+      "exactFrozenSourceString": true,
+      "sourceSha256": "b58e4945746d1b3bb12afba8d5454ca3c61b477af542576152cb9391f06bf1f2",
+      "maintainedProbeAssertionUnchangedAfterTrailingWhitespaceNormalization": true,
+      "constructorAttributeOrderClaim": false
+    },
+    "deferredNativeRows": ["attributes-list-replacement", "attributes-remove-copy"],
+    "separateAdmission": {
+      "foundationAssertionsPassed": 14,
+      "rawGraphsPassed": 1,
+      "environmentAliasesPassed": 3,
+      "unexpectedDiagnosticPropagationGuardsPassed": 1,
+      "strictBindingCausalControls": 0
+    },
+    "mainRecursive": {
+      "foundationGroupsPassed": 4,
+      "foundationAssertionsPassed": 45,
+      "recursiveGroupsPassed": 4,
+      "environmentAliasesPassed": 10,
+      "strictControlsPassed": 16,
+      "supplementalAssertionsPassed": 14
+    },
+    "separateStorageModeFollowup": {
+      "counts": {
+        "independentAssertionsPassed": 2,
+        "foundationGroupsPassed": 1,
+        "foundationAssertionsPassed": 2,
+        "recursiveGroupsPassed": 1,
+        "bindingCausalControls": 0
+      },
+      "sourceAssertions": [
+        {
+          "id": "storage-mode-expression-retains-metadata",
+          "path": "packages/nativr/test/logical-mode-conversion.test.ts",
+          "codeSha256": "caac481eaf40710700eb20cbaa1e2324e2b6699d3bd7141fd853777b0b51c9aa",
+          "exactNativeAssertion": true,
+          "sourceSha256": "f4812c8587217ee7d60a9a3182cc5a9dbc65965ffef912d820002b3fe11aa594"
+        },
+        {
+          "id": "named-expression-evaluation-does-not-assign",
+          "path": "packages/nativr/test/integration.test.ts",
+          "codeSha256": "fcf238410d6314a8e29586aa8445848ae5b559396c53a904ece63c9359116481",
+          "exactNativeAssertion": true,
+          "sourceSha256": "5c9cf3f65dd844d691f314a46ed81769453645ed47d2efaecc678813a74a10f5"
+        }
+      ],
+      "counting": "Two independently validated assertion strings are also assembled into one two-component foundation group; these are the same assertions, not four independent checks. One separate exact raw graph has no binding causal credit.",
+      "scope": [
+        "Only character scalar storage.mode replacement to expression preserving one ordinary attribute and source immutability is observed; no complete storage.mode conversion claim.",
+        "Named expression evaluation is an existing accepted behavior guard; this separate exact assertion does not expand the frozen45.",
+        "No binding causal credit claimed."
+      ]
+    },
+    "cases": [
+      {
+        "suite": "foundation",
+        "id": "expression-owned-construction-evaluation",
+        "codeSha256": "b580846360d77d5aefc30e8bd30d9f59e00086b1aa296788f4a07fcc23c96df0",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-owned-names-attributes",
+        "codeSha256": "c8b9d3f813cf2cb3e83576077f843127a6f40c19219bd2b9930e7c61560ee526",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-owned-subset-replacement",
+        "codeSha256": "8e13060167ddb1cd464584c2ae7b6b37719e636e3b3ab3808df7fac3c8c1af89",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-owned-conversion-unlist",
+        "codeSha256": "38ef9d8fafc8a53b53fac870437b58e224037c752e571a495e305209edb18b6a",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "recursive",
+        "id": "expression-owned-construction-evaluation-graph",
+        "codeSha256": "6a24bf88c25bd4ff8a3b9656fdec81902ee24fd6b295e6da599c1b60877ed090",
+        "bindingEvidence": ["base::expression", "base::eval"]
+      },
+      {
+        "suite": "recursive",
+        "id": "expression-owned-metadata-reference-graph",
+        "codeSha256": "0c611fcc0530b532924aafe83133eb0fe0877a072ff719093fbb3f08271c13f1",
+        "bindingEvidence": ["base::names<-", "base::attr<-"]
+      },
+      {
+        "suite": "recursive",
+        "id": "expression-owned-selector-replacement-graph",
+        "codeSha256": "928b6c31178b9d58fd3e291fddf7276809faa9f3df23f86da2cb3e84f6bbfa85",
+        "bindingEvidence": ["base::as.list"]
+      },
+      {
+        "suite": "recursive",
+        "id": "expression-owned-conversion-unlist-reference-graph",
+        "codeSha256": "ffec2e3f5a45ae406c90441cc54bd070bb19c5c244f4b559d971d5c219154558",
+        "bindingEvidence": ["base::as.expression", "base::as.list", "base::unlist"]
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-owned-replacement-admission",
+        "codeSha256": "a67f223c20fe37e4050e673e2239312b552ccabc38b02c6cf4e08390c594a288",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "recursive",
+        "id": "expression-owned-replacement-admission-graph",
+        "codeSha256": "2e1b03cc69ed6632f9e342d4840cbdcf449bbc4f27cad9c44f0e8fae8238e5e3",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-owned-storage-mode-and-eval-guard",
+        "codeSha256": "d68d5653e150e8b39cbafe461a42c1fefca02e3e7a54829ea0c1838cf211eba0",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "recursive",
+        "id": "expression-owned-storage-mode-metadata-graph",
+        "codeSha256": "adfde8ddb993f6699fb25f75f6a8b16f17f94b366d8c74b366a9b77ccc947d80",
+        "bindingEvidence": []
+      }
+    ],
+    "causalScope": "16 controls qualify eight composite group/binding associations across seven bindings; no separate causal credit for each component or replacement syntax.",
+    "initialRejectedAssembly": "The first assembly failed an independently constructed expected value and an observer supplemental projection; its failed receipt is retained. Corrected construction uses separately observed existing-name $ replacement; no observation or graph comparison was weakened."
+  },
+  "verification": {
+    "unitPassed": 3352,
+    "unitSkipped": 95,
+    "foundationPassed": 1486,
+    "livePassed": 1413,
+    "liveSkipped": 55,
+    "recursivePassed": 401,
+    "causalLinkedBindings": 172,
+    "partialMatrixDimensions": 132,
+    "partialMatrixBindings": 25,
+    "bundleGate": [
+      "PASS statically loaded public client: 17.6 KiB / 150.0 KiB gzip",
+      "PASS Worker JavaScript: 494.0 KiB / 512.0 KiB gzip",
+      "PASS combined parser Wasm: 671.9 KiB / 1536.0 KiB raw",
+      "PASS elementary-function Wasm: 311.2 KiB / 384.0 KiB raw"
+    ],
+    "gates": [
+      {
+        "logSha256": "c2a737aba06b00c89eb71a8d082f46de704dabdd29c6157aaa625c494d675545",
+        "gate": "check",
+        "exitCode": 0,
+        "arguments": ["check"],
+        "log": ".tmp/profile-0394-check.log",
+        "finishedAt": "2026-10-22T23:36:42.7237085Z",
+        "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+        "executable": "pnpm",
+        "startedAt": "2026-10-22T23:34:57.2307797Z",
+        "kind": "owned-local-gate-exit",
+        "schemaVersion": 1,
+        "receiptSha256": "da442ac9898bd65989a5c92edcfda76cd87a7d4419584a36abe53118440872c5"
+      },
+      {
+        "gate": "foundation",
+        "logSha256": "e4e647c9d340de2eb41467d08f7562de8eb478f2a197f33eb343468aec3adbf9",
+        "exitCode": 0,
+        "schemaVersion": 1,
+        "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+        "executable": "pnpm",
+        "arguments": ["conformance"],
+        "finishedAt": "2026-10-22T23:36:52.2109262Z",
+        "kind": "owned-local-gate-exit",
+        "startedAt": "2026-10-22T23:36:49.2556569Z",
+        "log": ".tmp/profile-0394-foundation.log",
+        "receiptSha256": "fe6e8d00ad601d45b06afb92632b68f394c86efe92917e0abb4edeca9f1d5719"
+      },
+      {
+        "startedAt": "2026-10-22T23:36:49.9886581Z",
+        "logSha256": "9cadf57b77916ee9ac87e877c091c1b5d75db8fc789125ccf7665f9d5c29a0d9",
+        "arguments": ["conformance:r"],
+        "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+        "finishedAt": "2026-10-22T23:41:10.0274641Z",
+        "gate": "native",
+        "schemaVersion": 1,
+        "kind": "owned-local-gate-exit",
+        "log": ".tmp/profile-0394-native.log",
+        "executable": "pnpm",
+        "exitCode": 0,
+        "receiptSha256": "af2d063936e91d7b70632bd122fd540ca9ced71936c6a49ce990d10b580d27d3"
+      },
+      {
+        "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+        "gate": "v2",
+        "arguments": ["conformance:r:v2"],
+        "exitCode": 0,
+        "log": ".tmp/profile-0394-v2.log",
+        "schemaVersion": 1,
+        "startedAt": "2026-10-22T23:36:49.9526398Z",
+        "kind": "owned-local-gate-exit",
+        "finishedAt": "2026-10-22T23:42:08.9240830Z",
+        "logSha256": "23e3349c57f0f044e297a9d189f49042cc1260b12130de81ef1ad14efe66cc4d",
+        "executable": "pnpm",
+        "receiptSha256": "ed8d41cce959d3b31155de32d0be51a0ad895c230516710f31ce5b22d0bb2d1e"
+      },
+      {
+        "gate": "e2e",
+        "finishedAt": "2026-10-22T23:38:46.1105298Z",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+        "schemaVersion": 1,
+        "executable": "pnpm",
+        "startedAt": "2026-10-22T23:36:50.2469099Z",
+        "log": ".tmp/profile-0394-e2e.log",
+        "logSha256": "02e8ccc2fa0ffea0436b9d7b5040ffb3cfff026ce2c0130616b13a0b84645a0b",
+        "kind": "owned-local-gate-exit",
+        "exitCode": 0,
+        "receiptSha256": "2bdda7368ca476a077bb4bca97bd66c627c2495352c15d26dc55f7f8c55a4b6d"
+      },
+      {
+        "log": ".tmp/profile-0394-corpus.log",
+        "gate": "corpus",
+        "kind": "owned-local-gate-exit",
+        "arguments": [".tmp/run-corpus-0394.mjs", "--run"],
+        "startedAt": "2026-10-22T23:36:50.6164600Z",
+        "sourceCommit": "2df8dd41e43ceb97130b2a1064de1262cd0086ce",
+        "logSha256": "3527255097a86c6bb41b88d45fb800299ec95d462759887eeea3d718ef54aeb8",
+        "finishedAt": "2026-10-22T23:38:47.9102567Z",
+        "exitCode": 0,
+        "executable": "node",
+        "schemaVersion": 1,
+        "receiptSha256": "9bcf5e05b174f861ab19fde039a45c31d47f22ad88a0483adb6023ebc6ed39aa"
+      }
+    ],
+    "postCorpus": {
+      "gates": [
+        {
+          "name": "checkpoint-tests",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-checkpoint-tests.log",
+          "finishedAt": "2026-10-22T23:42:20.5556748Z",
+          "startedAt": "2026-10-22T23:42:19.3296376Z",
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "logSha256": "32246701a19158b777bbb12e62c7ef8bf29427cbc0dd0ccbc342e7262586b137",
+          "command": "pnpm"
+        },
+        {
+          "name": "all-types",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-all-types.log",
+          "finishedAt": "2026-10-22T23:42:25.3618003Z",
+          "startedAt": "2026-10-22T23:42:20.5793191Z",
+          "arguments": ["typecheck:all"],
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b",
+          "command": "pnpm"
+        },
+        {
+          "name": "checkpoint-lint",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-checkpoint-lint.log",
+          "finishedAt": "2026-10-22T23:42:28.6183996Z",
+          "startedAt": "2026-10-22T23:42:25.3639726Z",
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "command": "pnpm"
+        },
+        {
+          "name": "format",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-format.log",
+          "finishedAt": "2026-10-22T23:42:39.2840478Z",
+          "startedAt": "2026-10-22T23:42:28.6201449Z",
+          "arguments": ["format:check"],
+          "logSha256": "6481f5c1dfdccdc2896c631250e526de7c0c998f33f0c46397d3f328a536d7bb",
+          "command": "pnpm"
+        },
+        {
+          "name": "capabilities",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-capabilities.log",
+          "finishedAt": "2026-10-22T23:42:39.8578172Z",
+          "startedAt": "2026-10-22T23:42:39.2915031Z",
+          "arguments": ["capabilities:check"],
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502",
+          "command": "pnpm"
+        },
+        {
+          "name": "coverage",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-coverage.log",
+          "finishedAt": "2026-10-22T23:42:40.3919015Z",
+          "startedAt": "2026-10-22T23:42:39.8664700Z",
+          "arguments": ["compatibility:check"],
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668",
+          "command": "pnpm"
+        },
+        {
+          "name": "inventory",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-inventory.log",
+          "finishedAt": "2026-10-22T23:42:41.1462018Z",
+          "startedAt": "2026-10-22T23:42:40.3999745Z",
+          "arguments": ["inventory:check"],
+          "logSha256": "742652792d2bd74ab25d73552f6e8fe1f0dd7c9692359dbd506f94dae739e1a4",
+          "command": "pnpm"
+        },
+        {
+          "name": "status",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-status.log",
+          "finishedAt": "2026-10-22T23:42:41.9405912Z",
+          "startedAt": "2026-10-22T23:42:41.1525488Z",
+          "arguments": ["status:check"],
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55",
+          "command": "pnpm"
+        },
+        {
+          "name": "corpus",
+          "exitCode": 0,
+          "log": ".tmp/profile-0394-post-corpus.log",
+          "finishedAt": "2026-10-22T23:42:42.3932519Z",
+          "startedAt": "2026-10-22T23:42:41.9472541Z",
+          "arguments": ["corpus:check"],
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc",
+          "command": "pnpm"
+        }
+      ],
+      "kind": "owned-post-corpus-verification",
+      "schemaVersion": 1,
+      "ok": true
+    },
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.394.0.json",
+      "sha256": "4044d16401710fe51500565c05a84ba2250e369871f4b347f15bb014f1c47be0",
+      "passed": 12
+    },
+    "affectedCorpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.394.0.json",
+      "sha256": "8b078f4bb0c0caf7582fff612aa4fdcd3c3ce70067bb1bed05ea5d002b33cb2f",
+      "packages": 4,
+      "observations": 49
+    }
+  },
+  "remaining": [
+    "All 13 domain matrices and all 2553 callable matrices remain incomplete; counts do not measure percentage completion.",
+    "Public expression snapshots remain sources-only; general attributes<-, full parse/source metadata, multidimensional indexing and complete transformation/dispatch semantics remain unfinished.",
+    "Bounded RHS admission does not settle special/builtin single-[, pairlist/formula or malformed-index precedence. The original structure attribute-order discrepancy remains open.",
+    "The latest full 24-package corpus checkpoint remains 0.393; this 0.394 refresh covers only evaluate, withr, abind and numDeriv.",
+    "Original dependency closure and assisted testing-runner evidence remain separate; no substitute-runner P6/P7 credit.",
+    "Repeated performance remains 0.389 and packed-consumer evidence remains 0.388; no public API or packaging schema changed.",
+    "Linux normative gate and Formula holdout remain deferred; no downloads, pushes, publication or remote changes."
+  ]
+}

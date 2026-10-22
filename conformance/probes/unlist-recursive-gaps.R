@@ -1,10 +1,12 @@
 # Independently authored GNU R 4.6.1 black-box observations; no native implementation body.
-# Open gaps retained outside passing conformance claims. Both native expectations are TRUE
+# Original gap observations retained without changing their assertions. Both native expectations are TRUE
 # with no warnings. The original 43-row survey remains unchanged.
 # Frozen hashes below identify original assertions before trailing-space normalization.
 # Named expression: list names outer.a, outer.b, f; values 1L, 2L and the owned closure.
 # Constructor order: source attribute names dim, names, note, class.
 # The revised unlist fixture checks input nonmutation without claiming that order fixed.
+# Profile 0.394 also verifies the exact named-expression assertion in expression-attributes.test.ts.
+# That bounded named-expression gap is closed; the constructor-order assertion remains unfinished.
 
 # named-expression
 # Frozen assertion SHA-256: b58e4945746d1b3bb12afba8d5454ca3c61b477af542576152cb9391f06bf1f2

@@ -286,11 +286,17 @@ it.each(cases)("%s: %s", async (_group, _name, code) => {
   expect(result.warnings).toEqual([]);
 });
 
-it("reports attributed symbol and expression mode results as unsupported", async () => {
-  for (const mode of ["symbol", "expression"]) {
-    await expect(
-      runtime.eval(`x<-structure("owned",note="original");storage.mode(x)<-"${mode}"`),
-    ).rejects.toMatchObject({ code: "NRU6250" });
-    expect(await runtime.eval('identical(x,structure("owned",note="original"))')).toBe(true);
-  }
+it("reports attributed symbol mode results as unsupported", async () => {
+  await expect(
+    runtime.eval('x<-structure("owned",note="original");storage.mode(x)<-"symbol"'),
+  ).rejects.toMatchObject({ code: "NRU6250" });
+  expect(await runtime.eval('identical(x,structure("owned",note="original"))')).toBe(true);
+});
+// Independently verified GNU R 4.6.1 follow-up for the expression attribute carrier.
+it("retains metadata when storage.mode converts an owned character value to expression", async () => {
+  expect(
+    await runtime.eval(
+      'local({observed<-local({x<-structure("owned",note="original");before<-x;storage.mode(x)<-"expression";list(value=x,original=before,kind=typeof(x),note=attr(x,"note"))});identical(observed,list(value=structure(expression("owned"),note="original"),original=structure("owned",note="original"),kind="expression",note="original"))&&identical(names(attributes(observed$value)),"note")})',
+    ),
+  ).toBe(true);
 });

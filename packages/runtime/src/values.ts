@@ -161,7 +161,12 @@ export interface RLanguage {
 export interface RExpression {
   readonly type: "expression";
   readonly values: readonly AstNode[];
+  readonly length: number;
+  readonly attributes: RAttributes;
 }
+
+/** Metadata-bearing sequences; expression syntax remains outside ordinary vector storage. */
+export type RAttributedSequence = RVector | RPairlist | RExpression;
 
 /** A lazily evaluated, memoized argument. */
 export interface RPromise {
@@ -975,11 +980,26 @@ export const R_NULL: RNull = Object.freeze({ type: "null" });
 
 const EMPTY_ATTRIBUTES: RAttributes = new Map();
 
+/** Construct expression storage without evaluating or copying its embedded values. */
+export function expressionValue(
+  values: readonly AstNode[],
+  attributes: RAttributes = EMPTY_ATTRIBUTES,
+): RExpression {
+  const nodes = Object.freeze([...values]);
+  return {
+    type: "expression",
+    values: nodes,
+    length: nodes.length,
+    attributes: new Map(attributes),
+  };
+}
+
 /** Read the general attribute map carried by supported attributed runtime objects. */
 export function objectAttributes(value: RValue): RAttributes | undefined {
   if (
     isVector(value) ||
     value.type === "pairlist" ||
+    value.type === "expression" ||
     value.type === "environment" ||
     value.type === "closure"
   ) {
@@ -1325,7 +1345,7 @@ export function dataFrameRowCount(value: RList): number {
 }
 
 /** Read stored textual names; callers requiring NA identity inspect the names attribute mask. */
-export function vectorNames(value: RVector | RPairlist): readonly string[] | undefined {
+export function vectorNames(value: RAttributedSequence): readonly string[] | undefined {
   const names = value.attributes.get("names");
   if (names === undefined) return undefined;
   if (names.type !== "character" || names.length !== value.length) {
@@ -1337,7 +1357,7 @@ export function vectorNames(value: RVector | RPairlist): readonly string[] | und
 }
 
 /** Read validated dimensions from a vector when present. */
-export function vectorDimensions(value: RVector | RPairlist): readonly number[] | undefined {
+export function vectorDimensions(value: RAttributedSequence): readonly number[] | undefined {
   const dimensions = value.attributes.get("dim");
   if (dimensions === undefined) return undefined;
   if (dimensions.type !== "integer" || dimensions.missing !== undefined) {
@@ -1356,12 +1376,12 @@ export function vectorDimensions(value: RVector | RPairlist): readonly number[] 
 }
 
 /** Read exact class names from a vector when present. */
-export function vectorClasses(value: RVector | RPairlist): readonly string[] | undefined {
+export function vectorClasses(value: RAttributedSequence): readonly string[] | undefined {
   return objectClasses(value);
 }
 
 /** Return an immutable vector clone with an exact names attribute. */
-export function withNames<T extends RVector | RPairlist>(value: T, names: readonly string[]): T {
+export function withNames<T extends RAttributedSequence>(value: T, names: readonly string[]): T {
   if (names.length !== value.length) {
     throw new RTypeMismatchError("NRT3004", "Names must match vector length.", {
       details: { valueLength: value.length, namesLength: names.length },
@@ -1373,7 +1393,7 @@ export function withNames<T extends RVector | RPairlist>(value: T, names: readon
 }
 
 /** Return an immutable vector clone with validated dimensions. */
-export function withDimensions<T extends RVector | RPairlist>(
+export function withDimensions<T extends RAttributedSequence>(
   value: T,
   dimensions: readonly number[],
 ): T {
@@ -1394,7 +1414,7 @@ export function withDimensions<T extends RVector | RPairlist>(
 }
 
 /** Return an immutable vector clone with exact class names. */
-export function withClasses<T extends RVector | RPairlist>(
+export function withClasses<T extends RAttributedSequence>(
   value: T,
   classes: readonly string[],
 ): T {
@@ -1407,7 +1427,7 @@ export function withClasses<T extends RVector | RPairlist>(
 }
 
 /** Return an immutable vector clone with one validated runtime attribute. */
-export function withAttribute<T extends RVector | RPairlist>(
+export function withAttribute<T extends RAttributedSequence>(
   value: T,
   name: string,
   attribute: RValue,
@@ -1425,7 +1445,7 @@ export function withAttribute<T extends RVector | RPairlist>(
 }
 
 /** Return an immutable vector clone without one named runtime attribute. */
-export function withoutAttribute<T extends RVector | RPairlist>(value: T, name: string): T {
+export function withoutAttribute<T extends RAttributedSequence>(value: T, name: string): T {
   if (!value.attributes.has(name)) return value;
   const attributes = new Map(value.attributes);
   attributes.delete(name);
@@ -1433,7 +1453,7 @@ export function withoutAttribute<T extends RVector | RPairlist>(value: T, name: 
 }
 
 /** Return an immutable vector clone without an explicit class attribute. */
-export function withoutClasses<T extends RVector | RPairlist>(value: T): T {
+export function withoutClasses<T extends RAttributedSequence>(value: T): T {
   return withoutAttribute(value, "class");
 }
 

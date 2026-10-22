@@ -7,6 +7,14 @@ import {
 import type { PartialArgumentMatch } from "./arguments.js";
 import { translatePosixCharacterClasses } from "./regex.js";
 import { logicalCondition } from "./logical-condition.js";
+import {
+  extractExpressionElement,
+  extractExpressionMember,
+  replaceExpressionElement,
+  replaceExpressionMember,
+  replaceExpressionSubset,
+  subsetExpression,
+} from "./expression-subset.js";
 import { assertNever } from "@nativr/ast";
 import type {
   AssignmentExpressionNode,
@@ -1259,7 +1267,7 @@ export class Evaluator {
               await this.#assignBinding(targetEnvironment, name, updated, context);
               return { value: replacement, visible: false };
             }
-            if (target.type === "language") {
+            if (target.type === "language" || target.type === "expression") {
               const positional = node.target.arguments.filter(
                 (argument) => argument.name === undefined,
               );
@@ -1269,7 +1277,9 @@ export class Evaluator {
               ) {
                 throw new REvaluationError(
                   "NRE2204",
-                  "Language replacement accepts at most one subscript.",
+                  target.type === "expression"
+                    ? "Expression replacement accepts at most one subscript."
+                    : "Language replacement accepts at most one subscript.",
                 );
               }
               if (node.target.arguments.some((entry) => entry.name !== undefined)) {
@@ -1290,9 +1300,13 @@ export class Evaluator {
                   ? undefined
                   : await this.#evaluateValue(argument, environment, context);
               updated =
-                node.target.operator === "["
-                  ? replaceLanguageSubset(target, index, replacement, context)
-                  : replaceLanguageElement(target, index as RValue, replacement, context);
+                target.type === "expression"
+                  ? node.target.operator === "["
+                    ? replaceExpressionSubset(target, index, replacement, context)
+                    : replaceExpressionElement(target, index as RValue, replacement, context)
+                  : node.target.operator === "["
+                    ? replaceLanguageSubset(target, index, replacement, context)
+                    : replaceLanguageElement(target, index as RValue, replacement, context);
               await this.#assignBinding(targetEnvironment, name, updated, context);
               return { value: replacement, visible: false };
             }
@@ -1493,6 +1507,9 @@ export class Evaluator {
             if (target.type === "language") {
               return { value: extractLanguageMember(target, name, context), visible: true };
             }
+            if (target.type === "expression") {
+              return { value: extractExpressionMember(target, name, context), visible: true };
+            }
             return {
               value: extractListMember(target, name, context),
               visible: true,
@@ -1550,12 +1567,14 @@ export class Evaluator {
             }
             return { value: R_NULL, visible: true };
           }
-          if (target.type === "language") {
+          if (target.type === "language" || target.type === "expression") {
             const positional = node.arguments.filter((argument) => argument.name === undefined);
             if (positional.length > 1 || (node.operator === "[[" && positional.length !== 1)) {
               throw new REvaluationError(
                 "NRE2204",
-                "Language extraction accepts at most one subscript.",
+                target.type === "expression"
+                  ? "Expression extraction accepts at most one subscript."
+                  : "Language extraction accepts at most one subscript.",
               );
             }
             const named = node.arguments.filter((entry) => entry.name !== undefined);
@@ -1589,9 +1608,13 @@ export class Evaluator {
                   );
             return {
               value:
-                node.operator === "["
-                  ? subsetLanguage(target, index, context)
-                  : extractLanguageElement(target, index as RValue, context, exact),
+                target.type === "expression"
+                  ? node.operator === "["
+                    ? subsetExpression(target, index, context)
+                    : extractExpressionElement(target, index as RValue, context, exact)
+                  : node.operator === "["
+                    ? subsetLanguage(target, index, context)
+                    : extractLanguageElement(target, index as RValue, context, exact),
               visible: true,
             };
           }
@@ -2038,6 +2061,8 @@ export class Evaluator {
         const binding = operation.target.bindings.get(operation.member);
         return binding === undefined ? R_NULL : this.#force(binding, context);
       }
+      if (operation.target.type === "expression")
+        return extractExpressionMember(operation.target, operation.member, context);
       return extractListMember(operation.target, operation.member, context);
     }
     if (operation.target.type === "environment") {
@@ -2046,6 +2071,11 @@ export class Evaluator {
       }
       const binding = operation.target.bindings.get(environmentSubscriptName(operation.index));
       return binding === undefined ? R_NULL : this.#force(binding, context);
+    }
+    if (operation.target.type === "expression") {
+      return operation.operator === "["
+        ? subsetExpression(operation.target, operation.index, context)
+        : extractExpressionElement(operation.target, operation.index, context, operation.exact);
     }
     if (!isVector(operation.target) && operation.target.type !== "pairlist") {
       throw new RTypeMismatchError(
@@ -2137,7 +2167,8 @@ export class Evaluator {
     }
     if (target.type === "language")
       return replaceLanguageMember(target, member, replacement, context);
-    if (target.type === "expression" && replacement.type === "null") return target;
+    if (target.type === "expression")
+      return replaceExpressionMember(target, member, replacement, context);
     if (isAtomic(target)) {
       const warning = { code: "NRW3304", message: "Coercing LHS to a list" };
       const condition = withClasses(
@@ -2197,6 +2228,11 @@ export class Evaluator {
             ? subsetVector(replacement, integerVector([]), context)
             : logicalVector([]);
       return replaceVectorSubset(emptyTarget, operation.index, replacement, context);
+    }
+    if (operation.target.type === "expression") {
+      return operation.operator === "["
+        ? replaceExpressionSubset(operation.target, operation.index, replacement, context)
+        : replaceExpressionElement(operation.target, operation.index, replacement, context);
     }
     if (!isVector(operation.target) && operation.target.type !== "pairlist") {
       throw new RTypeMismatchError(
@@ -6390,7 +6426,7 @@ function runtimeClassNames(value: RValue): readonly string[] {
   if (value.type === "formula") return ["formula"];
   if (value.type === "symbol") return ["name"];
   if (value.type === "language") return ["call"];
-  if (value.type === "expression") return ["expression"];
+  if (value.type === "expression") return objectClasses(value) ?? ["expression"];
   if (value.type === "null") return ["NULL"];
   const explicit = objectClasses(value);
   if (explicit !== undefined) return explicit;

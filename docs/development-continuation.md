@@ -2296,3 +2296,64 @@ snapshot/API boundaries, exact evaluation and metadata behavior, reference ident
 limits. Select acceptance cases from native observations, reproduce the current-runtime baseline,
 and complete the semantic and affected-package gates before the next local semantic commit. Full
 parse-data/source-reference behavior remains subsequent work. All thirteen domains remain open.
+
+### Expression metadata checkpoint (profile 0.394)
+
+The frozen native survey has 46 original assertions: 44 pass and two conversion assumptions are
+false. Those originals remain unchanged. Three separately authored conversion controls produce a
+47-row native-passing pool; profile 0.393 passes seven, differs on twelve and returns controlled
+errors on 28. The implementation acceptance set contains 45 rows, excluding only the two general
+`attributes<-` routes retained in
+[`expression-attributes-gaps.R`](../conformance/probes/expression-attributes-gaps.R).
+
+Expression tags now remain names rather than assignments. Bounded metadata, conversions,
+selection/replacement and reference handling have independent evidence. Four raw recursive groups
+have native validation with ten environment aliases and sixteen strict controls for eight composite
+binding/group associations. Separate replacement-admission and storage-mode groups preserve exact
+graphs without additional binding causal credit. The original named-expression unlist assertion
+passes; the original structure attribute-order discrepancy remains open. The
+[verification record](../compatibility/platform-evidence/expression-metadata-windows-0.394.0.json)
+retains independent native inputs, source-string checks and completed runtime gates.
+
+Two older source-test expectations were corrected after independent GNU R 4.6.1 checks: tagged
+expression evaluation returns the cell's value without assigning the tag, and converting an owned
+character scalar with `storage.mode` to expression preserves its ordinary attribute and original
+value. These bounded checks do not establish every replacement or storage-mode conversion. The first
+failed production attempt is retained separately from the successful rerun.
+
+- Full pnpm check: 3,352 tests passed, 95 opt-in skips; production/test/config types and bundle
+  audit pass.
+- Checked-in conformance: 1,486 cases passed.
+- Live GNU R: 1,413 cases passed, with 55 NativR-only exclusions.
+- Recursive Oracle v2: 401 cases passed; 172 bindings have causal case links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.394.0.json): 12/12 tests
+  pass, including three unchanged native-backed expression assertions. Required examples take 13.431
+  / 15.737 / 69.431 seconds on Chromium / Firefox / WebKit under the unchanged 120-second timeout.
+  These are advisory correctness-run durations, not isolated performance measurements.
+- Bundles: Worker 494.0/512 KiB gzip; all four existing caps pass.
+- Inventory: 132 partial dimensions on 25 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus verification: 38 checkpoint tests, all-source/test/config types without
+  emitting builds, checkpoint lint, formatting, and capability/coverage/inventory/status/corpus
+  checks pass. These are supplemental to the completed 3,352-test production run.
+
+The [selected corpus refresh](../compatibility/package-check-evidence/corpus-0.394.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.394.0.json) retain all 49
+observations and comparisons for four regression packages. Tiers remain evaluate P4, withr P4, abind
+P7 and numDeriv P6, with no promotions. Package-test stage metadata follows the maintained
+nested-coverage policy: evaluate has 19 discovered obligations and withr has 26, each still with one
+executed entrypoint and a failed stage. abind and numDeriv retain passed 5/5 and 7/7 stages; reason
+hashes are refreshed. These metadata differences do not imply a runtime improvement or regression.
+The other twenty development/regression packages retain prior evidence; Formula is untouched. The
+latest full 24-package checkpoint remains 0.393.
+
+The completed semantic, browser, selected-package and supplemental gates agree with the generated
+reports and this checkpoint. The selected refresh remains distinct from a full-corpus sweep;
+original dependency-closure evidence remains separate from assisted-runner outcomes.
+
+Next measurable work is bounded parse controls, defaults and laziness with independently authored
+fixtures, followed by the confirmed browser platform-adapter gaps. Public expression snapshots
+remain sources-only; this increment adds no lossless metadata round trip or protocol schema. Full
+source/parse-data metadata remains unsupported, while general `attributes<-`, complete
+multidimensional indexing and transformation/dispatch coverage remain subsequent work. Continue
+licensed datasets and isolated testing-runner parity. All five completion criteria remain the goal;
+Linux, Formula, downloads, remote actions and publication retain their existing boundaries.

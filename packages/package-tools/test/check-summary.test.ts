@@ -39,6 +39,7 @@ it.each([
   "0.388.0",
   "0.389.0",
   "0.393.0",
+  "0.394.0",
 ])("pins checkpoint %s without evaluating the holdout", async (profile) => {
   const read = async (path: string) =>
     JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
@@ -64,25 +65,31 @@ it.each([
     summarySha256: string | null;
     tier: string;
   }[];
-  const expectedNames = ["0.381.0", "0.383.0"].includes(profile)
-    ? ["prettyunits"]
-    : profile === "0.360.0"
-      ? ["pkgconfig", "abind", "inline", "withr", "evaluate", "rprojroot", "whisker"]
-      : profile !== "0.357.0"
-        ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
-        : [
-            "prettyunits",
-            "rstudioapi",
-            "inline",
-            "evaluate",
-            "rprojroot",
-            "withr",
-            "whisker",
-            "pkgconfig",
-            "abind",
-          ];
+  const expectedNames =
+    profile === "0.394.0"
+      ? ["evaluate", "withr", "abind", "numDeriv"]
+      : ["0.381.0", "0.383.0"].includes(profile)
+        ? ["prettyunits"]
+        : profile === "0.360.0"
+          ? ["pkgconfig", "abind", "inline", "withr", "evaluate", "rprojroot", "whisker"]
+          : profile !== "0.357.0"
+            ? corpus.filter((e) => e.partition !== "holdout").map((e) => e.package)
+            : [
+                "prettyunits",
+                "rstudioapi",
+                "inline",
+                "evaluate",
+                "rprojroot",
+                "withr",
+                "whisker",
+                "pkgconfig",
+                "abind",
+              ];
   expect(entries.map((e) => e.package).sort()).toEqual(expectedNames.sort());
   expect(entries).toHaveLength(expectedNames.length);
+  if (profile === "0.394.0") {
+    expect(checkpoint.scope).toBe("selected-development-and-regression");
+  }
   if (["0.381.0", "0.383.0"].includes(profile)) {
     expect(checkpoint.scope).toBe("affected-development-and-regression");
   }
