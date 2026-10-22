@@ -1930,3 +1930,17 @@ records both tarball hashes and smoke-script inputs. With offline dependency res
 strict public declaration checking, the browser consumer build and the package-tools tarball CLI
 pass. No emitting build ran during the smoke. Performance measurements still need refreshing from
 0.380, and this packaging result does not establish publication or broader OS readiness.
+
+### Browser performance refresh at profile 0.388
+
+The maintained full harness passes all three cached engines using pinned numDeriv inputs and the
+verified production build. The
+[redacted checkpoint](../compatibility/platform-evidence/performance-windows-0.388.0.json) contains
+seven fresh-context and seven same-document startups, seven cancellation/recovery samples, and two
+warmups plus nine measured samples for each of five owned package workloads per engine. All
+correctness checks pass, runtime/tool hashes remain stable, and no external requests or page errors
+occur. Fresh-context createR medians are 56 / 116 / 87 ms; complete post-interrupt recovery medians
+are 68.4 / 116 / 94 ms for Chromium / Firefox / WebKit. Zero-valued measurements reflect clock
+resolution. These are exploratory observations; release latency budgets, broader OS evidence and
+optimization of the required-example workload remain unfinished. No timeout or bundle cap was
+changed. Performance and packed-consumer evidence are now both current at 0.388.

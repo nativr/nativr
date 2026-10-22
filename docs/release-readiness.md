@@ -59,6 +59,29 @@ records both tarball digests and the smoke-script inputs. It reused the existing
 and local dependency cache; strict consumer declaration checking, the browser consumer build and the
 package-tools tarball CLI all passed. This does not establish registry or remote CI readiness.
 
+### Current performance observations
+
+The
+[0.388 Windows performance checkpoint](../compatibility/platform-evidence/performance-windows-0.388.0.json)
+passes all owned correctness and capture checks on Chromium, Firefox and WebKit. Each engine has
+seven fresh-context startups, seven same-document startups, seven interruption/recovery samples, and
+nine samples after two warmups for each of five fixed numDeriv workloads. Cached archive and
+converted artifact pins match; runtime/tool hashes remain stable; external requests and page errors
+are zero.
+
+| Median observation (milliseconds)          | Chromium | Firefox | WebKit |
+| ------------------------------------------ | -------: | ------: | -----: |
+| Fresh-context createR                      |     56.0 |   116.0 |   87.0 |
+| Same-document createR                      |     53.4 |   122.0 |   76.0 |
+| Interrupt to rejected evaluation           |      0.2 |     1.0 |    0.0 |
+| Interrupt to completed recovery evaluation |     68.4 |   116.0 |   94.0 |
+| Twelve-variable complex Hessian workload   |     87.6 |   624.0 |   66.0 |
+
+These small-sample measurements are descriptive, not latency acceptance or a controlled speedup
+comparison. Zero measured latency reflects clock resolution. Recovery verifies Worker reset and
+state loss. Browser/OS coverage, release latency budgets and the slow required-example workload
+remain separate work; the existing 120-second example timeout is unchanged.
+
 ## Cached package checkpoint
 
 All 24 development/regression archives matched their pinned hashes and were rerun with the original
@@ -121,8 +144,8 @@ repeatability or a compatibility improvement. The
 9/9, including NULL/literal-missing dispatch, method defaults and missing flags through the Worker
 without evaluation network traffic. Required examples take 12.6 / 15.6 / 66.7 seconds within the
 unchanged timeout; this is not release-performance acceptance. Worker gzip is 491.4/512 KiB, and all
-caps pass. Performance and pack evidence remain at 0.380. Public API/protocol, holdout, Linux,
-download and remote-action boundaries remain unchanged.
+caps pass. Subsequent local tooling checkpoints refresh performance and pack evidence to 0.388.
+Public API/protocol, holdout, Linux, download and remote-action boundaries remain unchanged.
 
 ### Profile 0.387 verification (2026-10-22)
 
