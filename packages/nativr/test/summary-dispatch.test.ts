@@ -27,7 +27,7 @@ it("selects methods per class and only dispatches on the first data argument", a
     await r.eval(
       'local({c.fixture<-function(...)exists(".Group",inherits=FALSE);c(structure(1,class="fixture"))})',
     ),
-  ).toBe(false);
+  ).toBe(true);
   expect(
     await r.eval(
       `local({Summary.first<-function(...)"group-first";sum.second<-function(...)"specific-second";x<-structure(1,class=c("first","second"));c(sum(x),sum(1,x),sum(NULL,x))})`,

@@ -38,6 +38,34 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Replication family controls and interpreted dispatch (profile 0.378)
+
+`rep.int(x, times)` and `rep_len(x, length.out)` expose closure signatures and force x before the
+control after argument matching. Scalar and vector counts retain the observed truncation, coercion
+warnings, raw/list restrictions, missing arguments and NULL diagnostics. Empty rep_len inputs fill
+with typed missing values, raw zeroes or NULL elements; zero length retains the original empty value
+and its attributes. Positive length on NULL errors. Ordinary nonempty inputs drop names and
+unrelated container attributes. Factors retain levels and normalized factor/ordered classes; empty
+factors lose those attributes when lengthened. Element identity and expression elements are
+preserved. Final allocation and expansion remain subject to vector, step and cancellation limits.
+
+The interpreted library path has executable coverage for primary class/default dispatch, fallback to
+rep methods, factor bypass, declaration-order forcing, visible method results, forwarded call syntax
+and forced substitution values. Its modeled forwarding frame uses the library namespace lookup
+chain. rep.int's NextMethod default replicates directly; rep_len can continue through rep. Owned S3
+methods expose generic call/definition environments and forward reassigned supplied formal arguments
+through NextMethod. UseMethod selects its first matched formal when named actuals are reordered.
+These changes retain lazy arguments not consumed by the next method.
+
+Sixty-six independently authored parity fixtures form fourteen foundation/recursive groups with
+causal binding controls. Explicit `local` evaluation isolates interpreted behavior: native compiler
+optimizations can change replication method lookup, frame counts and call syntax. Compiled-path
+equivalence remains unfinished. Symbol inputs with unbound names also have an observed native
+evaluation difference; that case is not credited by the invalid-environment fixtures. Integer
+literal suffixes in unused-argument diagnostics, exact warning/condition calls, missing/dots
+rewrites in NextMethod, and general attributed/class edge cases remain required work. This matrix
+does not establish full replication or S3 compatibility.
+
 ### Replication controls and class methods (profile 0.377)
 
 rep is a special primitive with args(x, ...). It selects S3 dispatch from its first actual before

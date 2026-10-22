@@ -167,7 +167,7 @@ export interface RExpression {
 export interface RPromise {
   readonly type: "promise";
   readonly expression: AstNode | null;
-  /** Original RHS retained for substitute() when a replacement call embeds its evaluated value. */
+  /** Substitution expression when observable call syntax differs from the supplied expression. */
   readonly sourceExpression?: AstNode;
   readonly environment: REnvironment;
   /** Whether this promise originated from an omitted actual argument. */
@@ -471,6 +471,8 @@ export interface BuiltinInvocation {
     group?: string,
     lookupEnvironment?: REnvironment,
     defaultOnly?: boolean,
+    /** Observable call for a modeled library forwarding operation. */
+    dispatchCall?: CallExpressionNode,
   ): Promise<RValue | undefined>;
   nextMethod(generic?: string): Promise<RValue>;
 }

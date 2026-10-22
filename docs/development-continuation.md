@@ -1332,7 +1332,7 @@ remain required work. General attributes, bytecode-equivalent control, earlier e
 performance cost, browser timing and all thirteen domain closures are also unfinished. The full goal
 stays active.
 
-### Immediate continuation after profile 0.377
+### Continuation recorded at profile 0.377 (superseded below)
 
 Next close rep.int and rep_len using independently authored native fixtures. Initial observations
 show both are closures with x/times or x/length.out formals; they force x before the control even
@@ -1362,3 +1362,61 @@ rep_len(integer(), 2L), rep_len(expression(x, y), 3L), rep_len(1:2, "3"), attrib
 missing-argument diagnostics and forcing a times error before global method dispatch. Closure
 signatures, raw/list controls, warning order and class-specific fallback complete the next bounded
 acceptance matrix before the usual full gates and corpus rerun.
+
+### Profile 0.378 verification (2026-10-22)
+
+rep.int and rep_len now have closure signatures, declaration-order forcing, scalar/vector control
+coercion, ordered warnings, typed empty filling, factor class normalization and expression/element
+identity preservation. Their interpreted class dispatch uses the observed primary/default/fallback
+order, library lookup frames, visible results and distinct NextMethod fallback rules. Shared S3
+methods expose generic environments, NextMethod forwards reassigned supplied formals, and UseMethod
+uses its first matched formal for reversed named actuals. Final allocations and steps remain
+bounded. The type errors in call construction and an ES2023-only array operation were fixed without
+raising the browser language target.
+
+All 66 independently authored native parity fixtures and the resource/recovery test pass. Fourteen
+foundation/recursive groups pass; metadata and error-only diagnostic groups have no causal claims.
+The full check passes 2154 tests with 93 opt-in skips. Checked-in/live/recursive conformance passes
+1368 / 1299 / 280, with 149 linked bindings. All 25 checkpoint-integrity tests pass after saving the
+new corpus checkpoint. Bundle budgets pass: client 17.6/150 KiB gzip, Worker 483.6/512 KiB gzip,
+parser 671.9/1,536 KiB raw, elementary 311.2/384 KiB raw. Name overlap stays 780/2,522; it is not a
+completion percentage.
+
+The [0.378 checkpoint](../compatibility/package-check-evidence/corpus-0.378.0.json) records all 24
+digest-pinned cached development/regression packages with original entrypoints and applicable native
+repeatability. All 178 script input hashes, execution/comparison outcomes and repeatability flags
+are unchanged from 0.377; package stages and tiers are unchanged. pkgconfig and abind remain P7,
+numDeriv P6, eight packages P5, twelve P4 and BH P3. The untouched Formula holdout remains P0. The
+withr timezone example retains its native repeatability failure and mismatch; unchanged failures
+gain no credit. No substitute testing runner receives P6/P7 credit. Formula and partition
+assignments are unchanged. No public NativR API, Worker protocol, dependency direction or host
+capability changed. E2e, pack smoke and performance measurements were not refreshed for this
+base-runtime increment. No downloads, pushes or publication occurred; no GNU R implementation bodies
+were development inputs.
+
+Explicit local evaluation establishes interpreted behavior. Native compiler optimizations change
+replication lookup, frame counts and call syntax; compiled-path equivalence remains unfinished.
+Unbound symbol inputs have a separate native evaluation difference. Integer suffixes in unused
+argument diagnostics, exact condition-call attribution and omitted/dots rewriting in NextMethod
+remain open. General S3 names dispatch, POSIXlt method bindings, time attributes, domain closure,
+browser timing, dataset/testing support and platform validation also remain required work.
+
+### Immediate continuation after profile 0.378
+
+Close general S3 names/names<- dispatch and expose the missing names.POSIXlt/names<-.POSIXlt methods
+using independently authored parity fixtures. Native observations demonstrate caller-local and
+global methods, default methods, forced-input error ordering, x/value signatures and year component
+names with the POSIXlt balance transition. Reproduce NativR failures first, then reuse the bounded
+dispatch/replacement primitives and add foundation/recursive evidence before full gates. The initial
+independently authored 22-case matrix passes in GNU R 4.6.1; NativR 0.378 passes two cases and fails
+twenty. Method-continuation fixtures assert that the method actually ran, so a default-only result
+cannot accidentally pass the dispatch check. This is investigative evidence, not passing conformance
+credit.
+
+Retain exact replication condition calls, unbound-symbol evaluation, integer diagnostic suffixes,
+native compiler differences, omitted/dots NextMethod arguments, explicit time-zone attributes and
+the general attribute model in the semantic queue. Continue the measurable thirteen-domain and
+callable inventory, independently licensed offline datasets, isolated testing support, browser
+timing and release gates. Linux and Formula still require separate authorization; downloads need
+approval. The full five-criterion target remains unfinished; the next local semantic work needs no
+additional input.

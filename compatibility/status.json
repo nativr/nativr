@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.377.0",
-  "capabilityManifestHash": "92885ffef18b4657471d32e612bdcf49bb08f935d4231a75b7ad518b1810bb88",
+  "semanticProfileVersion": "0.378.0",
+  "capabilityManifestHash": "cdb047b703c18d7c6a35289f6892ae489b14bc5ce886ade58ee13641ad0762f4",
   "evidence": {
-    "checkedInConformanceCases": 1354,
-    "liveREligibleCases": 1285,
+    "checkedInConformanceCases": 1368,
+    "liveREligibleCases": 1299,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 266,
-    "recursiveBehaviorallyProvenBindings": 146,
+    "recursiveOracleV2Cases": 280,
+    "recursiveBehaviorallyProvenBindings": 149,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -315,7 +315,12 @@
       { "binding": "base::next", "cases": ["first-class-loop-transfer"] },
       {
         "binding": "base::NextMethod",
-        "cases": ["combine-next-method-primitive-fallback", "next-method-default-reentry"]
+        "cases": [
+          "combine-next-method-primitive-fallback",
+          "next-method-default-reentry",
+          "replication-family-next-method",
+          "replication-family-shared-s3"
+        ]
       },
       {
         "binding": "base::on.exit",
@@ -369,9 +374,38 @@
           "replication-values"
         ]
       },
+      {
+        "binding": "base::rep_len",
+        "cases": [
+          "replication-family-attributes",
+          "replication-family-classes",
+          "replication-family-dispatch",
+          "replication-family-empty",
+          "replication-family-length-controls",
+          "replication-family-next-method",
+          "replication-family-ordering",
+          "replication-family-reflection",
+          "replication-family-values"
+        ]
+      },
       { "binding": "base::rep.Date", "cases": ["replication-classes"] },
       { "binding": "base::rep.difftime", "cases": ["replication-classes"] },
       { "binding": "base::rep.factor", "cases": ["replication-factor"] },
+      {
+        "binding": "base::rep.int",
+        "cases": [
+          "replication-family-attributes",
+          "replication-family-classes",
+          "replication-family-dispatch",
+          "replication-family-empty",
+          "replication-family-int-controls",
+          "replication-family-next-method",
+          "replication-family-ordering",
+          "replication-family-reflection",
+          "replication-family-values",
+          "replication-family-warnings"
+        ]
+      },
       { "binding": "base::rep.numeric_version", "cases": ["replication-classes"] },
       { "binding": "base::rep.POSIXct", "cases": ["replication-classes"] },
       { "binding": "base::rep.POSIXlt", "cases": ["replication-posixlt"] },
@@ -554,6 +588,7 @@
       { "binding": "base::tryCatch", "cases": ["exiting-condition-handlers-and-unwind"] },
       { "binding": "base::unlist", "cases": ["unlist-shallow-values-types-and-names"] },
       { "binding": "base::unloadNamespace", "cases": ["unload-absent-namespace"] },
+      { "binding": "base::UseMethod", "cases": ["replication-family-shared-s3"] },
       {
         "binding": "base::vapply",
         "cases": [

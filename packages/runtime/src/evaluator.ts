@@ -366,6 +366,7 @@ interface ClosureCallFrame {
   readonly closure: RClosure;
   readonly matched: ReadonlyMap<string, RPromise>;
   readonly matchedByPosition: ReadonlyMap<number, BuiltinCallArgument>;
+  readonly methodFrame?: S3DispatchFrame;
   readonly call?: CallExpressionNode;
 }
 
@@ -2868,6 +2869,7 @@ export class Evaluator {
             group,
             lookupEnvironment,
             defaultOnly,
+            dispatchCall,
           ) => {
             const result = await this.#dispatchS3IfPresentResult(
               generic,
@@ -2881,7 +2883,7 @@ export class Evaluator {
                 args[0]?.promise.environment ??
                 this.#globalEnvironment,
               group,
-              call,
+              dispatchCall ?? call,
               defaultOnly,
             );
             if (result === undefined) return undefined;
@@ -3522,9 +3524,20 @@ export class Evaluator {
       }
       if (methodFrame !== undefined) {
         setBinding(frame, ".Generic", characterVector([methodFrame.generic]));
-        if (methodFrame.group !== undefined)
-          setBinding(frame, ".Group", characterVector([methodFrame.group]));
+        setBinding(frame, ".Group", characterVector([methodFrame.group ?? ""]));
         setBinding(frame, ".Method", characterVector([methodFrame.methodName ?? ""]));
+        setBinding(
+          frame,
+          ".GenericCallEnv",
+          callerEnvironment ?? this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment,
+        );
+        setBinding(
+          frame,
+          ".GenericDefEnv",
+          methodFrame.genericEnvironment === this.#baseEnvironment
+            ? this.#baseNamespace
+            : this.#s3TopEnvironment(methodFrame.genericEnvironment),
+        );
         const classes = characterVector(methodFrame.classes.slice(methodFrame.classIndex));
         setBinding(
           frame,
@@ -3547,6 +3560,7 @@ export class Evaluator {
         closure,
         matched,
         matchedByPosition: result.matchedByPosition,
+        ...(methodFrame === undefined ? {} : { methodFrame }),
         ...(call === undefined ? {} : { call }),
       });
       this.#callFrames.push({
@@ -4101,7 +4115,7 @@ export class Evaluator {
     let arguments_ = callFrame?.arguments ?? [];
     let dispatchObject = object;
     if (dispatchObject === undefined) {
-      const first = arguments_[0];
+      const first = callFrame?.matchedByPosition.get(0) ?? arguments_[0];
       if (first === undefined) {
         throw new REvaluationError(
           "NRE2214",
@@ -5205,12 +5219,45 @@ export class Evaluator {
     const repeatedGroupMember =
       Boolean(frame.group) && frame.methodName?.startsWith(`${frame.generic}.`);
     const previous = characterVector(frame.classes.slice(frame.classIndex));
+    let active: ClosureCallFrame | undefined;
+    for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
+      context.checkpoint();
+      const candidate = this.#closureCallFrames[index]!;
+      if (candidate.methodFrame === frame) {
+        active = candidate;
+        break;
+      }
+    }
+    const formalByArgument = new Map<BuiltinCallArgument, string>();
+    if (active !== undefined) {
+      for (const [index, argument] of active.matchedByPosition) {
+        context.checkpoint();
+        const name = active.closure.parameters[index]?.name;
+        if (name !== undefined) formalByArgument.set(argument, name);
+      }
+    }
+    const nextArguments =
+      active === undefined
+        ? frame.arguments
+        : frame.arguments.map((argument) => {
+            context.checkpoint();
+            const name = formalByArgument.get(argument);
+            if (name === undefined || active.environment.bindings.get(name) === argument.promise)
+              return argument;
+            return {
+              ...argument,
+              promise: createPromise(
+                { kind: "Identifier", name, span: SYNTHETIC_SPAN },
+                active.environment,
+              ),
+            };
+          });
     return this.#invokeS3Method(
       generic ?? frame.generic,
       frame.genericEnvironment,
       frame.classes,
       Math.min(frame.classIndex + (repeatedGroupMember ? 0 : 1), frame.classes.length),
-      frame.arguments,
+      nextArguments,
       context,
       frame.call,
       frame.callerEnvironment,
@@ -5258,7 +5305,11 @@ export class Evaluator {
         return this.#invokeCallable(
           {
             type: "builtin",
-            definition: { ...definition, implementation: definition.s3DefaultImplementation },
+            definition: {
+              ...definition,
+              reflectiveFrame: false,
+              implementation: definition.s3DefaultImplementation,
+            },
           },
           arguments_,
           context,

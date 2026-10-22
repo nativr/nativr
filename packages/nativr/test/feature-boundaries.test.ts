@@ -51,9 +51,7 @@ describe("measured feature boundary coverage", () => {
       code: "NRT3109",
       message: "invalid 'times' argument",
     });
-    await expect(runtime.eval("rep_len((1:3)[FALSE], 1)")).rejects.toMatchObject({
-      code: "NRE2120",
-    });
+    await expect(runtime.eval("rep_len((1:3)[FALSE], 1)")).resolves.toBe(NA);
     await expect(
       runtime.eval("set.seed(1.5)\na <- runif(2)\nset.seed(1)\nidentical(a, runif(2))"),
     ).resolves.toBe(true);

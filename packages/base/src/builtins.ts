@@ -142,7 +142,13 @@ import type {
   RuntimeOutputRouter,
 } from "@nativr/runtime";
 import { assertNever } from "@nativr/ast";
-import type { AstNode, CallArgument, FunctionParameter, SourceSpan } from "@nativr/ast";
+import type {
+  AstNode,
+  CallArgument,
+  CallExpressionNode,
+  FunctionParameter,
+  SourceSpan,
+} from "@nativr/ast";
 import {
   matchBuiltinArguments,
   matchBuiltinDefaults,
@@ -3158,8 +3164,8 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     { name: "x" },
     { name: "..." },
   ]),
-  defineBuiltin("rep.int", ["x", "times"], "behavioral", builtinRepInt),
-  defineBuiltin("rep_len", ["x", "length.out"], "behavioral", builtinRepLen),
+  replicationFamilyBuiltin("rep.int"),
+  replicationFamilyBuiltin("rep_len"),
   withBuiltinFormals(
     defineBuiltin("replicate", ["n", "expr", "simplify"], "behavioral", builtinReplicate),
     [
@@ -19540,7 +19546,7 @@ function emptyAtomicAst(type: AtomicVector["type"]): AstNode {
   ]);
 }
 
-function callAst(name: string, arguments_: readonly CallArgument[]): AstNode {
+function callAst(name: string, arguments_: readonly CallArgument[]): CallExpressionNode {
   return {
     kind: "CallExpression",
     callee: { kind: "Identifier", name, span: SYNTHETIC_SPAN },
@@ -27463,207 +27469,303 @@ async function builtinRepPosixLt(invocation: BuiltinInvocation): Promise<RValue>
   );
 }
 
-async function builtinRepInt(invocation: BuiltinInvocation): Promise<RValue> {
-  const { matched } = await matchBuiltinArguments(invocation, ["x", "times"]);
-  const inputArgument = matched.get("x");
-  const timesArgument = matched.get("times");
-  if (inputArgument === undefined || inputArgument.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'x' is missing in rep.int().");
-  }
-  if (timesArgument === undefined || timesArgument.promise.missing) {
-    throw new REvaluationError("NRE2103", "Argument 'times' is missing in rep.int().");
-  }
+type ReplicationFamilyName = "rep.int" | "rep_len";
 
-  const input = await invocation.force(inputArgument.promise);
-  const dispatched = await invocation.dispatchS3IfPresent("rep.int", input, invocation.arguments);
-  if (dispatched !== undefined) return dispatched;
-  if (input.type === "null") {
-    throw new RTypeMismatchError("NRT3326", "rep.int() cannot replicate NULL.");
+function replicationFamilyBuiltin(name: ReplicationFamilyName): BuiltinDefinition {
+  const control = name === "rep.int" ? "times" : "length.out";
+  return {
+    ...withBuiltinFormals(
+      defineBuiltin(name, ["x", control], "behavioral", (invocation) =>
+        builtinReplicationFamily(invocation, name),
+      ),
+      [{ name: "x" }, { name: control }],
+    ),
+    reflectiveFrame: true,
+    s3DefaultImplementation: (invocation) => builtinReplicationFamilyDefault(invocation, name),
+  };
+}
+
+async function replicationFamilyArguments(
+  invocation: BuiltinInvocation,
+  name: ReplicationFamilyName,
+): Promise<readonly [RValue, RValue]> {
+  const control = name === "rep.int" ? "times" : "length.out";
+  const frame = invocation.functionEnvironment();
+  const matched =
+    frame === undefined
+      ? (await matchBuiltinArguments(invocation, ["x", control])).matched
+      : undefined;
+  const force = async (formal: string): Promise<RValue> => {
+    const promise =
+      frame === undefined ? matched?.get(formal)?.promise : invocation.functionArgument(formal);
+    if (promise === undefined)
+      throw new REvaluationError(
+        "NRE2103",
+        'argument "' + formal + '" is missing, with no default',
+      );
+    return invocation.force(promise);
+  };
+  // These library closures force formals in declaration order, before internal dispatch.
+  return [await force("x"), await force(control)];
+}
+
+async function builtinReplicationFamily(
+  invocation: BuiltinInvocation,
+  name: ReplicationFamilyName,
+): Promise<RValue> {
+  const [input, control] = await replicationFamilyArguments(invocation, name);
+  if (objectClasses(input) === undefined)
+    return replicationFamilyDefaultValue(input, control, name, invocation);
+  const controlName = name === "rep.int" ? "times" : "length.out";
+  const environment = invocation.functionEnvironment()!;
+  // Class dispatch has an observable forwarding frame, distinct from the public wrapper.
+  const dispatcher: RBuiltin = {
+    type: "builtin",
+    definition: {
+      ...withBuiltinFormals(
+        defineBuiltin(name, ["x", controlName], "behavioral", (inner) =>
+          dispatchReplicationFamily(inner, name),
+        ),
+        [{ name: "x" }, { name: controlName }],
+      ),
+      reflectiveFrame: true,
+    },
+  };
+  return invocation.invokeLazy(
+    dispatcher,
+    [
+      { promise: createForcedPromise(input, environment) },
+      { promise: createForcedPromise(control, environment) },
+    ],
+    callAst(name, [
+      { value: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+      {
+        value: { kind: "Identifier", name: controlName, span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      },
+    ]),
+  );
+}
+
+async function dispatchReplicationFamily(
+  invocation: BuiltinInvocation,
+  name: ReplicationFamilyName,
+): Promise<RValue> {
+  const [input, control] = await replicationFamilyArguments(invocation, name);
+  const environment = invocation.arguments[0]!.promise.environment;
+  const args = [
+    { promise: replicationForwardedPromise(input, "x", environment, invocation) },
+    {
+      promise: replicationForwardedPromise(
+        control,
+        name === "rep.int" ? "times" : "length.out",
+        environment,
+        invocation,
+      ),
+    },
+  ];
+  const primary = await invocation.dispatchS3IfPresent(
+    name,
+    input,
+    args,
+    true,
+    -1,
+    undefined,
+    environment,
+  );
+  if (primary !== undefined) {
+    invocation.setResultVisibility("visible");
+    return primary;
   }
-  if (!isVector(input) && input.type !== "expression") {
+  const fallback = await dispatchReplicationFallback(input, control, name, invocation, environment);
+  if (fallback !== undefined) return fallback;
+  return replicationFamilyDefaultValue(input, control, name, invocation);
+}
+
+async function dispatchReplicationFallback(
+  input: RValue,
+  control: RValue,
+  name: ReplicationFamilyName,
+  invocation: BuiltinInvocation,
+  environment: REnvironment,
+): Promise<RValue | undefined> {
+  // Factors use the internal replication path unless the primary generic has a method.
+  if (isFactor(input)) return undefined;
+  const isLength = name === "rep_len";
+  const controlName = isLength ? "length.out" : "times";
+  const result = await invocation.dispatchS3IfPresent(
+    "rep",
+    input,
+    [
+      { promise: replicationForwardedPromise(input, "x", environment, invocation) },
+      {
+        ...(isLength ? { name: controlName } : {}),
+        promise: replicationForwardedPromise(control, controlName, environment, invocation),
+      },
+    ],
+    true,
+    -1,
+    undefined,
+    environment,
+    false,
+    callAst("rep", [
+      { value: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
+      {
+        ...(isLength ? { name: controlName } : {}),
+        value: { kind: "Identifier", name: controlName, span: SYNTHETIC_SPAN },
+        span: SYNTHETIC_SPAN,
+      },
+    ]),
+  );
+  if (result !== undefined) invocation.setResultVisibility("visible");
+  return result;
+}
+
+function replicationForwardedPromise(
+  value: RValue,
+  name: string,
+  environment: REnvironment,
+  invocation: BuiltinInvocation,
+) {
+  return {
+    ...createForcedPromise(value, environment),
+    expression: { kind: "Identifier" as const, name, span: SYNTHETIC_SPAN },
+    sourceExpression: embeddedCallArgumentAst(value, () => invocation.context.checkpoint()),
+  };
+}
+
+async function builtinReplicationFamilyDefault(
+  invocation: BuiltinInvocation,
+  name: ReplicationFamilyName,
+): Promise<RValue> {
+  const [input, control] = await replicationFamilyArguments(invocation, name);
+  if (name === "rep_len" && objectClasses(input) !== undefined) {
+    const result = await dispatchReplicationFallback(
+      input,
+      control,
+      name,
+      invocation,
+      invocation.namespaceEnvironment("base") ?? invocation.baseEnvironment(),
+    );
+    if (result !== undefined) return result;
+  }
+  return replicationFamilyDefaultValue(input, control, name, invocation);
+}
+
+async function replicationFamilyScalar(
+  value: RValue,
+  invocation: BuiltinInvocation,
+): Promise<number> {
+  if (value.type === "raw")
+    throw new RTypeMismatchError("NRT3326", "unimplemented type 'raw' in 'asReal'\n");
+  if (!isAtomic(value) || value.length === 0) return Number.NaN;
+  const converted = replicationAtomicNumber(value, 0);
+  if (converted.warning !== undefined) await replicationWarning(invocation, converted.warning);
+  return Math.trunc(converted.value);
+}
+
+async function replicationFamilyDefaultValue(
+  input: RValue,
+  control: RValue,
+  name: ReplicationFamilyName,
+  invocation: BuiltinInvocation,
+): Promise<RValue> {
+  if (input.type !== "null" && !isVector(input) && input.type !== "expression")
     throw new RTypeMismatchError(
       "NRT3326",
-      "rep.int() requires an atomic, list, factor, or expression vector.",
+      name === "rep.int"
+        ? "attempt to replicate an object of type '" + valueTypeName(input) + "'"
+        : "attempt to replicate non-vector",
+    );
+  const inputLength = valueLength(input);
+  if (name === "rep_len") {
+    if (valueLength(control) !== 1)
+      throw new RTypeMismatchError("NRT3326", "invalid 'length.out' value");
+    const length = await replicationFamilyScalar(control, invocation);
+    if (!Number.isFinite(length) || length < 0 || length > 2 ** 52)
+      throw new RTypeMismatchError("NRT3326", "invalid 'length.out' value");
+    if (input.type === "null") {
+      if (length > 0)
+        throw new RTypeMismatchError("NRT3326", "cannot replicate NULL to a non-zero length");
+      return R_NULL;
+    }
+    if (inputLength === 0) {
+      if (length === 0) return input;
+      const empty =
+        input.type === "expression"
+          ? input
+          : {
+              ...input,
+              attributes: new Map([...input.attributes].filter(([key]) => key === "names")),
+            };
+      return replicationResult(empty, length, () => -1, invocation);
+    }
+    return replicationResult(
+      replicationWithoutNames(input),
+      length,
+      (index) => (inputLength === 0 ? -1 : index % inputLength),
+      invocation,
     );
   }
-
-  const counts = repIntCounts(
-    await invocation.force(timesArgument.promise),
-    input.type === "expression" ? input.values.length : input.length,
+  if (!isVector(control) && control.type !== "expression")
+    throw new RTypeMismatchError(
+      "NRT3326",
+      "invalid type (" + valueTypeName(control) + ") for 'times' (must be a vector)",
+    );
+  const countLength = valueLength(control);
+  if (countLength !== 1 && countLength !== inputLength)
+    throw new RTypeMismatchError("NRT3326", "invalid 'times' value");
+  const counts =
+    countLength === 1
+      ? [await replicationFamilyScalar(control, invocation)]
+      : await replicationCounts(control, invocation);
+  let length = 0;
+  for (const count of counts) {
+    invocation.context.checkpoint();
+    if (!Number.isFinite(count) || count < 0)
+      throw new RTypeMismatchError("NRT3326", "invalid 'times' value");
+    length += count;
+  }
+  if (input.type === "null")
+    throw new RTypeMismatchError(
+      "NRT3326",
+      "unimplemented type 'NULL' in '" + (countLength === 1 ? "rep3" : "rep2") + "'\n",
+    );
+  const source = replicationWithoutNames(input);
+  if (countLength === 1)
+    return replicationResult(
+      source,
+      inputLength * counts[0]!,
+      (index) => index % inputLength,
+      invocation,
+    );
+  let position = 0,
+    remaining = counts[0] ?? 0;
+  return replicationResult(
+    source,
+    length,
+    () => {
+      while (remaining === 0) {
+        invocation.context.checkpoint();
+        position += 1;
+        remaining = counts[position] ?? 0;
+      }
+      remaining -= 1;
+      return position;
+    },
     invocation,
   );
-  const inputLength = input.type === "expression" ? input.values.length : input.length;
-  const outputLength =
-    counts.length === 1
-      ? inputLength * (counts[0] ?? 0)
-      : counts.reduce((total, count) => total + count, 0);
-  if (!Number.isSafeInteger(outputLength)) {
-    throw new RResourceLimitError("NRL4002", "rep.int() result length exceeds runtime limits.");
-  }
-  invocation.context.allocate(outputLength);
-  return repIntValue(input, counts, outputLength, invocation);
 }
 
-function repIntCounts(
-  value: RValue,
-  inputLength: number,
-  invocation: BuiltinInvocation,
-): readonly number[] {
-  if (!isAtomic(value) || value.type === "raw") {
-    throw new RTypeMismatchError("NRT3326", "invalid 'times' value");
-  }
-  const numeric = coerceAtomicToDouble(value, invocation);
-  if (
-    numeric.length !== 1 &&
-    !(inputLength === 0 && numeric.length === 0) &&
-    numeric.length !== inputLength
-  ) {
-    throw new RTypeMismatchError("NRT3326", "invalid 'times' value");
-  }
-  const counts = Array.from({ length: numeric.length }, (_, index) => {
-    invocation.context.checkpoint();
-    const count = numeric.values[index] ?? 0;
-    if (isMissing(numeric, index) || !Number.isFinite(count) || count < 0) {
-      throw new RTypeMismatchError("NRT3326", "invalid 'times' value");
-    }
-    return Math.trunc(count);
-  });
-  return counts;
-}
-
-function repIntValue(
-  input: RVector | RExpression,
-  counts: readonly number[],
-  outputLength: number,
-  invocation: BuiltinInvocation,
-): RValue {
-  switch (input.type) {
-    case "logical": {
-      const values = new Uint8Array(outputLength);
-      const missing = new Uint8Array(outputLength);
-      fillRepInt(input.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? 0;
-        if (isMissing(input, source)) missing[target] = 1;
-        invocation.context.checkpoint();
-      });
-      return logicalVector(values, compactMask(missing));
-    }
-    case "integer": {
-      const values = new Int32Array(outputLength);
-      const missing = new Uint8Array(outputLength);
-      fillRepInt(input.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? 0;
-        if (isMissing(input, source)) missing[target] = 1;
-        invocation.context.checkpoint();
-      });
-      let output = integerVector(values, compactMask(missing));
-      if (isFactor(input)) {
-        output = withClasses(output, vectorClasses(input) ?? ["factor"]);
-        const levels = input.attributes.get("levels");
-        if (levels !== undefined) output = withAttribute(output, "levels", levels);
-      }
-      return output;
-    }
-    case "double": {
-      const values = new Float64Array(outputLength);
-      const missing = new Uint8Array(outputLength);
-      fillRepInt(input.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? 0;
-        if (isMissing(input, source)) missing[target] = 1;
-        invocation.context.checkpoint();
-      });
-      return doubleVector(values, compactMask(missing));
-    }
-    case "complex": {
-      const real = new Float64Array(outputLength);
-      const imaginary = new Float64Array(outputLength);
-      const missing = new Uint8Array(outputLength);
-      fillRepInt(input.length, counts, (source, target) => {
-        real[target] = input.real[source] ?? 0;
-        imaginary[target] = input.imaginary[source] ?? 0;
-        if (isMissing(input, source)) missing[target] = 1;
-        invocation.context.checkpoint();
-      });
-      return complexVector(real, imaginary, compactMask(missing));
-    }
-    case "raw": {
-      const values = new Uint8Array(outputLength);
-      fillRepInt(input.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? 0;
-        invocation.context.checkpoint();
-      });
-      return rawVector(values);
-    }
-    case "character": {
-      const values = Array.from({ length: outputLength }, () => "");
-      const missing = new Uint8Array(outputLength);
-      fillRepInt(input.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? "";
-        if (isMissing(input, source)) missing[target] = 1;
-        invocation.context.checkpoint();
-      });
-      return characterVector(values, compactMask(missing));
-    }
-    case "list": {
-      const values = Array.from<RValue>({ length: outputLength });
-      fillRepInt(input.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? R_NULL;
-        invocation.context.checkpoint();
-      });
-      return listValue(values);
-    }
-    case "expression": {
-      const values = Array.from<AstNode>({ length: outputLength });
-      fillRepInt(input.values.length, counts, (source, target) => {
-        values[target] = input.values[source] ?? {
-          kind: "NullLiteral",
-          span: SYNTHETIC_SPAN,
-        };
-        invocation.context.checkpoint();
-      });
-      return { type: "expression", values: Object.freeze(values) };
-    }
-  }
-}
-
-function fillRepInt(
-  inputLength: number,
-  counts: readonly number[],
-  visit: (source: number, target: number) => void,
-): void {
-  let target = 0;
-  if (counts.length === 1) {
-    const repetitions = counts[0] ?? 0;
-    for (let repetition = 0; repetition < repetitions; repetition += 1) {
-      for (let source = 0; source < inputLength; source += 1) {
-        visit(source, target);
-        target += 1;
-      }
-    }
-    return;
-  }
-  for (let source = 0; source < inputLength; source += 1) {
-    const repetitions = counts[source] ?? 0;
-    for (let repetition = 0; repetition < repetitions; repetition += 1) {
-      visit(source, target);
-      target += 1;
-    }
-  }
-}
-
-async function builtinRepLen(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x", "length.out"]);
-  const value = required(matched, "x", "rep_len");
-  const length = nonNegativeInteger(required(matched, "length.out", "rep_len"), "length.out");
-  if (value.type === "null") return R_NULL;
-  if (!isVector(value)) {
-    throw new RTypeMismatchError("NRT3155", "rep_len() requires an atomic vector or list.");
-  }
-  if (value.length === 0 && length > 0) {
-    throw new REvaluationError("NRE2120", "Cannot lengthen an empty value with rep_len().");
-  }
-  const indices = Array.from({ length }, (_, index) => (index % value.length) + 1);
-  return subsetVector(value, integerVector(indices), invocation.context);
+function replicationWithoutNames(input: RVector | RExpression): RVector | RExpression {
+  if (input.type === "expression") return input;
+  const result = withoutAttribute(input, "names");
+  return isFactor(result)
+    ? withClasses(
+        result,
+        vectorClasses(result)?.includes("ordered") ? ["ordered", "factor"] : ["factor"],
+      )
+    : result;
 }
 
 async function builtinReplicate(invocation: BuiltinInvocation): Promise<RValue> {
