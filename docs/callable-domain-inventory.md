@@ -9,7 +9,7 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.390, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.391, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
 overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
@@ -104,6 +104,15 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+Profile 0.391 adds six recursive evidence links across four existing UseMethod dimensions: ordinary,
+boundaries, errors and side effects. Interpreted-closure promise-origin rejection, generic-first
+forcing, ordered cleanup and valid own-default/inner-generic behavior are covered. Three foundation
+groups retain 22 assertions and three recursive groups retain 21 exact raw components with six
+strict group-level causal controls. The separate retry/caching session guard adds no native matrix
+credit. Counts stay at 109 partial dimensions on nineteen bindings; native wrappers,
+library/evaluation admission, arbitrary generic diagnostics, full condition origins and complete S3
+behavior remain unfinished. No new registration, dimension or completion is claimed.
 
 Profile 0.390 adds partial UseMethod errors evidence for direct same-closure active-loop rejection,
 generic-before-selector forcing and ordinary cleanup. Three foundation groups and three recursive

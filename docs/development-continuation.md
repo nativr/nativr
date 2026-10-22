@@ -2092,3 +2092,50 @@ dependency-closure or P6/P7 credit.
 Next steps remain independently reproducing the neighboring evaluation/forced-argument dispatch
 contexts, extending the isolated runner's documented parity, and closing the broader semantic and
 platform ledger. Linux, holdout, downloads and remote actions retain their existing boundaries.
+
+### Interpreted UseMethod promise-origin admission (profile 0.391)
+
+The 22 independently native-verified assertions reproduce ten defects on 0.390 and retain twelve
+passing guards. The evaluator now compares the explicit expression origin with the active
+interpreted closure only when its exact function target is current. A foreign forced expression
+raises the observed context error after generic-name evaluation and before selector/original
+forcing. Own-default evaluation, unused actuals, ordinary inner generic entry, reference identity
+and ordered helper/generic cleanup retain their bounded observations. No native-wrapper or
+library/evaluation admission claim follows from this change.
+
+All 23 source tests pass. One is an explicitly NativR-only session guard: the same retained promise
+fails, retries successfully after an owned flag changes, then returns its cached value; cleanup,
+zero frames and a fresh invisible generic verify recovery. Native interrupted-promise restart
+warnings are not covered by that guard. Three foundation and three exact recursive groups retain 22
+assertions and 21 raw components. Native assembly validation passes all six groups, all components
+and six strict causal controls. Those controls apply to three composite binding associations, not 21
+independent per-component causal proofs. Six new links extend ordinary, boundary, error and
+side-effect declarations; 109 partial dimensions on nineteen bindings and 169 causal-linked bindings
+remain unchanged. No complete callable or domain is claimed.
+
+The canonical check passes 3,167 unit tests with 94 opt-in skips, both typechecks, tooling, serial
+build and fixed bundle caps. Checked-in/live/recursive conformance passes 1,473 / 1,400 / 388, with
+55 NativR-only live skips. Client/Worker gzip sizes are 17.6/491.6 KiB; parser and elementary Wasm
+are 671.9/311.2 KiB raw, all below unchanged limits. The
+[Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.391.0.json) passes
+12/12. Four assertions added inside the existing Worker test verify context rejection before
+selector/original effects, ordered helper/generic cleanup, a valid generic through the helper and
+own-default preservation. Required examples take 11.3 / 12.7 / 50.1 seconds for Chromium / Firefox /
+WebKit under the unchanged 120-second budget; this is not a new performance benchmark or
+visibility-equivalence claim.
+
+The
+[two-package checkpoint](../compatibility/platform-evidence/offline-packages-windows-0.391.0/index.json)
+uses the maintained 0.389 full-corpus baseline accepted by the CLI and additionally agrees with the
+0.390 partial pair: all 21 observation objects and stage arrays match, including repeatability.
+abind retains ten matching observations and P7 eligibility. numDeriv retains five matches, six
+mismatches, two nonrepeatable observations and its test-output blocker. Source pins and regression
+partitions are unchanged. The complete 24-package corpus remains at 0.389, performance at 0.389 and
+packed-consumer evidence at 0.388. Formula remains untouched; isolated-runner results receive no
+original package-tier credit.
+
+Next work remains independently reproducing native-wrapper/library and evaluation-context admission,
+extending the isolated runner's documented parity, and closing the semantic and platform ledger.
+Full condition origins, arbitrary generic diagnostics, direct NextMethod visibility and complete S3
+behavior remain unfinished. Linux, holdout, downloads and remote actions retain their existing
+boundaries.

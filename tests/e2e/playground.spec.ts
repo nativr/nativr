@@ -122,6 +122,52 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill(`local({
+  trace <- character()
+  helper <- function(y) {
+    on.exit(trace <<- c(trace, "helper cleanup"))
+    y
+  }
+  g <- function(x) {
+    on.exit(trace <<- c(trace, "generic cleanup"))
+    helper(UseMethod("g", {
+      trace <<- c(trace, "selector forced")
+      1L
+    }))
+    99L
+  }
+  g.default <- function(x) {
+    trace <<- c(trace, "forbidden method")
+    7L
+  }
+  problem <- tryCatch(g({
+    trace <<- c(trace, "original forced")
+    stop("original forced")
+  }), error=function(e) conditionMessage(e))
+  rejected <- identical(problem, "'UseMethod' used in an inappropriate fashion") &&
+    identical(trace, c("helper cleanup", "generic cleanup"))
+
+  good <- function(x) {
+    UseMethod("good")
+    stop("continued")
+  }
+  good.default <- function(x) 7L
+  recovered <- helper(good(1L))
+
+  ownDefault <- function(y=UseMethod("ownDefault")) {
+    y
+    99L
+  }
+  ownDefault.default <- function(...) 7L
+  c(rejected,
+    identical(recovered, 7L),
+    identical(trace, c("helper cleanup", "generic cleanup", "helper cleanup")),
+    identical(ownDefault(), 7L))
+})`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true, true]");
+  expect(evaluationRequests).toEqual([]);
   await page
     .locator("#source")
     .fill(

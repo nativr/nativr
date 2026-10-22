@@ -462,7 +462,7 @@ export interface BuiltinInvocation {
     method: RValue,
     environment: REnvironment,
   ): Promise<void>;
-  /** Reject direct UseMethod inside an active loop in its interpreted closure. */
+  /** Enforce observed direct UseMethod restrictions in loops and interpreted closures. */
   assertUseMethodContext(): void;
   dispatchS3(generic: string, object?: RValue): Promise<RValue>;
   dispatchS3IfPresent(

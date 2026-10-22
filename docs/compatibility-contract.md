@@ -38,6 +38,32 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### UseMethod admission in interpreted promise contexts (profile 0.391)
+
+A direct `UseMethod` expression forced from another environment by an interpreted closure raises the
+observed inappropriate-context error. Admission checks the exact active interpreted closure target,
+then compares the expression's recorded environment with that closure's environment. It uses no
+ancestor scan or inferred argument environment. The existing same-closure loop rule is preserved.
+
+Generic evaluation and validation still precede admission; rejection leaves selectors and original
+dispatch arguments unforced and runs ordinary cleanup. The current closure's own default expression
+remains valid. An ordinary generic call passed through one or more helpers establishes its own frame
+and remains valid, including the observed original-reference control. A default forwarded to another
+helper and a retained actual forced after its origin returns are covered rejection boundaries.
+
+Twenty-two independently observed fixtures cover these rules, with three foundation groups and three
+exact recursive groups retaining 21 raw observations and group-level causal controls. The
+unused-actual control is foundation-only because its dispatch expression is not executed. A separate
+NativR session guard verifies failed-promise reset, retry, caching, cleanup, empty frames and later
+finite invisible dispatch; it does not establish GNU R interrupted-promise warning parity.
+
+This increment changes only interpreted closure admission with an explicit call environment.
+Library/evaluation frames and absent origin metadata retain their existing routes. Direct native
+wrapper, eval/evalq/local, handler and no-closure contexts, arbitrary generic diagnostics, full
+condition origins, direct NextMethod visibility and complete S3/S4/group behavior remain unfinished.
+No callable or semantic domain is complete; the public session API and Worker protocol are
+unchanged.
+
 ### UseMethod admission in active loops (profile 0.390)
 
 Direct `UseMethod` execution in an active loop belonging to its interpreted closure raises the
@@ -61,11 +87,12 @@ observations with strict unexpected-error propagation and group-level causal con
 While-condition cases remain foundation-only to keep the successful-value controls finite and
 meaningful.
 
-This is a bounded direct-loop rule. Direct forced-argument, eval/evalq/local, handler and no-closure
-contexts, arbitrary generic argument diagnostics, complete condition origins, S4/group interactions,
-free-variable forwarding and direct NextMethod visibility remain unfinished. Calling an ordinary
-generic through a wrapper is a preservation control, not evidence for direct UseMethod inside that
-wrapper. No complete callable or semantic domain is established.
+This is a bounded direct-loop rule. Selected interpreted promise contexts gain the evidence above in
+0.391; native wrapper, eval/evalq/local, handler and no-closure contexts, arbitrary generic argument
+diagnostics, complete condition origins, S4/group interactions, free-variable forwarding and direct
+NextMethod visibility remain unfinished. Calling an ordinary generic through a wrapper is a
+preservation control, not evidence for direct UseMethod inside that wrapper. No complete callable or
+semantic domain is established.
 
 ### Direct UseMethod completion in closures (profile 0.389)
 
@@ -85,10 +112,10 @@ public TypeScript API, Worker protocol or new input-sized allocation is introduc
 The focused independent native matrix covers direct completion, visible/invisible results, cleanup,
 helper/nested target identity, laziness and reference preservation. Resource guards and browser
 interruption/recovery are NativR-specific evidence. Unusual evaluation contexts remain unfinished:
-direct forced-argument, `evalq` and `tryCatch` restrictions are recorded separately. Selected active
-loop contexts have the bounded evidence above in 0.390. Direct `NextMethod` visibility forwarding,
-local free-variable forwarding, top-level dispatch, condition origins and full S3/S4/group behavior
-are not established by this bounded increment.
+direct native wrapper, `evalq` and `tryCatch` restrictions are recorded separately. Selected active
+loop and interpreted promise contexts have the bounded evidence above in 0.390 and 0.391. Direct
+`NextMethod` visibility forwarding, local free-variable forwarding, top-level dispatch, condition
+origins and full S3/S4/group behavior are not established by this bounded increment.
 
 ### Omitted UseMethod selectors inside generics (profile 0.388)
 

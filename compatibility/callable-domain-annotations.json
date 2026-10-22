@@ -168,7 +168,7 @@
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
         "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished.",
         "Closure UseMethod search classes remain distinct from public class()/inherits() labels and internal/group generic policy.",
-        "Direct UseMethod completion and selected same-closure active-loop admission have bounded causal evidence. Forced-argument/evaluation/no-closure contexts, full generic diagnostics, direct NextMethod visibility and complete S3 control behavior remain unfinished."
+        "Direct completion, selected same-closure loops and interpreted-closure promise-origin admission have bounded causal evidence. Native wrapper/library/evaluation/no-closure contexts, full generic diagnostics, direct NextMethod visibility and complete S3 control behavior remain unfinished."
       ],
       "matrix": [
         {
@@ -225,6 +225,10 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-context-inner-generic-and-loop-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-promise-origin-defaults-and-generics-values"
             }
           ],
           "remainingGaps": [
@@ -232,7 +236,8 @@
             "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished.",
             "Selected omitted-selector calls inside owned generics choose NULL when no actual was supplied and name for a literal missing selected actual; existing matched-first-formal and first-supplied fallback behavior remains observed. Arbitrary objects, generic-call contexts and complete S3 dispatch remain unfinished.",
             "Direct owned generic completion and nested/helper return targets are observed; unusual evaluation contexts, complete S3 dispatch and free-variable forwarding remain unfinished.",
-            "A separate generic invoked from selected caller loops retains its own function frame. Direct UseMethod inside evaluation/handler wrappers and complete generic contexts remain unfinished."
+            "A separate generic invoked from selected caller loops retains its own function frame. Direct UseMethod inside evaluation/handler wrappers and complete generic contexts remain unfinished.",
+            "Owned default promises and ordinary generic calls passed through interpreted helpers retain their observed dispatch. Complete default/forwarding behavior, native wrappers and all generic contexts remain unfinished."
           ]
         },
         {
@@ -277,14 +282,23 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-context-inner-generic-and-loop-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-promise-origin-rejection-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-promise-origin-defaults-and-generics-values"
             }
           ],
           "remainingGaps": [
             "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished.",
             "A supplied NULL selector and selected zero-actual, literal-missing and forwarded-missing flags are observed without injecting the selector as an argument; omitted-selector, invalid/explicitly missing selector, broader default and diagnostic boundaries remain unfinished.",
             "Selected zero-formal/empty-dots calls, forced or unforced generic defaults, local rebinding and literal-missing actuals retain the original argument list; outside-generic invocation, complete missing/default behavior and full diagnostic origins remain unfinished.",
-            "Direct cleanup return replacement and caller continuation are observed; direct evaluation/forced-argument contexts and full error origins remain unfinished.",
-            "Selected active same-closure loop bodies reject while for-sequence dispatch, completed loops and new inner generic frames remain admitted. Arbitrary context composition, no-closure behavior and complete generic diagnostics remain unfinished."
+            "Direct cleanup return replacement and caller continuation are observed; native wrapper/evaluation contexts and full error origins remain unfinished.",
+            "Selected active same-closure loop bodies reject while for-sequence dispatch, completed loops and new inner generic frames remain admitted. Arbitrary context composition, no-closure behavior and complete generic diagnostics remain unfinished.",
+            "A forced expression from a different recorded environment is rejected at the exact active interpreted closure target; current-closure defaults and newly entered generics remain admitted. Library/evaluation/no-closure contexts and arbitrary context composition remain unfinished."
           ]
         },
         {
@@ -368,6 +382,10 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-context-forcing-and-cleanup-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-promise-origin-forcing-cleanup-values"
             }
           ],
           "remainingGaps": [
@@ -375,7 +393,8 @@
             "Selected selector/name/original forcing order, unused original laziness, second-promise reuse, method-default selection and changed-method-argument continuation are observed; arbitrary control flow, visibility, dots reconstruction and missing/default forcing remain unfinished.",
             "Selected generic-default forcing does not invent a supplied actual; method defaults, local rebinding order and memoized original promises retain their observed behavior. General promise/control-flow behavior, nonlocal return, visibility and full condition attribution remain unfinished.",
             "Direct generic continuation is suppressed and method/generic/caller cleanup order is observed. Unusual evaluation contexts, active-binding behavior and full condition/control interaction remain unfinished.",
-            "Generic-first forcing, selector/original laziness before loop rejection, cleanup and completed expression loops have bounded observations. Complete promise, error-origin and control-flow behavior remains unfinished."
+            "Generic-first forcing, selector/original laziness before loop rejection, cleanup and completed expression loops have bounded observations. Complete promise, error-origin and control-flow behavior remains unfinished.",
+            "Selected generic-first forcing, rejected selector/original laziness and helper-before-origin cleanup are observed for interpreted forwarding. Native wrappers, retained-promise warning behavior and complete control effects remain unfinished."
           ]
         },
         {
@@ -431,10 +450,19 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-context-forcing-and-cleanup-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-promise-origin-rejection-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-promise-origin-forcing-cleanup-values"
             }
           ],
           "remainingGaps": [
-            "Selected same-closure active-loop calls produce the observed inappropriate-context diagnostic after generic validation and before selector/original forcing. Native messages for arbitrary malformed/missing generic arguments, direct evaluation/forced-argument/no-closure contexts and complete condition attribution remain unfinished."
+            "Selected same-closure active-loop calls produce the observed inappropriate-context diagnostic after generic validation and before selector/original forcing. Native messages for arbitrary malformed/missing generic arguments, native wrapper/evaluation/no-closure contexts and complete condition attribution remain unfinished.",
+            "Selected interpreted-helper promise origins raise the observed inappropriate-context diagnostic before selector/original forcing, while an owned generic-expression error wins. Interrupted-promise warning parity, malformed generic diagnostics and complete condition attribution remain unfinished."
           ]
         }
       ]

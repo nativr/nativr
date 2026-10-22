@@ -2990,7 +2990,7 @@ export class Evaluator {
           },
           registerS3Method: async (generic, className, method, environment) =>
             this.#registerS3Method(generic, className, method, environment, context),
-          assertUseMethodContext: () => this.#assertUseMethodContext(),
+          assertUseMethodContext: () => this.#assertUseMethodContext(callerEnvironment),
           dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
           dispatchS3IfPresent: async (
             generic,
@@ -4227,7 +4227,7 @@ export class Evaluator {
     );
   }
 
-  #assertUseMethodContext(): void {
+  #assertUseMethodContext(environment: REnvironment | undefined): void {
     const closureFrame = this.#closureCallFrames.at(-1);
     const controlFrame = this.#controlFrames.at(-1);
     // A caller's loop cannot reject a newly entered generic; completed loops have been popped.
@@ -4235,6 +4235,16 @@ export class Evaluator {
       closureFrame !== undefined &&
       controlFrame?.kind === "loop" &&
       controlFrame.environment === closureFrame.environment
+    ) {
+      throw new REvaluationError("NRE2282", "'UseMethod' used in an inappropriate fashion");
+    }
+    // An interpreted helper cannot dispatch from another environment's forced expression.
+    if (
+      closureFrame !== undefined &&
+      controlFrame?.kind === "function" &&
+      controlFrame.target === closureFrame.functionTarget &&
+      environment !== undefined &&
+      environment !== closureFrame.environment
     ) {
       throw new REvaluationError("NRE2282", "'UseMethod' used in an inappropriate fashion");
     }

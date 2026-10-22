@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-browser-host-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.391.0",
+  "sourceCommit": "1ad2a717c7d2dd72cd925d1b71ea48d6328d5f87",
+  "sourceState": "Uncommitted candidate over sourceCommit; exact tested sources and runtime artifacts identified by stable before/after digests",
+  "scope": "Windows cached-browser advisory evidence; not a complete browser/OS or release-performance matrix",
+  "environment": {
+    "os": "win32",
+    "osRelease": "10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "playwright": "1.62.0",
+    "browsers": [
+      { "name": "chromium", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "chromium-headless-shell", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "firefox", "revision": "1538", "browserVersion": "153.0" },
+      { "name": "webkit", "revision": "2336", "browserVersion": "26.5" }
+    ]
+  },
+  "provenance": {
+    "inputs": [
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "aa5bc56e3a9ba6ccb03727900472006b865906be1d5b2c2abc42187167b95a0e"
+      },
+      {
+        "path": "packages/nativr/dist/assets/elementary.wasm",
+        "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+      },
+      {
+        "path": "packages/nativr/dist/assets/tree-sitter-r.wasm",
+        "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+      },
+      {
+        "path": "packages/nativr/dist/assets/web-tree-sitter.wasm",
+        "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+      },
+      {
+        "path": "packages/nativr/dist/assets/worker-entry-aGT00K2T.js",
+        "sha256": "abdc665a4d972f90db282cbc3242abf7746e63e2879e50c59644822605b4aef3"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/conversion-hqUUaSZc.js",
+        "sha256": "275e6ed904955f257de90948f294bfa251cb1a34317973d1dfcaf4bece4f39ce"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/runtime-host-DnIme3FJ.js",
+        "sha256": "a61bc74288c6f223bd6c1ef8bd91d93e165031514632bdd34beb8def4b3e4c99"
+      },
+      {
+        "path": "packages/nativr/dist/elementary.wasm",
+        "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+      },
+      {
+        "path": "packages/nativr/dist/index.js",
+        "sha256": "c2a18e98b4a69be402712a751a77b2f7854c9c5eeadd254e5d2c1b333a68e9b7"
+      },
+      {
+        "path": "packages/nativr/dist/tree-sitter-r.wasm",
+        "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+      },
+      {
+        "path": "packages/nativr/dist/web-tree-sitter.wasm",
+        "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+      },
+      {
+        "path": "playwright.config.ts",
+        "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      },
+      {
+        "path": "testing/nativr-test-runner/DESCRIPTION",
+        "sha256": "491afa7588224bddd7d0567bb06d35802c6664e6e4da46dfdc650fe1b9fb8c46"
+      },
+      {
+        "path": "testing/nativr-test-runner/NAMESPACE",
+        "sha256": "51924b38447cedb0ce43839f113f3dd8c44cca334e28b5a645eb3b0dbb16380c"
+      },
+      {
+        "path": "testing/nativr-test-runner/R/runner.R",
+        "sha256": "f89f4f3a6c34f0c11a67a21d4d1d7563f4dfd15ebf0d4ec1cd5c65717d3a341e"
+      },
+      {
+        "path": "testing/nativr-test-runner/behavior-contract.md",
+        "sha256": "043069854d0c84c3233548802f91df9e0254c3036f286c2bfdc60b0ad6ebd732"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/core-contract-cases.json",
+        "sha256": "b430c578647a96549dc7b6e70430b7c97b4d45229c1b5167b7839118df7a35ff"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/manifest.json",
+        "sha256": "4cab40db937ac781ee1fc3c274feface4666bbb6e0f76c575df371bb5b450d39"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-cleanup-failure.R",
+        "sha256": "1b16125f6678580e8757823bd8d457675d770fd4a26b3e6f0d47d66ea50f01c1"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-event-limit.R",
+        "sha256": "f75b1a852aedbb1e443aea7549c8aac94d6383a2a2429b068834370e2d655b1a"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-fail.R",
+        "sha256": "0d96892b7251cd045bacf612d247e869bd9acf8cb4106e7af2360783a4ae3e1e"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-ordinary-error.R",
+        "sha256": "f1c208e93ee0d59a02c65b193ac6d9bddaaf12782a7d4a7e27d9c21638959a5e"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-outer-output.R",
+        "sha256": "b1f2683f114663e9a021bcb0a644ce1ddb2a83e4e74433a99754c21f1b21b901"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-pass.R",
+        "sha256": "176230daeb73b79066c17d4c52c418de06eafecfd3190ea6aae4a837a97038b5"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-runtime-limit.R",
+        "sha256": "46b3958f67128de05fb3e90187c4f00aa5e2b19601aaff1c0f31e19b26e1956f"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-skip.R",
+        "sha256": "0505ef84831ebb1d10a1b3ff65caef524a6fe4761630149c6178e2b0e2954332"
+      },
+      {
+        "path": "testing/nativr-test-runner/fixtures/tests/test-unsupported-caught.R",
+        "sha256": "45d194f2fa85744c683b7eebfc20cd0dba8d2c792f07a424704590b5891e1926"
+      },
+      {
+        "path": "testing/nativr-test-runner/support-manifest.json",
+        "sha256": "0af1470fc5ef75676f8fbdf5a7be755ad3ba6e1880272ae41441283e9bab9f5e"
+      },
+      {
+        "path": "tests/e2e/assisted-runner.spec.ts",
+        "sha256": "edc6a6151e10196166237e45f6168547f23218a7c763c967f8f220ba0d4b0447"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "de80f58e054a79b78bc4d8028512f0c56661597bd45ab9d4d851326965b6c238"
+      }
+    ],
+    "inputsStable": true,
+    "runLogSha256": "21559d1aa38abdaf4fb1e67252272c73eb05e9217c14794f7edc4d40038a85a9",
+    "reportSha256": "ac6e05b932d244328dc482776627e014c2414104b9799ed417d08b40bcc8a69d",
+    "redaction": "Only owned test names, status, timing, tool revisions and source/artifact digests; no bodies, browser traces, console output or local user paths"
+  },
+  "execution": {
+    "command": "pnpm test:e2e --workers=1 --reporter=list,json",
+    "precondition": "Serial production build; existing cached browser revisions; NATIVR_E2E_SKIP_BUILD=1; no reused preview server",
+    "workers": 1,
+    "retries": 0,
+    "requiredExamplesTimeoutMs": 120000,
+    "otherTestsTimeoutMs": 60000,
+    "viewportPolicy": "Unchanged configured desktop viewports",
+    "timingPrecision": "Playwright JSON reporter milliseconds",
+    "tests": [
+      {
+        "browser": "chromium",
+        "name": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+        "status": "passed",
+        "durationMs": 430
+      },
+      {
+        "browser": "firefox",
+        "name": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+        "status": "passed",
+        "durationMs": 1438
+      },
+      {
+        "browser": "webkit",
+        "name": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+        "status": "passed",
+        "durationMs": 831
+      },
+      {
+        "browser": "chromium",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 11271
+      },
+      {
+        "browser": "chromium",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1056
+      },
+      {
+        "browser": "chromium",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 361
+      },
+      {
+        "browser": "firefox",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 12711
+      },
+      {
+        "browser": "firefox",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1254
+      },
+      {
+        "browser": "firefox",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 485
+      },
+      {
+        "browser": "webkit",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 50055
+      },
+      {
+        "browser": "webkit",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 4007
+      },
+      {
+        "browser": "webkit",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 863
+      }
+    ],
+    "resourceAssertions": [
+      "Oversized intermediate sprintf width is rejected in the Worker with NRL4007",
+      "Oversized intermediate sprintf fixed precision is rejected in the Worker with NRL4007",
+      "Same Worker session recovers with bounded short general formatting and no evaluation network traffic",
+      "UTC POSIXlt conversion preserves finite/Inf/NA classification through the Worker",
+      "POSIXlt numeric predicates and Gregorian wide-year fractional conversion work through the Worker",
+      "UseMethod preserves integer-to-numeric continuation and method class history through the Worker",
+      "Implicit S3 dispatch preserves public class labels and original integer storage",
+      "Explicit UseMethod selectors retain original actuals, lazy forcing and NextMethod class history through the Worker",
+      "Omitted UseMethod selectors dispatch empty actuals on NULL and literal missing actuals on name through the Worker",
+      "Direct UseMethod completes its generic with method invisibility and ordered method/generic cleanup",
+      "Direct UseMethod in a same-closure loop rejects before selector/original-argument forcing, executes cleanup, and permits subsequent finite invisible dispatch through the Worker",
+      "The optional own-name testing bundle preserves failure/unsupported outcomes, reporter abort and same-Worker recovery; no original dependency-closure or P6/P7 credit",
+      "UseMethod forced from a different environment by an interpreted helper rejects before selector/original effects, runs helper-before-generic cleanup, and preserves subsequent generic forwarding and own-default dispatch through the Worker"
+    ]
+  },
+  "remaining": [
+    "Historical WebKit timeout cause not established",
+    "Broader performance workloads and acceptance budgets; repeated measurements remain at profile 0.389",
+    "Declared additional OS/platform coverage",
+    "Separately authorized GNU R Linux normative gate",
+    "Reproducible remote CI and publication remain separate"
+  ]
+}
