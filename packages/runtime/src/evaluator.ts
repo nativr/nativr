@@ -358,6 +358,7 @@ type ControlFrame =
   | { readonly kind: "loop"; readonly target: symbol; readonly environment: REnvironment };
 
 interface ClosureCallFrame {
+  readonly functionTarget: symbol;
   readonly arguments: readonly {
     readonly name?: string;
     readonly promise: RPromise;
@@ -3678,6 +3679,7 @@ export class Evaluator {
         callerEnvironment ?? this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment;
       const parent = this.#callParent(caller, context);
       this.#closureCallFrames.push({
+        functionTarget,
         arguments: args,
         environment: frame,
         callerEnvironment:
@@ -4251,20 +4253,31 @@ export class Evaluator {
             ? { type: "symbol", name: "" }
             : await this.#force(first.promise, context);
     }
-    return this.#invokeS3Method(
+    const classes = useMethodClassNames(dispatchObject, context);
+    const result = await this.#invokeS3MethodIfPresentResult(
       generic,
       callFrame?.closure.environment ?? this.#baseEnvironment,
-      useMethodClassNames(dispatchObject, context),
+      classes,
       0,
       arguments_,
       context,
+      true,
       callFrame?.call,
       callFrame?.callerEnvironment,
-      false,
       undefined,
+      true,
       undefined,
       "use-method",
     );
+    if (result === undefined) {
+      throw new REvaluationError(
+        "NRE2216",
+        `No applicable method for '${generic}' and classes ${classes.join(", ")}.`,
+      );
+    }
+    // The selected method completes this generic; its caller and NextMethod still resume normally.
+    if (callFrame !== undefined) throw new ReturnSignal(callFrame.functionTarget, result);
+    return result.value;
   }
 
   async #loadPackage(

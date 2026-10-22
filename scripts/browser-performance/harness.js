@@ -105,9 +105,21 @@ globalThis.nativrPerformance = {
       for (let sample = 0; sample < iterations; sample += 1) {
         await runtime.assign("ownedCancellationSentinel", 123);
         expectOwned((await runtime.get("ownedCancellationSentinel")) === 123, "interrupt-contract");
+        await runtime.eval(`
+          ownedCancellationGeneric <- function(x) {
+            on.exit(return(9L))
+            UseMethod("ownedCancellationGeneric")
+            stop("generic continued")
+          }
+          ownedCancellationGeneric.default <- function(x) {
+            on.exit(return(9L))
+            repeat { 1L+1L }
+          }
+          invisible(NULL)
+        `);
         let settled = false;
         const submissionAt = performance.now();
-        const pending = runtime.evalDetailed("repeat { 1L+1L }", { timeoutMs }).then(
+        const pending = runtime.evalDetailed("ownedCancellationGeneric(1L)", { timeoutMs }).then(
           () => {
             settled = true;
             return { ok: true, settledAt: performance.now() };
@@ -136,8 +148,15 @@ globalThis.nativrPerformance = {
         );
         const recovery = await timedEvaluation(
           runtime,
-          'c(1L+1L,as.integer(exists("ownedCancellationSentinel",inherits=FALSE)))',
-          [2, 0],
+          `
+            g <- function(x) { UseMethod("g"); stop("generic continued") }
+            g.default <- function(x) invisible(7L)
+            c(1L+1L, as.integer(exists("ownedCancellationSentinel",inherits=FALSE)),
+              as.integer(exists("ownedCancellationGeneric",inherits=FALSE)),
+              sys.nframe() == 0L,
+              identical(withVisible(g(1L)),list(value=7L,visible=FALSE)))
+          `,
+          [2, 0, 0, 1, 1],
         );
         samples.push({
           submissionToInterruptMs: interruptAt - submissionAt,

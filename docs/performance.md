@@ -1,11 +1,11 @@
 # Performance and bundle discipline
 
-## Current bundle observation (profile 0.388, 2026-10-22)
+## Current bundle observation (profile 0.389, 2026-10-22)
 
 The verified build passes the unchanged caps: client 17.6/150 KiB gzip, Worker 491.4/512 KiB gzip,
-parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw. Current Windows e2e, repeated
-Worker measurements and offline packed-consumer evidence are recorded at profile 0.388. No latency
-acceptance budget or bundle cap changed; broader OS coverage remains unfinished.
+parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw. Current Windows e2e and repeated
+Worker measurements are recorded at profile 0.389; offline packed-consumer evidence remains at
+0.388. No latency acceptance budget or bundle cap changed; broader OS coverage remains unfinished.
 
 ## Bundle observation at profile 0.382 (2026-10-22)
 
@@ -23,12 +23,12 @@ uses shared checkpointed arithmetic and allocation accounting; session-limit/rec
 Browser timing measurements below remain at 0.380. No new latency claim or budget change follows
 from this semantic increment.
 
-## Current Windows browser observation (profile 0.388, 2026-10-22)
+## Current Windows browser observation (profile 0.389, 2026-10-22)
 
 All nine maintained e2e tests pass across the cached Chromium, Firefox and WebKit revisions, with
-one test worker and unchanged timeouts/viewports. Required Worker examples take 12.6 / 15.6 / 66.7
+one test worker and unchanged timeouts/viewports. Required Worker examples take 12.8 / 15.9 / 57
 seconds respectively against the existing 120-second budget. The
-[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.388.0.json) binds these
+[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.389.0.json) binds these
 rounded reporter timings to test/config/runtime hashes and browser revisions.
 
 At profile 0.380, an isolated unchanged WebKit run passed in 42.6 seconds. Historical WebKit traces
@@ -44,23 +44,30 @@ initialization. It is not a repeated Worker-startup benchmark. The separate repe
 below cover startup, interrupt/restart and fixed numDeriv workloads on this host. Additional OS
 coverage, broader workloads, agreed latency budgets and Linux normative verification remain open.
 
-## Repeated Worker measurements (profile 0.388, 2026-10-22)
+## Repeated Worker measurements (profile 0.389, 2026-10-22)
 
 The
-[Windows performance checkpoint](../compatibility/platform-evidence/performance-windows-0.388.0.json)
+[Windows performance checkpoint](../compatibility/platform-evidence/performance-windows-0.389.0.json)
 retains all samples, browser versions, runtime/tool digests, package pins and validation results.
 Each browser completed seven fresh-context starts, seven same-document starts and seven
 interrupt/recovery cycles. Every startup returned the expected value and semantic profile.
 Interruption rejected with NRL4005, recreated the Worker, removed a previously verified sentinel and
 successfully evaluated a recovery expression. No external requests or page errors occurred.
 
+The submitted workload now calls an owned generic whose selected method loops, with cleanup-return
+attempts in both closures. The existing one-billion-step test budget is unchanged. Recovery verifies
+loss of the sentinel and generic bindings, zero frames and a fresh invisible finite S3 result. The
+100 ms pending check does not acknowledge method entry, and termination does not guarantee cleanup
+execution. The recovery expression differs from 0.388; total recovery timings are not directly
+comparable to that checkpoint.
+
 | Median wall time (ms)              | Chromium | Firefox | WebKit |
 | ---------------------------------- | -------: | ------: | -----: |
-| New-context createR                |     56.0 |     116 |     87 |
-| Same-document createR              |     53.4 |     122 |     76 |
-| Interrupt rejection                |      0.2 |       1 |      0 |
-| Interrupt through restart ready    |     64.6 |     114 |     81 |
-| Interrupt through checked recovery |     68.4 |     116 |     94 |
+| New-context createR                |     56.7 |     125 |     84 |
+| Same-document createR              |     59.8 |     116 |     76 |
+| Interrupt rejection                |      0.3 |       1 |      0 |
+| Interrupt through restart ready    |     67.5 |     109 |     79 |
+| Interrupt through checked recovery |     72.4 |     113 |     93 |
 
 Five independently authored polynomial workloads use the unchanged pinned numDeriv archive as an
 opaque execution input. Each receives two warmups and nine retained samples; analytical derivative
@@ -69,11 +76,11 @@ establish performance for arbitrary package inputs or alter numDeriv's P6/P7 evi
 
 | Median evalDetailed wall time (ms) | Chromium | Firefox | WebKit |
 | ---------------------------------- | -------: | ------: | -----: |
-| Simple gradient, 4 variables       |      2.3 |       6 |     15 |
-| Simple Jacobian, 2 variables       |      2.2 |       5 |     15 |
-| Richardson Hessian, 4 variables    |     16.9 |      92 |     15 |
-| Complex Hessian, 4 variables       |     19.8 |     130 |     20 |
-| Complex Hessian, 12 variables      |     87.6 |     624 |     66 |
+| Simple gradient, 4 variables       |      2.1 |       6 |     15 |
+| Simple Jacobian, 2 variables       |      1.6 |       5 |     15 |
+| Richardson Hessian, 4 variables    |     14.2 |      87 |     15 |
+| Complex Hessian, 4 variables       |     19.2 |     131 |     18 |
+| Complex Hessian, 12 variables      |     75.5 |     618 |     68 |
 
 These local-loopback timings exclude browser launch, internet delivery and true OS cold-cache
 effects. HTTP responses use no-store. Independent module imports are recorded for fresh contexts;
@@ -109,7 +116,8 @@ changed artifacts/tooling, invalid timings and redaction; pnpm check runs them. 
 safe partial evidence and fail validation. One preparatory repeated run was rejected because the
 validator changed during measurement; the accepted checkpoint was rerun with tooling frozen. No
 package implementation bodies, output, arbitrary diagnostic text or local user paths enter the
-report. The public API, Worker protocol and runtime distribution did not change in this increment.
+report. The public API and Worker protocol remain unchanged; the profile 0.389 runtime includes the
+bounded UseMethod completion correction.
 
 ## Measurement and budgets
 

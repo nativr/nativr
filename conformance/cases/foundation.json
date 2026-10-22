@@ -19273,5 +19273,40 @@
     "expected": [true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "usemethod-control-completion",
+    "code": "c(local({\n    g<-function(x){UseMethod(\"g\");stop(\"continued\")};g.default<-function(x)7L\n    identical(g(1L),7L)\n  }),local({\n    g<-function(x)100L+UseMethod(\"g\");g.default<-function(x)7L\n    identical(g(1L),7L)\n  }),local({\n    value<-0L;g<-function(x){value<<-UseMethod(\"g\");99L};g.default<-function(x)7L\n    identical(g(1L),7L)&&identical(value,0L)\n  }),local({\n    g<-function(x){if(TRUE){UseMethod(\"g\");stop(\"branch continued\")};99L};g.default<-function(x)7L\n    identical(g(1L),7L)\n  }),local({\n    g<-function(x){UseMethod(\"g\");stop(\"generic continued\")};g.default<-function(x)invisible(7L)\n    f<-function(){v<-g(1L);v+1L};identical(withVisible(f()),list(value=8L,visible=TRUE))\n  }),local({\n    g<-function(x){UseMethod(\"g\");99L};g.default<-function(x)invisible(7L);alias<-g\n    identical(withVisible(alias(1L)),list(value=7L,visible=FALSE))\n  }),local({\n    helper<-function(x){UseMethod(\"g\");99L};g<-function(x){helper(x)+1L};g.default<-function(x)7L\n    identical(g(1L),8L)\n  }))",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "usemethod-control-visibility",
+    "code": "c(local({\n    g<-function(x)UseMethod(\"g\");g.default<-function(x)invisible(7L);v<-withVisible(g(1L))\n    identical(v,list(value=7L,visible=FALSE))\n  }),local({\n    g<-function(x)UseMethod(\"g\");g.default<-function(x)7L;v<-withVisible(g(1L))\n    identical(v,list(value=7L,visible=TRUE))\n  }),local({\n    g<-function(x)UseMethod(\"g\");g.default<-function(x){x<-7L};v<-withVisible(g(1L))\n    identical(v,list(value=7L,visible=FALSE))\n  }),local({\n    g<-function(x)UseMethod(\"g\");g.default<-function(x){return(invisible(7L));stop(\"continued\")};v<-withVisible(g(1L))\n    identical(v,list(value=7L,visible=FALSE))\n  }),local({\n    g<-function(x)UseMethod(\"g\");g.default<-function(x)invisible(NULL);v<-withVisible(g(1L))\n    identical(v,list(value=NULL,visible=FALSE))\n  }),local({\n    ref<-new.env(parent=emptyenv());x<-structure(7L,note=ref);g<-function(x)UseMethod(\"g\");g.default<-function(x)invisible(x)\n    v<-withVisible(g(x));identical(v$value,x)&&identical(attr(v$value,\"note\"),ref)&&identical(v$visible,FALSE)\n  }))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "usemethod-control-cleanup",
+    "code": "c(local({\n    trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");trace<<-c(trace,\"continued\");99L}\n    g.default<-function(x){trace<<-c(trace,\"method\");7L};v<-g(1L)\n    identical(v,7L)&&identical(trace,c(\"method\",\"generic\"))\n  }),local({\n    trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L}\n    g.default<-function(x){on.exit(trace<<-c(trace,\"method-exit\"));trace<<-c(trace,\"method\");7L};v<-g(1L)\n    identical(v,7L)&&identical(trace,c(\"method\",\"method-exit\",\"generic\"))\n  }),local({\n    trace<-character();g<-function(x){on.exit({trace<<-c(trace,\"generic\");100L});UseMethod(\"g\")}\n    g.default<-function(x){on.exit({trace<<-c(trace,\"method\");200L});invisible(7L)};v<-withVisible(g(1L))\n    identical(v,list(value=7L,visible=FALSE))&&identical(trace,c(\"method\",\"generic\"))\n  }),local({\n    g<-function(x){on.exit(return(invisible(9L)));UseMethod(\"g\");99L};g.default<-function(x)7L\n    identical(withVisible(g(1L)),list(value=9L,visible=FALSE))\n  }),local({\n    g<-function(x){UseMethod(\"g\");99L};g.default<-function(x){on.exit(return(invisible(9L)));7L}\n    identical(withVisible(g(1L)),list(value=9L,visible=FALSE))\n  }),local({\n    trace<-character();g<-function(x){on.exit({trace<<-c(trace,\"generic\");stop(\"owned cleanup\")});UseMethod(\"g\")}\n    g.default<-function(x){trace<<-c(trace,\"method\");7L};v<-tryCatch(g(1L),error=function(e)conditionMessage(e))\n    identical(v,\"owned cleanup\")&&identical(trace,c(\"method\",\"generic\"))\n  }),local({\n    trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L}\n    g.default<-function(x){on.exit(trace<<-c(trace,\"method\"));stop(\"owned method\")}\n    v<-tryCatch(g(1L),error=function(e){trace<<-c(trace,\"handler\");conditionMessage(e)})\n    identical(v,\"owned method\")&&identical(trace,c(\"method\",\"generic\",\"handler\"))\n  }),local({\n    trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L}\n    g.default<-function(x){on.exit({trace<<-c(trace,\"method\");stop(\"owned method cleanup\")});7L}\n    v<-tryCatch(g(1L),error=function(e)conditionMessage(e))\n    identical(v,\"owned method cleanup\")&&identical(trace,c(\"method\",\"generic\"))\n  }),local({\n    trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L};g.default<-function(x)7L\n    f<-function(){on.exit(trace<<-c(trace,\"caller\"));v<-g(1L);trace<<-c(trace,\"caller-continued\");v+1L}\n    identical(f(),8L)&&identical(trace,c(\"generic\",\"caller-continued\",\"caller\"))\n  }),local({\n    trace<-character();g<-function(x){local_value<-\"owned-local\";on.exit(trace<<-c(trace,local_value));UseMethod(\"g\");99L}\n    g.default<-function(x)7L;v<-g(1L);identical(v,7L)&&identical(trace,\"owned-local\")\n  }))",
+    "expected": [true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "usemethod-control-arguments",
+    "code": "c(local({\n    g<-function(x,y){UseMethod(\"g\");y;99L};g.default<-function(x,y)7L\n    identical(g(1L,stop(\"unused original forced\")),7L)\n  }),local({\n    g<-function(x){UseMethod(\"g\",1L);stop(\"continued\")};g.integer<-function(x)invisible(x)\n    ref<-new.env(parent=emptyenv());v<-withVisible(g(ref));identical(v$value,ref)&&identical(v$visible,FALSE)\n  }),local({\n    cleaned<-FALSE;g<-function(x){on.exit(cleaned<<-TRUE);UseMethod(\"owned_no_methods\");99L}\n    caught<-tryCatch({g(1L);FALSE},error=function(e)TRUE);caught&&cleaned\n  }))",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "usemethod-control-nested-nextmethod",
+    "code": "c(local({\n    trace<-character();g<-function(x){UseMethod(\"g\");stop(\"g continued\")}\n    h<-function(x){UseMethod(\"h\");stop(\"h continued\")};h.default<-function(x){trace<<-c(trace,\"h-method\");3L}\n    g.default<-function(x){v<-h(x);trace<<-c(trace,\"g-method-continued\");v+4L}\n    identical(g(1L),7L)&&identical(trace,c(\"h-method\",\"g-method-continued\"))\n  }),local({\n    g<-function(x)UseMethod(\"g\");g.a<-function(x){v<-NextMethod();v+1L};g.default<-function(x)invisible(7L)\n    identical(withVisible(g(structure(1L,class=\"a\"))),list(value=8L,visible=TRUE))\n  }),local({\n    trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\")}\n    g.a<-function(x){on.exit(trace<<-c(trace,\"a-exit\"));v<-NextMethod();trace<<-c(trace,\"a-continued\");v+1L}\n    g.default<-function(x){on.exit(trace<<-c(trace,\"default-exit\"));7L};v<-g(structure(1L,class=\"a\"))\n    identical(v,8L)&&identical(trace,c(\"default-exit\",\"a-continued\",\"a-exit\",\"generic\"))\n  }))",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]

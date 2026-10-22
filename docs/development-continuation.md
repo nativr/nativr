@@ -1973,3 +1973,52 @@ cleanup against independently authored native cases, preserving NextMethod conti
 isolated testing runner's strict host projection, adversarial fixtures and native parity review.
 Keep runner-assisted evidence separate from original dependency-closure and P6/P7 evidence. All
 broader domain and platform completion criteria remain open; current local work needs no new input.
+
+### Direct UseMethod completion (profile 0.389)
+
+The stable 0.388 baseline reproduced all 21 proposed completion/visibility defects; eight
+preservation controls already passed. Direct dispatch now preserves the selected method's complete
+result and returns to the captured generic closure target through existing cleanup machinery.
+Pending statements, assignments and arithmetic do not resume inside the generic. The caller and
+ordinary NextMethod continuation still resume. Method/generic cleanup order, explicit cleanup
+returns, original promises, attributes and reference identity retain their bounded observations.
+
+All 31 focused tests pass, including step/depth exhaustion and recovery, alongside 206 related
+regressions. Five foundation groups and five recursive graphs add ten links across six UseMethod
+dimensions, including a new visibility dimension. Totals are 108 partial dimensions on nineteen
+bindings and 169 causal-linked bindings; no callable or domain is complete. Independent native
+validation passes 49 assertions including ten strict causal controls. Seven neighboring context and
+NextMethod visibility observations remain explicit exclusions from this claim.
+
+The full canonical check passes 3,076 unit tests with 94 opt-in skips, all tooling tests, both
+typechecks, serial build, generated reports and fixed caps. Checked-in/live/recursive conformance
+passes 1,467 / 1,394 / 382, with 55 NativR-only live skips. The 24-package checkpoint retains all
+178 input hashes, execution/comparison outcomes and stage statuses from 0.388, with unchanged tiers.
+The withr timezone repeatability flag changes from true to false while execution still fails; this
+variation receives no compatibility credit. Formula remains untouched.
+
+The [Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.389.0.json)
+passes 9/9 with direct return, invisibility and ordered cleanup through the Worker and no evaluation
+network traffic. Required examples take 12.8 / 15.9 / 57 seconds under the unchanged 120-second
+budget. An initial UI interruption fixture was rejected because Chromium exhausted the default step
+budget before its click, and WebKit also timed out. The final maintained cancellation fixture
+instead uses the existing public-API performance harness and explicit test budget, without changing
+product limits.
+
+The
+[repeated performance checkpoint](../compatibility/platform-evidence/performance-windows-0.389.0.json)
+passes all three engines, including seven selected-method interruption/recovery samples each. It
+checks NRL4005/reset, sentinel and generic state loss, zero frames and a fresh invisible finite
+generic. Pending status is verified after the existing 100 ms delay; no method-entry acknowledgement
+or cleanup-after-termination guarantee is inferred. The changed recovery workload precludes a direct
+total-recovery timing comparison to 0.388. All runtime/tool hashes remain stable, external requests
+and page errors are zero. Pack evidence remains at 0.388; public API/protocol and bundle caps are
+unchanged.
+
+Next measurable increments: promote the reviewed isolated own-name runner with bounded host capture,
+per-API parity qualifiers and owned-fixture-only acceptance; retain explicit unsupported behavior
+and zero original P6/P7 credit. Then close the independently reproduced loop-context admission gap
+for UseMethod, preserving rejection before selector forcing and valid generic calls from
+loop/evaluation callers. Wider domain closure, provenance-backed datasets, browser/OS coverage and
+release gates remain unfinished. Current local work needs no new input; download, holdout, Linux and
+remote-action boundaries remain unchanged.

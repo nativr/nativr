@@ -38,6 +38,28 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Direct UseMethod completion in closures (profile 0.389)
+
+A direct `UseMethod` call completes its active generic closure with the selected method's value and
+visibility. Statements, assignments and arithmetic pending in that closure do not resume; the
+enclosing caller resumes normally. The return target is the actual executing closure, including an
+alias or helper with a different name from the dispatched generic. Nested generic calls retain
+distinct targets. Original promises, selected classes, attributes and reference identity remain
+intact, and ordinary `NextMethod` calls retain local continuation.
+
+Method cleanup completes before generic cleanup. Ordinary cleanup expressions preserve the selected
+result's visibility; explicit cleanup returns and errors retain the existing replacement behavior.
+The implementation uses the existing return signal and completion machinery. Resource exhaustion
+retains priority over cleanup returns, and frame stacks are restored on success and failure. No
+public TypeScript API, Worker protocol or new input-sized allocation is introduced.
+
+The focused independent native matrix covers direct completion, visible/invisible results, cleanup,
+helper/nested target identity, laziness and reference preservation. Resource guards and browser
+interruption/recovery are NativR-specific evidence. Unusual evaluation contexts remain unfinished:
+native restrictions within loops, forced arguments, `evalq` and `tryCatch` are recorded separately.
+Direct `NextMethod` visibility forwarding, local free-variable forwarding, top-level dispatch,
+condition origins and full S3/S4/group behavior are not established by this bounded increment.
+
 ### Omitted UseMethod selectors inside generics (profile 0.388)
 
 Inside an owned generic closure, omitted-selector dispatch uses the original supplied actual matched
@@ -59,9 +81,9 @@ exact recursive graphs add bounded evidence, including strict causal controls. N
 argument-array copy, input-sized allocation or public API is introduced.
 
 The existing no-closure-call-frame guard remains unchanged. Top-level and unusual nested contexts,
-full nonlocal return, visibility, arbitrary missing/default/dots reconstruction, local free-variable
-forwarding, condition origins, S4/group behavior and direct builtin-method continuation remain
-unfinished. The
+full nonlocal return and visibility beyond the direct cases above, arbitrary missing/default/dots
+reconstruction, local free-variable forwarding, condition origins, S4/group behavior and direct
+builtin-method continuation remain unfinished. The
 [neighboring observations](../conformance/probes/usemethod-omitted-neighboring-gaps.R) receive no
 passing compatibility credit. This increment does not establish complete `UseMethod`.
 

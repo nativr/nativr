@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-browser-host-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.389.0",
+  "sourceCommit": "e10924245e6df5f0a5d14dabf7fd1b8e173e1a0b",
+  "sourceState": "Uncommitted candidate over sourceCommit; exact tested sources and runtime artifacts identified by the following digests",
+  "scope": "Windows cached-browser advisory evidence; not a complete browser/OS or release-performance matrix",
+  "environment": {
+    "os": "win32",
+    "osRelease": "10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "playwright": "1.62.0",
+    "browsers": [
+      { "name": "chromium", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "chromium-headless-shell", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "firefox", "revision": "1538", "browserVersion": "153.0" },
+      { "name": "webkit", "revision": "2336", "browserVersion": "26.5" }
+    ]
+  },
+  "provenance": {
+    "sources": [
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "84710b350f70d183062afbb8b2ddd83301a9841e6e48d440d0777436a4324d49"
+      },
+      {
+        "path": "playwright.config.ts",
+        "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "ebd9d6c6b7423b3c6c1645bc7655fc6ae02056f3e1b119123afca08bcd52a15c"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "runtimeJavaScript": [
+      {
+        "path": "packages/nativr/dist/assets/worker-entry-6ol7OHyQ.js",
+        "sha256": "0f367e4cac5a7955370c722eea7b45983526df5252a77f000931de592710ad5c"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/conversion-hqUUaSZc.js",
+        "sha256": "275e6ed904955f257de90948f294bfa251cb1a34317973d1dfcaf4bece4f39ce"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/runtime-host-CCi6pBmg.js",
+        "sha256": "840ad7a4dfad015101e214d3b06ee11e1816bf55464ae0c188e51822a9944a63"
+      },
+      {
+        "path": "packages/nativr/dist/index.js",
+        "sha256": "c1303bad6bb38dd742cfd7f6993e7c92c443410ed1c3751e0ae124cbcacf27cd"
+      }
+    ],
+    "runLogSha256": "b8d5d438f02c9ff55c9fe17b0a73313dec12f38886ffd97f0d453f3e0391b516",
+    "reportSha256": "0aa3ae7d39de7dff07b016d1f96c5d1db6ac1ca773e9bf39990e1f642adcf5f4",
+    "redaction": "Only owned test names, status, timing, tool revisions and source/artifact digests; no bodies, browser traces, console output or local user paths"
+  },
+  "execution": {
+    "command": "pnpm test:e2e --workers=1 --reporter=list,json",
+    "precondition": "Serial production build; existing cached browser revisions; NATIVR_E2E_SKIP_BUILD=1; no reused preview server",
+    "workers": 1,
+    "retries": 0,
+    "requiredExamplesTimeoutMs": 120000,
+    "otherTestsTimeoutMs": 60000,
+    "viewportPolicy": "Unchanged configured desktop viewports",
+    "timingPrecision": "Playwright JSON reporter milliseconds",
+    "tests": [
+      {
+        "browser": "chromium",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 12793
+      },
+      {
+        "browser": "chromium",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1173
+      },
+      {
+        "browser": "chromium",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 449
+      },
+      {
+        "browser": "firefox",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 15922
+      },
+      {
+        "browser": "firefox",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1608
+      },
+      {
+        "browser": "firefox",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 600
+      },
+      {
+        "browser": "webkit",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 56990
+      },
+      {
+        "browser": "webkit",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 4468
+      },
+      {
+        "browser": "webkit",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 555
+      }
+    ],
+    "resourceAssertions": [
+      "Oversized intermediate sprintf width is rejected in the Worker with NRL4007",
+      "Oversized intermediate sprintf fixed precision is rejected in the Worker with NRL4007",
+      "Same Worker session recovers with bounded short general formatting and no evaluation network traffic",
+      "UTC POSIXlt conversion preserves finite/Inf/NA classification through the Worker",
+      "POSIXlt numeric predicates and Gregorian wide-year fractional conversion work through the Worker",
+      "UseMethod preserves integer-to-numeric continuation and method class history through the Worker",
+      "Implicit S3 dispatch preserves public class labels and original integer storage",
+      "Explicit UseMethod selectors retain original actuals, lazy forcing and NextMethod class history through the Worker",
+      "Omitted UseMethod selectors dispatch empty actuals on NULL and literal missing actuals on name through the Worker",
+      "Direct UseMethod completes its generic with method invisibility and ordered method/generic cleanup"
+    ]
+  },
+  "remaining": [
+    "Historical WebKit timeout cause not established",
+    "Broader performance workloads and acceptance budgets; prior repeated measurements remain at profile 0.388",
+    "Declared additional OS/platform coverage",
+    "Separately authorized GNU R Linux normative gate",
+    "Reproducible remote CI and publication remain separate"
+  ]
+}

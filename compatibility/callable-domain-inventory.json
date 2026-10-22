@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.388.0",
+  "semanticProfileVersion": "0.389.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "8855a54767b37c7f4da5508cb3d735b569c391c07863033b18358803d918674e",
+    "capabilities": "ebd9d6c6b7423b3c6c1645bc7655fc6ae02056f3e1b119123afca08bcd52a15c",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "81cd11575011780d7e8013cc86e626fa9f3b64fc9be52e12dabcbcce0935b907",
-    "oracleV2": "abde92168e92434d56eea9367a9823ff8e584e69b0d2c8f077a0626cdf55e718",
+    "foundation": "f79c311190d43de65db23a7f8138e211efc5e36f5a8509a88468f3f890bf9c20",
+    "oracleV2": "06a0af58025ea5f24dbc21190ac158e69cf8802217860ac4f324ceecdbd66b8a",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "8a3393a52299313e0bf4175c09815fa2766903dd5c01c6361da67db37fb04987"
+    "annotations": "4ba4c09bad0c3f67356a6ec68e32014642680255ef9e1663ec23dee740716645"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -358,8 +358,8 @@
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 420,
-          "partialDeclaredBindings": 5
+          "pendingBindings": 419,
+          "partialDeclaredBindings": 6
         },
         {
           "dimension": "side-effects",
@@ -3904,6 +3904,11 @@
         "s3-usemethod-nextmethod-class-history",
         "s3-usemethod-public-labels-and-forcing",
         "s3-usemethod-returned-reference-graph",
+        "usemethod-control-cleanup-values",
+        "usemethod-control-completion-values",
+        "usemethod-control-nested-nextmethod-values",
+        "usemethod-control-original-reference-graph",
+        "usemethod-control-visibility-values",
         "usemethod-omitted-literal-missing-values",
         "usemethod-omitted-original-actuals-and-forcing",
         "usemethod-omitted-original-reference-graph",
@@ -3933,6 +3938,10 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-control-original-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-omitted-literal-missing-values"
             },
             {
@@ -3949,6 +3958,7 @@
             }
           ],
           "remainingGaps": [
+            "Owned return values preserve tested attributes and environment-valued aliases; arbitrary attribute types and metadata mutation remain unfinished.",
             "Selected .Class suffix/previous history, .Method/.Generic/.Group and unchanged public class labels are observed; arbitrary metadata mutation and full call/environment attribution remain unfinished.",
             "Selected NULL/name methods retain the observed .Class/.Method metadata, and initial default dispatch retains NULL .Class; complete call/environment metadata and arbitrary metadata mutation remain unfinished.",
             "Selected source expressions, match.call/sys.call argument metadata and selector-derived .Class history survive original-actual forwarding; arbitrary call attributes, metadata mutation and full call/environment attribution remain unfinished."
@@ -3965,6 +3975,14 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-cleanup-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-completion-values"
             },
             {
               "suite": "oracle-v2",
@@ -3985,6 +4003,7 @@
           ],
           "remainingGaps": [
             "A supplied NULL selector and selected zero-actual, literal-missing and forwarded-missing flags are observed without injecting the selector as an argument; omitted-selector, invalid/explicitly missing selector, broader default and diagnostic boundaries remain unfinished.",
+            "Direct cleanup return replacement and caller continuation are observed; loop/evaluation/forced-argument context restrictions and full error origins remain unfinished.",
             "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished.",
             "Selected zero-formal/empty-dots calls, forced or unforced generic defaults, local rebinding and literal-missing actuals retain the original argument list; outside-generic invocation, complete missing/default behavior and full diagnostic origins remain unfinished."
           ]
@@ -3999,6 +4018,10 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-control-original-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-omitted-original-reference-graph"
             },
             {
@@ -4009,7 +4032,8 @@
           "remainingGaps": [
             "An explicit integer selector preserves the original environment reference through the selected method and NextMethod; replacing the method formal forwards the second environment reference while retaining the selector chain. Arbitrary returned objects and complete identity behavior remain unfinished.",
             "An owned generic's local rebinding preserves the original environment as the selected method argument and returned alias; arbitrary reference types, active bindings and complete identity behavior remain unfinished.",
-            "Owned implicit and explicitly selected numeric methods preserve tested returned environment references; arbitrary selector/reference combinations and complete identity behavior remain unfinished."
+            "Owned implicit and explicitly selected numeric methods preserve tested returned environment references; arbitrary selector/reference combinations and complete identity behavior remain unfinished.",
+            "Owned returned environment aliases survive direct nonlocal completion and attribute references. Arbitrary reference types and complete identity behavior remain unfinished."
           ]
         },
         {
@@ -4027,6 +4051,14 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-implicit-dispatch-classes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-completion-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-nested-nextmethod-values"
             },
             {
               "suite": "oracle-v2",
@@ -4058,6 +4090,7 @@
             }
           ],
           "remainingGaps": [
+            "Direct owned generic completion and nested/helper return targets are observed; unusual evaluation contexts, complete S3 dispatch and free-variable forwarding remain unfinished.",
             "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished.",
             "Selected omitted-selector calls inside owned generics choose NULL when no actual was supplied and name for a literal missing selected actual; existing matched-first-formal and first-supplied fallback behavior remains observed. Arbitrary objects, generic-call contexts and complete S3 dispatch remain unfinished.",
             "Selected scalar, array and explicit-class method selection is covered; arbitrary objects and the complete generic-call matrix remain unfinished."
@@ -4070,6 +4103,14 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-public-labels-and-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-cleanup-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-completion-values"
             },
             {
               "suite": "oracle-v2",
@@ -4093,14 +4134,33 @@
             }
           ],
           "remainingGaps": [
+            "Direct generic continuation is suppressed and method/generic/caller cleanup order is observed. Unusual evaluation contexts, active-binding behavior and full condition/control interaction remain unfinished.",
             "Selected generic-default forcing does not invent a supplied actual; method defaults, local rebinding order and memoized original promises retain their observed behavior. General promise/control-flow behavior, nonlocal return, visibility and full condition attribution remain unfinished.",
             "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished.",
             "Selected selector/name/original forcing order, unused original laziness, second-promise reuse, method-default selection and changed-method-argument continuation are observed; arbitrary control flow, visibility, dots reconstruction and missing/default forcing remain unfinished."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-cleanup-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-control-visibility-values"
+            }
+          ],
+          "remainingGaps": [
+            "Direct visible/invisible method results and ordinary or explicit-return cleanup are observed. Direct NextMethod visibility forwarding, unusual evaluation contexts and full S3 visibility remain unfinished."
           ]
         }
       ],
       "remainingGaps": [
         "Closure UseMethod search classes remain distinct from public class()/inherits() labels and internal/group generic policy.",
+        "Direct UseMethod nonlocal completion, method visibility and cleanup have bounded causal evidence. Native context restrictions, direct NextMethod visibility and complete S3 control behavior remain unfinished.",
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
         "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished."
       ]

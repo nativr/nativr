@@ -2746,5 +2746,35 @@
     "policy": "exact",
     "bindingEvidence": ["base::UseMethod"],
     "code": "local({shared<-new.env(parent=emptyenv());shared$marker<-53L;replacement<-new.env(parent=emptyenv());replacement$marker<-59L;g<-function(x){x<-replacement;UseMethod(\"g\")};g.environment<-function(x)x;list(shared=shared,replacement=replacement,returned=g(shared))})"
+  },
+  {
+    "id": "usemethod-control-completion-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(local({g<-function(x){UseMethod(\"g\");stop(\"continued\")};g.default<-function(x)7L;g(1L)}),local({g<-function(x)100L+UseMethod(\"g\");g.default<-function(x)7L;g(1L)}),local({assigned<-0L;g<-function(x){assigned<<-UseMethod(\"g\");99L};g.default<-function(x)7L;list(value=g(1L),assigned=assigned)}),local({g<-function(x){if(TRUE){UseMethod(\"g\");99L};101L};g.default<-function(x)7L;g(1L)}),local({g<-function(x){UseMethod(\"g\");99L};g.default<-function(x)invisible(7L);f<-function(){v<-g(1L);v+1L};withVisible(f())}),local({g<-function(x){UseMethod(\"g\");99L};g.default<-function(x)invisible(7L);alias<-g;withVisible(alias(1L))}),local({helper<-function(x){UseMethod(\"g\");99L};g<-function(x)helper(x)+1L;g.default<-function(x)7L;g(1L)}))})"
+  },
+  {
+    "id": "usemethod-control-visibility-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(local({g<-function(x)UseMethod(\"g\");g.default<-function(x)invisible(7L);withVisible(g(1L))}),local({g<-function(x)UseMethod(\"g\");g.default<-function(x)7L;withVisible(g(1L))}),local({g<-function(x)UseMethod(\"g\");g.default<-function(x){x<-7L};withVisible(g(1L))}),local({g<-function(x)UseMethod(\"g\");g.default<-function(x){return(invisible(7L));99L};withVisible(g(1L))}),local({g<-function(x)UseMethod(\"g\");g.default<-function(x)invisible(NULL);withVisible(g(1L))}))})"
+  },
+  {
+    "id": "usemethod-control-cleanup-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(local({trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L};g.default<-function(x){trace<<-c(trace,\"method\");7L};list(value=g(1L),events=trace)}),local({trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L};g.default<-function(x){on.exit(trace<<-c(trace,\"method-exit\"));trace<<-c(trace,\"method\");7L};list(value=g(1L),events=trace)}),local({trace<-character();g<-function(x){on.exit({trace<<-c(trace,\"generic\");100L});UseMethod(\"g\")};g.default<-function(x){on.exit({trace<<-c(trace,\"method\");200L});invisible(7L)};list(observed=withVisible(g(1L)),events=trace)}),local({g<-function(x){on.exit(return(invisible(9L)));UseMethod(\"g\");99L};g.default<-function(x)7L;withVisible(g(1L))}),local({g<-function(x){UseMethod(\"g\");99L};g.default<-function(x){on.exit(return(invisible(9L)));7L};withVisible(g(1L))}),local({trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\");99L};g.default<-function(x)7L;f<-function(){on.exit(trace<<-c(trace,\"caller\"));v<-g(1L);trace<<-c(trace,\"caller-continued\");v+1L};list(value=f(),events=trace)}),local({trace<-character();g<-function(x){local_value<-\"owned-local\";on.exit(trace<<-c(trace,local_value));UseMethod(\"g\");99L};g.default<-function(x)7L;list(value=g(1L),events=trace)}))})"
+  },
+  {
+    "id": "usemethod-control-nested-nextmethod-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(local({trace<-character();g<-function(x){UseMethod(\"g\");stop(\"g continued\")};h<-function(x){UseMethod(\"h\");stop(\"h continued\")};h.default<-function(x){trace<<-c(trace,\"h-method\");3L};g.default<-function(x){v<-h(x);trace<<-c(trace,\"g-method-continued\");v+4L};list(value=g(1L),events=trace)}),local({g<-function(x)UseMethod(\"g\");g.a<-function(x){v<-NextMethod();v+1L};g.default<-function(x)invisible(7L);withVisible(g(structure(1L,class=\"a\")))}),local({trace<-character();g<-function(x){on.exit(trace<<-c(trace,\"generic\"));UseMethod(\"g\")};g.a<-function(x){on.exit(trace<<-c(trace,\"a-exit\"));v<-NextMethod();trace<<-c(trace,\"a-continued\");v+1L};g.default<-function(x){on.exit(trace<<-c(trace,\"default-exit\"));7L};list(value=g(structure(1L,class=\"a\")),events=trace)}))})"
+  },
+  {
+    "id": "usemethod-control-original-reference-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({shared<-new.env(parent=emptyenv());shared$marker<-71L;original<-structure(7L,note=shared);g<-function(x){UseMethod(\"g\",1L);99L};g.integer<-function(x)invisible(x);observed<-withVisible(g(original));direct<-withVisible(g(shared));h<-function(x,y){UseMethod(\"h\");y;99L};h.default<-function(x,y)7L;list(shared=shared,original=original,observed=observed,direct=direct,lazy=h(1L,stop(\"unused original forced\")))})"
   }
 ]
