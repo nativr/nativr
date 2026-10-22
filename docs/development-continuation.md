@@ -1737,3 +1737,17 @@ recursive causal evidence, and explicitly reject unsupported calendar ranges/tim
 existing character conversion and input identity; defer standalone Date method metadata without
 behavior. Then continue the remaining domain, dataset, testing-runner and platform work under the
 existing download, Linux, holdout and remote-action boundaries. No input is needed for this step.
+
+### Distribution purpose inventory review (2026-10-22)
+
+Classified 65 reference-only stats distribution bindings from 23 public documentation topics using
+only observable titles and aliases. The
+[review record](../compatibility/callable-purpose-evidence/stats-distributions-4.6.1.json) maps
+exact qualified names to those topics. Explicit gaps retain numerical, vector/shape, RNG, error and
+metadata work. Existing assignments and all behavioral evidence remain unchanged.
+
+The inventory has 1,228 classified bindings and 1,325 pending; all 817 registered bindings remain
+assigned. This purpose-only increment leaves profile 0.384, callable overlap, 162 causal links, 48
+partial dimensions and all incomplete domains unchanged. It was verified with inventory validators
+and generated inventory/status consistency checks. The active semantic step remains bounded UTC/GMT
+POSIXlt conversion and dispatch.

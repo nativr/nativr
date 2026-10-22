@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-callable-purpose-review",
+  "date": "2026-10-22",
+  "reference": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "package": "stats",
+    "source": "Installed public Rd documentation titles and aliases, joined against the existing observable export inventory",
+    "fieldsRead": ["title", "alias"]
+  },
+  "scope": "Purpose assignments only; no function bodies, examples, implementations, behavior observations, complete matrices or exclusions",
+  "domains": ["numeric-runtime", "vector-semantics"],
+  "groups": [
+    { "topic": "Beta", "bindings": ["stats::dbeta", "stats::pbeta", "stats::qbeta"] },
+    { "topic": "Binomial", "bindings": ["stats::pbinom"] },
+    { "topic": "Chisquare", "bindings": ["stats::dchisq", "stats::pchisq", "stats::qchisq"] },
+    { "topic": "Exponential", "bindings": ["stats::dexp", "stats::pexp", "stats::qexp"] },
+    { "topic": "GammaDist", "bindings": ["stats::dgamma", "stats::pgamma", "stats::qgamma"] },
+    {
+      "topic": "Geometric",
+      "bindings": ["stats::dgeom", "stats::pgeom", "stats::qgeom", "stats::rgeom"]
+    },
+    {
+      "topic": "Hypergeometric",
+      "bindings": ["stats::dhyper", "stats::phyper", "stats::qhyper", "stats::rhyper"]
+    },
+    { "topic": "Lognormal", "bindings": ["stats::dlnorm", "stats::plnorm", "stats::qlnorm"] },
+    { "topic": "Logistic", "bindings": ["stats::dlogis", "stats::plogis", "stats::rlogis"] },
+    {
+      "topic": "NegBinomial",
+      "bindings": ["stats::dnbinom", "stats::pnbinom", "stats::qnbinom", "stats::rnbinom"]
+    },
+    { "topic": "Normal", "bindings": ["stats::dnorm"] },
+    { "topic": "Poisson", "bindings": ["stats::dpois", "stats::ppois", "stats::qpois"] },
+    {
+      "topic": "SignRank",
+      "bindings": ["stats::dsignrank", "stats::psignrank", "stats::qsignrank", "stats::rsignrank"]
+    },
+    { "topic": "TDist", "bindings": ["stats::dt"] },
+    { "topic": "Tukey", "bindings": ["stats::ptukey", "stats::qtukey"] },
+    { "topic": "Uniform", "bindings": ["stats::dunif", "stats::punif", "stats::qunif"] },
+    {
+      "topic": "Weibull",
+      "bindings": ["stats::dweibull", "stats::pweibull", "stats::qweibull", "stats::rweibull"]
+    },
+    {
+      "topic": "Wilcoxon",
+      "bindings": ["stats::dwilcox", "stats::pwilcox", "stats::qwilcox", "stats::rwilcox"]
+    },
+    { "topic": "Smirnov", "bindings": ["stats::psmirnov", "stats::qsmirnov", "stats::rsmirnov"] },
+    { "topic": "Fdist", "bindings": ["stats::df", "stats::pf", "stats::qf", "stats::rf"] },
+    { "topic": "Multinom", "bindings": ["stats::rmultinom", "stats::dmultinom"] },
+    { "topic": "birthday", "bindings": ["stats::qbirthday", "stats::pbirthday"] },
+    { "topic": "rWishart", "bindings": ["stats::rWishart"] }
+  ]
+}

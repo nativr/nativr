@@ -17,7 +17,7 @@ name in one namespace does not establish the binding in another namespace.
 All 162 bindings with existing causal links have explicit domain assignments. Reviewed purpose
 assignments add 430 bindings from graphics, graphics devices and object-system methods, and 572
 previously unclassified owned registrations. The bounded formatC increment adds one assignment. The
-classified total is 1,163, including all 817 registered bindings. Another 1,390 reference bindings
+classified total is 1,228, including all 817 registered bindings. Another 1,325 reference bindings
 remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
 Eight bindings have 48 reviewed, partial behavioral-dimension declarations. Each declaration
@@ -46,6 +46,21 @@ Native windows, printers, font embedding and interactive devices remain unfinish
 graphics and I/O domains is not a platform exclusion; browser adaptations require documented host
 capabilities and executable boundary checks. These purpose assignments add no causal evidence or
 compatibility claims.
+
+### Distribution reference callables
+
+A separate
+[purpose review](../compatibility/callable-purpose-evidence/stats-distributions-4.6.1.json) assigns
+65 unregistered stats bindings across 23 documented distribution families to numeric and vector
+semantics. Inputs were only the installed GNU R 4.6.1 public help titles and aliases, joined against
+the already recorded callable export inventory. No function bodies, examples or behavior outputs
+were used, and existing assignments were preserved.
+
+The review covers univariate densities/probabilities/quantiles and sampling, rank-statistic and
+Smirnov distributions, multivariate counts, coincidence probabilities and Wishart matrix sampling.
+Parameter rules, tails/log scales, vector and matrix shapes, numerical accuracy, RNG state/draw
+ordering, errors and metadata remain explicit work. Documentation establishes purpose; none of these
+65 bindings receives a runtime registration, causal link, behavioral dimension or exclusion.
 
 ### Owned registered callables
 

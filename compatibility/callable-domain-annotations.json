@@ -9606,6 +9606,526 @@
           ]
         }
       ]
+    },
+    {
+      "binding": "stats::dbeta",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pbeta",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qbeta",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pbinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dchisq",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pchisq",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qchisq",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dexp",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pexp",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qexp",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dgamma",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pgamma",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qgamma",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dgeom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pgeom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qgeom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rgeom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dhyper",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::phyper",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qhyper",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rhyper",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dlnorm",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::plnorm",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qlnorm",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dlogis",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::plogis",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rlogis",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dnbinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pnbinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qnbinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rnbinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dnorm",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dpois",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::ppois",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qpois",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dsignrank",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::psignrank",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qsignrank",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rsignrank",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dt",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::ptukey",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qtukey",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dunif",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::punif",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qunif",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dweibull",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pweibull",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qweibull",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rweibull",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dwilcox",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pwilcox",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qwilcox",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rwilcox",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::psmirnov",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qsmirnov",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rsmirnov",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::df",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pf",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qf",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Distribution parameters, vector recycling, empty/missing/nonfinite inputs, tail and log conventions, boundary probabilities, numerical accuracy and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rf",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Sampling parameters, vector sizing, seed/state transitions, deterministic generators, draw ordering, invalid/nonfinite values and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rmultinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Multivariate counts/probability normalization, output shape, parameter recycling, boundary values, numerical accuracy, sampling state/draw ordering where applicable and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::dmultinom",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Multivariate counts/probability normalization, output shape, parameter recycling, boundary values, numerical accuracy, sampling state/draw ordering where applicable and errors/attributes remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::qbirthday",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Coincidence probability and threshold conventions, class sizes, parameter boundaries, numerical accuracy and error/vector behavior remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::pbirthday",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Coincidence probability and threshold conventions, class sizes, parameter boundaries, numerical accuracy and error/vector behavior remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "stats::rWishart",
+      "domains": ["numeric-runtime", "vector-semantics"],
+      "remainingGaps": [
+        "Matrix sampling, degrees of freedom, covariance validation, output arrays, numerical stability and RNG state/draw ordering remain unimplemented or unverified.",
+        "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
     }
   ]
 }
