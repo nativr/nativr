@@ -13,7 +13,7 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                       | Status              |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Production check                   | Profile 0.382: 2,532 unit tests pass, 93 opt-in tests skipped; production/test/config types, build and bundle audit pass                              | Passed              |
+| Production check                   | Profile 0.382 after observer repair: 2,534 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass        | Passed              |
 | Conformance                        | 1,405 checked-in, 1,336 live GNU R 4.6.1, 320 recursive cases; 160 bindings linked with causal controls                                               | Passed              |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                          | Passed              |
 | Browser e2e                        | Profile 0.380 on Windows: 9/9 pass across Chromium, Firefox and WebKit; required examples take 10.4 / 11.7 / 41.5 s within the unchanged 120 s budget | Passed on this host |
@@ -110,6 +110,18 @@ records repeated startup, cancellation and five fixed numDeriv workloads across 
 All assertions pass; runtime and tooling hashes remain stable. See [performance](performance.md) for
 sample counts, timings and limits. Additional OS coverage, broader workloads, latency acceptance
 budgets and the separately authorized Linux gate remain open.
+
+### Recursive observer verification at profile 0.382 (2026-10-22)
+
+The observer now retains both component tokens before choosing whole-complex NA. Native preflights
+pin 49 ordered component pairs plus whole NA; six pure decoder tests reject malformed untagged
+complex payloads and preserve tagged graphs. All five focused inline/native observer tests pass. The
+complete check passes 2,534 tests with 94 opt-in skips, and the corrected recursive gate passes all
+320 existing cases with 160 causal-linked bindings. No case or control was removed or weakened.
+
+All ten production JavaScript/Wasm artifact hashes are unchanged. No runtime profile, public API,
+Worker protocol or package tier changed; the 0.382 corpus checkpoint remains applicable. This
+improves observation fidelity and does not establish runtime mixed-component NA compatibility.
 
 ### Profile 0.382 verification (2026-10-22)
 

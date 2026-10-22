@@ -42,9 +42,9 @@ nativr_oracle_observe_graph <- function(value, max_depth = 64L, max_bindings = 1
       return(list(kind = "raw", value = as.integer(item)))
     }
     if (type == "complex") {
-      if (is.na(item) && !is.nan(item)) return(list(kind = "complex-na"))
       real <- scalar_token(Re(item), 1L)
       imaginary <- scalar_token(Im(item), 1L)
+      if (real$kind == "double-na" && imaginary$kind == "double-na") return(list(kind = "complex-na"))
       if (real$kind != "double" || imaginary$kind != "double") {
         return(list(kind = "complex-components", real = real, imaginary = imaginary))
       }

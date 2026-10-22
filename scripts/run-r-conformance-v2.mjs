@@ -3,6 +3,7 @@ import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { snapshotToPlain } from "./lib/oracle-v2-snapshot.mjs";
 import {
   collectOracleV2BindingEvidence,
   shadowedOracleV2Code,
@@ -61,6 +62,7 @@ assertNormativeR(rscript);
 const observerPath = path.join(root, "conformance", "oracle-v2-observer.R");
 const observerSource = await readFile(observerPath, "utf8");
 assertRawPromisesRejected(rscript, observerPath);
+assertComplexComponentTokens(rscript, observerPath);
 const { createR } = await import(
   pathToFileURL(path.join(root, "packages", "nativr", "dist", "index.js")).href
 );
@@ -129,6 +131,28 @@ else {
   console.log(
     `Recursive live R oracle v2: ${cases.length}/${cases.length} passed; ${bindingEvidence.length} registered bindings have case links with causal shadow controls.`,
   );
+}
+
+function assertComplexComponentTokens(rscript, observerPath) {
+  const result = spawnSync(
+    rscript,
+    [
+      "--vanilla",
+      path.join(root, "conformance", "oracle-v2-complex-token-fixtures.R"),
+      observerPath,
+    ],
+    { encoding: "utf8", timeout: 15_000, windowsHide: true },
+  );
+  const expected = "PASS complex component-token preflight (49 pairs; whole NA retained)";
+  if (
+    result.error !== undefined ||
+    result.signal !== null ||
+    result.status !== 0 ||
+    result.stdout.trim() !== expected
+  ) {
+    throw new Error("Oracle-v2 complex component-token preflight failed.");
+  }
+  console.log(expected);
 }
 
 function assertRawPromisesRejected(rscript, observerPath) {
@@ -425,40 +449,6 @@ function assertGraphAssertions(observation, testCase, implementation) {
       throw new Error(`${prefix}: '${name}' is not an unforced active binding.`);
     }
   }
-}
-
-function snapshotToPlain(snapshot) {
-  if (snapshot.type === "null") return null;
-  if (snapshot.type === "list" || snapshot.type === "pairlist") {
-    const values = snapshot.values.map(snapshotToPlain);
-    const names = snapshot.names;
-    if (
-      names !== undefined &&
-      names.length === values.length &&
-      names.every((name) => name.length > 0) &&
-      new Set(names).size === names.length
-    ) {
-      return Object.fromEntries(names.map((name, index) => [name, values[index]]));
-    }
-    return values;
-  }
-  if (snapshot.type === "complex") {
-    const values = snapshot.real.map((real, index) => ({
-      real,
-      imaginary: snapshot.imaginary[index],
-    }));
-    return values.length === 1 ? values[0] : values;
-  }
-  if (snapshot.type === "formula") return { ...snapshot };
-  if (snapshot.type === "symbol") return snapshot.name;
-  if (snapshot.type === "language") return snapshot.source;
-  if (snapshot.type === "expression") return [...snapshot.sources];
-  const values = Array.from(snapshot.values, (value, index) => {
-    if (snapshot.missing?.[index] === 1) return null;
-    if (snapshot.type === "logical") return value === 1;
-    return value;
-  });
-  return values.length === 1 ? values[0] : values;
 }
 
 function runOracle(rscript, observerPath, code) {

@@ -1652,3 +1652,23 @@ pending. All 2,553 bindings and all thirteen domains remain incomplete. The 53 v
 generated inventory/status checks pass. This metadata increment adds no runtime behavior or
 compatibility credit. Continue classification of unregistered reference bindings using documented
 public purpose, the observer repair, shared formatting and remaining domain matrices.
+
+### Recursive complex observation correction at profile 0.382
+
+The owned observer now emits whole-complex NA only when both component tokens are NA. Mixed
+component values retain their existing component-token schema. An independent native preflight
+checks 49 ordered pairs plus whole NA; the previous observer conflated ten of those pairs. The JS
+decoder rejects untagged raw complex payloads instead of losing their values through typed-array
+coercion. Six pure decoder tests and all five focused inline/native observer tests pass.
+
+The full check passes 2,534 tests with 94 opt-in skips; the corrected live recursive gate passes all
+320 existing cases and all controls for 160 linked bindings. No existing case or causal claim was
+weakened. All ten production JavaScript/Wasm hashes are unchanged, so runtime profile 0.382, the
+public API, Worker protocol and current corpus evidence remain unchanged. Runtime component NA
+storage and lossless public values still need separate work; an observer preflight grants no runtime
+compatibility credit.
+
+Continue the native-backed formatC matrix and affected prettyunits repeatability, then the shared
+POSIXlt conversion/dispatch and remaining semantic-domain work. The full five-criterion goal remains
+unfinished. Local commits remain authorized; downloads, Linux, Formula and remote actions retain
+their existing boundaries.

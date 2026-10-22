@@ -13,6 +13,7 @@ for (const command of [
   ["compatibility:check"],
   ["inventory:test"],
   ["benchmark:browser:test"],
+  ["conformance:r:v2:test"],
   ["inventory:check"],
   ["lint"],
   ["boundaries"],

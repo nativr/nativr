@@ -74,33 +74,34 @@ selected policy accepts them. Platform adaptations must identify the matching en
 4. Migrate every behavioral claim; retire scalar-extraction workarounds only after equivalent v2
    evidence exists.
 
-The current gate has forty exact cases: nested arbitrary attributes, data frames, scalar missingness
-and non-finite boundaries, stdout with invisible return, shared environment identity, self and
-mutual environment cycles, active binding observation without evaluation, nested and matched
-language-call structure with unexpanded dots, tagged pairlists with nested language and missingness,
-closure formals/body/environment capture, returned simple error and custom warning conditions,
-signalled simple and custom errors and warnings, message output, two ordered warnings with separate
-streams, a warning before a signalled error, and calls supplied by conditions or captured from
-nested callers, and replacement RHS reflection through direct closures, S3 methods, escaped captured
-frames, and nested reconstruction. Closure-rendering cases compare complete formals/body language
-graphs alongside the printed and deparsed line vectors, and pin the stdout ordering of a named
-closure environment and arbitrary attributes plus the invisible print return. Table-rendering cases
-retain counts and all table attributes while pinning symbol, compound, and explicit axis headings,
-zero-extent output, and invisible print returns. Factor-level construction and additional table
-options remain outside those sampled claims. Numeric-reporting cases preserve error attributes,
-callback side effects, scaling controls, session formatting options, array metadata, and stdout/file
-output with visibility. Condition-accessor cases retain owned fields, caller-local methods, and
-method visibility. Embedded-value cases retain full call/value graphs, ordered attributes, names and
-dimensions, and replacement-condition call text plus its evaluated replacement value. Raw oracle
-promises remain rejected. Thirty unambiguous registered base bindings are linked to thirty-seven
-cases; the live gate checks each link with causal controls. The condition cases pin simple warning
-and error classes, custom condition classes, messages, order, null calls when `call. = FALSE`
-including within a nested caller, explicit non-null language calls, and nested caller calls. The
-NativR observer captures builtin warning conditions through the public `globalCallingHandlers()`
-behavior. Automatic use of custom condition accessors while signalling/printing conditions remains
-incomplete, as do warnings that bypass condition signalling, interrupts, or every condition shape.
-RNG and migration of the remaining behavioral surface are also pending; v1 remains the broad
-regression gate.
+Current exact-case and causal-link counts are generated in
+[canonical status](../../compatibility/status.json). The maintained cases cover nested arbitrary
+attributes, data frames, scalar missingness and non-finite boundaries, stdout with invisible return,
+shared environment identity, self and mutual environment cycles, active binding observation without
+evaluation, nested and matched language-call structure with unexpanded dots, tagged pairlists with
+nested language and missingness, closure formals/body/environment capture, returned simple error and
+custom warning conditions, signalled simple and custom errors and warnings, message output, two
+ordered warnings with separate streams, a warning before a signalled error, and calls supplied by
+conditions or captured from nested callers, and replacement RHS reflection through direct closures,
+S3 methods, escaped captured frames, and nested reconstruction. Closure-rendering cases compare
+complete formals/body language graphs alongside the printed and deparsed line vectors, and pin the
+stdout ordering of a named closure environment and arbitrary attributes plus the invisible print
+return. Table-rendering cases retain counts and all table attributes while pinning symbol, compound,
+and explicit axis headings, zero-extent output, and invisible print returns. Factor-level
+construction and additional table options remain outside those sampled claims. Numeric-reporting
+cases preserve error attributes, callback side effects, scaling controls, session formatting
+options, array metadata, and stdout/file output with visibility. Condition-accessor cases retain
+owned fields, caller-local methods, and method visibility. Embedded-value cases retain full
+call/value graphs, ordered attributes, names and dimensions, and replacement-condition call text
+plus its evaluated replacement value. Raw oracle promises remain rejected. Qualified binding links
+and their case IDs are recorded in canonical status; the live gate checks each link with causal
+controls. The condition cases pin simple warning and error classes, custom condition classes,
+messages, order, null calls when `call. = FALSE` including within a nested caller, explicit non-null
+language calls, and nested caller calls. The NativR observer captures builtin warning conditions
+through the public `globalCallingHandlers()` behavior. Automatic use of custom condition accessors
+while signalling/printing conditions remains incomplete, as do warnings that bypass condition
+signalling, interrupts, or every condition shape. RNG and migration of the remaining behavioral
+surface are also pending; v1 remains the broad regression gate.
 
 ### Complex infinity observation
 
@@ -108,17 +109,30 @@ The recursive observer emits a complex-components token when a non-missing compl
 infinite or signed-zero component. Each component uses the existing double token grammar, so its
 position and infinity sign survive JSON serialization. Ordinary finite complex tokens remain
 unchanged. Independent assertions pin all four real/imaginary positive/negative infinity cases, and
-a recursive case now compares complex infinities directly. The existing complex-na token still
-collapses missing complex components; distinct NA/NaN component payloads remain an observer gap.
-This changes conformance evidence, not the runtime semantic profile.
+a recursive case now compares complex infinities directly. This changes conformance evidence, not
+the runtime semantic profile.
 
 ### Complex NaN observation
 
 Complex values for which is.nan is true now retain separate real and imaginary double tokens,
 including NaN positions, instead of being collapsed into complex-na. Independent expected-token
-assertions cover each single-NaN position and both components. Non-NaN complex NA values retain the
-historical collapsed token: component-specific NA storage and observation remain incomplete. This
-tightens oracle evidence without changing the runtime semantic profile.
+assertions cover each single-NaN position and both components. This tightens oracle evidence without
+changing the runtime semantic profile.
+
+### Mixed complex NA observation
+
+Complex scalar tokens observe real and imaginary components separately. The historical `complex-na`
+token is retained only when both component tokens are `double-na`; any mixed NA/finite, signed-zero,
+infinity or NaN pair uses `complex-components`. The native observer preflight pins all 49 ordered
+pairs of finite, signed-zero, NA, NaN and signed-infinity components, plus the whole-`NA_complex_`
+token. These preflights do not increase the exact case count or give runtime binding credit.
+Untagged raw complex values in a graph payload are rejected by the JS decoder, matching the native
+encoder's tagged-value boundary.
+
+This repairs an observer blind spot without asserting NativR mixed-component NA storage parity.
+Construction, storage, arithmetic and public snapshot fidelity for those values remain unfinished
+and require separate implementation and Worker evidence. No runtime semantic-profile or public
+protocol change follows from this observer repair.
 
 Missing list names use null in the redundant `tags` summary, keeping the JSON payload representable.
 Their exact NA identity remains recorded in the recursively observed `names` attribute, distinct
