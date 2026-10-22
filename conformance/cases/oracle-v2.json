@@ -2830,5 +2830,80 @@
     "policy": "exact",
     "bindingEvidence": ["base::UseMethod"],
     "code": "local({list(\n\"loop-missing-forwarded\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(name){for(i in 1L)UseMethod(name,mark(\"selector\",1L));99L};g()},error=function(e){message<-conditionMessage(e);if(!identical(message,\"argument \\\"name\\\" is missing, with no default\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-missing-forwarded\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(name){helper(UseMethod(name,mark(\"selector\",1L)));99L};g()},error=function(e){message<-conditionMessage(e);if(!identical(message,\"argument \\\"name\\\" is missing, with no default\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-missing-absent\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod();99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"there must be a 'generic' argument\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-missing-absent\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod());99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"there must be a 'generic' argument\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-missing-literal\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(,mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"there must be a 'generic' argument\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-missing-literal\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(,mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"there must be a 'generic' argument\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-noncharacter\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(mark(\"generic\",1L),mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'generic' argument must be a character string\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-noncharacter\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(mark(\"generic\",1L),mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'generic' argument must be a character string\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-character-empty-vector\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(mark(\"generic\",character()),mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'generic' argument must be a character string\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-character-empty-vector\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(mark(\"generic\",character()),mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'generic' argument must be a character string\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-character-multiple\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(mark(\"generic\",c(\"g\",\"other\")),mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'generic' argument must be a character string\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-character-multiple\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(mark(\"generic\",c(\"g\",\"other\")),mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'generic' argument must be a character string\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-na-name\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(mark(\"generic\",NA_character_),mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'UseMethod' used in an inappropriate fashion\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-na-name\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(mark(\"generic\",NA_character_),mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'UseMethod' used in an inappropriate fashion\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-empty-name\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(mark(\"generic\",\"\"),mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'UseMethod' used in an inappropriate fashion\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-empty-name\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(mark(\"generic\",\"\"),mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'UseMethod' used in an inappropriate fashion\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"loop-valid-name\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({g<-function(x){for(i in 1L)UseMethod(mark(\"generic\",\"g\"),mark(\"selector\",1L));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'UseMethod' used in an inappropriate fashion\"))stop(e);list(error=message)});list(value=value,trace=trace)}),\n\"interpreted-valid-name\"=local({trace<-character();mark<-function(k,value){trace<<-c(trace,k);value};g.default<-function(...) {trace<<-c(trace,\"method\");7L};value<-tryCatch({helper<-function(y)y;g<-function(x){helper(UseMethod(mark(\"generic\",\"g\"),mark(\"selector\",1L)));99L};g(1L)},error=function(e){message<-conditionMessage(e);if(!identical(message,\"'UseMethod' used in an inappropriate fashion\"))stop(e);list(error=message)});list(value=value,trace=trace)})\n)})"
+  },
+  {
+    "id": "unlist-recursive-reference-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::unlist"],
+    "code": "local({\n  f <- local({ offset <- 7L; function(x) x + offset })\n  e <- new.env(parent=emptyenv())\n  e$token <- 11L\n  attr(f,\"note\") <- e\n  attr(f,\"class\") <- \"owned\"\n  v <- structure(c(a=1L,b=2L),note=e,class=\"owned\")\n  source <- structure(list(\n    opaque=list(closure=f,builtin=sum,special=quote,environment=e,again=e,\n                symbol=as.name(\"owned\"),call=quote(owned(1L))),\n    scalarized=v,\n    types=list(raw=as.raw(2L),logical=TRUE,double=4,complex=1+2i,text=\"owned\"),\n    factor=factor(c(\"b\",\"a\",\"b\")),\n    empty=list(NULL,list(),integer(),character())\n  ),note=\"root\",class=\"owned\")\n  result <- unlist(source)\n  list(result=result,source=source,originalClosure=f,originalEnvironment=e,\n       originalBuiltin=sum,originalSpecial=quote,originalAtomic=v)\n})\n",
+    "graphAssertions": {
+      "sameNode": [
+        [["result", "opaque.environment"], ["originalEnvironment"]],
+        [["result", "opaque.again"], ["originalEnvironment"]],
+        [
+          ["result", "opaque.closure", "@environment"],
+          ["originalClosure", "@environment"]
+        ]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "unlist-recursive-hierarchical-names",
+    "policy": "exact",
+    "bindingEvidence": ["base::unlist"],
+    "code": "local({\n  f <- local({ offset <- 7L; function(x) x + offset })\n  e <- new.env(parent=emptyenv())\n  e$token <- 11L\n  sym <- as.name(\"owned\")\n  cl <- quote(owned(1L))\n  list(\n    unnamed=unlist(list(list(f,e),list(list(sym,cl)))),\n    numbered=unlist(list(outer=list(f,1:2,e),tail=cl)),\n    duplicate=unlist(structure(list(f,e,list(q=sym,cl)),names=c(\"\",\"same\",\"same\"))),\n    missingRoot=unlist(structure(list(f,e),names=c(NA_character_,\"NA\"))),\n    missingNested=unlist(list(outer=structure(list(f,e),names=c(NA_character_,\"\")))),\n    suppressed=unlist(list(a=list(f=f,n=c(u=1L,v=2L)),b=e),use.names=FALSE)\n  )\n})\n",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "unlist-recursive-expression-boundaries",
+    "policy": "exact",
+    "bindingEvidence": ["base::unlist"],
+    "code": "local({\n  f <- local({ offset <- 7L; function(x) x + offset })\n  e <- new.env(parent=emptyenv())\n  e$token <- 11L\n  expr <- expression(a,1+2)\n  atom <- structure(c(a=1L,b=2L),note=e)\n  list(\n    rootExpression=unlist(expr),originalExpression=expr,\n    nestedExpression=unlist(list(outer=list(expr=expression(a,1+2)),tail=3L)),\n    expressionWithReferences=unlist(list(expr=expression(a,1+2),f=f,e=e)),\n    emptyExpressionWithReference=unlist(list(expression(),list(f=f),NULL)),\n    emptyExpressionWithInteger=unlist(list(expression(),integer(),NULL)),\n    pairlistRoot=unlist(pairlist(a=f,b=pairlist(c=e,d=1:2))),\n    pairlistNested=unlist(list(outer=pairlist(f=f,e=e),tail=4L)),\n    shallow=unlist(list(outer=list(f=f,n=1:2),e=e),recursive=FALSE),\n    shallowNested=unlist(list(outer=list(inner=list(f=f)),tail=1:2),recursive=FALSE),\n    promotion=unlist(list(a=TRUE,b=1L,c=2,d=1+2i,e=\"x\")),\n    factors=unlist(list(a=factor(c(\"b\",\"a\")),b=factor(\"c\"))),\n    empty=list(unlist(NULL),unlist(list()),unlist(pairlist()),unlist(list(list(),NULL))),\n    directClosure=unlist(f),originalClosure=f,\n    directEnvironment=unlist(e),originalEnvironment=e,\n    directBuiltin=unlist(sum),directSpecial=unlist(quote),\n    directSymbol=unlist(as.name(\"owned\")),directCall=unlist(quote(owned(1L))),\n    directAtomic=unlist(atom),directAtomicNoNames=unlist(atom,use.names=FALSE),originalAtomic=atom\n  )\n})\n",
+    "graphAssertions": {
+      "sameNode": [
+        [["directEnvironment"], ["originalEnvironment"]],
+        [
+          ["directClosure", "@environment"],
+          ["originalClosure", "@environment"]
+        ]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "unlist-recursive-control-observations",
+    "policy": "exact",
+    "bindingEvidence": ["base::unlist"],
+    "code": "local({\n  f <- local({ offset <- 7L; function(x) x + offset })\n  trace <- character()\n  result <- unlist({trace<-c(trace,\"x\");list(f=f)},\n                   recursive={trace<-c(trace,\"recursive\");TRUE},\n                   use.names={trace<-c(trace,\"names\");FALSE})\n  list(\n    trace=trace,result=result,\n    literalMissing=unlist(list(f=f),recursive=,use.names=),\n    coerced=unlist(list(outer=list(f=f)),recursive=0L,use.names=0L),\n    visibility=withVisible(unlist(list(f=f))),\n    recursiveError=tryCatch(\n      unlist(stop(\"owned x\"),recursive=stop(\"owned recursive\"),use.names=stop(\"owned names\")),\n      error=function(e) {\n        if(identical(conditionMessage(e),\"owned recursive\")) list(error=conditionMessage(e))\n        else stop(e)\n      }),\n    namesError=tryCatch(unlist(list(f=f),use.names=stop(\"owned names\")),\n      error=function(e) {\n        if(identical(conditionMessage(e),\"owned names\")) list(error=conditionMessage(e))\n        else stop(e)\n      })\n  )\n})\n",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

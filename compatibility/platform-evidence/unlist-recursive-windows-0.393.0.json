@@ -1,0 +1,925 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-unlist-recursive-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.393.0",
+  "sourceCommit": "ce425cad0c41932352dae4f9c6de05179cff4d78",
+  "sourceState": "Uncommitted candidate over sourceCommit; exact source digests identify the recorded state",
+  "platform": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "oracleVersion": "4.6.1",
+    "oracleLocale": "C"
+  },
+  "scope": "Bounded recursive heterogeneous unlist, reference retention, names and selected existing routes; Windows advisory evidence",
+  "provenance": {
+    "sources": [
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "e4fe042a0c604cf838cf22ebc03de59b986ad76a4868a2248eb873be8068ceeb"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "d0ac1ebcccb50db3ce5abed25f08a72d9a4e311bcbd2207241838706ab1f685e"
+      },
+      {
+        "path": "packages/nativr/test/unlist-recursive-leaves.test.ts",
+        "sha256": "2acdea38a747e3bbb42f79e40cf6d3b07d4931a4993b324751bd6b67f1b9ad25"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "7640e1eb5eb29b0d8439fc093d19674e5505e3f68e0a6b60ac04ef3ba509a30d"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "83419f1cf7011a3da0e953c2580b4fa0fb75dd2786aaa08ac9dde19fc10d212b"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "b317dc080bd1904c137b6034ad269c283eec13d17b6caba94039431618852717"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "3f93becf74576e051ffba42fc9548584bdcdc3218df9d241f6ae7298f2d1cadb"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "0dfe435d87d84fa9269fe9e8f2f50dc9776a069b5ac0d1432036a228ab237ec2"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "e0e606f5cd70c686f924cbefe06715780e2b47b0b3428f527ff4cbd24a61e3c2"
+      },
+      {
+        "path": "conformance/probes/unlist-recursive-gaps.R",
+        "sha256": "c66d9e4f5e9c0582f541916d0c91927c959056491cfd12c882df32d3a0939639"
+      },
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "f783a8082d32f02edd2a18ec83a993ae7a5a6d8e9de2de7ed6825ed4bac9c3b5"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "e1ff0d2b816e1f3fdd1b8467c29934da628bda1fd3f6c2ddc5f616a5260bf5b1"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "9e48342d9b14d21a3ef7ee4f673e4003efddbed7158e0db0d79be6c293986a32"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "98a14ab64eb028009599b5f89c735d80f31b9c8c6809479f8d1033fffa128b07"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "61d1755e54648144908549740fa30c15f664de3f077209e4bb9eac1b47207725"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "c6b39a757afe2ae013dbaef1aa5dde90638b5e09a349437b3f23fdad4cac4e3f"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "recorderSha256": "73f029c263037f0aa369101694ea415151edffc948e90bf81df94c4e3af3c923",
+    "sourceVerifierSha256": "28ab164b2b728e645b59b48edb762077c25300b4ce3171c8510fd62402107d8a",
+    "originalFrozenMatrixSha256": "4dbbcf9e89e829ef76d4892cc67bd15a8848a941d0761b81a2db6b5ef1bdf8b7",
+    "originalNativeReceiptSha256": "673899e8656620b83e1e8c421f95a95e0be71425e63ffba43f1604966e446aa3",
+    "revisionReceiptSha256": "702658d5f1e0f46fad409df496a74ac75ee0b56be60e8ae8e0e85158e1f42cbf",
+    "nativeAssemblyReceiptSha256": "39b1840184c7e1fcf4388684705476241227537db899cae538f4d3799a6c2c0e",
+    "nativeInputDigests": [
+      {
+        "label": "foundation.json",
+        "sha256": "6d9081bf3909a5302f09d8c4eea946471dcd4108a705644bafc3b5e3ef81482f"
+      },
+      {
+        "label": "oracle-v2.json",
+        "sha256": "f28319503f83af11699b450721902cfc2831e70ade08488c24939f3a5f635415"
+      },
+      {
+        "label": "native-checks.json",
+        "sha256": "2298249172614c078bfca2e03dac4ade8a33f4c5cc290b7c5597570482050526"
+      },
+      {
+        "label": "provenance.json",
+        "sha256": "d69e1b2d01d3514dd1db03a8d645c457ab5f7be9681dfb4ae08c85c85d4bc801"
+      },
+      {
+        "label": "deferred-gaps.json",
+        "sha256": "545a470ea6244cf151a05b3095aa4396c445e0d79f542e5548ea9c1d6f7beb26"
+      },
+      {
+        "label": "prepare.mjs",
+        "sha256": "a07a17cdbded824cdc00f787e67708923a63c3fe2de8a640ba62bd2fd3c78d5f"
+      },
+      {
+        "label": "validate-native.mjs",
+        "sha256": "533ae2457cea10fb7c633056d77c1c527754509c4e938bef7a8582a7da52de43"
+      },
+      {
+        "label": "../bounded-matrix.json",
+        "sha256": "4dbbcf9e89e829ef76d4892cc67bd15a8848a941d0761b81a2db6b5ef1bdf8b7"
+      },
+      {
+        "label": "../observations.json",
+        "sha256": "336f57d5e748bc9f6a8ed9f7d51358f2558a1ce6a4799d71c3f401c67e394ad5"
+      },
+      {
+        "label": "../native-validation.json",
+        "sha256": "673899e8656620b83e1e8c421f95a95e0be71425e63ffba43f1604966e446aa3"
+      },
+      {
+        "label": "../root-attrs-revised.json",
+        "sha256": "37e64e829516684a7ee5c7c3fedf326bba7c1b165b29422c3caf881c201c2604"
+      },
+      {
+        "label": "../root-attrs-revised-native.json",
+        "sha256": "702658d5f1e0f46fad409df496a74ac75ee0b56be60e8ae8e0e85158e1f42cbf"
+      },
+      {
+        "label": "../root-attrs-revised.R",
+        "sha256": "a049ee58e8a5896c109038a07e417147e0356743a99dc0843810794134c77d12"
+      },
+      {
+        "label": "../evidence-plan/reference-graph.R",
+        "sha256": "b513f68c12de405ffd240211980722c92957c2b98dc60d68f47a7df60e829d08"
+      },
+      {
+        "label": "../evidence-plan/hierarchical-names.R",
+        "sha256": "75d497ea5350bbb36c4299724dab65cb8ea98ab79d11cbb879fa8410c47899e2"
+      },
+      {
+        "label": "../evidence-plan/expression-boundaries.R",
+        "sha256": "a5fa18abbfa76259ef6633662ffa4feb86a6b73a26f8ac95d50271d03efe7215"
+      },
+      {
+        "label": "../evidence-plan/control-observations.R",
+        "sha256": "54d3160deb490fa92907b611d45a48777874618f4248e3c56ba93b914af7b652"
+      },
+      {
+        "label": "production/observer",
+        "sha256": "591c9e75b85aac4af34a32148543b70f6ee4fddccb92b1889595da0b3ac1e2e6"
+      },
+      {
+        "label": "production/adapter",
+        "sha256": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e"
+      },
+      {
+        "label": "production/binding-helper",
+        "sha256": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46"
+      },
+      {
+        "label": "metadata/capabilities",
+        "sha256": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384"
+      },
+      {
+        "label": "metadata/surface",
+        "sha256": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e"
+      },
+      {
+        "label": "oracle/executable",
+        "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+      }
+    ],
+    "draftPromotionExact": true,
+    "maintainedSourceTest": {
+      "path": "packages/nativr/test/unlist-recursive-leaves.test.ts",
+      "sha256": "2acdea38a747e3bbb42f79e40cf6d3b07d4931a4993b324751bd6b67f1b9ad25",
+      "cases": 42,
+      "exactAcceptedStrings": true,
+      "originalAssertions": 41,
+      "revisedAssertions": 1,
+      "nativrOnlyResourceGuards": [
+        "does not impose an internal length-two requirement on a scalar result",
+        "bounds mixed recursive output before allocation and preserves the source",
+        "checkpoints atomic cells in mixed output and recovers the session",
+        "traverses deep mixed containers without consuming the R call-depth budget",
+        "bounds recursive name-prefix bytes and recovers without generated names"
+      ]
+    },
+    "normalization": "Accepted fixture literals are exact: 41 originals and one independently verified revision. Maintained gap probe removes trailing spaces only; its comments identify original pre-normalization hashes.",
+    "historicalMetadata": "Native assembly metadata/capabilities predates generated profile 0.393; its historical hash is not runtime-build evidence. The final browser/corpus snapshots independently bind current artifacts.",
+    "redaction": "Only owned identifiers, counts, status, digests and repository-relative evidence links; no expressions, raw graphs, foreign bodies, raw logs or absolute host paths"
+  },
+  "baseline": {
+    "profile": "0.392.0",
+    "reportSha256": "0eae85d5c548be25d7dbb8cba4245ade73154ac789628b72743100ce0248f5b1",
+    "stableInputsAndArtifacts": true,
+    "counts": { "total": 43, "pass": 11, "mismatch": 32, "error": 0 },
+    "mismatchedCaseIds": [
+      "single-closure",
+      "single-builtin",
+      "single-special",
+      "single-environment",
+      "single-symbol",
+      "single-call",
+      "mixed-callable-references",
+      "nested-all-leaf-kinds",
+      "nested-numeric-leaves",
+      "atomic-types-with-callable",
+      "null-empty-and-callable",
+      "pairlist-root",
+      "pairlist-nested",
+      "unnamed-nested",
+      "named-parent-unnamed-children",
+      "empty-and-duplicate-names",
+      "missing-root-name",
+      "missing-nested-name",
+      "use-names-false",
+      "closure-reference-attributes",
+      "environment-alias-mutation",
+      "root-list-attrs-drop",
+      "atomic-leaf-attrs-drop",
+      "factor-with-callable",
+      "expression-nested",
+      "expression-with-callable",
+      "empty-expression-precedence",
+      "expression-only-empty",
+      "named-expression",
+      "forcing-order-once",
+      "literal-missing-controls",
+      "visible-return"
+    ],
+    "interpretation": "Original 43-row survey: 32 mismatches and 11 guards; not the revised 42-row acceptance set or a completion percentage"
+  },
+  "acceptance": {
+    "originalSurvey": 43,
+    "unchangedOriginalAssertions": 41,
+    "revisedAssertions": 1,
+    "acceptedAssertions": 42,
+    "revisedSourceSha256": "0f0046e54fc20b2c580936b53ee9f4e0f515f2feee92d565ee23db7626a7a658",
+    "deferred": [
+      {
+        "id": "named-expression",
+        "originalSourceSha256": "b58e4945746d1b3bb12afba8d5454ca3c61b477af542576152cb9391f06bf1f2",
+        "unfinished": true
+      },
+      {
+        "id": "root-list-attrs-drop",
+        "originalSourceSha256": "f618c90f693296b402f7eebf442fe90dea78697031f9316e864af3420fff1d7d",
+        "unfinished": true
+      }
+    ],
+    "initialImplementation": "The initial 42-row source attempt passed 41; the remaining source-attribute constructor-order claim was preserved as a gap and replaced by an independently verified unlist nonmutation assertion"
+  },
+  "independentNative": {
+    "counts": {
+      "foundationGroups": 4,
+      "foundationAssertionsPassed": 42,
+      "recursiveGroupsPassed": 4,
+      "environmentAliasAssertionsPassed": 5,
+      "strictCausalControlsPassed": 8
+    },
+    "cases": [
+      {
+        "id": "unlist-recursive-heterogeneous-leaves",
+        "suite": "foundation",
+        "sourceSha256": "314452ebabc54fb14ef4bef3b5297228a2bd792781503841fe62d73a57a40412",
+        "assertions": 13,
+        "environmentAliasAssertions": 0,
+        "nativeObservationSha256": "8db18a012aab15eaa8148f520778affd40e6e3fa7a6d52a4f0c0c409ddb0edc3"
+      },
+      {
+        "id": "unlist-recursive-names-and-attributes",
+        "suite": "foundation",
+        "sourceSha256": "07a327b6de70aa7ce7b7334c3138ec789baddfa477f633c8893bea93cfd4778c",
+        "assertions": 11,
+        "environmentAliasAssertions": 0,
+        "nativeObservationSha256": "e357b441ba77c228a79f77614dcd6f0b100ab322fce0f4ce08c875e7688884fc"
+      },
+      {
+        "id": "unlist-recursive-expression-and-preservation",
+        "suite": "foundation",
+        "sourceSha256": "bbb2e8390f43a74859a8ab472e1e1e2e15ef3facdc9504497a57d6fd0fc0d01b",
+        "assertions": 12,
+        "environmentAliasAssertions": 0,
+        "nativeObservationSha256": "e9f7472816c75b88c6a8625eaf2b5dc2b7182d4a46d0b1f3445793efeac658c8"
+      },
+      {
+        "id": "unlist-recursive-controls",
+        "suite": "foundation",
+        "sourceSha256": "457277109e20b48b25b8aeaa6e542618ff96d07f334f4a1d2638aff269a36e4b",
+        "assertions": 6,
+        "environmentAliasAssertions": 0,
+        "nativeObservationSha256": "8c8f60f2f893035ac53a1d5a6ac616d20d41fc4a88c3437b9d4fd44e75ef9a23"
+      },
+      {
+        "id": "unlist-recursive-reference-graph",
+        "suite": "oracle-v2",
+        "sourceSha256": "b513f68c12de405ffd240211980722c92957c2b98dc60d68f47a7df60e829d08",
+        "assertions": 0,
+        "environmentAliasAssertions": 3,
+        "nativeObservationSha256": "7818d05bdffe758a0d666b1a4b4c9250d248d2d35eeed039cdfd9b4d94f9e1af"
+      },
+      {
+        "id": "unlist-recursive-hierarchical-names",
+        "suite": "oracle-v2",
+        "sourceSha256": "75d497ea5350bbb36c4299724dab65cb8ea98ab79d11cbb879fa8410c47899e2",
+        "assertions": 0,
+        "environmentAliasAssertions": 0,
+        "nativeObservationSha256": "f2c57aa3b35fc2103eff954af45b16a2c0347d15c92b8a61fd3c8f4b6ef86ec5"
+      },
+      {
+        "id": "unlist-recursive-expression-boundaries",
+        "suite": "oracle-v2",
+        "sourceSha256": "a5fa18abbfa76259ef6633662ffa4feb86a6b73a26f8ac95d50271d03efe7215",
+        "assertions": 0,
+        "environmentAliasAssertions": 2,
+        "nativeObservationSha256": "51c819bfa00292738ed6747c6dfeeb604c01bcd48dcf55daf45b1eac42451df4"
+      },
+      {
+        "id": "unlist-recursive-control-observations",
+        "suite": "oracle-v2",
+        "sourceSha256": "54d3160deb490fa92907b611d45a48777874618f4248e3c56ba93b914af7b652",
+        "assertions": 0,
+        "environmentAliasAssertions": 0,
+        "nativeObservationSha256": "99a40b3fd5d2bda30208f838eea8fc03315363a94881c44234a724243e5e1f09"
+      }
+    ],
+    "causalControls": [
+      {
+        "id": "unlist-recursive-reference-graph",
+        "binding": "base::unlist",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "f27835620656c93b32442e5c949869a48957750e01d9fcca23776f321e957a18",
+        "valueObservationSha256": "6869945bb8bbe3b289f092bb9e205a94ed3f24054cdaebe2c0394255eb926d8a"
+      },
+      {
+        "id": "unlist-recursive-hierarchical-names",
+        "binding": "base::unlist",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "149108bccbe8c2ceece826bb5e1ae24eadf9c5a45fdb9ae82505ef1334c8ba5e",
+        "valueObservationSha256": "8b8ccbe9ba0e666e11f03c57b40c5f15c083920dc7932e9428df29c5944bd337"
+      },
+      {
+        "id": "unlist-recursive-expression-boundaries",
+        "binding": "base::unlist",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "a64fb0b1f31a3c7fe0bdf26bfbeb40eb756bf1dbfb691c7ef1dd2ea11f14a8a0",
+        "valueObservationSha256": "9d97f75729888ab66583cb9655bdf6df292280123ef82ae814e4929e22dd9105"
+      },
+      {
+        "id": "unlist-recursive-control-observations",
+        "binding": "base::unlist",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "4e3eeeee5fda27c9ec91fb9647f2b0652ec49a688ddd29c6b2460cf0b0d122c0",
+        "valueObservationSha256": "7597fc80aa3e1f11bc6a065ec3b5b090848d6fdce7f498c0e01c0a0168177e1b"
+      }
+    ],
+    "causalScope": "Four composite base::unlist associations with two strict controls each; not 42 independent causal proofs",
+    "aliasScope": "Five environment and closure-environment graph edges; no observer identity credit for value kinds it does not deduplicate",
+    "workerAssertions": [
+      {
+        "id": "nested-all-leaf-kinds",
+        "profileSite": "required-134",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "sourceSha256": "5b598630d53cd84157be93f6b01e7a21f99b279ccbbc3d336b92746ec0263ab8",
+        "separateNativeAssertions": false
+      },
+      {
+        "id": "named-parent-unnamed-children",
+        "profileSite": "required-135",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "sourceSha256": "c3c748a3f3a21353d4701642c580117b8f42535817b967994f294b5d034e269f",
+        "separateNativeAssertions": false
+      },
+      {
+        "id": "expression-with-callable",
+        "profileSite": "required-136",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "sourceSha256": "2c119d597173385629b2c44f030d11adb6038cced036808074714479bc85b497",
+        "separateNativeAssertions": false
+      }
+    ],
+    "boundary": "Native-side graph/causal checks only; the complete recursive runtime gate independently establishes matching execution"
+  },
+  "gates": [
+    {
+      "command": "pnpm check",
+      "logSha256": "fec9c1e82e85753fd60766aa2ae06dbd33deec2795c836637cb328632d0f46ca",
+      "verification": "Successful unit and Node test summaries plus completed build/manifest/status/browser/bundle tail",
+      "unitPassed": 3262,
+      "unitSkipped": 94,
+      "sourceTestPassed": 47,
+      "nativrOnlyResourceGuards": 5
+    },
+    {
+      "command": "pnpm conformance",
+      "logSha256": "697905c834823ab729578e1b2f1d5538b53cd63b38d3bf100557d5e9683b2901",
+      "passed": 1480
+    },
+    {
+      "command": "pnpm conformance:r",
+      "logSha256": "8e08be194d78b859ae2076d8db112f3e5970c6cf290fb351bd60daa77375f666",
+      "passed": 1407,
+      "nativrOnlySkipped": 55
+    },
+    {
+      "command": "pnpm conformance:r:v2",
+      "logSha256": "0bc38ae3c45d6a0f64115729766b51e074487ea54992b5d8af90f7c545b7ec16",
+      "passed": 395,
+      "causallyLinkedBindings": 169
+    },
+    {
+      "command": "pnpm test:e2e --workers=1 --reporter=list,json",
+      "logSha256": "c3909d7e9de1fe939a7aa55c38ba38b2b7d7936fbd828dd226e63904cb40e998",
+      "passed": 12
+    },
+    {
+      "command": "pnpm exec vitest run packages/package-tools/test/check-summary.test.ts",
+      "logSha256": "bee48fd4f70da25d193bb746d05c2d0a002606e31ec23d39aea8d7e61bea7faa",
+      "passed": 37,
+      "source": {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "83419f1cf7011a3da0e953c2580b4fa0fb75dd2786aaa08ac9dde19fc10d212b"
+      },
+      "verification": {
+        "testCases": 37,
+        "newCheckpointProfile": "0.393.0",
+        "qualificationAssertionsPresent": true
+      },
+      "relationToFullCheck": "Supplementary run after extending this test; not included in the earlier 3262-pass full-check state",
+      "exitReceipt": {
+        "path": ".tmp/profile-0393-supplement.json",
+        "sha256": "5a9b69e3df67e0ac08f236f5bd0edd638d03a4f34e91dc858876bab22eea4a78",
+        "exitCode": 0,
+        "provenance": "Parent-recorded successful exec_command completion; independently bound log and input digests"
+      }
+    },
+    {
+      "command": "pnpm typecheck:all",
+      "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b",
+      "exitReceipt": {
+        "path": ".tmp/profile-0393-supplement.json",
+        "sha256": "5a9b69e3df67e0ac08f236f5bd0edd638d03a4f34e91dc858876bab22eea4a78",
+        "exitCode": 0,
+        "provenance": "Parent-recorded successful exec_command completion; command-only compiler log is not treated as completion proof"
+      },
+      "relationToFullCheck": "Supplementary noEmit verification after the checkpoint test update"
+    }
+  ],
+  "relatedEvidence": {
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.393.0.json",
+      "sha256": "f7976c74d3649d7fad3ed19f7484bdc736bce0d4694df598a0dfc7c448c94dba",
+      "passed": 12,
+      "inputsStable": true,
+      "timingScope": "Concurrent-gate whole-test durations; not isolated performance measurements"
+    },
+    "originalPackages": {
+      "path": "compatibility/package-check-evidence/corpus-0.393.0.json",
+      "sha256": "e68c86b0355061364a3a5ca1bcd78de9bdc220df0beb1e3e341acf89893fd45b",
+      "runnerIndexSha256": "193e85f361c8c86b7fc2a42f2cc0bf5b80d11f842dc11498881131f41c73c6c5",
+      "baselinePath": "compatibility/package-check-evidence/corpus-0.389.0.json",
+      "persistenceReceipt": {
+        "path": "compatibility/platform-evidence/corpus-windows-0.393.0.json",
+        "sha256": "664b4bbc0c8f95eb4890c376edf4516cd13f14dd0ddac68e2b3982fb1281c593"
+      },
+      "baselineSha256": "a7fa8ac0b68cd91a43ab2b1e0388bad0465b600784b758d97e10110f7335738e",
+      "observationBaselineProfile": "0.389.0",
+      "packages": [
+        {
+          "package": "pkgconfig",
+          "version": "2.0.3",
+          "partition": "regression",
+          "sourceSha256": "330fef440ffeb842a7dcfffc8303743f1feae83e8d6131078b5a44ff11bc3850",
+          "artifactSha256": "4622ae429bf36b71ec392ac3deb337db86e04e77b5e6ee91fc6ceef0de97835e",
+          "path": "compatibility/package-check-evidence/0.393.0/pkgconfig.json",
+          "sha256": "fca856fbef60ebaa275cfbcef2e41501a4e0cab10e6dc61042e125d66c433311",
+          "previousTier": "P7",
+          "tier": "P5",
+          "checkerP7Eligible": true,
+          "nestedTestsUnverified": true,
+          "observations": 1,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "generics",
+          "version": "0.1.4",
+          "partition": "regression",
+          "sourceSha256": "bbe95a097792d38fc3b7e677738af1b95b66ea5e5017e33b8beac6a6088d0801",
+          "artifactSha256": "7720925af995c4519af8a5259dbb1529a0d45212aaa376b2fe24985c794efbaf",
+          "path": "compatibility/package-check-evidence/0.393.0/generics.json",
+          "sha256": "a9915b1d883df58a4b933638206b421c5a58b9da52e74557ea3df938a4e93e70",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 4,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "withr",
+          "version": "3.0.3",
+          "partition": "regression",
+          "sourceSha256": "d86c6454164fc85678bfc85e2a6cce42f7461d45fa9a87de71f376e7956c991e",
+          "artifactSha256": "a51a19247a01ad7d3f712b2029914f2c52f6c713846d0a63ada5a989ab4187f9",
+          "path": "compatibility/package-check-evidence/0.393.0/withr.json",
+          "sha256": "7a3e461633e9045a775d4f166175985e9ae054fc70a38e62c11a7d07c4650375",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 21,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "R6",
+          "version": "2.6.1",
+          "partition": "regression",
+          "sourceSha256": "59c6eba8b1b912eb7e104f65053235604be853425ee67c152ac4e86a1f2073b4",
+          "artifactSha256": "71ec633b25beaabf1b6114e3a1cf488666e273a4b93729a837db87505ea0201f",
+          "path": "compatibility/package-check-evidence/0.393.0/R6.json",
+          "sha256": "31e67a01d7ea7ee795e87402dfbd1ab5b196361af769397ad3f5774b03281338",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 3,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "viridisLite",
+          "version": "0.4.3",
+          "partition": "regression",
+          "sourceSha256": "433be9bde66234dc76301fb4ffbbc9fc74bab5c14f4548d8ef2fc0065e121ef5",
+          "artifactSha256": "aba19bcae8a19d1bfaa4806275b6caf4c6d0d4ea7acd58cbb8df7474aa39bb09",
+          "path": "compatibility/package-check-evidence/0.393.0/viridisLite.json",
+          "sha256": "522d0e71cb6a8868d5b62c8f98926172ed47e91544bd92559d2f64f8dc46f4d0",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 2,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "RColorBrewer",
+          "version": "1.1-3",
+          "partition": "development",
+          "sourceSha256": "4f42f5423c45688b39f492c7892d93f37b4541831c8ffb140364d2bd89031ac0",
+          "artifactSha256": "4a5438a27a6ddfe2ead9563c736b34498081c811a4185d84bb18ecbde12f6ba8",
+          "path": "compatibility/package-check-evidence/0.393.0/RColorBrewer.json",
+          "sha256": "322ee6167ab8f6da38e3489053b3204956a6c5923cfeea2783bdb01009dffd98",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 1,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "labeling",
+          "version": "0.4.3",
+          "partition": "development",
+          "sourceSha256": "c62f4fc2cc74377d7055903c5f1913b7295f7587456fe468592738a483e264f2",
+          "artifactSha256": "2d4f9e5a9b1b0e109821a3cd705ca81dbbc46c6ee53acc0d216db907e857a89f",
+          "path": "compatibility/package-check-evidence/0.393.0/labeling.json",
+          "sha256": "1083fc4dfcd300d02f63ef9df4ff186fd317bc581338577110844b05498be11a",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 1,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "assertthat",
+          "version": "0.2.1",
+          "partition": "regression",
+          "sourceSha256": "85cf7fcc4753a8c86da9a6f454e46c2a58ffc70c4f47cac4d3e3bcefda2a9e9f",
+          "artifactSha256": "26678946c287baad27a9b359fb27ea64e349e0fd10a5e9b5346d1d8e38f69ca2",
+          "path": "compatibility/package-check-evidence/0.393.0/assertthat.json",
+          "sha256": "6e3eadcffe36e5c4fd887d13bf86d2751f981656960bce634dedc33b6f66ed57",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 12,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "crayon",
+          "version": "1.5.3",
+          "partition": "regression",
+          "sourceSha256": "3e74a0685541efb5ea763b92cfd5c859df71c46b0605967a0b5dbb7326e9da69",
+          "artifactSha256": "1d7035a894f2b3aea604bf1af9a155a143c27e7889d0b95fd2f2be48e96a23d7",
+          "path": "compatibility/package-check-evidence/0.393.0/crayon.json",
+          "sha256": "34ead4fbb9c48e41caac3ce3572abe5e35db64c99b096a6d21f8c4d0d1f1fe93",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 20,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "praise",
+          "version": "1.0.0",
+          "partition": "regression",
+          "sourceSha256": "5c035e74fd05dfa59b03afe0d5f4c53fbf34144e175e90c53d09c6baedf5debd",
+          "artifactSha256": "2b019b6f6363cfd1ddbf20694b6cdf6e6ce0fcb67f1775d5c64697d6ef5c2cae",
+          "path": "compatibility/package-check-evidence/0.393.0/praise.json",
+          "sha256": "eb8e80770f0fb793febd4d35e59111fe807021fe281e29c356af5d3fb7eefe0d",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 2,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "prettyunits",
+          "version": "1.2.0",
+          "partition": "regression",
+          "sourceSha256": "f059f27e2a5c82e351fe05b87ad712f7afc273c651450453f59d99af5deeacea",
+          "artifactSha256": "69d93f2b9a1190f907f14d7fb03f8f8c1ab424570544d9e27a8d52aa4ecd9a18",
+          "path": "compatibility/package-check-evidence/0.393.0/prettyunits.json",
+          "sha256": "180e6a9dece449d22f6002ddeee03e303ec1cf6936bf763bda45793c278a7275",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 9,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "evaluate",
+          "version": "1.0.5",
+          "partition": "regression",
+          "sourceSha256": "47aac79f889a828a5f8b4756cb972d7c2966bb984cbae17a4bd2389a73270794",
+          "artifactSha256": "4c69fe41198004538efce999d5be1b34cd9ec3641d476e09cb9ec350f02ef041",
+          "path": "compatibility/package-check-evidence/0.393.0/evaluate.json",
+          "sha256": "3d57e43f4a81ac9008dfdf9890e1754f674d8f8c99773c8fd657ef3e673e8f48",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 7,
+          "observationsChanged": true,
+          "stagesChanged": true,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "numDeriv",
+          "version": "2016.8-1.1",
+          "partition": "regression",
+          "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+          "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+          "path": "compatibility/package-check-evidence/0.393.0/numDeriv.json",
+          "sha256": "4c2301756ac1255ce073da6c820e2f53d82d69edaed709d49230544a87f521a3",
+          "previousTier": "P6",
+          "tier": "P6",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 11,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "abind",
+          "version": "1.4-8",
+          "partition": "regression",
+          "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+          "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+          "path": "compatibility/package-check-evidence/0.393.0/abind.json",
+          "sha256": "a03c4e45418dde6a288374367fe9aed101fd1bfe09813d666b2b603ce1817391",
+          "previousTier": "P7",
+          "tier": "P7",
+          "checkerP7Eligible": true,
+          "nestedTestsUnverified": false,
+          "observations": 10,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "rprojroot",
+          "version": "2.1.1",
+          "partition": "regression",
+          "sourceSha256": "473989bbef45fd9cd68f68dc317b14c9f42de5cea4b55fd6ba9011f25e0517e9",
+          "artifactSha256": "086ed9af48d2f4e917f40bdf3364e395115f25fff5017d5527d00b20df343744",
+          "path": "compatibility/package-check-evidence/0.393.0/rprojroot.json",
+          "sha256": "f2ce4d5570bc8ad5b5feca77184b3587008cb8f9ff38c477aa84ed944a4b9d1b",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 3,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "rstudioapi",
+          "version": "0.19.0",
+          "partition": "regression",
+          "sourceSha256": "f1e3bb445a90aadc07b043493022d120493eba7ff30c0b3055442d8b77d8069a",
+          "artifactSha256": "d3834a7e3c17f04c0808e50afe5fa80575fe87f3ed0ab8fc5c69fbb1ab645ab0",
+          "path": "compatibility/package-check-evidence/0.393.0/rstudioapi.json",
+          "sha256": "c26e11d57397107417a19cafa305a134b37dd703bc2ed86d643659f9eac15e59",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 5,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "inline",
+          "version": "0.3.21",
+          "partition": "regression",
+          "sourceSha256": "7ef9410a933a47f6a346bc8c0e55b62931379b464b92696aee9865ec6378bc98",
+          "artifactSha256": "1de1adf3d804477438730e68d81c9bf6173a4a1cedf0081dc838a0286b805af0",
+          "path": "compatibility/package-check-evidence/0.393.0/inline.json",
+          "sha256": "96648567b4cf08b08c4c96e6c35fc0a6a31a0092a67e124e845b8ee0e39fb9b8",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 3,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "rematch",
+          "version": "2.0.0",
+          "partition": "regression",
+          "sourceSha256": "15daf7bf2907aef8503635bc8631fce9fd75248a1fc2496825588c4bdf785c26",
+          "artifactSha256": "9ebf25642db777d3a9d50470064a894ae773dcfb0419b0ceb969374c503196f0",
+          "path": "compatibility/package-check-evidence/0.393.0/rematch.json",
+          "sha256": "59324720878970b03bcbd1e672ded322ea14276f2c8afcb51a789e04b7c24ed8",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 2,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "whisker",
+          "version": "0.4.1",
+          "partition": "regression",
+          "sourceSha256": "bf5151494508032f68ac41e211bda80da9087c65c7068ffdd12f16669bf1f2bc",
+          "artifactSha256": "29f934c71cb22d51e7cdaae64df35e2484b7797c44b6ab78371d18d50072c9c6",
+          "path": "compatibility/package-check-evidence/0.393.0/whisker.json",
+          "sha256": "6a52256eafd60f3a29a093ed7d9d4772a2c54a67db07ae1e57a53852ef44f0db",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 4,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "zeallot",
+          "version": "0.2.0",
+          "partition": "regression",
+          "sourceSha256": "7f6b97dbb7cd762f76f7319b3e2b38f3d4206fe625d363da1b5f96c928da92bb",
+          "artifactSha256": "e679272f5d80b5146960fc707a147d6b160d423dfecf56d66523000be30e9971",
+          "path": "compatibility/package-check-evidence/0.393.0/zeallot.json",
+          "sha256": "0c46af300a3308a5714dd16500bbb26a86eeaa82bcb498ce306dbeeee03ec949",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 4,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "ini",
+          "version": "0.3.1",
+          "partition": "regression",
+          "sourceSha256": "7b191a54019c8c52d6c2211c14878c95564154ec4865f57007953742868cd813",
+          "artifactSha256": "a379851668bc01062386e5e1d5cbc64157eb7cf9c69d14258e9eacec5b4bd30c",
+          "path": "compatibility/package-check-evidence/0.393.0/ini.json",
+          "sha256": "952e369978a93657a6898a5755beab91b3f23bbe860a30a81cc1f26b7c080ace",
+          "previousTier": "P5",
+          "tier": "P5",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 3,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "cpp11",
+          "version": "0.5.5",
+          "partition": "regression",
+          "sourceSha256": "72486beb0605c1229bf3d422cd536224af8dc09bd389a3116f62f4c7705c62f4",
+          "artifactSha256": "779706e05b9b47e2a408a92092cd58a5dca86c1ed9668860722dee255fa65be9",
+          "path": "compatibility/package-check-evidence/0.393.0/cpp11.json",
+          "sha256": "a68f0c78ab1f57729cb0b12a6d9a12db08afd9072ee36b0e1c5102009a0e023d",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 4,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "otel",
+          "version": "0.2.0",
+          "partition": "regression",
+          "sourceSha256": "ef8afe5a1bc8074bbeb8a84134699ef348a1f8ac629ffba25ee43ea7bcd8dd17",
+          "artifactSha256": "5820974e12d10781ab4fd1b443ed1f1f352ce6561d3e5c2926814906c291cf77",
+          "path": "compatibility/package-check-evidence/0.393.0/otel.json",
+          "sha256": "157b55f00f4a3a8b291eae69863d3d74db3d1a0cd8a6acbb2cd3f9eab894d037",
+          "previousTier": "P4",
+          "tier": "P4",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": true,
+          "observations": 46,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        },
+        {
+          "package": "BH",
+          "version": "1.90.0-1",
+          "partition": "regression",
+          "sourceSha256": "2e1fafb05938e81073561ae4892dc543ef15807e375e0ea8fa75e3ab79f0281b",
+          "artifactSha256": "3f70ea3572c3e20f712697d6d9fa2544dc72216d97a06d5f11c0af844d893fb8",
+          "path": "compatibility/package-check-evidence/0.393.0/BH.json",
+          "sha256": "5b87eebc094ea271b391c9ee78d4a4bf62115b3a0385e7326ed0498c3667f6e2",
+          "previousTier": "P3",
+          "tier": "P3",
+          "checkerP7Eligible": false,
+          "nestedTestsUnverified": false,
+          "observations": 0,
+          "observationsChanged": false,
+          "stagesChanged": false,
+          "comparisonsChanged": false
+        }
+      ],
+      "originalEntrypointsOnly": true,
+      "observedPackages": 24,
+      "observations": 178,
+      "inputsStable": true,
+      "runtimeSourceAndArtifactFiles": 438,
+      "linuxNormativeCredit": false,
+      "formulaHoldoutExecuted": false
+    }
+  },
+  "qualification": {
+    "completeCallable": false,
+    "completeDomain": false,
+    "fullDevelopmentRegressionRefresh": true,
+    "linuxGate": false,
+    "releaseReady": false
+  },
+  "limitations": [
+    "Named expressions and the original structure source-attribute insertion order remain unfinished; both original assertions are preserved",
+    "Arbitrary expression containers, complete name encoding/byte composition, malformed names, S3/S4 and condition origins remain unfinished",
+    "Five resource/recovery guards and the existing maxOutputBytes-backed NRL4007 name-prefix boundary are NativR-only behavior, not GNU R resource parity",
+    "Checker P7 eligibility is separate from qualified corpus tiers: a nested R-file inventory does not prove those tests executed, even when a dependency version is present",
+    "Four composite causal associations and five environment alias edges do not establish complete behavior or every object identity",
+    "Log summaries are verified and hashed; this recorder does not rerun gates or infer subprocess exit receipts",
+    "Linux validation, Formula holdout execution, publication and remote changes remain separately authorized work"
+  ]
+}

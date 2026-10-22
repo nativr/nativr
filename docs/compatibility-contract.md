@@ -38,6 +38,53 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Recursive unlist across heterogeneous leaves (profile 0.393)
+
+The profile 0.393 acceptance boundary extends recursive `unlist` of lists and pairlists to sampled
+closures, builtins, special functions, environments, symbols and calls. These opaque leaves remain
+unevaluated and make the result a list. Atomic vectors then contribute scalar cells of their
+original storage type, dropping scalar attributes; a factor mixed with an opaque leaf contributes
+integer codes. Existing all-atomic/factor, shallow and direct non-list routes are preservation
+controls. This boundary does not imply complete dispatch or storage coverage.
+
+The cases distinguish missing root names from the literal text `NA`, compose observed nested names,
+preserve duplicate/empty names and number unnamed descendants across a named subtree. `use.names`
+suppression affects the result names. Sampled opaque attributes, closure capture environments and
+environment aliases survive flattening; container and atomic-cell attributes follow the recorded
+boundaries. Nested unnamed expression entries are quoted and flattened without evaluation, while a
+root expression retains the direct non-list route. Empty expression/atomic precedence is separately
+observed.
+
+Forty-two independently authored native fixtures form four foundation groups: 41 original assertions
+and one separately verified revision that isolates result attributes, identity and input nonmutation
+from an existing constructor attribute-order discrepancy. Both original gap observations are
+retained separately. Four raw recursive groups compare complete values and include five explicit
+environment or closure-environment alias checks. All eight native causal controls propagate the
+exact error shadow and retain a successful, changed observation for the alternate-value shadow.
+These are four composite binding associations, not separate causal proof for every output component.
+The forcing, literal-missing/coerced-control, visible-return and two owned argument-error cases are
+bounded preservation observations. Profile 0.393 passes the full production check, 1,480 checked-in,
+1,407 live GNU R and 395 recursive conformance cases, plus all twelve browser tests. The
+[verification record](../compatibility/platform-evidence/unlist-recursive-windows-0.393.0.json)
+identifies the exact inputs, five NativR-only resource guards and remaining gaps.
+
+Named expression entries and attributes, and the existing `structure` source-attribute insertion
+order discrepancy, remain explicit gaps in
+[`unlist-recursive-gaps.R`](../conformance/probes/unlist-recursive-gaps.R), outside the 42 accepted
+fixtures. Arbitrary embedded expression containers, full name encodings and byte composition,
+malformed names, exhaustive deep/cyclic/resource behavior, complete S3/S4 dispatch and condition
+origins remain unfinished. NativR-only resource/recovery checks do not supply native parity credit.
+No callable or semantic domain is complete, and no package compatibility improvement is inferred
+from these owned cases.
+
+The extended recursive path also applies a NativR-only resource boundary to name construction.
+Cumulative inherited byte copies, temporary composed/numbered UTF-8 prefixes and final name byte
+copies are reserved before allocation, concatenation or encoding against the existing
+`maxOutputBytes` limit; excess work raises `NRL4007`. Character measurement and byte reservations
+include cancellation/step checkpoints. This adds no public limit and makes no GNU R allocation or
+resource-limit parity claim. Name suppression and same-session recovery have separate implementation
+guards.
+
 ### UseMethod generic-name admission and diagnostic precedence (profile 0.392)
 
 The `generic` argument of direct `UseMethod` calls must have character storage and length one.

@@ -38,6 +38,7 @@ it.each([
   "0.387.0",
   "0.388.0",
   "0.389.0",
+  "0.393.0",
 ])("pins checkpoint %s without evaluating the holdout", async (profile) => {
   const read = async (path: string) =>
     JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
@@ -150,6 +151,18 @@ it.each([
     if (entry.tier === "P7") {
       expect(summary.p7Eligible).toBe(true);
       expect(stages.every((s) => s.status === "passed" || s.status === "inapplicable")).toBe(true);
+    }
+    if (profile === "0.393.0" && entry.package === "pkgconfig") {
+      expect(entry).toMatchObject({
+        tier: "P5",
+        checkerP7Eligible: true,
+        nestedTestsUnverified: true,
+        examplesEvidence: "inapplicable-no-execution",
+        checkerNestedTestClosureDefect: true,
+        firstBlocker: { tier: "P6", code: "nested-tests-unverified" },
+      });
+      expect(summary.inventory).toMatchObject({ nestedTestFiles: 4 });
+      expect(stages.find((stage) => stage.id === "examples")?.status).toBe("inapplicable");
     }
     if (entry.package === "rematch") {
       expect(entry.tier).toBe("P5");

@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.392.0",
-  "capabilityManifestHash": "976b40cdf4b868ce612d454f85501d2899a8cba3fb8d82bb25ca84d1fa83e53c",
+  "semanticProfileVersion": "0.393.0",
+  "capabilityManifestHash": "8e1cdb406d7a8cebb3096e445cacdaf48317ce7c915f65e2b76765e00586a4aa",
   "evidence": {
-    "checkedInConformanceCases": 1476,
-    "liveREligibleCases": 1403,
+    "checkedInConformanceCases": 1480,
+    "liveREligibleCases": 1407,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 391,
+    "recursiveOracleV2Cases": 395,
     "recursiveBehaviorallyProvenBindings": 169,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -776,7 +776,16 @@
         "binding": "base::units<-.difftime",
         "cases": ["difftime-units-conversion", "difftime-units-scope"]
       },
-      { "binding": "base::unlist", "cases": ["unlist-shallow-values-types-and-names"] },
+      {
+        "binding": "base::unlist",
+        "cases": [
+          "unlist-recursive-control-observations",
+          "unlist-recursive-expression-boundaries",
+          "unlist-recursive-hierarchical-names",
+          "unlist-recursive-reference-graph",
+          "unlist-shallow-values-types-and-names"
+        ]
+      },
       { "binding": "base::unloadNamespace", "cases": ["unload-absent-namespace"] },
       {
         "binding": "base::UseMethod",
@@ -873,7 +882,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "7dd47b5477a1d4824417328d296d540f8ea4ce31e33a263f8aec69266040cb28",
+    "sha256": "e1ff0d2b816e1f3fdd1b8467c29934da628bda1fd3f6c2ddc5f616a5260bf5b1",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -883,7 +892,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 169,
-    "bindingsWithDeclaredMatrixEvidence": 19,
+    "bindingsWithDeclaredMatrixEvidence": 20,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."
@@ -891,7 +900,7 @@
   "packageCorpus": {
     "total": 25,
     "partitions": { "development": 2, "regression": 22, "holdout": 1 },
-    "statuses": { "passing": 2, "blocked": 22, "unevaluated": 1 },
+    "statuses": { "passing": 1, "blocked": 23, "unevaluated": 1 },
     "completedAtLeast": {
       "P0": 25,
       "P1": 24,
@@ -899,8 +908,8 @@
       "P3": 24,
       "P4": 23,
       "P5": 12,
-      "P6": 3,
-      "P7": 2
+      "P6": 2,
+      "P7": 1
     }
   }
 }

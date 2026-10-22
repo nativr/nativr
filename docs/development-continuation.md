@@ -2233,3 +2233,37 @@ prepared; they require source/runtime verification and strict causal validation 
 Complete the semantic gates, refreshed reports and affected cached-package checks before a local
 semantic commit. The full corpus remains at 0.389, repeated performance at 0.389 and packed-consumer
 evidence at 0.388. All thirteen domains remain incomplete; existing boundaries remain in force.
+
+### Profile 0.393 recursive heterogeneous unlist
+
+The bounded heterogeneous unlist increment is verified. Forty-one original native assertions plus
+one independently validated replacement pass, with five NativR-only resource/recovery guards. The
+original constructor-order row remains a documented gap alongside named-expression metadata. Four
+foundation and four exact recursive groups are added; recursive graphs preserve opaque references,
+environment aliases, hierarchical names and unevaluated expressions, with eight strict native causal
+controls. See the
+[verification record](../compatibility/platform-evidence/unlist-recursive-windows-0.393.0.json).
+
+- pnpm check: 3262 tests passed and 94 opt-in skips; all source/test/config types pass.
+- After the corpus refresh, the checkpoint file passes 37 tests, including the new 0.393 pin and
+  tier-qualification regression. The separate final all-source TypeScript check also passes.
+- Checked-in/live/recursive conformance: 1480 / 1407 / 395 passed.
+- Browser suite: 12/12 on cached Chromium, Firefox and WebKit; unchanged 120-second example budget.
+- Worker: 492.9/512 KiB gzip; all four existing bundle limits pass.
+- All 24 development/regression packages refreshed at 0.393 with original entrypoints and repeated
+  oracle observations; 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. Formula's pin, partition and unevaluated
+  status are unchanged.
+
+The corpus refresh corrects historical pkgconfig P7 credit to P5: its guarded entrypoint completes,
+but four nested test files remain unverified and testthat is unavailable. Inapplicable examples
+receive no execution claim. The checker still incorrectly marks this narrower result P7-eligible.
+The evaluate set_hooks example now completes where 0.389 failed, but its repeatable output remains
+different from GNU R; its P4 tier is unchanged. No isolated cause is inferred from this refresh.
+
+Next measurable work: make the checker report unverified nested-test coverage explicitly, with
+independent fixtures for guarded, directly sourced, absent and failing entrypoints. Then reproduce
+source-aware parsing/parse-data and browser platform-adapter blockers using owned fixtures. The
+constructor attribute-order and named-expression representation gaps remain executable probe leads.
+Continue independent datasets and isolated testing-runner parity without awarding original
+test-stage credit. All thirteen domain matrices remain incomplete. Linux, holdout, downloads, push
+and publication retain the existing authorization boundaries.

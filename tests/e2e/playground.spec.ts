@@ -1361,6 +1361,38 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('"worker boom"');
   await expect(page.locator("#console-output")).toContainText("worker condition");
   expect(evaluationRequests).toEqual([]);
+  // Owned native assertion: nested-all-leaf-kinds.
+  await page
+    .locator("#source")
+    .fill(
+      'local({warnings<-character();value<-withCallingHandlers(tryCatch(local({f<-local({offset<-7L;function(x)x+offset});e<-new.env(parent=emptyenv());e$token<-11L;b<-sum;s<-quote;sym<-as.name("owned");cl<-quote(owned(1L));x<-list(outer=list(f=f,b=b,s=s,e=e,q=sym,c=cl));y<-unlist(x);list(summary=list(type=typeof(y),length=length(y),names=names(y),types=vapply(y,typeof,"")),same=c(identical(y[[1L]],f),identical(y[[2L]],b),identical(y[[3L]],s),identical(y[[4L]],e),identical(y[[5L]],sym),identical(y[[6L]],cl)))}),error=function(e)list(error=conditionMessage(e))),warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")});identical(list(value=value,warnings=warnings),list(value = list(summary = list(type = "list", length = 6L, \n    names = c("outer.f", "outer.b", "outer.s", "outer.e", "outer.q", \n    "outer.c"), types = c(outer.f = "closure", outer.b = "builtin", \n    outer.s = "special", outer.e = "environment", outer.q = "symbol", \n    outer.c = "language")), same = c(TRUE, TRUE, TRUE, TRUE, \nTRUE, TRUE)), warnings = character(0)))})',
+    );
+  await profiledRun(page, "required-134");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native assertion: named-parent-unnamed-children.
+  await page
+    .locator("#source")
+    .fill(
+      'local({warnings<-character();value<-withCallingHandlers(tryCatch(local({f<-local({offset<-7L;function(x)x+offset});e<-new.env(parent=emptyenv());e$token<-11L;b<-sum;s<-quote;sym<-as.name("owned");cl<-quote(owned(1L));x<-list(outer=list(f,1:2,e),tail=cl);y<-unlist(x);list(summary=list(type=typeof(y),length=length(y),names=names(y),types=vapply(y,typeof,"")),same=c(identical(y[[1L]],f),identical(y[[4L]],e),identical(y[[5L]],cl)))}),error=function(e)list(error=conditionMessage(e))),warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")});identical(list(value=value,warnings=warnings),list(value = list(summary = list(type = "list", length = 5L, \n    names = c("outer1", "outer2", "outer3", "outer4", "tail"), \n    types = c(outer1 = "closure", outer2 = "integer", outer3 = "integer", \n    outer4 = "environment", tail = "language")), same = c(TRUE, \nTRUE, TRUE)), warnings = character(0)))})',
+    );
+  await profiledRun(page, "required-135");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native assertion: expression-with-callable.
+  await page
+    .locator("#source")
+    .fill(
+      'local({warnings<-character();value<-withCallingHandlers(tryCatch(local({f<-local({offset<-7L;function(x)x+offset});e<-new.env(parent=emptyenv());e$token<-11L;b<-sum;s<-quote;sym<-as.name("owned");cl<-quote(owned(1L));x<-list(expr=expression(a,1+2),f=f,e=e);y<-unlist(x);list(summary=list(type=typeof(y),length=length(y),names=names(y),types=vapply(y,typeof,"")),same=c(identical(y[[1L]],quote(a)),identical(y[[2L]],quote(1+2)),identical(y[[3L]],f),identical(y[[4L]],e)))}),error=function(e)list(error=conditionMessage(e))),warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")});identical(list(value=value,warnings=warnings),list(value = list(summary = list(type = "list", length = 4L, \n    names = c("expr1", "expr2", "f", "e"), types = c(expr1 = "symbol", \n    expr2 = "language", f = "closure", e = "environment")), same = c(TRUE, \nTRUE, TRUE, TRUE)), warnings = character(0)))})',
+    );
+  await profiledRun(page, "required-136");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
   expect(pageErrors).toEqual([]);
 });
 

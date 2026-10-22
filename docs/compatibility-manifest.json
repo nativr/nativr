@@ -2,8 +2,8 @@
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
   "targetRVersion": "4.6.1",
-  "semanticProfileVersion": "0.392.0",
-  "languageSubsetVersion": "0.392.0",
+  "semanticProfileVersion": "0.393.0",
+  "languageSubsetVersion": "0.393.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -183,6 +183,7 @@
     "replicateClosureFramesAndSimplification": "supported",
     "shallowUnlistTypeAndNamePreservation": "supported",
     "unlistControlAndMethodDispatch": "supported",
+    "recursiveUnlistHeterogeneousLeaves": "supported",
     "lengthsMethodDispatch": "supported",
     "missingNameExtraction": "supported",
     "missingCharacterReplacementIndices": "supported",

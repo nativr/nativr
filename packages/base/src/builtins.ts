@@ -26031,12 +26031,377 @@ function unlistValue(
   if (input.type !== "list" && input.type !== "pairlist") return input;
   if (!recursive) return shallowUnlist(input, useNames, invocation);
 
+  if (hasExtendedRecursiveUnlistLeaf(input, invocation)) {
+    return materializeRecursiveUnlist(
+      planRecursiveUnlist(input, useNames, invocation),
+      useNames,
+      invocation,
+    );
+  }
+
+  // Preserve the established ordinary atomic and factor route in this increment.
   const entries: { name?: string; value: AtomicVector }[] = [];
   const factorsOnly = collectUnlistEntries(input, undefined, useNames, entries, invocation);
   return (
     (factorsOnly ? combineUnlistedFactors(entries, invocation) : undefined) ??
     combineAtomicEntries(entries, invocation, "unlist")
   );
+}
+
+function hasExtendedRecursiveUnlistLeaf(
+  input: RList | RPairlist,
+  invocation: BuiltinInvocation,
+): boolean {
+  // Reuse cursor storage by nesting depth; ordinary scalar leaves need no descriptors.
+  invocation.context.allocate(1);
+  const stack: { value: RList | RPairlist; next: number }[] = [{ value: input, next: 0 }];
+  let depth = 0;
+  while (depth >= 0) {
+    invocation.context.checkpoint();
+    const frame = stack[depth];
+    if (frame === undefined) break;
+    if (frame.next >= frame.value.length) {
+      depth -= 1;
+      continue;
+    }
+    const child = frame.value.values[frame.next] ?? R_NULL;
+    frame.next += 1;
+    if (child.type === "null" || isAtomic(child)) continue;
+    if (child.type !== "list" && child.type !== "pairlist") return true;
+    depth += 1;
+    const previous = stack[depth];
+    if (previous === undefined) {
+      invocation.context.allocate(1);
+      stack.push({ value: child, next: 0 });
+    } else {
+      previous.value = child;
+      previous.next = 0;
+    }
+  }
+  return false;
+}
+
+interface RecursiveUnlistNode {
+  readonly value: RValue;
+  readonly children: RecursiveUnlistNode[];
+  readonly names: RCharacterVector | undefined;
+  count: number;
+  hasNames: boolean;
+  listResult: boolean;
+}
+
+interface RecursiveUnlistName {
+  readonly value: string | null;
+  readonly encoding: RCharacterEncoding;
+  readonly bytes: Uint8Array;
+}
+
+interface RecursiveUnlistNameBudget {
+  reserveBytes(bytes: number): void;
+  reserveText(parts: readonly string[]): void;
+}
+
+function recursiveUnlistNameBudget(invocation: BuiltinInvocation): RecursiveUnlistNameBudget {
+  let reservedBytes = 0;
+  const check = (bytes: number): void => {
+    const total = reservedBytes + bytes;
+    if (
+      !Number.isSafeInteger(total) ||
+      bytes < 0 ||
+      total > invocation.context.limits.maxOutputBytes
+    ) {
+      throw new RResourceLimitError("NRL4007", "unlist() name byte budget exceeded.", {
+        details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, nameBytes: total },
+      });
+    }
+  };
+  const reserveBytes = (bytes: number): void => {
+    check(bytes);
+    invocation.context.checkpoint(Math.ceil(bytes / 256));
+    reservedBytes += bytes;
+  };
+  return {
+    reserveBytes,
+    reserveText(parts) {
+      let bytes = 0;
+      let work = 0;
+      for (const part of parts) {
+        for (let index = 0; index < part.length;) {
+          if (work++ % 256 === 0) {
+            invocation.context.checkpoint();
+            check(bytes);
+          }
+          const point = part.codePointAt(index) ?? 0;
+          bytes += utf8ByteLength(point);
+          index += point > 0xffff ? 2 : 1;
+        }
+      }
+      reserveBytes(bytes);
+    },
+  };
+}
+
+function planRecursiveUnlist(
+  input: RList | RPairlist,
+  useNames: boolean,
+  invocation: BuiltinInvocation,
+): RecursiveUnlistNode {
+  const reserveNode = (): void => {
+    invocation.context.checkpoint();
+    // Account for a descriptor and its parent/stack reference before growing either.
+    invocation.context.allocate(1);
+    invocation.context.allocate(1);
+  };
+  const createNode = (value: RValue, reserved = false): RecursiveUnlistNode => {
+    if (!reserved) reserveNode();
+    const sequence = isAtomic(value) || value.type === "list" || value.type === "pairlist";
+    const names = sequence && useNames ? sequenceNamesAttribute(value) : undefined;
+    const container =
+      value.type === "list" || value.type === "pairlist" || value.type === "expression";
+    const opaque = !container && !isAtomic(value) && value.type !== "null";
+    if (
+      opaque &&
+      value.type !== "closure" &&
+      value.type !== "builtin" &&
+      value.type !== "environment" &&
+      value.type !== "symbol" &&
+      value.type !== "language"
+    ) {
+      throw new RTypeMismatchError(
+        "NRT3231",
+        `unlist() cannot flatten a value of type '${value.type}'.`,
+      );
+    }
+    const count = container || value.type === "null" ? 0 : isAtomic(value) ? value.length : 1;
+    return {
+      value,
+      children: [],
+      names,
+      count,
+      hasNames: names !== undefined && count > 0,
+      listResult: opaque,
+    };
+  };
+  const root = createNode(input);
+  const stack: { readonly node: RecursiveUnlistNode; next: number }[] = [{ node: root, next: 0 }];
+  while (stack.length > 0) {
+    invocation.context.checkpoint();
+    const frame = stack[stack.length - 1];
+    if (frame === undefined) break;
+    const value = frame.node.value;
+    const container =
+      value.type === "list" || value.type === "pairlist" || value.type === "expression";
+    const length = container ? value.values.length : 0;
+    if (container && frame.next < length) {
+      const index = frame.next;
+      frame.next += 1;
+      // Quote one owned expression cell at a time; calls stay opaque and are never evaluated.
+      let child: RecursiveUnlistNode;
+      if (value.type === "expression") {
+        const item = value.values[index];
+        if (item === undefined) continue;
+        reserveNode();
+        // Embedded constant references and NULL are reused, not copied or reallocated.
+        if (item.kind !== "ConstantExpression" && item.kind !== "NullLiteral")
+          invocation.context.allocate(1);
+        child = createNode(quoteAst(item), true);
+      } else {
+        const item = value.values[index];
+        if (item === undefined) continue;
+        child = createNode(item);
+      }
+      frame.node.children.push(child);
+      stack.push({ node: child, next: 0 });
+      continue;
+    }
+    stack.pop();
+    if (frame.node.count > 0 && frame.node.names !== undefined) frame.node.hasNames = true;
+    const parent = stack[stack.length - 1]?.node;
+    if (parent !== undefined) {
+      const count = parent.count + frame.node.count;
+      if (!Number.isSafeInteger(count) || count > invocation.context.limits.maxVectorLength) {
+        throw new RResourceLimitError("NRL4002", "Vector length limit exceeded.", {
+          details: { maxVectorLength: invocation.context.limits.maxVectorLength, requested: count },
+        });
+      }
+      parent.count = count;
+      parent.hasNames ||= frame.node.hasNames;
+      parent.listResult ||= frame.node.listResult;
+    }
+  }
+  return root;
+}
+
+function recursiveUnlistNameAt(
+  names: RCharacterVector | undefined,
+  index: number,
+  budget: RecursiveUnlistNameBudget,
+): RecursiveUnlistName | undefined {
+  const value = unlistNameAt(names, index);
+  if (value === undefined || names === undefined) return undefined;
+  budget.reserveBytes(names.byteValues[index]?.byteLength ?? 0);
+  return {
+    value,
+    encoding: characterEncodingAt(names, index),
+    bytes: characterBytesAt(names, index),
+  };
+}
+
+function joinedRecursiveUnlistName(
+  prefix: RecursiveUnlistName | undefined,
+  name: RecursiveUnlistName | undefined,
+  budget: RecursiveUnlistNameBudget,
+): RecursiveUnlistName | undefined {
+  if (prefix === undefined) return name;
+  if (name === undefined) return prefix;
+  if (prefix.encoding === "bytes" || name.encoding === "bytes") {
+    throw new RTypeMismatchError(
+      "NRT3231",
+      'translating strings with "bytes" encoding is not allowed',
+    );
+  }
+  const left = prefix.value ?? "NA";
+  const right = name.value ?? "NA";
+  budget.reserveText([left, ".", right]);
+  const value = `${left}.${right}`;
+  return { value, encoding: "UTF-8", bytes: encodeUtf8(value) };
+}
+
+function numberedRecursiveUnlistName(
+  prefix: RecursiveUnlistName,
+  index: number,
+  budget: RecursiveUnlistNameBudget,
+): RecursiveUnlistName {
+  if (prefix.encoding === "bytes") {
+    throw new RTypeMismatchError(
+      "NRT3231",
+      'translating strings with "bytes" encoding is not allowed',
+    );
+  }
+  const base = prefix.value ?? "NA";
+  const suffix = String(index);
+  budget.reserveText([base, suffix]);
+  const value = `${base}${suffix}`;
+  return { value, encoding: "UTF-8", bytes: encodeUtf8(value) };
+}
+
+function materializeRecursiveUnlist(
+  root: RecursiveUnlistNode,
+  useNames: boolean,
+  invocation: BuiltinInvocation,
+): RValue {
+  invocation.context.allocate(root.count);
+  const values: RValue[] = [];
+  const entries: { value: AtomicVector }[] = [];
+  const hasNames = useNames && root.hasNames && root.count > 0;
+  const nameBudget = recursiveUnlistNameBudget(invocation);
+  if (hasNames) invocation.context.allocate(root.count);
+  const names: string[] = [];
+  const missingNames = hasNames ? new Uint8Array(root.count) : undefined;
+  const encodings: RCharacterEncoding[] = [];
+  const bytes: Uint8Array[] = [];
+  let offset = 0;
+  interface Numbering {
+    readonly prefix: RecursiveUnlistName;
+    next: number;
+  }
+  interface Frame {
+    readonly node: RecursiveUnlistNode;
+    readonly prefix: RecursiveUnlistName | undefined;
+    readonly numbering: Numbering | undefined;
+    next: number;
+  }
+  const frame = (
+    node: RecursiveUnlistNode,
+    prefix: RecursiveUnlistName | undefined,
+    inherited: Numbering | undefined,
+  ): Frame => ({
+    node,
+    prefix,
+    numbering:
+      inherited ??
+      (prefix !== undefined && !node.hasNames && node.count > 1 ? { prefix, next: 1 } : undefined),
+    next: 0,
+  });
+  const stack: Frame[] = [frame(root, undefined, undefined)];
+  const appendName = (current: Frame, index: number): void => {
+    if (!hasNames) {
+      offset += 1;
+      return;
+    }
+    const name =
+      current.numbering !== undefined
+        ? numberedRecursiveUnlistName(
+            current.numbering.prefix,
+            current.numbering.next++,
+            nameBudget,
+          )
+        : joinedRecursiveUnlistName(
+            current.prefix,
+            recursiveUnlistNameAt(current.node.names, index, nameBudget),
+            nameBudget,
+          );
+    nameBudget.reserveBytes(name?.bytes.byteLength ?? 0);
+    names.push(name?.value ?? "");
+    if (name?.value === null && missingNames !== undefined) missingNames[offset] = 1;
+    encodings.push(name?.encoding ?? "unknown");
+    bytes.push(name?.bytes ?? encodeUtf8(""));
+    offset += 1;
+  };
+  while (stack.length > 0) {
+    invocation.context.checkpoint();
+    const current = stack[stack.length - 1];
+    if (current === undefined) break;
+    const node = current.node;
+    const value = node.value;
+    const container =
+      value.type === "list" || value.type === "pairlist" || value.type === "expression";
+    if (container) {
+      if (current.next >= node.children.length) {
+        stack.pop();
+        continue;
+      }
+      const index = current.next;
+      current.next += 1;
+      const child = node.children[index];
+      if (child === undefined) continue;
+      const prefix = hasNames
+        ? joinedRecursiveUnlistName(
+            current.prefix,
+            recursiveUnlistNameAt(node.names, index, nameBudget),
+            nameBudget,
+          )
+        : undefined;
+      stack.push(frame(child, prefix, current.numbering));
+      continue;
+    }
+    stack.pop();
+    if (value.type === "null") continue;
+    if (isAtomic(value)) {
+      if (!root.listResult) entries.push({ value: withoutAttribute(value, "names") });
+      for (let index = 0; index < value.length; index += 1) {
+        invocation.context.checkpoint();
+        if (root.listResult) values.push(vectorItem(value, index, invocation));
+        appendName(current, index);
+      }
+    } else {
+      values.push(value);
+      appendName(current, 0);
+    }
+  }
+  const result = root.listResult
+    ? listValue(values)
+    : combineAtomicEntries(entries, invocation, "unlist");
+  if (!hasNames || result.type === "null") return result;
+  const namesAttribute = characterVector(
+    names,
+    compactMask(missingNames ?? new Uint8Array()),
+    encodings,
+    bytes,
+  );
+  if (result.type === "list" || isAtomic(result))
+    return withAttribute(result, "names", namesAttribute);
+  return result;
 }
 
 function collectUnlistEntries(

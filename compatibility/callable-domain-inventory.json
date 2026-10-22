@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.392.0",
+  "semanticProfileVersion": "0.393.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384",
+    "capabilities": "98a14ab64eb028009599b5f89c735d80f31b9c8c6809479f8d1033fffa128b07",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "6b88bf0e13caf2698d884f502d16829f1cb11add0c35fb1e60a3409a36bd1c83",
-    "oracleV2": "22e8438916b14295d1f9e00e6920cce980e218da4f0b44dc5685c9f6be1ce658",
+    "foundation": "0dfe435d87d84fa9269fe9e8f2f50dc9776a069b5ac0d1432036a228ab237ec2",
+    "oracleV2": "e0e606f5cd70c686f924cbefe06715780e2b47b0b3428f527ff4cbd24a61e3c2",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "4d875cf7564fb87a1872eed006d503daba50551052f7439d2ef6c2be19d3e336"
+    "annotations": "f783a8082d32f02edd2a18ec83a993ae7a5a6d8e9de2de7ed6825ed4bac9c3b5"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -53,7 +53,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 169,
-    "bindingsWithDeclaredMatrixEvidence": 19,
+    "bindingsWithDeclaredMatrixEvidence": 20,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -248,38 +248,38 @@
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 412,
-          "partialDeclaredBindings": 8
+          "pendingBindings": 411,
+          "partialDeclaredBindings": 9
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 412,
-          "partialDeclaredBindings": 8
+          "pendingBindings": 411,
+          "partialDeclaredBindings": 9
         },
         {
           "dimension": "errors",
-          "pendingBindings": 412,
-          "partialDeclaredBindings": 8
+          "pendingBindings": 411,
+          "partialDeclaredBindings": 9
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 412,
-          "partialDeclaredBindings": 8
+          "pendingBindings": 411,
+          "partialDeclaredBindings": 9
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 414,
-          "partialDeclaredBindings": 6
-        },
-        {
-          "dimension": "side-effects",
           "pendingBindings": 413,
           "partialDeclaredBindings": 7
         },
         {
+          "dimension": "side-effects",
+          "pendingBindings": 412,
+          "partialDeclaredBindings": 8
+        },
+        {
           "dimension": "identity",
-          "pendingBindings": 417,
-          "partialDeclaredBindings": 3
+          "pendingBindings": 416,
+          "partialDeclaredBindings": 4
         }
       ]
     },
@@ -23989,9 +23989,129 @@
         "domains": ["vector-semantics"]
       },
       "completion": "incomplete",
-      "recursiveCaseIds": ["unlist-shallow-values-types-and-names"],
+      "recursiveCaseIds": [
+        "unlist-recursive-control-observations",
+        "unlist-recursive-expression-boundaries",
+        "unlist-recursive-hierarchical-names",
+        "unlist-recursive-reference-graph",
+        "unlist-shallow-values-types-and-names"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-expression-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-hierarchical-names"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Selected hierarchical names, missing names versus literal NA, retained opaque attributes and dropped scalar/container attributes are specified. Full name encodings/bytes, malformed names and expression attributes remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-expression-boundaries"
+            }
+          ],
+          "remainingGaps": [
+            "Selected empty containers, empty type precedence and root-versus-nested expression boundaries are specified. Named expression representation and exhaustive nesting, cyclic and resource boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-control-observations"
+            }
+          ],
+          "remainingGaps": [
+            "Two owned argument-error precedence controls are specified, with unexpected errors rethrown. Full invalid-input diagnostics, condition classes/calls and method error propagation remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-expression-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Explicit graph checks cover selected environment and closure-environment alias edges. The observer does not deduplicate other value kinds; general promise, arbitrary object and cyclic identity behavior remain unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-expression-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-hierarchical-names"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "The listed cases specify selected recursive heterogeneous leaves and preserved ordinary atomic, factor, shallow and direct non-list routes. Arbitrary expression containers and complete dispatch/storage combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-control-observations"
+            }
+          ],
+          "remainingGaps": [
+            "Selected recursive/input/names forcing order and count are specified. Complete custom method, active-binding and promise side effects remain unfinished."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "unlist-recursive-control-observations"
+            }
+          ],
+          "remainingGaps": [
+            "The owned default result is visible in the listed control. Complete method and evaluation-context visibility remain unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
-        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "The bounded recursive heterogeneous-leaf cases do not establish complete unlist behavior. Named expression entries and attributes, arbitrary embedded expression containers, full name encoding/byte composition, malformed names, complete S3/S4 and condition origins, and exhaustive deep/cyclic/resource behavior remain unfinished. The existing structure source-attribute insertion-order discrepancy is retained as a separate constructor gap; the revised unlist assertion checks input nonmutation without claiming that order fixed."
       ]
     },
     {
