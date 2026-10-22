@@ -1944,3 +1944,32 @@ are 68.4 / 116 / 94 ms for Chromium / Firefox / WebKit. Zero-valued measurements
 resolution. These are exploratory observations; release latency budgets, broader OS evidence and
 optimization of the required-example workload remain unfinished. No timeout or bundle cap was
 changed. Performance and packed-consumer evidence are now both current at 0.388.
+
+### Maintained offline original-package evidence
+
+`pnpm evidence:packages` now provides a read-only preflight and an explicit offline run for the
+pinned development/regression abind and numDeriv archives. It requires an existing GNU R 4.6.1
+oracle, validates the full observation inventory and original-runner identity, and checks source,
+tool, archive, executable and build hashes before and after execution. Raw child output is bounded
+and quarantined; only allowlisted summaries and hashes are retained. Blocked package evidence is
+accepted only when complete and internally consistent. Assisted-runner evidence cannot confer
+original-package tier credit through this command.
+
+The
+[verified local checkpoint](../compatibility/platform-evidence/offline-packages-windows-0.388.0/index.json)
+records 487 stable artifact inputs. All 21 observation records and package stage results match the
+accepted 0.388 baseline. abind retains ten matching, repeatable observations and P7 eligibility;
+numDeriv retains five matches, six mismatches and two nonrepeatable observations, with test-output
+as its first blocker. The checkpoint is advisory Windows evidence and does not promote corpus tiers
+or satisfy the deferred normative Linux gate.
+
+All 62 independent tooling tests pass, including bounded child output, process-tree cleanup,
+contradictory P7 rejection, mixed-runner rejection, canonical report bytes and report digest checks.
+The full canonical check passes 3,044 unit tests with 94 opt-in skips, both typechecks, builds,
+generated reports and unchanged bundle limits. Runtime semantics and profile 0.388 are unchanged.
+
+Next measurable increments: verify direct S3 dispatch's nonlocal return, method visibility and
+cleanup against independently authored native cases, preserving NextMethod continuation; finish the
+isolated testing runner's strict host projection, adversarial fixtures and native parity review.
+Keep runner-assisted evidence separate from original dependency-closure and P6/P7 evidence. All
+broader domain and platform completion criteria remain open; current local work needs no new input.

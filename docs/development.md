@@ -55,5 +55,44 @@ metadata collectors have their own existing interfaces and are outside this thre
 No command here authorizes a download; use previously approved cached inputs when downloads are
 restricted. Ordinary development and `pnpm check` do not require GNU R.
 
+## Offline original-package evidence
+
+`pnpm evidence:packages` captures the pinned abind/numDeriv development/regression pair with the
+original package entrypoints. Complete the serial production build and its verification first; keep
+source, dist, tooling and input files unchanged throughout the run. The command never builds,
+downloads, changes corpus tiers or selects the holdout. Hashing source and dist verifies stability
+during execution; it cannot establish that stale dist was compiled from current source.
+
+```text
+pnpm evidence:packages -- --archive-dir CACHED_ARCHIVE_DIRECTORY --rscript PATH_TO_RSCRIPT --baseline-profile 0.388.0 --output .tmp/package-preflight
+pnpm evidence:packages -- --run --archive-dir CACHED_ARCHIVE_DIRECTORY --rscript PATH_TO_RSCRIPT --baseline-profile 0.388.0 --output .tmp/package-evidence
+```
+
+All paths resolve relative to this repository unless absolute. Supply an existing oracle executable
+file and a new output directory inside the repository. Preflight hashes cached inputs and checks
+prerequisites; it does not execute R or the runtime. `--run` validates the built capability
+manifest, GNU R 4.6.1, archive/artifact pins, all fifteen stages and exact test/example input hashes
+against the selected maintained baseline. Both packages use the existing package-test limits,
+explicit RNG seed 20261016 and repeated native observations. Native package-version normalization
+does not relax the exact archive or package pins.
+
+Wrapper exit zero means both complete reports were captured and validated with stable artifacts. A
+package may still fail compatibility: the wrapper accepts a checker exit of one only with a valid
+complete non-P7 report and explicit blocker. Missing/truncated evidence, contradictory P7 claims,
+unexpected exits, changed inputs and runner-substitution markers fail validation. An assisted runner
+cannot be projected into this original-report format.
+
+Publishable output contains `abind.json`, `numDeriv.json` and `index.json`, with allowlisted
+metadata, counts and digests. Raw reports stay under gitignored `.tmp/package-evidence-raw/`; child
+output is bounded, hashed and discarded. Raw/output overlap and link/junction ancestors are
+rejected. Do not upload the quarantine. Failed runs retain safe partial evidence and an explicitly
+failed index; reusing an output directory is rejected. Native observations remain advisory pending
+RFC-0007.
+
+The owned fixture and subprocess tests run in `pnpm check` without R or external archives. On an
+unrestricted verification host, `NATIVR_PROCESS_TEST_REQUIRE_TREE_CLEANUP=1` additionally requires
+successful process-tree termination. Restricted hosts may report a controlled termination failure;
+that failure never becomes valid package evidence. Executable package runs are opt-in.
+
 Do not add shell-specific npm scripts. Browser packages must remain ESM-only and free of Node
 built-ins. Semantic work requires tests, a conformance case, capability changes, and accurate docs.

@@ -1303,11 +1303,15 @@ and selected unchanged-package external tests on Ubuntu. It does not run compreh
 `pnpm package:check` for abind/numDeriv or retain their redacted stage summaries. Browser CI runs
 all three engines on Ubuntu but lacks a redacted success checkpoint and repeated performance report.
 Main CI configuration now invokes the canonical `pnpm check` plus its existing coverage gate and
-packed-consumer smoke; this configuration has not been pushed or run remotely. _Acceptance:_
-maintain and locally verify an offline evidence command with pinned inputs, RNG/repeatability
-settings, artifact validation and safe summaries; align CI with the canonical checks and artifact
-contract. Remote execution remains separate, and normative evidence requires RFC-0007's pinned
-Linux/glibc gate.
+packed-consumer smoke; this configuration has not been pushed or run remotely. The maintained
+`pnpm evidence:packages` command now verifies cached pins, observation inventories, original-runner
+identity, RNG/repeatability settings and stable artifacts, and retains only redacted summaries. Its
+[local 0.388 checkpoint](../compatibility/platform-evidence/offline-packages-windows-0.388.0/index.json)
+preserves all 21 abind/numDeriv observations and stage results from the accepted baseline: abind has
+ten matches; numDeriv retains six mismatches and two nonrepeatable observations. All 62 tooling
+tests and the full canonical check pass. _Remaining acceptance:_ integrate the safe artifact
+contract into separately authorized CI execution and complete browser checkpoint retention.
+Normative evidence still requires RFC-0007's pinned Linux/glibc gate.
 
 **R12 (P2): re-verify recorded corpus blockers** with the external suite, and evaluate the holdout
 only at a release gate.

@@ -15,6 +15,7 @@ for (const command of [
   ["benchmark:browser:test"],
   ["conformance:r:v2:test"],
   ["oracle:discovery:test"],
+  ["evidence:packages:test"],
   ["inventory:check"],
   ["lint"],
   ["boundaries"],
