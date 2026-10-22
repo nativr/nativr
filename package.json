@@ -41,6 +41,8 @@
     "oracle:discovery:test": "node --test scripts/test/rscript-discovery.test.mjs scripts/test/rscript-discovery-cli.test.mjs",
     "evidence:packages": "node scripts/package-evidence.mjs",
     "evidence:packages:test": "node --test scripts/test/package-evidence.test.mjs scripts/test/package-evidence-process.test.mjs",
+    "testing:assisted": "node scripts/assisted-test-runner.mjs",
+    "testing:assisted:test": "node --test scripts/test/assisted-test-runner.test.mjs scripts/test/assisted-test-runner-cli.test.mjs",
     "size": "node scripts/check-bundle-size.mjs",
     "pack:smoke": "node scripts/smoke-pack.mjs",
     "package:check": "node scripts/package-check.mjs",

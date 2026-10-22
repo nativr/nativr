@@ -11,15 +11,15 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                                                                                   | Status              |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Production check                   | Profile 0.389: 3,076 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                                                          | Passed              |
-| Conformance                        | 1,467 checked-in, 1,394 live GNU R 4.6.1, 382 recursive cases; 169 bindings linked with causal controls                                                                                                           | Passed              |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                                      | Passed              |
-| Browser e2e                        | Profile 0.389 on Windows: 9/9 pass across Chromium, Firefox and WebKit, including direct UseMethod completion, visibility and cleanup; required examples take 12.8 / 15.9 / 57 s under the unchanged 120 s budget | Passed on this host |
-| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                                                | Passed              |
-| Fixed bundle limits                | Profile 0.389: client 17.6/150 KiB gzip; Worker 491.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                                               | Passed              |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                                        | Open                |
+| Gate                               | Latest evidence                                                                                                                                                                             | Status              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Production check                   | Profile 0.389: 3,105 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                                    | Passed              |
+| Conformance                        | 1,467 checked-in, 1,394 live GNU R 4.6.1, 382 recursive cases; 169 bindings linked with causal controls                                                                                     | Passed              |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                | Passed              |
+| Browser e2e                        | Profile 0.389 on Windows: 12/12 pass across Chromium, Firefox and WebKit, including the optional owned runner; required examples take 11.7 / 16.0 / 41.5 s under the unchanged 120 s budget | Passed on this host |
+| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                          | Passed              |
+| Fixed bundle limits                | Profile 0.389: client 17.6/150 KiB gzip; Worker 491.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                         | Passed              |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                  | Open                |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
 broader workload coverage, latency acceptance budgets, the declared OS matrix, CI and release
@@ -120,6 +120,31 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Optional owned testing runner (0.1.0 on profile 0.389)
+
+The [maintained runner](assisted-testing-runner.md) is an optional interpreted bundle with its own
+namespace, contract and report format. The CLI accepts only pinned repository-owned fixtures;
+admission binds hashes and explicit limits, strict capture rejects unknown chronology or incomplete
+snapshots, and original-package evidence ingestion rejects assisted reports. Per-API support labels
+retain native-parity gaps and explicit unsupported behavior.
+
+All 29 source integration tests and 86 host/CLI tests pass. The nine built-runtime scenarios repeat
+with seven identical report digests and two identical explicit rejections. The complete browser
+suite passes 12/12 across the cached three engines; the added case checks optional bundle execution,
+failure/unsupported outcomes, reporter abort and same-Worker recovery. It does not establish Worker
+host-projection parity or real-testthat equivalence. The full check passes 3,105 tests with 94
+opt-in skips and unchanged caps. Runtime semantics, capabilities, public API and profile remain
+unchanged. Checked-in/live/recursive conformance is freshly verified at 1,467 / 1,394 / 382, with 55
+NativR-only live skips. The
+[owned checkpoint](../compatibility/assisted-testing-evidence/owned-core-windows-0.389.0/index.json)
+and
+[verification record](../compatibility/assisted-testing-evidence/owned-core-windows-0.389.0/verification.json)
+retain the separate identities and results.
+
+Original corpus tiers retain the 0.389 original-entrypoint checkpoint. This foundation cannot
+satisfy the original testthat dependency closure, establish P6/P7, or close domain/callable
+evidence. Broader testing APIs and package admission remain required work.
 
 ### Profile 0.388 verification (2026-10-22)
 

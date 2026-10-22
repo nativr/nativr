@@ -1,0 +1,248 @@
+{
+  "kind": "nativr-owned-runner-support",
+  "schemaVersion": 1,
+  "runner": "nativr-cleanroom-test-runner",
+  "package": "nativrTest",
+  "version": "0.1.0",
+  "documentationTarget": {
+    "package": "testthat",
+    "version": "3.3.2",
+    "edition": 3
+  },
+  "ownedContract": "behavior-contract.md",
+  "referenceObservations": "reference/native-observations.json",
+  "publicSources": "reference/public-sources.json",
+  "hasCompleteNativeParity": false,
+  "normativeTierCredit": false,
+  "originalDependencyClosureSatisfied": false,
+  "note": "Reference observations are separate from executing this own implementation under GNU R; no API has a complete native-parity claim.",
+  "apis": [
+    {
+      "name": "run_tests",
+      "implementation": "owned-only",
+      "nativeObservationIds": [],
+      "implementedSubset": ["explicit files and bounded private event aggregation"],
+      "remainingGaps": ["nested runs", "hostile-code authenticity", "original dependency closure"],
+      "nativeParityStatus": "not-applicable-own-api"
+    },
+    {
+      "name": "run_file",
+      "implementation": "owned-only",
+      "nativeObservationIds": [],
+      "implementedSubset": ["explicit file execution and FIFO registered cleanup"],
+      "remainingGaps": ["automatic discovery", "helpers", "package loading"],
+      "nativeParityStatus": "not-applicable-own-api"
+    },
+    {
+      "name": "runner_info",
+      "implementation": "owned-only",
+      "nativeObservationIds": [],
+      "implementedSubset": ["own runner identity and unsupported areas"],
+      "remainingGaps": ["native testthat metadata equivalence"],
+      "nativeParityStatus": "not-applicable-own-api"
+    },
+    {
+      "name": "test_that",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["suite"],
+      "implementedSubset": [
+        "active-file test scope",
+        "local isolation",
+        "failure continuation",
+        "skip/error progression",
+        "on.exit",
+        "empty-test skip"
+      ],
+      "remainingGaps": [
+        "interactive standalone return",
+        "nested tests",
+        "complete native reporter semantics"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "expect_true",
+      "implementation": "owned-subset",
+      "nativeObservationIds": [
+        "true-attributed",
+        "true-integer",
+        "true-missing",
+        "true-empty",
+        "true-vector",
+        "true-return-reference-attribute"
+      ],
+      "implementedSubset": ["scalar TRUE check ignoring attributes", "invisible actual return"],
+      "remainingGaps": [
+        "exact diagnostics",
+        "missing/partial argument parity",
+        "custom labels/info"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "expect_false",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["false-attributed"],
+      "implementedSubset": ["scalar FALSE check ignoring attributes", "invisible actual return"],
+      "remainingGaps": [
+        "complete negative boundary parity",
+        "exact diagnostics",
+        "custom labels/info"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "expect_error",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["error-captured", "error-absent", "error-none-result"],
+      "implementedSubset": ["plain class/fixed-string matching", "owned error absence contract"],
+      "remainingGaps": [
+        "negative pattern/class parity",
+        "absence failure return parity",
+        "regex",
+        "condition ancestry",
+        "diagnostic controls"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "expect_warning",
+      "implementation": "owned-subset",
+      "nativeObservationIds": [
+        "warning-two",
+        "warning-class-and-pattern",
+        "warning-return-identity"
+      ],
+      "implementedSubset": ["first matching plain warning", "additional warning visibility"],
+      "remainingGaps": [
+        "captured condition attributes/identity",
+        "negative class/pattern parity",
+        "regex",
+        "absence",
+        "all=TRUE",
+        "condition ancestry"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "expect_message",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["message-unmatched-first"],
+      "implementedSubset": ["first matching plain message", "earlier unmatched message visibility"],
+      "remainingGaps": [
+        "captured condition attributes/identity",
+        "negative class/pattern parity",
+        "regex",
+        "absence",
+        "all=TRUE",
+        "condition ancestry"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "fail",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["failure-observed", "failure-without-handler", "suite"],
+      "implementedSubset": ["failure signal and continuation under the owned reporter"],
+      "remainingGaps": ["advanced diagnostic controls", "exact native rendering"],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "pass",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["pass-observed"],
+      "implementedSubset": ["success signal and invisible NULL"],
+      "remainingGaps": ["arbitrary reporter compatibility"],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "succeed",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["legacy-succeed"],
+      "implementedSubset": ["legacy success condition returned invisibly"],
+      "remainingGaps": ["info controls", "exact diagnostics"],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "skip",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["skip-true", "suite"],
+      "implementedSubset": ["skip condition and current-test termination"],
+      "remainingGaps": [
+        "default reason parity",
+        "malformed/missing arguments",
+        "file-scope skip during a run"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "skip_if",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["skip-true", "skip-false", "skip-missing", "skip-vector"],
+      "implementedSubset": ["isTRUE guard and explicit reason"],
+      "remainingGaps": ["default reason parity", "malformed/missing arguments"],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "skip_if_not",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["skip-not-missing", "skip-not-vector"],
+      "implementedSubset": ["inverse isTRUE guard and explicit reason"],
+      "remainingGaps": ["default reason parity", "malformed/missing arguments"],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "setup",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["suite"],
+      "implementedSubset": ["immediate file setup in clean child environment"],
+      "remainingGaps": [
+        "native failure equivalence",
+        "explicit environment forcing parity",
+        "nested cleanup"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "teardown",
+      "implementation": "owned-subset",
+      "nativeObservationIds": ["suite"],
+      "implementedSubset": ["FIFO file cleanup", "owned failure aggregation"],
+      "remainingGaps": [
+        "native cleanup failure equivalence",
+        "simultaneous errors",
+        "withr lifecycle"
+      ],
+      "nativeParityStatus": "observed-reference-only"
+    },
+    {
+      "name": "expect_identical",
+      "implementation": "unsupported",
+      "nativeObservationIds": [
+        "identical-storage",
+        "identical-names",
+        "identical-attributes",
+        "forcing"
+      ],
+      "implementedSubset": [],
+      "remainingGaps": ["waldo comparison is unimplemented"],
+      "nativeParityStatus": "unsupported"
+    },
+    {
+      "name": "expect_equal",
+      "implementation": "unsupported",
+      "nativeObservationIds": [],
+      "implementedSubset": [],
+      "remainingGaps": ["waldo comparison is unimplemented"],
+      "nativeParityStatus": "unsupported"
+    },
+    {
+      "name": "expect_snapshot",
+      "implementation": "unsupported",
+      "nativeObservationIds": [],
+      "implementedSubset": [],
+      "remainingGaps": ["snapshot behavior is unimplemented"],
+      "nativeParityStatus": "unsupported"
+    }
+  ]
+}

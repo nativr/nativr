@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "retrievalDate": "2026-10-22",
+  "documentationVersion": "3.3.2",
+  "selectedEdition": 3,
+  "provider": "official testthat documentation",
+  "immutableWebSnapshot": false,
+  "note": "Version observed in the official site header; rolling web URLs are not immutable content pins. Only independently authored notes are retained. No linked implementation, package archive or foreign test source was opened.",
+  "sources": [
+    { "id": "site", "url": "https://testthat.r-lib.org/" },
+    { "id": "test", "url": "https://testthat.r-lib.org/reference/test_that.html" },
+    { "id": "logical", "url": "https://testthat.r-lib.org/reference/logical-expectations.html" },
+    { "id": "equality", "url": "https://testthat.r-lib.org/reference/equality-expectations.html" },
+    { "id": "conditions", "url": "https://testthat.r-lib.org/reference/expect_error.html" },
+    { "id": "skip", "url": "https://testthat.r-lib.org/reference/skip.html" },
+    { "id": "fail-pass", "url": "https://testthat.r-lib.org/reference/fail.html" },
+    {
+      "id": "custom-contract",
+      "url": "https://testthat.r-lib.org/articles/custom-expectation.html"
+    },
+    { "id": "teardown", "url": "https://testthat.r-lib.org/reference/teardown.html" },
+    { "id": "special-files", "url": "https://testthat.r-lib.org/articles/special-files.html" },
+    { "id": "fixtures", "url": "https://testthat.r-lib.org/articles/test-fixtures.html" },
+    { "id": "teardown-env", "url": "https://testthat.r-lib.org/reference/teardown_env.html" },
+    { "id": "reporter", "url": "https://testthat.r-lib.org/reference/Reporter.html" },
+    { "id": "test-dir", "url": "https://testthat.r-lib.org/reference/test_dir.html" },
+    { "id": "edition", "url": "https://testthat.r-lib.org/articles/third-edition.html" },
+    { "id": "edition-scope", "url": "https://testthat.r-lib.org/reference/local_edition.html" },
+    { "id": "news", "url": "https://testthat.r-lib.org/news/index.html" },
+    { "id": "index", "url": "https://testthat.r-lib.org/reference/index.html" },
+    { "id": "expectation-observer", "url": "https://testthat.r-lib.org/reference/expect.html" },
+    {
+      "id": "expectation-conditions",
+      "url": "https://testthat.r-lib.org/reference/expectation.html"
+    }
+  ]
+}

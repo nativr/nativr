@@ -1,0 +1,30 @@
+{
+  "kind": "owned-native-observation-validation",
+  "checks": 16,
+  "passed": 16,
+  "checkIds": [
+    "reference-and-complete-inventory",
+    "attributed-logical-return",
+    "logical-failure-boundaries",
+    "strict-plain-comparison",
+    "error-value-and-absence",
+    "one-warning-and-external-order",
+    "unmatched-message-escapes",
+    "class-and-pattern-positive",
+    "fail-muffling-and-default-error",
+    "pass-versus-legacy-succeed",
+    "skip-condition-and-guard-boundaries",
+    "single-forcing-and-return-attribute-identity",
+    "condition-value-not-unmodified-input-claim",
+    "suite-lifecycle-order",
+    "suite-result-distinction",
+    "exact-independent-rerun"
+  ],
+  "reference": {
+    "R": "4.6.1",
+    "testthat": "3.3.2",
+    "edition": 3
+  },
+  "nativrExecuted": false,
+  "compatibilityCredit": false
+}

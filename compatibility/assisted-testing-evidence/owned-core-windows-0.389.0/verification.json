@@ -1,0 +1,114 @@
+{
+  "kind": "nativr-owned-assisted-verification",
+  "schemaVersion": 1,
+  "semanticProfile": "0.389.0",
+  "normativeTierCredit": false,
+  "originalDependencyClosureSatisfied": false,
+  "realTestthatParity": false,
+  "sourceTests": { "passed": 29, "coreContractCases": 28 },
+  "hostAndCliTests": { "passed": 86, "skipped": 0 },
+  "unitTests": { "passed": 3105, "skipped": 94 },
+  "conformance": { "checkedIn": 1467, "native": 1394, "nativrOnlySkips": 55, "recursive": 382 },
+  "repeatedSuite": {
+    "fixtures": 9,
+    "identicalReports": 7,
+    "identicalRejections": 2,
+    "stableInputs": true
+  },
+  "browser": {
+    "platform": "win32",
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      {
+        "project": "chromium",
+        "title": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+        "durationMs": 634
+      },
+      {
+        "project": "firefox",
+        "title": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+        "durationMs": 1951
+      },
+      {
+        "project": "webkit",
+        "title": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+        "durationMs": 1243
+      },
+      {
+        "project": "chromium",
+        "title": "runs the required Worker examples without evaluation network traffic",
+        "durationMs": 11666
+      },
+      {
+        "project": "chromium",
+        "title": "surfaces recycling warnings and reset clears assigned state",
+        "durationMs": 1043
+      },
+      {
+        "project": "chromium",
+        "title": "loads the pinned elementary-function asset once per Worker session",
+        "durationMs": 347
+      },
+      {
+        "project": "firefox",
+        "title": "runs the required Worker examples without evaluation network traffic",
+        "durationMs": 15985
+      },
+      {
+        "project": "firefox",
+        "title": "surfaces recycling warnings and reset clears assigned state",
+        "durationMs": 1258
+      },
+      {
+        "project": "firefox",
+        "title": "loads the pinned elementary-function asset once per Worker session",
+        "durationMs": 528
+      },
+      {
+        "project": "webkit",
+        "title": "runs the required Worker examples without evaluation network traffic",
+        "durationMs": 41507
+      },
+      {
+        "project": "webkit",
+        "title": "surfaces recycling warnings and reset clears assigned state",
+        "durationMs": 2988
+      },
+      {
+        "project": "webkit",
+        "title": "loads the pinned elementary-function asset once per Worker session",
+        "durationMs": 520
+      }
+    ],
+    "optionalRunnerSpec": {
+      "path": "tests/e2e/assisted-runner.spec.ts",
+      "sha256": "edc6a6151e10196166237e45f6168547f23218a7c763c967f8f220ba0d4b0447"
+    },
+    "claim": "Worker execution of owned core only; no host projection or native testthat parity"
+  },
+  "logs": [
+    {
+      "file": "assisted-check.log",
+      "sha256": "c925f5774f087cdc8ff16939115d895fb431b495e191744a62e87908b827e635"
+    },
+    {
+      "file": "assisted-foundation.log",
+      "sha256": "999102e144c92fa82d73b853298121a1a8a94da71d5ec10c8ba5d4bdd9feedb2"
+    },
+    {
+      "file": "assisted-native.log",
+      "sha256": "76d8189b3f0d0c823724732cf458c037ddb11dc2ee49d402e8dcc6388a97db2b"
+    },
+    {
+      "file": "assisted-v2.log",
+      "sha256": "2b93b06db8d2655c82f10713030fe60df6624718ffa986c0dd7ea63efecb6c7e"
+    },
+    {
+      "file": "assisted-e2e.log",
+      "sha256": "db263732188dcd19e4b97ca63ffc0ec032530f9b5aab9426f469e2ea166d494e"
+    }
+  ],
+  "limits": "No runtime/profile/public API changes; full compatibility remains incomplete."
+}

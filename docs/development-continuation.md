@@ -2022,3 +2022,37 @@ for UseMethod, preserving rejection before selector forcing and valid generic ca
 loop/evaluation callers. Wider domain closure, provenance-backed datasets, browser/OS coverage and
 release gates remain unfinished. Current local work needs no new input; download, holdout, Linux and
 remote-action boundaries remain unchanged.
+
+### Maintained optional testing foundation (runner 0.1.0, profile 0.389)
+
+The independently authored `nativrTest` bundle now lives under `testing/nativr-test-runner/` with an
+explicit behavior contract, per-API support labels, pinned owned fixtures and separate historical
+native references. The offline `testing:assisted` command accepts only the owned core suite. It
+binds source/bundle/configuration/runtime identities, rejects malformed or incomplete capture and
+writes a separate assisted report. Existing output directories, path escapes and linked ancestors
+are rejected. The original-package evidence validator rejects assisted reports.
+
+The 28 core behavior cases and inventory check pass, as do all 86 host/CLI tests. Nine built-runtime
+acceptance scenarios preserve deliberate failures, unsupported calls, skipped tests, cleanup and
+ordinary errors, reporter aborts and rejected runtime/outer-effect capture. Two final runs match
+their expected outcomes. Browser Worker coverage independently checks pass/failure/unsupported,
+reporter abort and same-Worker recovery under the existing CSP and timeout.
+
+The full canonical gate passes 3,105 unit tests with 94 opt-in skips, both typechecks, tooling,
+serial build, generated checks and unchanged bundle limits. Runtime profile, capabilities, public
+API and protocol remain unchanged. No original package tier or callable/domain credit is granted.
+Checked-in/live/recursive conformance passes 1,467 / 1,394 / 382, with 55 NativR-only live skips;
+the complete browser suite passes 12/12. The
+[owned checkpoint](../compatibility/assisted-testing-evidence/owned-core-windows-0.389.0/index.json)
+and its separate verification record retain all nine outcomes, repeated digests and stable inputs.
+The [runner guide](assisted-testing-runner.md) documents explicit gaps: real-testthat API parity,
+comparison/snapshot support, discovery/helpers, broader conditions and package/dependency admission.
+
+The next 38 independently native-verified loop-context fixtures reproduce sixteen defects on the
+stable 0.389 runtime, with twenty-two passing controls and no exceptions. Fifteen defects concern
+active-loop admission; one concerns generic-first forcing with reversed named arguments. Next
+measurable semantic increment: correct direct UseMethod admission before selector forcing while
+preserving valid inner generic calls, cleanup and original promises. Add bounded foundation and
+recursive causal evidence, rerun all semantic gates and affected cached package checks, then commit
+locally. Full compatibility, further datasets, original package testing, OS coverage and release
+gates remain open. No new user input is required for this local increment.

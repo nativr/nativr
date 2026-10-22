@@ -1,0 +1,592 @@
+{
+  "reference": { "R": "4.6.1", "testthat": "3.3.2", "edition": 3 },
+  "signatures": [
+    { "name": "test_that", "callableType": "closure", "formalNames": ["desc", "code"] },
+    {
+      "name": "expect_true",
+      "callableType": "closure",
+      "formalNames": ["object", "info", "label"]
+    },
+    {
+      "name": "expect_false",
+      "callableType": "closure",
+      "formalNames": ["object", "info", "label"]
+    },
+    {
+      "name": "expect_identical",
+      "callableType": "closure",
+      "formalNames": ["object", "expected", "info", "label", "expected.label", "..."]
+    },
+    {
+      "name": "expect_error",
+      "callableType": "closure",
+      "formalNames": ["object", "regexp", "class", "...", "inherit", "info", "label"]
+    },
+    {
+      "name": "expect_warning",
+      "callableType": "closure",
+      "formalNames": ["object", "regexp", "class", "...", "inherit", "all", "info", "label"]
+    },
+    {
+      "name": "expect_message",
+      "callableType": "closure",
+      "formalNames": ["object", "regexp", "class", "...", "inherit", "all", "info", "label"]
+    },
+    { "name": "skip", "callableType": "closure", "formalNames": ["message"] },
+    { "name": "skip_if", "callableType": "closure", "formalNames": ["condition", "message"] },
+    { "name": "skip_if_not", "callableType": "closure", "formalNames": ["condition", "message"] },
+    {
+      "name": "fail",
+      "callableType": "closure",
+      "formalNames": ["message", "info", "srcref", "trace_env", "trace"]
+    },
+    { "name": "pass", "callableType": "closure", "formalNames": [] },
+    { "name": "succeed", "callableType": "closure", "formalNames": ["message", "info"] },
+    { "name": "setup", "callableType": "closure", "formalNames": ["code", "env"] },
+    { "name": "teardown", "callableType": "closure", "formalNames": ["code", "env"] }
+  ],
+  "records": [
+    {
+      "id": "true-attributed",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": {
+        "kind": "logical",
+        "values": true,
+        "names": "flag",
+        "attributeNames": ["note", "names"]
+      },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "false-attributed",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "logical", "values": false, "names": null, "attributeNames": "note" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "true-integer",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected 1L to be TRUE.\nDifferences:\n`actual` is an integer vector (1)\n`expected` is a logical vector (TRUE)\n"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "integer", "values": 1, "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "true-missing",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected NA to be TRUE.\nDifferences:\n`actual`:   <NA>\n`expected`: TRUE\n"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "logical", "values": null, "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "true-empty",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected `logical()` to be TRUE.\nDifferences:\n`actual`:       \n`expected`: TRUE\n"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "logical", "values": [], "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "true-vector",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected `c(TRUE, TRUE)` to be TRUE.\nDifferences:\n`actual`:   TRUE TRUE\n`expected`: TRUE     \n"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "logical", "values": [true, true], "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "identical-storage",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected 73L to be identical to 73.\nDifferences:\n`actual` is an integer vector (73)\n`expected` is a double vector (73)\n"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "integer", "values": 73, "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "identical-names",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected `c(a = 73L)` to be identical to `c(b = 73L)`.\nDifferences:\n`names(actual)`:   \"a\"\n`names(expected)`: \"b\"\n"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "integer", "values": 73, "names": "a", "attributeNames": "names" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "identical-attributes",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "integer", "values": 73, "names": null, "attributeNames": ["a", "b"] },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "error-captured",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": {
+        "kind": "condition",
+        "condition": { "classes": ["simpleError", "error", "condition"], "message": "owned-73" }
+      },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "error-absent",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "Expected 73 to throw a error."
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "NULL" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "error-none-result",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "integer", "values": 73, "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "warning-two",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "warning",
+          "condition": {
+            "classes": ["simpleWarning", "warning", "condition"],
+            "message": "owned-second"
+          }
+        },
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": {
+        "kind": "condition",
+        "condition": {
+          "classes": ["simpleWarning", "warning", "condition"],
+          "message": "owned-first"
+        }
+      },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "message-unmatched-first",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "message",
+          "condition": {
+            "classes": ["simpleMessage", "message", "condition"],
+            "message": "owned-other\n"
+          }
+        },
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": {
+        "kind": "condition",
+        "condition": {
+          "classes": ["simpleMessage", "message", "condition"],
+          "message": "owned-selected\n"
+        }
+      },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "warning-class-and-pattern",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": {
+        "kind": "condition",
+        "condition": {
+          "classes": ["owned_warning", "warning", "condition"],
+          "message": "owned-class"
+        }
+      },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "failure-observed",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "owned explicit failure"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "NULL" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "failure-without-handler",
+      "edition": 3,
+      "events": [],
+      "termination": {
+        "classes": ["expectation_failure", "expectation", "error", "condition"],
+        "message": "owned explicit failure"
+      },
+      "value": null,
+      "visible": null,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "pass-observed",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "NULL" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "legacy-succeed",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "Success has been forced"
+          }
+        }
+      ],
+      "termination": null,
+      "value": {
+        "kind": "condition",
+        "condition": {
+          "classes": ["expectation_success", "expectation", "condition"],
+          "message": "Success has been forced"
+        }
+      },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "skip-true",
+      "edition": 3,
+      "events": [],
+      "termination": { "classes": ["skip", "condition"], "message": "Reason: owned skip" },
+      "value": null,
+      "visible": null,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "skip-false",
+      "edition": 3,
+      "events": [],
+      "termination": null,
+      "value": { "kind": "NULL" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "skip-missing",
+      "edition": 3,
+      "events": [],
+      "termination": null,
+      "value": { "kind": "NULL" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "skip-vector",
+      "edition": 3,
+      "events": [],
+      "termination": null,
+      "value": { "kind": "NULL" },
+      "visible": false,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "skip-not-missing",
+      "edition": 3,
+      "events": [],
+      "termination": { "classes": ["skip", "condition"], "message": "Reason: owned skip" },
+      "value": null,
+      "visible": null,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "skip-not-vector",
+      "edition": 3,
+      "events": [],
+      "termination": { "classes": ["skip", "condition"], "message": "Reason: owned skip" },
+      "value": null,
+      "visible": null,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "true-return-reference-attribute",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "logical", "values": true, "names": null, "attributeNames": null },
+      "visible": true,
+      "capturedOutputLines": 0
+    },
+    {
+      "id": "warning-return-identity",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "logical", "values": false, "names": null, "attributeNames": null },
+      "visible": true,
+      "capturedOutputLines": 0
+    }
+  ],
+  "forcing": {
+    "actual": 1,
+    "expected": 1,
+    "observation": {
+      "id": "identical-single-forcing",
+      "edition": 3,
+      "events": [
+        {
+          "kind": "expectation",
+          "condition": {
+            "classes": ["expectation_success", "expectation", "condition"],
+            "message": "success"
+          }
+        }
+      ],
+      "termination": null,
+      "value": { "kind": "integer", "values": 73, "names": null, "attributeNames": null },
+      "visible": false,
+      "capturedOutputLines": 0
+    }
+  },
+  "suite": {
+    "events": [
+      "helper",
+      "setup-file",
+      "setup-block",
+      "after-failure",
+      "on-exit-failure",
+      "on-exit-skip",
+      "on-exit-error",
+      "cleanup-one",
+      "cleanup-two",
+      "second-file",
+      "teardown-file"
+    ],
+    "error": null,
+    "warnings": [],
+    "results": [
+      {
+        "file": "test-a-owned.R",
+        "test": "owned failure continues",
+        "results": [
+          {
+            "classes": ["expectation_failure", "expectation", "error", "condition"],
+            "message": "owned failure"
+          },
+          { "classes": ["expectation_success", "expectation", "condition"], "message": "success" }
+        ]
+      },
+      {
+        "file": "test-a-owned.R",
+        "test": "owned isolated skip",
+        "results": [
+          { "classes": ["expectation_success", "expectation", "condition"], "message": "success" },
+          {
+            "classes": ["expectation_skip", "expectation", "condition"],
+            "message": "Reason: owned skip"
+          }
+        ]
+      },
+      {
+        "file": "test-a-owned.R",
+        "test": "owned ordinary error",
+        "results": [
+          {
+            "classes": ["expectation_error", "expectation", "error", "condition"],
+            "message": "Error in `eval(code, test_env)`: owned ordinary error"
+          }
+        ]
+      },
+      {
+        "file": "test-z-owned.R",
+        "test": "owned later success",
+        "results": [
+          { "classes": ["expectation_success", "expectation", "condition"], "message": "success" }
+        ]
+      },
+      {
+        "file": "test-z-owned.R",
+        "test": "owned empty test",
+        "results": [
+          {
+            "classes": ["expectation_skip", "expectation", "condition"],
+            "message": "Reason: empty test"
+          }
+        ]
+      }
+    ],
+    "capturedOutputLines": 0
+  }
+}

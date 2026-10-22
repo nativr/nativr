@@ -1,0 +1,124 @@
+{
+  "kind": "nativr-owned-assisted-suite",
+  "schemaVersion": 1,
+  "id": "core",
+  "runnerVersion": "0.1.0",
+  "normativeTierCredit": false,
+  "originalDependencyClosureSatisfied": false,
+  "fixtures": [
+    {
+      "id": "pass",
+      "path": "tests/test-pass.R",
+      "sha256": "176230daeb73b79066c17d4c52c418de06eafecfd3190ea6aae4a837a97038b5",
+      "expected": {
+        "outcome": "completed"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "fail",
+      "path": "tests/test-fail.R",
+      "sha256": "0d96892b7251cd045bacf612d247e869bd9acf8cb4106e7af2360783a4ae3e1e",
+      "expected": {
+        "outcome": "failed"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "unsupported-caught",
+      "path": "tests/test-unsupported-caught.R",
+      "sha256": "45d194f2fa85744c683b7eebfc20cd0dba8d2c792f07a424704590b5891e1926",
+      "expected": {
+        "outcome": "partial",
+        "testOutcome": "unsupported"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "cleanup-failure",
+      "path": "tests/test-cleanup-failure.R",
+      "sha256": "1b16125f6678580e8757823bd8d457675d770fd4a26b3e6f0d47d66ea50f01c1",
+      "expected": {
+        "outcome": "failed"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "ordinary-error",
+      "path": "tests/test-ordinary-error.R",
+      "sha256": "f1c208e93ee0d59a02c65b193ac6d9bddaaf12782a7d4a7e27d9c21638959a5e",
+      "expected": {
+        "outcome": "failed",
+        "testOutcome": "error"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "skip",
+      "path": "tests/test-skip.R",
+      "sha256": "0505ef84831ebb1d10a1b3ff65caef524a6fe4761630149c6178e2b0e2954332",
+      "expected": {
+        "outcome": "completed",
+        "testOutcome": "skipped"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "event-limit",
+      "path": "tests/test-event-limit.R",
+      "sha256": "f75b1a852aedbb1e443aea7549c8aac94d6383a2a2429b068834370e2d655b1a",
+      "expected": {
+        "outcome": "aborted"
+      },
+      "controls": {
+        "maxEvents": 3,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "outer-output",
+      "path": "tests/test-outer-output.R",
+      "sha256": "b1f2683f114663e9a021bcb0a644ce1ddb2a83e4e74433a99754c21f1b21b901",
+      "expected": {
+        "rejection": "unaccounted-host-effects"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      }
+    },
+    {
+      "id": "runtime-limit",
+      "path": "tests/test-runtime-limit.R",
+      "sha256": "46b3958f67128de05fb3e90187c4f00aa5e2b19601aaff1c0f31e19b26e1956f",
+      "expected": {
+        "rejection": "evaluation-or-capture-failed"
+      },
+      "controls": {
+        "maxEvents": 1000,
+        "maxTextBytes": 8192
+      },
+      "limits": {
+        "maxSteps": 50000
+      }
+    }
+  ]
+}

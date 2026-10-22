@@ -94,5 +94,12 @@ unrestricted verification host, `NATIVR_PROCESS_TEST_REQUIRE_TREE_CLEANUP=1` add
 successful process-tree termination. Restricted hosts may report a controlled termination failure;
 that failure never becomes valid package evidence. Executable package runs are opt-in.
 
+## Optional owned testing runner
+
+`pnpm testing:assisted -- --suite core --out .tmp/assisted-test-runs/core-checkpoint` executes the
+pinned owned acceptance suite after a verified build. Its pure tests are included in `pnpm check`.
+See [assisted testing runner](assisted-testing-runner.md) for provenance, limits, explicit gaps and
+the separate report format. These results cannot qualify original-package P6/P7 evidence.
+
 Do not add shell-specific npm scripts. Browser packages must remain ESM-only and free of Node
 built-ins. Semantic work requires tests, a conformance case, capability changes, and accurate docs.

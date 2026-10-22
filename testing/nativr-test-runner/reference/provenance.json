@@ -1,0 +1,54 @@
+{
+  "kind": "nativr-owned-runner-provenance",
+  "schemaVersion": 1,
+  "reference": {
+    "R": "4.6.1",
+    "testthat": "3.3.2",
+    "edition": 3,
+    "retrievalDate": "2026-10-22"
+  },
+  "historicalRuntimeProfile": "0.388.0",
+  "nativeObserverRelocatedNotExecuted": true,
+  "ownedCoreCasesPreserved": 28,
+  "nativeReferenceClaim": "bounded observable metadata and owned inputs only; not complete testthat parity",
+  "normativeTierCredit": false,
+  "originalDependencyClosureSatisfied": false,
+  "artifacts": [
+    {
+      "path": "R/runner.R",
+      "originSha256": "4b5cce0bb3363bf942fd757cb576f17973aec1d40cc85dfbef5911125a0e7511",
+      "sha256": "f89f4f3a6c34f0c11a67a21d4d1d7563f4dfd15ebf0d4ec1cd5c65717d3a341e",
+      "change": "Header comments identify maintained contract/reference paths; executable owned text is unchanged."
+    },
+    {
+      "path": "reference/public-sources.json",
+      "originSha256": "564fb92983ef2fdcb9d040a420cccae40003254640fc1c2b65c215775af0d047",
+      "sha256": "8ad4c219ba488cd1c66ce69b484e748e6e4d83747bdb5a556e49f8fdf4c3d8f9",
+      "change": "JSON formatting only."
+    },
+    {
+      "path": "reference/native-observations.json",
+      "originSha256": "f0c2f2371d9cca340258f4ba5c4e9381c2b59c5a66656f39d836f9f81f5d7c2d",
+      "sha256": "5a69fceb81e655710fcaf956cf7749a7aee261c03cfbfc621162966cfcd49cbc",
+      "change": "JSON formatting only; historical native observation values unchanged."
+    },
+    {
+      "path": "reference/native-repeat-reference.json",
+      "originSha256": "f0c2f2371d9cca340258f4ba5c4e9381c2b59c5a66656f39d836f9f81f5d7c2d",
+      "sha256": "5a69fceb81e655710fcaf956cf7749a7aee261c03cfbfc621162966cfcd49cbc",
+      "change": "JSON formatting only; historical repeat values unchanged."
+    },
+    {
+      "path": "reference/historical-validation.json",
+      "originSha256": "5d995d2003f1e2e52e82d2fc1d26407131c696db706760a1d1c974d6811bff04",
+      "sha256": "5d995d2003f1e2e52e82d2fc1d26407131c696db706760a1d1c974d6811bff04",
+      "change": "Historical validation copied; it is not fresh validation of the relocated harness."
+    },
+    {
+      "path": "reference/native-probes.R",
+      "originSha256": "aa9e885c3f5731c62cd3eb8375ee9e01547e90fa05a7522af27933d78dc486f4",
+      "sha256": "2f9f2fd30d14b864642b1cb7986e780901b06f82c12fb8a069149ba98d8a76df",
+      "change": "Owned observer now requires a fresh output directory argument; no native rerun during promotion."
+    }
+  ]
+}

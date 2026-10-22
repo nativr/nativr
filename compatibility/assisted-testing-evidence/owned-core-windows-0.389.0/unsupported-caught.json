@@ -1,0 +1,92 @@
+{
+  "kind": "nativr-runner-assisted-report",
+  "schemaVersion": 1,
+  "normativeTierCredit": false,
+  "originalDependencyClosureSatisfied": false,
+  "runner": {
+    "id": "nativr-cleanroom-test-runner",
+    "version": "0.1.0",
+    "sourceSha256": "f89f4f3a6c34f0c11a67a21d4d1d7563f4dfd15ebf0d4ec1cd5c65717d3a341e",
+    "bundleSha256": "cbc455062134283cf80ab45ee9b493590e9dc960c1488ca8d0432e106b1f5985",
+    "behaviorContractSha256": "043069854d0c84c3233548802f91df9e0254c3036f286c2bfdc60b0ad6ebd732",
+    "apiTarget": {
+      "package": "testthat",
+      "documentationVersion": "3.3.2",
+      "edition": 3,
+      "supportedApiManifestSha256": "0af1470fc5ef75676f8fbdf5a7be755ad3ba6e1880272ae41441283e9bab9f5e"
+    }
+  },
+  "input": {
+    "package": { "name": "OwnedRunnerFixture", "version": "0.1.0" },
+    "partition": "owned-fixture",
+    "sourceSha256": "45d194f2fa85744c683b7eebfc20cd0dba8d2c792f07a424704590b5891e1926",
+    "artifactSha256": "2cd6326e872f9f1364906ca0d65ee9f2cedc8842864e7e7841e6e91e896aa951",
+    "dependencies": [
+      {
+        "name": "nativrTest",
+        "version": "0.1.0",
+        "implementation": "clean-room-adapter",
+        "artifactSha256": "cbc455062134283cf80ab45ee9b493590e9dc960c1488ca8d0432e106b1f5985",
+        "runnerId": "nativr-cleanroom-test-runner"
+      }
+    ],
+    "files": [
+      {
+        "path": "tests/test-unsupported-caught.R",
+        "sha256": "45d194f2fa85744c683b7eebfc20cd0dba8d2c792f07a424704590b5891e1926",
+        "role": "test",
+        "selection": "selected"
+      }
+    ],
+    "discoveryPolicy": "explicit-files-v1",
+    "selectionComplete": true
+  },
+  "execution": {
+    "semanticProfile": "0.389.0",
+    "capabilitySha256": "7e46b78c9d2264688e1a5873199ad88806c1d4fa682b2f79cb05be96e0db785c",
+    "mode": "inline",
+    "runtimeProfile": "package-test",
+    "effectiveLimits": {
+      "maxSteps": 10000000,
+      "maxCallDepth": 500,
+      "maxVectorLength": 1000000,
+      "maxOutputBytes": 1048576,
+      "maxPackageResourceBytes": 1048576
+    },
+    "reporterLimits": { "maxEvents": 1000, "maxRecordBytes": 65536 },
+    "configurationSha256": "5a87687b57971503f989ee4e7207685c7b4ec69fa4992dc12ec64bbd61627ba7",
+    "capture": { "eventsComplete": true, "outputComplete": true, "conditionsComplete": true },
+    "outcome": "partial"
+  },
+  "events": [
+    { "sequence": 0, "type": "run-start" },
+    { "sequence": 1, "type": "file-start", "path": "tests/test-unsupported-caught.R" },
+    {
+      "sequence": 2,
+      "type": "test-start",
+      "path": "tests/test-unsupported-caught.R",
+      "testId": 1,
+      "descriptionSha256": "3d9826c6b9a5669ff2d3389026e2c71e17ff910fcf4efccb10912236550d1606"
+    },
+    {
+      "sequence": 3,
+      "type": "issue",
+      "path": "tests/test-unsupported-caught.R",
+      "testId": 1,
+      "code": "unsupported-api",
+      "api": "expect-identical-waldo",
+      "diagnosticSha256": "84550bc3e6c367530dc6493f53b1209bb5b9931c9515b65884ff63eb5ee2e8de"
+    },
+    {
+      "sequence": 4,
+      "type": "expectation",
+      "testId": 1,
+      "api": "expectation",
+      "outcome": "passed",
+      "diagnosticSha256": "aee408847d35e44e99430f0979c3357b85fe8dbb4535a494301198adbee85f27"
+    },
+    { "sequence": 5, "type": "test-end", "testId": 1, "outcome": "unsupported" },
+    { "sequence": 6, "type": "file-end", "path": "tests/test-unsupported-caught.R" },
+    { "sequence": 7, "type": "run-end" }
+  ]
+}

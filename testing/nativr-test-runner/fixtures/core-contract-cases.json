@@ -1,0 +1,148 @@
+{
+  "kind": "nativr-owned-runner-contract-cases",
+  "schemaVersion": 1,
+  "ownedContractOnly": true,
+  "normativeTierCredit": false,
+  "cases": [
+    {
+      "id": "core-01",
+      "name": "basic assertions retain failure and continue",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    trace<-character();r<-run_tests(run_file(\"tests/test-basic.R\", {\n      test_that(\"passing\", {expect_true(TRUE);expect_false(FALSE)})\n      test_that(\"failing\", {expect_true(1L);trace<<-c(trace,\"continued\");pass()})\n    }));identical(r$outcome,\"failed\")&&identical(outcomes(r),c(\"passed\",\"failed\"))&&\n      identical(trace,\"continued\")&&length(selected(r,\"expectation\"))==4L\n})"
+    },
+    {
+      "id": "core-02",
+      "name": "logical strictness and empty values",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-logical.R\", {\n      test_that(\"strict\", {expect_true(NA);expect_true(logical());expect_true(c(TRUE,TRUE));expect_false(0L)})\n    }));identical(r$outcome,\"failed\")&&length(selected(r,\"expectation\"))==4L&&\n      all(vapply(selected(r,\"expectation\"),function(e)identical(e$outcome,\"failed\"),logical(1)))\n})"
+    },
+    {
+      "id": "core-03",
+      "name": "assertion invisible actual and reference attribute identity",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    ref<-new.env(parent=emptyenv());x<-structure(TRUE,names=\"owned\",note=ref);same<-FALSE\n    r<-run_tests(run_file(\"tests/test-identity.R\", {test_that(\"identity\", {\n      v<-withVisible(expect_true(x));same<<-identical(v$value,x)&&identical(attr(v$value,\"note\"),ref)&&!v$visible\n    })}));same&&identical(r$outcome,\"completed\")\n})"
+    },
+    {
+      "id": "core-04",
+      "name": "fixed error matching forces actual and expected once",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    actual<-expected<-0L;same<-FALSE\n    r<-run_tests(run_file(\"tests/test-error.R\", {test_that(\"error\", {\n      v<-withVisible(expect_error({actual<<-actual+1L;stop(\"owned-error\")},{expected<<-expected+1L;\"owned\"},fixed=TRUE))\n      same<<-inherits(v$value,\"error\")&&identical(conditionMessage(v$value),\"owned-error\")&&!v$visible\n    })}));same&&actual==1L&&expected==1L&&identical(r$outcome,\"completed\")\n})"
+    },
+    {
+      "id": "core-05",
+      "name": "missing expected error is an expectation failure",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-error.R\",test_that(\"absent\",expect_error(17L))))\n    identical(r$outcome,\"failed\")&&identical(outcomes(r),\"failed\")&&length(selected(r,\"condition\"))==0L\n})"
+    },
+    {
+      "id": "core-06",
+      "name": "error absence returns invisible value",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    same<-FALSE;r<-run_tests(run_file(\"tests/test-error.R\",test_that(\"absent\",{\n      v<-withVisible(expect_error(17L,NA));same<<-identical(v$value,17L)&&!v$visible\n    })));same&&identical(r$outcome,\"completed\")\n})"
+    },
+    {
+      "id": "core-07",
+      "name": "error absence failure cannot pass",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-error.R\",test_that(\"unexpected\",expect_error(stop(\"owned\"),NA))))\n    identical(r$outcome,\"failed\")&&identical(outcomes(r),\"failed\")\n})"
+    },
+    {
+      "id": "core-08",
+      "name": "nonmatching error propagates as unexpected error",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-error.R\",test_that(\"other\",expect_error(stop(\"other\"),\"wanted\",fixed=TRUE))))\n    identical(r$outcome,\"failed\")&&identical(outcomes(r),\"error\")&&\n      identical(messages(selected(r,\"condition\")),\"other\")\n})"
+    },
+    {
+      "id": "core-09",
+      "name": "one warning captured and later warning recorded in order",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    selected_message<-NULL;r<-run_tests(run_file(\"tests/test-warning.R\",test_that(\"warnings\",{\n      cnd<-expect_warning({warning(\"first\");warning(\"second\");23L},\"first\",fixed=TRUE)\n      selected_message<<-conditionMessage(cnd)\n    })));identical(selected_message,\"first\")&&identical(messages(selected(r,\"condition\")),\"second\")&&\n      identical(vapply(r$events,function(e)e$type,character(1)),c(\"run-start\",\"file-start\",\"test-start\",\"condition\",\"expectation\",\"test-end\",\"file-end\",\"run-end\"))\n})"
+    },
+    {
+      "id": "core-10",
+      "name": "message class matching preserves unmatched message",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-message.R\",test_that(\"messages\",{\n      expect_message({message(\"before\");message(structure(list(message=\"selected\",call=NULL),class=c(\"owned_message\",\"message\",\"condition\")))},class=\"owned_message\")\n    })));identical(r$outcome,\"completed\")&&identical(messages(selected(r,\"condition\")),\"before\n\")\n})"
+    },
+    {
+      "id": "core-11",
+      "name": "skip retains earlier assertion and executes on.exit",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    trace<-character();r<-run_tests(run_file(\"tests/test-skip.R\",test_that(\"skip\",{\n      on.exit(trace<<-c(trace,\"cleanup\"));pass();skip(\"owned reason\");stop(\"unreachable\")\n    })));identical(r$outcome,\"completed\")&&identical(outcomes(r),\"skipped\")&&identical(trace,\"cleanup\")&&\n      length(selected(r,\"expectation\"))==1L&&identical(messages(selected(r,\"skip\")),\"Reason: owned reason\")\n})"
+    },
+    {
+      "id": "core-12",
+      "name": "failed assertion before skip remains aggregate failure",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-skip.R\",test_that(\"fail skip\",{fail(\"owned\");skip(\"later\")})))\n    identical(r$outcome,\"failed\")&&identical(outcomes(r),\"skipped\")\n})"
+    },
+    {
+      "id": "core-13",
+      "name": "skip guard bounded scalar semantics",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-skip.R\",{\n      test_that(\"continue\",{skip_if(NA);skip_if(c(TRUE,TRUE));pass()})\n      test_that(\"skip\",skip_if_not(NA,\"owned\"))\n    }));identical(outcomes(r),c(\"passed\",\"skipped\"))&&identical(r$outcome,\"completed\")\n})"
+    },
+    {
+      "id": "core-14",
+      "name": "ordinary error aborts only current test and on.exit runs",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    trace<-character();r<-run_tests(run_file(\"tests/test-error.R\",{\n      test_that(\"error\",{on.exit(trace<<-c(trace,\"cleanup\"));stop(\"owned\");trace<<-\"bad\"})\n      test_that(\"later\",{trace<<-c(trace,\"later\");pass()})\n    }));identical(r$outcome,\"failed\")&&identical(outcomes(r),c(\"error\",\"passed\"))&&identical(trace,c(\"cleanup\",\"later\"))\n})"
+    },
+    {
+      "id": "core-15",
+      "name": "test local assignment does not leak into next test",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    x<-11L;r<-run_tests(run_file(\"tests/test-env.R\",{\n      test_that(\"local\",{x<-29L;expect_true(x==29L)})\n      test_that(\"next\",expect_true(x==11L))\n    }));identical(x,11L)&&identical(r$outcome,\"completed\")&&identical(outcomes(r),c(\"passed\",\"passed\"))\n})"
+    },
+    {
+      "id": "core-16",
+      "name": "setup clean environment and FIFO cleanup",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    trace<-character();x<-3L;r<-run_tests(run_file(\"tests/test-lifecycle.R\",{\n      setup({x<-99L;trace<<-c(trace,\"setup\")});teardown(trace<<-c(trace,\"one\"));teardown(trace<<-c(trace,\"two\"))\n      test_that(\"body\",{expect_true(x==3L);trace<<-c(trace,\"body\")})\n    }));identical(r$outcome,\"completed\")&&identical(trace,c(\"setup\",\"body\",\"one\",\"two\"))&&\n      identical(vapply(selected(r,\"lifecycle\"),function(e)e$outcome,character(1)),c(\"started\",\"completed\",\"started\",\"completed\",\"started\",\"completed\"))\n})"
+    },
+    {
+      "id": "core-17",
+      "name": "cleanup failure prevents passing aggregate and later cleanup runs",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    trace<-character();r<-run_tests(run_file(\"tests/test-cleanup.R\",{\n      teardown(stop(\"cleanup failed\"));teardown(trace<<-\"later cleanup\");test_that(\"pass\",pass())\n    }));identical(r$outcome,\"failed\")&&identical(outcomes(r),\"passed\")&&identical(trace,\"later cleanup\")&&\n      identical(selected(r,\"issue\")[[1L]]$code,\"cleanup-failed\")\n})"
+    },
+    {
+      "id": "core-18",
+      "name": "setup failure still executes registered cleanup",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    trace<-character();r<-run_tests(run_file(\"tests/test-setup.R\",{\n      teardown(trace<<-\"cleanup\");setup(stop(\"setup failed\"));test_that(\"unreachable\",pass())\n    }));identical(r$outcome,\"failed\")&&length(outcomes(r))==0L&&identical(trace,\"cleanup\")&&\n      identical(selected(r,\"issue\")[[1L]]$code,\"setup-failed\")\n})"
+    },
+    {
+      "id": "core-19",
+      "name": "empty test and absent tests are explicit",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    empty<-run_tests(run_file(\"tests/test-empty.R\",test_that(\"empty\",1L)));none<-run_tests(run_file(\"tests/test-none.R\",1L))\n    identical(outcomes(empty),\"skipped\")&&identical(selected(empty,\"issue\")[[1L]]$code,\"no-expectations\")&&\n      identical(none$outcome,\"no-tests\")&&identical(outcomes(none),character())\n})"
+    },
+    {
+      "id": "core-20",
+      "name": "waldo API is explicit unsupported even if caught",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-unsupported.R\",test_that(\"caught\",{\n      tryCatch(expect_identical(1L,1L),error=function(e)NULL);pass()\n    })));identical(r$outcome,\"partial\")&&identical(outcomes(r),\"passed\")&&\n      identical(selected(r,\"issue\")[[1L]]$api,\"expect_identical: waldo comparison\")\n})"
+    },
+    {
+      "id": "core-21",
+      "name": "unsupported regexp does not force expression",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    count<-0L;r<-run_tests(run_file(\"tests/test-unsupported.R\",test_that(\"regexp\",expect_error({count<<-count+1L;stop(\"owned\")},\"own.*\"))))\n    count==0L&&identical(r$outcome,\"partial\")&&identical(outcomes(r),\"unsupported\")\n})"
+    },
+    {
+      "id": "core-22",
+      "name": "nested tests and file-scope skip explicitly unsupported",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    a<-run_tests(run_file(\"tests/test-nested.R\",test_that(\"outer\",test_that(\"inner\",pass()))))\n    b<-run_tests(run_file(\"tests/test-skip.R\",skip(\"outside\")))\n    identical(a$outcome,\"partial\")&&identical(b$outcome,\"partial\")&&length(outcomes(a))==1L&&length(outcomes(b))==0L\n})"
+    },
+    {
+      "id": "core-23",
+      "name": "event limit returns aborted incomplete report and subsequent run recovers",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    a<-run_tests(run_file(\"tests/test-limit.R\",test_that(\"body\",pass())),max_events=3L)\n    saved<-a;b<-run_tests(run_file(\"tests/test-next.R\",test_that(\"body\",pass())))\n    identical(a$outcome,\"aborted\")&&!a$eventsComplete&&length(a$events)==3L&&identical(a,saved)&&\n      identical(b$outcome,\"completed\")&&b$eventsComplete\n})"
+    },
+    {
+      "id": "core-24",
+      "name": "run-end limit cannot escape as an unreported error",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-limit.R\",1L),max_events=3L)\n    identical(r$outcome,\"aborted\")&&!r$eventsComplete&&length(r$events)==3L\n})"
+    },
+    {
+      "id": "core-25",
+      "name": "text limit returns incomplete report",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"a\",test_that(\"oversized\",pass())),max_text_bytes=4L)\n    identical(r$outcome,\"aborted\")&&!r$eventsComplete&&length(r$events)==2L\n})"
+    },
+    {
+      "id": "core-26",
+      "name": "report identity and nonqualification always explicit",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(run_file(\"tests/test-report.R\",test_that(\"pass\",pass())))\n    identical(r$kind,\"nativr-test-core-events\")&&identical(r$runner$package,\"nativrTest\")&&\n      identical(r$runner$version,\"0.1.0\")&&identical(r$normativeTierCredit,FALSE)&&\n      identical(r$originalDependencyClosureSatisfied,FALSE)&&\n      identical(vapply(r$events,function(e)as.integer(e$sequence),integer(1)),seq.int(0L,length(r$events)-1L))\n})"
+    },
+    {
+      "id": "core-27",
+      "name": "top-level error diagnostic hitting text limit still returns aborted envelope",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests(stop(\"oversized\"),max_text_bytes=4L)\n    identical(r$outcome,\"aborted\")&&!r$eventsComplete&&length(r$events)==1L\n})"
+    },
+    {
+      "id": "core-28",
+      "name": "top-level error diagnostic hitting event limit still returns aborted envelope",
+      "code": "local({\nselected <- function(report, type) {\n  result <- list()\n  for (event in report$events) if (identical(event$type, type)) result[[length(result) + 1L]] <- event\n  result\n}\noutcomes <- function(report) {\n  result <- character()\n  for (event in selected(report, \"test-end\")) result <- c(result, event$outcome)\n  result\n}\nmessages <- function(events) {\n  result <- character()\n  for (event in events) result <- c(result, event$message)\n  result\n}\n\n\n    r<-run_tests({run_file(\"x\",NULL);stop(\"x\")},max_events=3L)\n    identical(r$outcome,\"aborted\")&&!r$eventsComplete&&length(r$events)==3L\n})"
+    }
+  ]
+}

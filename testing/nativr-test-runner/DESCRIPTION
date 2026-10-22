@@ -1,0 +1,6 @@
+Package: nativrTest
+Version: 0.1.0
+Title: Independent Optional Testing Runner
+Description: An own-name assisted testing subset for independently authored fixtures.
+License: Apache-2.0
+Encoding: UTF-8

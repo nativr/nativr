@@ -1,0 +1,72 @@
+{
+  "kind": "nativr-runner-assisted-report",
+  "schemaVersion": 1,
+  "normativeTierCredit": false,
+  "originalDependencyClosureSatisfied": false,
+  "runner": {
+    "id": "nativr-cleanroom-test-runner",
+    "version": "0.1.0",
+    "sourceSha256": "f89f4f3a6c34f0c11a67a21d4d1d7563f4dfd15ebf0d4ec1cd5c65717d3a341e",
+    "bundleSha256": "cbc455062134283cf80ab45ee9b493590e9dc960c1488ca8d0432e106b1f5985",
+    "behaviorContractSha256": "043069854d0c84c3233548802f91df9e0254c3036f286c2bfdc60b0ad6ebd732",
+    "apiTarget": {
+      "package": "testthat",
+      "documentationVersion": "3.3.2",
+      "edition": 3,
+      "supportedApiManifestSha256": "0af1470fc5ef75676f8fbdf5a7be755ad3ba6e1880272ae41441283e9bab9f5e"
+    }
+  },
+  "input": {
+    "package": { "name": "OwnedRunnerFixture", "version": "0.1.0" },
+    "partition": "owned-fixture",
+    "sourceSha256": "f75b1a852aedbb1e443aea7549c8aac94d6383a2a2429b068834370e2d655b1a",
+    "artifactSha256": "1507e16763bdd78f5c36f9ecb9344c3389f5ae62c1de305497992f2de0034716",
+    "dependencies": [
+      {
+        "name": "nativrTest",
+        "version": "0.1.0",
+        "implementation": "clean-room-adapter",
+        "artifactSha256": "cbc455062134283cf80ab45ee9b493590e9dc960c1488ca8d0432e106b1f5985",
+        "runnerId": "nativr-cleanroom-test-runner"
+      }
+    ],
+    "files": [
+      {
+        "path": "tests/test-event-limit.R",
+        "sha256": "f75b1a852aedbb1e443aea7549c8aac94d6383a2a2429b068834370e2d655b1a",
+        "role": "test",
+        "selection": "selected"
+      }
+    ],
+    "discoveryPolicy": "explicit-files-v1",
+    "selectionComplete": true
+  },
+  "execution": {
+    "semanticProfile": "0.389.0",
+    "capabilitySha256": "7e46b78c9d2264688e1a5873199ad88806c1d4fa682b2f79cb05be96e0db785c",
+    "mode": "inline",
+    "runtimeProfile": "package-test",
+    "effectiveLimits": {
+      "maxSteps": 10000000,
+      "maxCallDepth": 500,
+      "maxVectorLength": 1000000,
+      "maxOutputBytes": 1048576,
+      "maxPackageResourceBytes": 1048576
+    },
+    "reporterLimits": { "maxEvents": 3, "maxRecordBytes": 65536 },
+    "configurationSha256": "519872ec4afd6f81731697c24273f173984b67464bfadee62156cda4de64a2e7",
+    "capture": { "eventsComplete": false, "outputComplete": true, "conditionsComplete": true },
+    "outcome": "aborted"
+  },
+  "events": [
+    { "sequence": 0, "type": "run-start" },
+    { "sequence": 1, "type": "file-start", "path": "tests/test-event-limit.R" },
+    {
+      "sequence": 2,
+      "type": "test-start",
+      "path": "tests/test-event-limit.R",
+      "testId": 1,
+      "descriptionSha256": "7cfe1b5f845940cb3d7cdf639a90bfd7d45d4dc63f021fd049dfafb54891650e"
+    }
+  ]
+}

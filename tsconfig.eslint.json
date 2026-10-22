@@ -21,6 +21,7 @@
     "apps/**/*.ts",
     "examples/**/*.ts",
     "packages/**/*.ts",
+    "scripts/**/*.ts",
     "tests/**/*.ts",
     "*.config.ts"
   ]
