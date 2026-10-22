@@ -15,9 +15,10 @@ overlaps. The existing 789 distinct-name overlaps measure a different relationsh
 name in one namespace does not establish the binding in another namespace.
 
 All 160 bindings with existing causal links have explicit domain assignments. Reviewed purpose
-assignments add 430 bindings from graphics, graphics devices and object-system methods, bringing the
-classified total to 590. Another 1,963 bindings remain classification-pending. Assignments may span
-domains, so per-domain counts cannot be summed.
+assignments add 430 bindings from graphics, graphics devices and object-system methods, and 572
+previously unclassified owned registrations. The classified total is 1,162, including all 816
+registered bindings. Another 1,391 reference bindings remain classification-pending. Assignments may
+span domains, so per-domain counts cannot be summed.
 
 Six bindings have 35 reviewed, partial behavioral-dimension declarations. Each declaration
 references existing executable cases and retains explicit remaining gaps. No domain or callable is
@@ -45,6 +46,35 @@ Native windows, printers, font embedding and interactive devices remain unfinish
 graphics and I/O domains is not a platform exclusion; browser adaptations require documented host
 capabilities and executable boundary checks. These purpose assignments add no causal evidence or
 compatibility claims.
+
+### Owned registered callables
+
+An additional 572 assignments cover 441 base, 76 stats and 55 utils bindings in 60 purpose families.
+Exact owner-qualified names were checked against the generated inventory and owned registrations;
+existing annotations and evidence were preserved. Case-sensitive identities such as NCOL/ncol and
+NROW/nrow remain distinct. There are no registered datasets callables; utils::data is classified as
+the registered resource loader. These assignments do not infer an unimplemented reference binding's
+behavior from its name.
+
+| Reviewed families                                                    | Purpose and retained gaps                                                                                                                                                                                                                                      |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Arithmetic, reductions, matrices, sequences, probability and RNG     | Owned operator/numerical implementations identify numeric and vector domains. Exceptional values, precision, shapes, coercion, RNG and platform behavior need complete evidence.                                                                               |
+| Complex values, type constructors, missingness and equality          | Runtime value helpers identify value/numeric/vector domains. Component NA provenance and complete coercion, equality and attribute matrices remain open. identity is separately assigned to calls/promises and values because it forces and returns its input. |
+| Indexing, attributes, shapes, ordering, sets and iteration           | Owned storage and callback paths identify vector behavior and calls/promises. Registration supplies no complete error, side-effect or identity evidence.                                                                                                       |
+| Raw/encoding, text, regex, Roman and hexmode values                  | Character and class helpers identify vector, data and object behavior. Locale, encoding, pattern and dispatch limits remain explicit.                                                                                                                          |
+| Parsing, deparsing, control, calls, source metadata and debugging    | Owned AST/evaluator helpers identify language and calls/promises. Source metadata and delayed assignment additionally involve environments; debugger interaction retains its host boundary.                                                                    |
+| Environments, namespaces, package state and native interfaces        | Binding and loader code distinguish lexical state from package execution. Native interfaces retain explicit I/O/platform work.                                                                                                                                 |
+| Conditions and restarts                                              | Construction, signalling, handlers, restarts and presentation map to conditions, with complete condition shape/order/call behavior still unfinished.                                                                                                           |
+| Files, connections, serialization, host services and memory          | Virtual I/O and host-capability paths identify I/O/platform and data responsibilities. No assignment is a platform exclusion.                                                                                                                                  |
+| Calendar/time, categorical, tabular and time-series values           | Owned conversion and data structures identify data/time with vector, object or numeric responsibilities. Malformed structures, attributes, dispatch and numerical boundaries remain open.                                                                      |
+| Classes, extension objects, models, formulas and plots               | Owned dispatch and model paths distinguish object systems, numerics, language and graphics. Formula construction is language/environment work; model.matrix additionally performs numeric design-matrix work.                                                  |
+| Utils metadata, documentation, datasets, tables and namespace access | Resource/loader and namespace helpers distinguish core namespaces, packages, data and environment responsibilities. Dependency and host boundaries remain unfinished.                                                                                          |
+| Object inspection and person metadata                                | Owned member/environment, recursive presentation, resource and structured-class helpers identify their respective domains; complete reflection and identity evidence remains open.                                                                             |
+
+Review inputs are the owner-qualified registration map, baseBuiltins and first-class operator
+tables, and owned implementations in builtins.ts, operators.ts, person.ts, roman.ts, hexmode.ts and
+sequences.ts. Each assignment retains specific remaining gaps and an unfinished behavioral matrix.
+This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
 

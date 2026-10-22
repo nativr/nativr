@@ -1639,3 +1639,16 @@ and a deliberate API/Worker compatibility design before enabling new component m
 remaining domains, independently licensed datasets and isolated testing support. Linux, Formula, new
 downloads and remote actions retain the existing boundaries. No additional input is needed for the
 current local observer, inventory or formatting work.
+
+### Registered callable classification at profile 0.382
+
+All 816 runtime registrations now have explicit domain assignments. The 572 newly reviewed entries
+cover 441 base, 76 stats and 55 utils bindings in 60 owned-purpose families. Independent review
+separated formula construction from numeric design matrices and identity's force/return behavior
+from equality/missingness. Existing annotations, matrices, case links and exclusions are unchanged.
+
+The generated inventory classifies 1,162 of 2,553 bindings, leaving 1,391 reference bindings
+pending. All 2,553 bindings and all thirteen domains remain incomplete. The 53 validator tests and
+generated inventory/status checks pass. This metadata increment adds no runtime behavior or
+compatibility credit. Continue classification of unregistered reference bindings using documented
+public purpose, the observer repair, shared formatting and remaining domain matrices.
