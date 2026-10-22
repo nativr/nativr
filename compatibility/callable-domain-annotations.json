@@ -560,8 +560,14 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-getter" },
-            { "suite": "oracle-v2", "caseId": "names-dispatch-next-method" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-getter"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-next-method"
+            }
           ],
           "remainingGaps": [
             "Owned class/default/registered lookup and primitive NextMethod fallback are covered; the full vector, language, environment and class-dispatch input matrix remains unaudited."
@@ -570,8 +576,14 @@
         {
           "dimension": "boundaries",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-getter" },
-            { "suite": "oracle-v2", "caseId": "replication-posixlt-names" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-getter"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-posixlt-names"
+            }
           ],
           "remainingGaps": [
             "Unnamed atomic input and removal of names on the observed POSIXlt value return NULL; empty, malformed and other boundary objects remain unaudited."
@@ -580,8 +592,14 @@
         {
           "dimension": "errors",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-getter" },
-            { "suite": "foundation", "caseId": "names-dispatch-method-errors" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-getter"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "names-dispatch-method-errors"
+            }
           ],
           "remainingGaps": [
             "Selected wrong tags, arity, missing/empty arguments and forced input errors are covered; broader invalid objects and exact condition-call origins remain unaudited."
@@ -590,8 +608,14 @@
         {
           "dimension": "attributes",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-next-method" },
-            { "suite": "oracle-v2", "caseId": "replication-posixlt-names" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-next-method"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-posixlt-names"
+            }
           ],
           "remainingGaps": [
             "Observed named-vector fallback and POSIXlt year-component names are read correctly; arbitrary attribute combinations and a general no-mutation guarantee have not been established."
@@ -599,7 +623,12 @@
         },
         {
           "dimension": "visibility",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-getter" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-getter"
+            }
+          ],
           "remainingGaps": [
             "An owned getter method returning invisibly is observed to become visible; the complete default, nested-dispatch and exceptional-path visibility matrix remains unaudited."
           ]
@@ -607,8 +636,14 @@
         {
           "dimension": "side-effects",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-getter" },
-            { "suite": "oracle-v2", "caseId": "names-dispatch-next-method" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-getter"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-next-method"
+            }
           ],
           "remainingGaps": [
             "Source-order argument effects before arity errors and one method/NextMethod effect are observed; active-binding callbacks, reentrancy and broader error ordering remain unaudited."
@@ -626,28 +661,48 @@
       "matrix": [
         {
           "dimension": "ordinary",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "The method reads a named or uniquely partially named year and resolves selected component/dollar methods in library scope; arbitrary POSIXlt shapes and dispatch combinations remain unaudited."
           ]
         },
         {
           "dimension": "boundaries",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "NULL and a list with no matching year return NULL in the observed direct calls; ambiguous/duplicate fields, empty components and broader malformed objects remain unaudited."
           ]
         },
         {
           "dimension": "errors",
-          "evidence": [{ "suite": "foundation", "caseId": "names-dispatch-method-errors" }],
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "names-dispatch-method-errors"
+            }
+          ],
           "remainingGaps": [
             "Missing x and an unclassed atomic input have observed messages; additional malformed objects and exact condition-call origins remain unaudited."
           ]
         },
         {
           "dimension": "attributes",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "The method observes year-component names rather than container field names in the recorded cases; full attribute preservation and input non-mutation have not been established."
           ]
@@ -665,8 +720,14 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-setter" },
-            { "suite": "oracle-v2", "caseId": "names-dispatch-next-method" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-setter"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-next-method"
+            }
           ],
           "remainingGaps": [
             "Owned class/default/registered dispatch, tagged arguments and primitive NextMethod fallback are covered; other container kinds and dispatch combinations remain unaudited."
@@ -674,7 +735,12 @@
         },
         {
           "dimension": "boundaries",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "replication-posixlt-names" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-posixlt-names"
+            }
+          ],
           "remainingGaps": [
             "The observed POSIXlt setter pads a short names vector with NA and removes names with NULL; this does not establish empty, long or malformed names behavior for every container."
           ]
@@ -682,8 +748,14 @@
         {
           "dimension": "errors",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-setter" },
-            { "suite": "foundation", "caseId": "names-dispatch-method-errors" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-setter"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "names-dispatch-method-errors"
+            }
           ],
           "remainingGaps": [
             "Selected arity and missing/empty-argument diagnostics are covered; replacement coercions, malformed objects and exact condition-call origins remain unaudited."
@@ -692,9 +764,18 @@
         {
           "dimension": "attributes",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-setter" },
-            { "suite": "oracle-v2", "caseId": "names-dispatch-next-method" },
-            { "suite": "oracle-v2", "caseId": "replication-posixlt-names" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-setter"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-next-method"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-posixlt-names"
+            }
           ],
           "remainingGaps": [
             "Observed owned-method attributes, class-preserving fallback, POSIXlt year names and balanced transitions do not establish every attribute/container combination."
@@ -702,7 +783,12 @@
         },
         {
           "dimension": "visibility",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-setter" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-setter"
+            }
+          ],
           "remainingGaps": [
             "A direct primitive call makes an invisible owned-method result visible; the fixture does not establish names-assignment syntax visibility or every nested/exceptional path."
           ]
@@ -710,8 +796,14 @@
         {
           "dimension": "side-effects",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-setter" },
-            { "suite": "oracle-v2", "caseId": "names-dispatch-next-method" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-setter"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-next-method"
+            }
           ],
           "remainingGaps": [
             "Both actuals are forced before an owned setter and one NextMethod effect is observed; active-binding callback counts, reentrant methods and broader ordering remain unaudited."
@@ -729,7 +821,12 @@
       "matrix": [
         {
           "dimension": "ordinary",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "Recorded direct calls set year names, preserve longer components and use selected library-scope component/dollar dispatch; the full malformed-object and dispatch matrix remains unaudited."
           ]
@@ -737,8 +834,14 @@
         {
           "dimension": "boundaries",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" },
-            { "suite": "foundation", "caseId": "names-dispatch-method-errors" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "names-dispatch-method-errors"
+            }
           ],
           "remainingGaps": [
             "NULL, removed names, a longer year component, ragged length expansion and missing/empty-year failures are bounded cases; ambiguous/duplicate fields and other boundary shapes remain unaudited."
@@ -747,8 +850,14 @@
         {
           "dimension": "errors",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" },
-            { "suite": "foundation", "caseId": "names-dispatch-method-errors" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "names-dispatch-method-errors"
+            }
           ],
           "remainingGaps": [
             "Selected atomic-input, missing-value, ragged names-length and absent-year failures have observed messages; broader malformed objects and exact condition-call origins remain unaudited."
@@ -756,21 +865,36 @@
         },
         {
           "dimension": "attributes",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "Observed year-name changes, balanced-to-NA transition and owned component/class attributes do not establish all POSIXlt attribute states or malformed class combinations."
           ]
         },
         {
           "dimension": "side-effects",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "A direct environment call changes its year binding and owned component length runs before rep_len; active-binding replacement callbacks and reentrant/nested effects remain gaps."
           ]
         },
         {
           "dimension": "identity",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "names-dispatch-posixlt" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "names-dispatch-posixlt"
+            }
+          ],
           "remainingGaps": [
             "A direct environment input is returned as the same reference with an updated year binding; nested aliases, active-binding identity effects and immutable-container sharing remain unaudited."
           ]
@@ -908,9 +1032,18 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-values" },
-            { "suite": "oracle-v2", "caseId": "replication-family-dispatch" },
-            { "suite": "oracle-v2", "caseId": "replication-family-next-method" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-next-method"
+            }
           ],
           "remainingGaps": [
             "Ordinary list/expression/atomic values and interpreted primary/fallback dispatch are bounded observations; compiled lookup, unbound symbols and additional class combinations remain unaudited."
@@ -919,8 +1052,14 @@
         {
           "dimension": "boundaries",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-int-controls" },
-            { "suite": "oracle-v2", "caseId": "replication-family-empty" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-int-controls"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-empty"
+            }
           ],
           "remainingGaps": [
             "Fractional counts, selected scalar/vector coercions and empty inputs with huge counts are covered; full count-type, length and allocation-boundary combinations remain unaudited."
@@ -929,10 +1068,22 @@
         {
           "dimension": "errors",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-int-controls" },
-            { "suite": "oracle-v2", "caseId": "replication-family-ordering" },
-            { "suite": "oracle-v2", "caseId": "replication-family-warnings" },
-            { "suite": "foundation", "caseId": "replication-family-diagnostics" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-int-controls"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-ordering"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-warnings"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "replication-family-diagnostics"
+            }
           ],
           "remainingGaps": [
             "Selected missing/type/count errors, warning multiplicity and matching-before-forcing messages are covered; unbound-symbol behavior, integer literal suffixes and exact condition/warning call origins remain gaps."
@@ -941,10 +1092,22 @@
         {
           "dimension": "attributes",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-attributes" },
-            { "suite": "oracle-v2", "caseId": "replication-family-classes" },
-            { "suite": "oracle-v2", "caseId": "replication-family-values" },
-            { "suite": "oracle-v2", "caseId": "replication-family-empty" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-classes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-empty"
+            }
           ],
           "remainingGaps": [
             "Observed factor normalization, Date/POSIXct fallback attributes, character encoding and empty-factor behavior do not establish arbitrary attributed objects or malformed class/level combinations."
@@ -952,7 +1115,12 @@
         },
         {
           "dimension": "visibility",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "replication-family-dispatch" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-dispatch"
+            }
+          ],
           "remainingGaps": [
             "An interpreted owned method returning invisibly is observed to become visible; other dispatch/fallback, compiled and exceptional paths have not received a complete visibility audit."
           ]
@@ -960,8 +1128,14 @@
         {
           "dimension": "side-effects",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-ordering" },
-            { "suite": "oracle-v2", "caseId": "replication-family-dispatch" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-ordering"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-dispatch"
+            }
           ],
           "remainingGaps": [
             "The fixtures establish declaration-order forcing, matching before forced errors and control forcing before dispatch; active bindings, reentrant methods and full side-effect/error ordering remain unaudited."
@@ -969,7 +1143,12 @@
         },
         {
           "dimension": "identity",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "replication-family-values" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-values"
+            }
+          ],
           "remainingGaps": [
             "A repeated list retains an environment element reference; closure, external-resource and nested mutable-element aliases, together with mutation-based controls, remain unaudited."
           ]
@@ -994,10 +1173,22 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-length-controls" },
-            { "suite": "oracle-v2", "caseId": "replication-family-values" },
-            { "suite": "oracle-v2", "caseId": "replication-family-dispatch" },
-            { "suite": "oracle-v2", "caseId": "replication-family-next-method" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-length-controls"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-next-method"
+            }
           ],
           "remainingGaps": [
             "Observed truncation/cycling of selected vectors and expressions plus interpreted primary/fallback dispatch do not cover all values/classes or native compiled lookup behavior."
@@ -1006,8 +1197,14 @@
         {
           "dimension": "boundaries",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-length-controls" },
-            { "suite": "oracle-v2", "caseId": "replication-family-empty" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-length-controls"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-empty"
+            }
           ],
           "remainingGaps": [
             "Selected fractional lengths, NULL/empty fills and the NULL 2^52 validation boundary are covered; this is not evidence of actual huge allocation support or a complete length/type cross-product."
@@ -1016,8 +1213,14 @@
         {
           "dimension": "errors",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-length-controls" },
-            { "suite": "oracle-v2", "caseId": "replication-family-ordering" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-length-controls"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-ordering"
+            }
           ],
           "remainingGaps": [
             "Selected invalid lengths/types, missing arguments and matching-before-forcing messages are covered; unbound symbols, integer literal suffixes and exact warning/condition call origins remain gaps."
@@ -1026,10 +1229,22 @@
         {
           "dimension": "attributes",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-length-controls" },
-            { "suite": "oracle-v2", "caseId": "replication-family-attributes" },
-            { "suite": "oracle-v2", "caseId": "replication-family-classes" },
-            { "suite": "oracle-v2", "caseId": "replication-family-empty" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-length-controls"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-classes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-empty"
+            }
           ],
           "remainingGaps": [
             "Ordinary attribute stripping, factor normalization, Date/difftime fallback and selected empty-attribute transitions are covered; malformed attributes and additional class combinations remain unaudited."
@@ -1037,7 +1252,12 @@
         },
         {
           "dimension": "visibility",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "replication-family-dispatch" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-dispatch"
+            }
+          ],
           "remainingGaps": [
             "An interpreted owned method returning invisibly is observed to become visible; other dispatch/fallback, compiled and exceptional paths have not received a complete visibility audit."
           ]
@@ -1045,8 +1265,14 @@
         {
           "dimension": "side-effects",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "replication-family-ordering" },
-            { "suite": "oracle-v2", "caseId": "replication-family-dispatch" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-ordering"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "replication-family-dispatch"
+            }
           ],
           "remainingGaps": [
             "The fixtures establish declaration-order forcing, matching before forced errors and length forcing before dispatch; active bindings, reentrant methods and full side-effect/error ordering remain unaudited."
@@ -5550,10 +5776,86 @@
     },
     {
       "binding": "base::as.POSIXct",
-      "domains": ["data-time"],
+      "domains": ["data-time", "calls-promises", "object-systems"],
       "remainingGaps": [
         "Calendar/time-zone/locale, conversion, missing-value, class/subset and attribute/error behavior remains incompletely evidenced.",
-        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence.",
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "Empty-zone arithmetic uses deterministic UTC; host-local timezone parity remains unclaimed. Direct Date behavior is deferred."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-lazy-owned-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-generic-preservation"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-utc-conversion-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected numeric, origin, NULL, owned dispatch, preserved character/POSIXct and UTC calendar paths are covered; implicit storage-class method selection and the full class/conversion matrix remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-numeric-origin-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-utc-conversion-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected empty, typed missing, nonfinite, fraction and normalized calendar inputs are covered; broader character parsing, native overflow, timezone and malformed-control boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-generic-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "Selected numeric and character names, storage, POSIXct/POSIXt class, inherited POSIXct custom attributes and UTC/GMT timezone labels are observed; arbitrary metadata and all conversion branches remain incomplete."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-lazy-owned-dispatch"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-conversion-warning-order"
+            }
+          ],
+          "remainingGaps": [
+            "Input-before-method events, lazy controls and component warnings are observed; general S3 continuation, coercion callbacks, reentrancy and condition origins remain unfinished."
+          ]
+        }
       ]
     },
     {
@@ -7944,8 +8246,14 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "sprintf-resource-parity-scanner" },
-            { "suite": "oracle-v2", "caseId": "sprintf-resource-parity-recycling" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-scanner"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-recycling"
+            }
           ],
           "remainingGaps": [
             "Existing fixed directives, selected flag combinations and vector recycling are covered; positional/star fields, hexadecimal/octal precision and complete classed-coercion behavior remain unfinished."
@@ -7954,9 +8262,18 @@
         {
           "dimension": "boundaries",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "sprintf-resource-parity-nonfinite" },
-            { "suite": "oracle-v2", "caseId": "sprintf-resource-parity-boundaries" },
-            { "suite": "oracle-v2", "caseId": "sprintf-resource-parity-dyadic-precision" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-nonfinite"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-dyadic-precision"
+            }
           ],
           "remainingGaps": [
             "Empty vectors, selected nonfinite values and exact dyadic fixed/exponential precision 1073 through 1075 are observed; a complete numerical-format boundary matrix remains unfinished.",
@@ -7966,28 +8283,48 @@
         },
         {
           "dimension": "errors",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "sprintf-resource-parity-forcing" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-forcing"
+            }
+          ],
           "remainingGaps": [
             "Owned failure controls establish format-before-value forcing and forcing despite an empty format; invalid directive/type diagnostics, unused-argument warnings and condition origins remain incomplete."
           ]
         },
         {
           "dimension": "attributes",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "sprintf-resource-parity-boundaries" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-boundaries"
+            }
+          ],
           "remainingGaps": [
             "A named and classed numeric input loses its metadata in the formatted character result; general attribute combinations, malformed metadata and reference identity remain unaudited."
           ]
         },
         {
           "dimension": "visibility",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "sprintf-resource-parity-forcing" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-forcing"
+            }
+          ],
           "remainingGaps": [
             "A direct ordinary result is visible; a full visibility matrix across empty, warning and exceptional branches remains incomplete."
           ]
         },
         {
           "dimension": "side-effects",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "sprintf-resource-parity-forcing" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "sprintf-resource-parity-forcing"
+            }
+          ],
           "remainingGaps": [
             "Observed format/argument source order and empty-format argument forcing are covered; classed coercion callbacks, reentrancy, complete warning behavior and mutation/identity remain unaudited."
           ]
@@ -9541,9 +9878,18 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "formatc-values-and-formats" },
-            { "suite": "oracle-v2", "caseId": "formatc-characters-and-coercion" },
-            { "suite": "foundation", "caseId": "formatc-metadata" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-values-and-formats"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-characters-and-coercion"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "formatc-metadata"
+            }
           ],
           "remainingGaps": [
             "The bounded real/integer/character f/e/E/g/G/d/s surface is covered; fg, grouping and optional zero/trailing-zero transformations remain unfinished.",
@@ -9553,8 +9899,14 @@
         {
           "dimension": "boundaries",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "formatc-rounding-and-precision" },
-            { "suite": "oracle-v2", "caseId": "formatc-width-and-flags" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-rounding-and-precision"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-width-and-flags"
+            }
           ],
           "remainingGaps": [
             "The observed precision caps and bounded widths are covered; exhaustive Unicode width, extreme output-size and all malformed-control boundaries remain incomplete.",
@@ -9564,8 +9916,14 @@
         {
           "dimension": "errors",
           "evidence": [
-            { "suite": "foundation", "caseId": "formatc-matching-and-diagnostics" },
-            { "suite": "oracle-v2", "caseId": "formatc-forcing-and-laziness" }
+            {
+              "suite": "foundation",
+              "caseId": "formatc-matching-and-diagnostics"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-forcing-and-laziness"
+            }
           ],
           "remainingGaps": [
             "Selected missing, duplicate, partial, unused, invalid mode/format/flag and control-length conditions are observed; complete condition-call origins and arbitrary classed controls remain unfinished."
@@ -9574,8 +9932,14 @@
         {
           "dimension": "attributes",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "formatc-attributes" },
-            { "suite": "oracle-v2", "caseId": "formatc-reference-identity" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-reference-identity"
+            }
           ],
           "remainingGaps": [
             "Numeric versus character metadata retention, missing names and a shared reference attribute are observed; arbitrary malformed attributes, additional class combinations and all optional-formatting metadata transitions remain unaudited."
@@ -9583,7 +9947,12 @@
         },
         {
           "dimension": "visibility",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "formatc-visibility-and-dispatch" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-visibility-and-dispatch"
+            }
+          ],
           "remainingGaps": [
             "Direct ordinary results are visible; exceptional paths and optional formatting branches do not yet have a complete visibility matrix."
           ]
@@ -9591,8 +9960,14 @@
         {
           "dimension": "side-effects",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "formatc-forcing-and-laziness" },
-            { "suite": "oracle-v2", "caseId": "formatc-decimal-mark" }
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-forcing-and-laziness"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-decimal-mark"
+            }
           ],
           "remainingGaps": [
             "Observed numeric, character and empty-input forcing order, unused controls, coercion warnings and OutDec lookup are covered; classed-control side effects, reentrancy, optional transforms and complete warning-origin behavior remain incomplete."
@@ -9600,7 +9975,12 @@
         },
         {
           "dimension": "identity",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "formatc-reference-identity" }],
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-reference-identity"
+            }
+          ],
           "remainingGaps": [
             "A shared environment attribute survives numeric formatting and aliases its source; nested reference attributes, unusual classed controls and a general no-mutation guarantee remain unaudited."
           ]
@@ -10125,6 +10505,683 @@
       "remainingGaps": [
         "Matrix sampling, degrees of freedom, covariance validation, output arrays, numerical stability and RNG state/draw ordering remain unimplemented or unverified.",
         "Public distribution documentation establishes purpose only. This reference binding has no runtime registration or complete behavioral matrix; this assignment adds no executable evidence or platform exclusion."
+      ]
+    },
+    {
+      "binding": "base::as.POSIXct.POSIXlt",
+      "domains": ["data-time", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "Calendar acceptance is intentionally bounded; out-of-range browser-meaningful inputs remain unfinished behavior, not platform exclusions."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-epoch-normalization"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-recycling-and-metadata"
+            }
+          ],
+          "remainingGaps": [
+            "UTC/GMT epoch conversion and selected normalized calendar fields are covered; other zones, inverse conversion and the full calendar matrix remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-accepted-range-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-epoch-normalization"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-recycling-and-metadata"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-wide-fraction-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-coercion-and-zone-labels"
+            }
+          ],
+          "remainingGaps": [
+            "The declared finite field bounds have endpoint, combined-corner and selected half-ULP observations, including year offset 1000000; exhaustive interior rounding, native behavior outside the accepted range and timezone boundaries remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-conversion-component-warnings"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-stage-warning-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-review-validation-stage-order"
+            }
+          ],
+          "remainingGaps": [
+            "Required field names/storage/length and selected timezone validation stages are observed, including all-storage-before-coercion and warning-before-length-error order; complete malformed objects and diagnostic call origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-recycling-and-metadata"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-coercion-and-zone-labels"
+            }
+          ],
+          "remainingGaps": [
+            "Year-name propagation with NA padding, recycling, UTC/GMT class/timezone results and omitted-versus-explicit-empty timezone labels are observed; arbitrary metadata, host-local epoch equivalence and unusual class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-conversion-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-conversion-component-warnings"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-stage-warning-values"
+            }
+          ],
+          "remainingGaps": [
+            "Unused origin/dots remain lazy, input/timezone promise order is observed and each overflowing non-seconds component has independent warning evidence; arbitrary callbacks, reentrancy and all evaluation-order cases remain incomplete."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-utc-conversion-values"
+            }
+          ],
+          "remainingGaps": [
+            "One normalized conversion preserves its input alias; this does not establish complete no-mutation behavior or reference metadata behavior for all inputs."
+          ]
+        }
+      ]
+    },
+    {
+      "binding": "base::as.POSIXct.numeric",
+      "domains": ["data-time", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "Numeric epoch conversion is separate from bounded civil-calendar field validation.",
+        "Dimensioned origin arithmetic still needs native attribute ordering and conflicting ordinary-attribute precedence; the non-array names-order correction does not establish these cases."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Integer/double no-origin, selected scalar origins, an owned origin conversion method and explicit/forwarded missing origin are observed; arbitrary origin shapes/classes and the complete numeric conversion surface remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, typed missing, NaN, infinity, integer-preserving addition and integer-overflow warning behavior are observed; recycled/malformed origins and broader rounding remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-conversion-numeric-null-and-origin"
+            }
+          ],
+          "remainingGaps": [
+            "Direct numeric NULL rejection is observed; complete control matching, type errors and condition origins remain incomplete."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-numeric-retained-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "No-origin numeric storage, names, custom metadata, replaced class/timezone, scalar-origin left-attribute precedence and a shared environment attribute are observed; arbitrary attribute combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-conversion-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Supplied-origin order origin,x,tz, absent-origin order x,tz, unused dots, one owned classed-origin conversion and integer-overflow warnings are observed; broader callbacks and full warning/evaluation behavior remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-numeric-retained-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "One shared environment attribute remains identical in source and result while the source class stays unchanged; nested metadata and general alias guarantees remain incomplete."
+          ]
+        }
+      ]
+    },
+    {
+      "binding": "base::as.POSIXct.default",
+      "domains": ["data-time", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "These links do not establish the whole default conversion method."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-default-null-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-character-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected NULL, inherited POSIXct and uniform full-time character routes have recursive value evidence; the complete default conversion surface remains unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-default-null-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "NULL becomes a classed integer-zero vector, inherited integer missing values remain typed, and omitted/forwarded-missing versus explicit-empty timezone labels are observed; other empty and malformed boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-conversion-numeric-null-and-origin"
+            }
+          ],
+          "remainingGaps": [
+            "Default numeric rejection is observed; other no-conversion diagnostics, dispatch contexts and condition origins remain incomplete."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-default-null-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-character-values"
+            }
+          ],
+          "remainingGaps": [
+            "NULL class/timezone labels, inherited POSIXct storage/names/custom attributes and selected character conversion metadata are observed; arbitrary metadata and reference identity remain incomplete."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-character-values"
+            }
+          ],
+          "remainingGaps": [
+            "Explicit timezone forcing, forwarded missing timezone and lazy unused origin/dots are observed on selected paths; classed callbacks, reentrancy and full evaluation behavior remain incomplete."
+          ]
+        }
+      ]
+    },
+    {
+      "binding": "base::is.finite.POSIXlt",
+      "domains": ["data-time", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "The method relies on bounded conversion; it does not establish full POSIXlt or datetime compatibility."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            }
+          ],
+          "remainingGaps": [
+            "Selected ordinary numeric/calendar inputs and direct-versus-generic values are observed; full datetime conversion and class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, missing/nonfinite seconds, missing calendar fields and selected recycling cases are covered; timezone, accepted-range interiors and native overflow behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            }
+          ],
+          "remainingGaps": [
+            "Closure missing/unused/duplicate arguments and selected conversion validation errors are observed; full condition origins and malformed control/object combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Year-derived names, missing-name masks, dropped seconds dimensions and names from custom conversion are observed; arbitrary metadata and class interactions remain incomplete."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Direct method output and the observed converted-object predicate path are visible; a complete visibility matrix is unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Single forcing, conversion events, selected base-namespace lookup and subclass continuation are observed; broader S3/default continuation, reentrancy and warning origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A custom converted-object predicate returns the same shared environment through this method; arbitrary references and broader alias/mutation behavior remain incomplete."
+          ]
+        }
+      ]
+    },
+    {
+      "binding": "base::is.infinite.POSIXlt",
+      "domains": ["data-time", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "The method relies on bounded conversion; it does not establish full POSIXlt or datetime compatibility."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            }
+          ],
+          "remainingGaps": [
+            "Selected ordinary numeric/calendar inputs and direct-versus-generic values are observed; full datetime conversion and class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, missing/nonfinite seconds, missing calendar fields and selected recycling cases are covered; timezone, accepted-range interiors and native overflow behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            }
+          ],
+          "remainingGaps": [
+            "Closure missing/unused/duplicate arguments and selected conversion validation errors are observed; full condition origins and malformed control/object combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Year-derived names, missing-name masks, dropped seconds dimensions and names from custom conversion are observed; arbitrary metadata and class interactions remain incomplete."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Direct method output and the observed converted-object predicate path are visible; a complete visibility matrix is unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Single forcing, conversion events, selected base-namespace lookup and subclass continuation are observed; broader S3/default continuation, reentrancy and warning origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A custom converted-object predicate returns the same shared environment through this method; arbitrary references and broader alias/mutation behavior remain incomplete."
+          ]
+        }
+      ]
+    },
+    {
+      "binding": "base::is.nan.POSIXlt",
+      "domains": ["data-time", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "The method relies on bounded conversion; it does not establish full POSIXlt or datetime compatibility."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            }
+          ],
+          "remainingGaps": [
+            "Selected ordinary numeric/calendar inputs and direct-versus-generic values are observed; full datetime conversion and class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, missing/nonfinite seconds, missing calendar fields and selected recycling cases are covered; timezone, accepted-range interiors and native overflow behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            }
+          ],
+          "remainingGaps": [
+            "Closure missing/unused/duplicate arguments and selected conversion validation errors are observed; full condition origins and malformed control/object combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Year-derived names, missing-name masks, dropped seconds dimensions and names from custom conversion are observed; arbitrary metadata and class interactions remain incomplete."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Direct method output and the observed converted-object predicate path are visible; a complete visibility matrix is unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Single forcing, conversion events, selected base-namespace lookup and subclass continuation are observed; broader S3/default continuation, reentrancy and warning origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A custom converted-object predicate returns the same shared environment through this method; arbitrary references and broader alias/mutation behavior remain incomplete."
+          ]
+        }
       ]
     }
   ]

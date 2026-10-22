@@ -38,6 +38,62 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Bounded POSIXlt conversion and numeric predicates (profile 0.385)
+
+`as.POSIXct` exposes lazy closure formals `(x, tz = "", ...)` and bounded numeric, default and
+POSIXlt methods. Custom conversion methods receive the original arguments and input value. The
+numeric method has the additional missing `origin` formal; without an origin it preserves numeric
+storage, values, names and custom attributes while setting POSIXct/POSIXt class and timezone.
+Replacing an existing class preserves its attribute position. Shared numeric arithmetic retains
+ordinary-attribute precedence and places names after those attributes on non-array results. Array
+results retain their existing name suppression; complete dimension/dimnames attribute ordering and
+conflicting ordinary-attribute precedence remain unfinished in the maintained
+[arithmetic gap probes](../conformance/probes/arithmetic-attribute-order-gaps.R). Recursive evidence
+checks non-array attribute order and retained references. Supplied scalar origins are converted
+through the base generic and denote seconds. Generic/default NULL conversion produces a classed
+empty integer vector; the direct numeric method rejects NULL. The default method preserves existing
+POSIXct metadata and updates an explicitly supplied timezone. The existing deterministic ISO
+character parser remains a bounded adaptation.
+
+The shared POSIXlt converter validates the nine ordered numeric fields, coerces the eight
+non-seconds fields to integer with one warning per overflowing component, validates timezone
+controls, and then checks required component lengths. Input and explicit timezone promises are
+forced before these validation passes. Output length uses seconds, minutes, hours, day, month, year
+and DST fields; weekday/year-day and trailing fields do not extend it. Empty auxiliary fields are
+accepted. Calendar fields recycle without changing the source; output names come from the year field
+and short names extend with missing names. Container and seconds attributes are dropped.
+
+UTC/GMT normalization uses independently authored Gregorian arithmetic, separate from strict ISO
+parsing. Finite accepted fields, after integer coercion where applicable, are:
+
+| Field                 | Inclusive range         |
+| --------------------- | ----------------------- |
+| Year offset from 1900 | -1,000 to 1,000,000     |
+| Zero-based month      | -1,200 to 1,200         |
+| Day of month          | -3,660 to 3,660         |
+| Hour and minute       | -10,000 to 10,000       |
+| Seconds               | -1,000,000 to 1,000,000 |
+
+These bounds admit calendar overflow normalization and years beyond JavaScript Date's range. Finite
+values outside them are explicitly unsupported. After structural validation, missing or nonfinite
+seconds retain their classification before calendar missingness or finite-range checks. Missing
+primary calendar values yield NA; auxiliary missing fields do not determine UTC instants. Empty
+timezone labels use deterministic UTC arithmetic, with no claim of native host-local parity. Named
+timezones, DST and full native integer-overflow behavior remain unfinished.
+
+`is.finite.POSIXlt`, `is.infinite.POSIXlt` and `is.nan.POSIXlt` have `(x)` formals. They call the
+base conversion generic and then the corresponding base predicate through normal callable
+invocation. This preserves global conversion dispatch, converted-class predicate dispatch, lazy
+controls, returned reference identity and visibility. Local shadows do not replace the base
+dependencies. Broader implicit S3 class fallback, S4 dispatch and complete call attribution remain
+unfinished.
+
+Owned tests cover calendar values, masks, storage, attributes, names, forcing and warning order,
+namespace/continuation behavior, reference results, range rejection and allocation/step-limit
+recovery. Full Date methods, vector/empty origins, classed-origin arithmetic, arbitrary character
+formats, timezone databases and complete metadata/error matrices remain open. These methods do not
+establish completion of the data/time or numeric domains.
+
 ### Bounded sprintf formatting work (profile 0.384)
 
 `sprintf` checks cumulative UTF-8 output bytes across literals, conversions and returned vector

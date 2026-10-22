@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.384.0",
+  "semanticProfileVersion": "0.385.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "d96f68c124f4d7890155ece836cbfcaef518193bfbdf5980092673a48ebcff1f",
+    "capabilities": "1983a1776a139c9ccf723ac2ebee162ed63866050af389cd0cab0364e4ef51a3",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "22dc74f0d450735f735cbcda2054160eae54628351acfbbcc7d58772715e6121",
-    "oracleV2": "670fbdcc880252e7794b5fe36793cd00318164aa51205838fbf23c09c87db678",
+    "foundation": "89eaefdba8fbe0db60fe1f16a1b71228c8c46bda487f4df96a8ea63c1befc9b1",
+    "oracleV2": "ec299e54f6225bf4c1d004df0c06c25e1286d73c069a28634c7ade5fae212214",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "c87275cdff03ad17a9550b8080c146b095fe07dced3e1d4a4924323f764b8160"
+    "annotations": "d09b3e2722d0f130e529c1f871d8394e04468fa929c21d4bc26a127b75a4a54a"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -47,13 +47,13 @@
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 817,
-    "qualifiedOverlaps": 789,
+    "registeredBindings": 823,
+    "qualifiedOverlaps": 795,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 1228,
-    "classificationPendingBindings": 1325,
-    "recursiveLinkedBindings": 162,
-    "bindingsWithDeclaredMatrixEvidence": 8,
+    "classifiedBindings": 1234,
+    "classificationPendingBindings": 1319,
+    "recursiveLinkedBindings": 169,
+    "bindingsWithDeclaredMatrixEvidence": 15,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -153,43 +153,43 @@
       "label": "Calls and promises",
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
-      "assignedBindings": 157,
-      "recursiveLinkedBindings": 48,
+      "assignedBindings": 164,
+      "recursiveLinkedBindings": 55,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "errors",
-          "pendingBindings": 153,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 154,
+          "partialDeclaredBindings": 10
         },
         {
           "dimension": "attributes",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 153,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 157,
+          "partialDeclaredBindings": 7
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "identity",
-          "pendingBindings": 155,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 157,
+          "partialDeclaredBindings": 7
         }
       ]
     },
@@ -333,43 +333,43 @@
       "label": "Object systems",
       "requirement": "Full S3/group generics, S4 classes/generics/method selection/slots, and compatible external object packages.",
       "completion": "incomplete",
-      "assignedBindings": 311,
-      "recursiveLinkedBindings": 49,
+      "assignedBindings": 318,
+      "recursiveLinkedBindings": 56,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 307,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 307,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "errors",
-          "pendingBindings": 307,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 308,
+          "partialDeclaredBindings": 10
         },
         {
           "dimension": "attributes",
           "pendingBindings": 307,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 309,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 313,
+          "partialDeclaredBindings": 5
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 308,
-          "partialDeclaredBindings": 3
+          "partialDeclaredBindings": 10
         },
         {
           "dimension": "identity",
-          "pendingBindings": 310,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 312,
+          "partialDeclaredBindings": 6
         }
       ]
     },
@@ -468,43 +468,43 @@
       "label": "Data and time",
       "requirement": "Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats.",
       "completion": "incomplete",
-      "assignedBindings": 189,
-      "recursiveLinkedBindings": 36,
+      "assignedBindings": 195,
+      "recursiveLinkedBindings": 43,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 185,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 184,
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 185,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 184,
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "errors",
           "pendingBindings": 185,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 10
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 185,
-          "partialDeclaredBindings": 4
+          "pendingBindings": 184,
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 187,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 190,
+          "partialDeclaredBindings": 5
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 186,
-          "partialDeclaredBindings": 3
+          "pendingBindings": 185,
+          "partialDeclaredBindings": 10
         },
         {
           "dimension": "identity",
-          "pendingBindings": 187,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 188,
+          "partialDeclaredBindings": 7
         }
       ]
     },
@@ -5045,15 +5045,100 @@
         "formals": ["x", "tz", "..."]
       },
       "runtime": {
-        "compatibility": "numeric"
+        "compatibility": "behavioral"
       },
       "classification": {
         "status": "assigned",
-        "domains": ["data-time"]
+        "domains": ["calls-promises", "data-time", "object-systems"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-generic-lazy-owned-dispatch",
+        "posixlt-generic-numeric-origin-values",
+        "posixlt-review-generic-preservation"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-generic-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "Selected numeric and character names, storage, POSIXct/POSIXt class, inherited POSIXct custom attributes and UTC/GMT timezone labels are observed; arbitrary metadata and all conversion branches remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-utc-conversion-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected empty, typed missing, nonfinite, fraction and normalized calendar inputs are covered; broader character parsing, native overflow, timezone and malformed-control boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-utc-conversion-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-lazy-owned-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-generic-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "Selected numeric, origin, NULL, owned dispatch, preserved character/POSIXct and UTC calendar paths are covered; implicit storage-class method selection and the full class/conversion matrix remain incomplete."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-conversion-warning-order"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-generic-lazy-owned-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Input-before-method events, lazy controls and component warnings are observed; general S3 continuation, coercion callbacks, reentrancy and condition origins remain unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
         "Calendar/time-zone/locale, conversion, missing-value, class/subset and attribute/error behavior remains incompletely evidenced.",
+        "Empty-zone arithmetic uses deterministic UTC; host-local timezone parity remains unclaimed. Direct Date behavior is deferred.",
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
         "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
       ]
     },
@@ -5075,11 +5160,152 @@
         "type": "closure",
         "formals": ["x", "tz", "..."]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-conversion-component-warnings",
+        "posixlt-direct-conversion-forcing",
+        "posixlt-review-coercion-and-zone-labels",
+        "posixlt-review-stage-warning-values",
+        "posixlt-review-wide-fraction-values",
+        "posixlt-utc-accepted-range-values",
+        "posixlt-utc-epoch-normalization",
+        "posixlt-utc-recycling-and-metadata"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-coercion-and-zone-labels"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-recycling-and-metadata"
+            }
+          ],
+          "remainingGaps": [
+            "Year-name propagation with NA padding, recycling, UTC/GMT class/timezone results and omitted-versus-explicit-empty timezone labels are observed; arbitrary metadata, host-local epoch equivalence and unusual class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-coercion-and-zone-labels"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-wide-fraction-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-accepted-range-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-epoch-normalization"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-recycling-and-metadata"
+            }
+          ],
+          "remainingGaps": [
+            "The declared finite field bounds have endpoint, combined-corner and selected half-ULP observations, including year offset 1000000; exhaustive interior rounding, native behavior outside the accepted range and timezone boundaries remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-review-validation-stage-order"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-conversion-component-warnings"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-stage-warning-values"
+            }
+          ],
+          "remainingGaps": [
+            "Required field names/storage/length and selected timezone validation stages are observed, including all-storage-before-coercion and warning-before-length-error order; complete malformed objects and diagnostic call origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-utc-conversion-values"
+            }
+          ],
+          "remainingGaps": [
+            "One normalized conversion preserves its input alias; this does not establish complete no-mutation behavior or reference metadata behavior for all inputs."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-epoch-normalization"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-utc-recycling-and-metadata"
+            }
+          ],
+          "remainingGaps": [
+            "UTC/GMT epoch conversion and selected normalized calendar fields are covered; other zones, inverse conversion and the full calendar matrix remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-conversion-component-warnings"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-conversion-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-stage-warning-values"
+            }
+          ],
+          "remainingGaps": [
+            "Unused origin/dots remain lazy, input/timezone promise order is observed and each overflowing non-seconds component has independent warning evidence; arbitrary callbacks, reentrancy and all evaluation-order cases remain incomplete."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Calendar acceptance is intentionally bounded; out-of-range browser-meaningful inputs remain unfinished behavior, not platform exclusions.",
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished."
+      ]
     },
     {
       "binding": "base::as.POSIXct.default",
@@ -5087,11 +5313,114 @@
         "type": "closure",
         "formals": ["x", "tz", "..."]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-default-null-values",
+        "posixlt-review-default-character-values",
+        "posixlt-review-default-posixct-preservation"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-default-null-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-character-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "NULL class/timezone labels, inherited POSIXct storage/names/custom attributes and selected character conversion metadata are observed; arbitrary metadata and reference identity remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-default-null-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "NULL becomes a classed integer-zero vector, inherited integer missing values remain typed, and omitted/forwarded-missing versus explicit-empty timezone labels are observed; other empty and malformed boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-conversion-numeric-null-and-origin"
+            }
+          ],
+          "remainingGaps": [
+            "Default numeric rejection is observed; other no-conversion diagnostics, dispatch contexts and condition origins remain incomplete."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-default-null-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-character-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "Selected NULL, inherited POSIXct and uniform full-time character routes have recursive value evidence; the complete default conversion surface remains unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-character-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-default-posixct-preservation"
+            }
+          ],
+          "remainingGaps": [
+            "Explicit timezone forcing, forwarded missing timezone and lazy unused origin/dots are observed on selected paths; classed callbacks, reentrancy and full evaluation behavior remain incomplete."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "These links do not establish the whole default conversion method."
+      ]
     },
     {
       "binding": "base::as.POSIXct.numeric",
@@ -5099,11 +5428,125 @@
         "type": "closure",
         "formals": ["x", "tz", "origin", "..."]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-direct-conversion-forcing",
+        "posixlt-direct-numeric-origin-values",
+        "posixlt-numeric-retained-reference-graph",
+        "posixlt-review-numeric-origin-values"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-numeric-retained-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "No-origin numeric storage, names, custom metadata, replaced class/timezone, scalar-origin left-attribute precedence and a shared environment attribute are observed; arbitrary attribute combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, typed missing, NaN, infinity, integer-preserving addition and integer-overflow warning behavior are observed; recycled/malformed origins and broader rounding remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-conversion-numeric-null-and-origin"
+            }
+          ],
+          "remainingGaps": [
+            "Direct numeric NULL rejection is observed; complete control matching, type errors and condition origins remain incomplete."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-numeric-retained-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "One shared environment attribute remains identical in source and result while the source class stays unchanged; nested metadata and general alias guarantees remain incomplete."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-numeric-origin-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Integer/double no-origin, selected scalar origins, an owned origin conversion method and explicit/forwarded missing origin are observed; arbitrary origin shapes/classes and the complete numeric conversion surface remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-direct-conversion-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-review-numeric-origin-values"
+            }
+          ],
+          "remainingGaps": [
+            "Supplied-origin order origin,x,tz, absent-origin order x,tz, unused dots, one owned classed-origin conversion and integer-overflow warnings are observed; broader callbacks and full warning/evaluation behavior remain unfinished."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Dimensioned origin arithmetic still needs native attribute ordering and conflicting ordinary-attribute precedence; the non-array names-order correction does not establish these cases.",
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "Numeric epoch conversion is separate from bounded civil-calendar field validation."
+      ]
     },
     {
       "binding": "base::as.POSIXlt",
@@ -12028,11 +12471,140 @@
         "type": "closure",
         "formals": ["x"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-finite-method-values",
+        "posixlt-predicate-global-conversion-dispatch",
+        "posixlt-predicate-returned-reference-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Year-derived names, missing-name masks, dropped seconds dimensions and names from custom conversion are observed; arbitrary metadata and class interactions remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, missing/nonfinite seconds, missing calendar fields and selected recycling cases are covered; timezone, accepted-range interiors and native overflow behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            }
+          ],
+          "remainingGaps": [
+            "Closure missing/unused/duplicate arguments and selected conversion validation errors are observed; full condition origins and malformed control/object combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A custom converted-object predicate returns the same shared environment through this method; arbitrary references and broader alias/mutation behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected ordinary numeric/calendar inputs and direct-versus-generic values are observed; full datetime conversion and class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Single forcing, conversion events, selected base-namespace lookup and subclass continuation are observed; broader S3/default continuation, reentrancy and warning origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-finite-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Direct method output and the observed converted-object predicate path are visible; a complete visibility matrix is unfinished."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "The method relies on bounded conversion; it does not establish full POSIXlt or datetime compatibility."
+      ]
     },
     {
       "binding": "base::is.function",
@@ -12087,11 +12659,140 @@
         "type": "closure",
         "formals": ["x"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-infinite-method-values",
+        "posixlt-predicate-global-conversion-dispatch",
+        "posixlt-predicate-returned-reference-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Year-derived names, missing-name masks, dropped seconds dimensions and names from custom conversion are observed; arbitrary metadata and class interactions remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, missing/nonfinite seconds, missing calendar fields and selected recycling cases are covered; timezone, accepted-range interiors and native overflow behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            }
+          ],
+          "remainingGaps": [
+            "Closure missing/unused/duplicate arguments and selected conversion validation errors are observed; full condition origins and malformed control/object combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A custom converted-object predicate returns the same shared environment through this method; arbitrary references and broader alias/mutation behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected ordinary numeric/calendar inputs and direct-versus-generic values are observed; full datetime conversion and class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Single forcing, conversion events, selected base-namespace lookup and subclass continuation are observed; broader S3/default continuation, reentrancy and warning origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-infinite-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Direct method output and the observed converted-object predicate path are visible; a complete visibility matrix is unfinished."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "The method relies on bounded conversion; it does not establish full POSIXlt or datetime compatibility."
+      ]
     },
     {
       "binding": "base::is.integer",
@@ -12363,11 +13064,140 @@
         "type": "closure",
         "formals": ["x"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "object-systems"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "posixlt-nan-method-values",
+        "posixlt-predicate-global-conversion-dispatch",
+        "posixlt-predicate-returned-reference-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Year-derived names, missing-name masks, dropped seconds dimensions and names from custom conversion are observed; arbitrary metadata and class interactions remain incomplete."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Empty, missing/nonfinite seconds, missing calendar fields and selected recycling cases are covered; timezone, accepted-range interiors and native overflow behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-arguments-and-validation"
+            }
+          ],
+          "remainingGaps": [
+            "Closure missing/unused/duplicate arguments and selected conversion validation errors are observed; full condition origins and malformed control/object combinations remain incomplete."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A custom converted-object predicate returns the same shared environment through this method; arbitrary references and broader alias/mutation behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-values-components-and-length"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected ordinary numeric/calendar inputs and direct-versus-generic values are observed; full datetime conversion and class combinations remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-predicate-global-conversion-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Single forcing, conversion events, selected base-namespace lookup and subclass continuation are observed; broader S3/default continuation, reentrancy and warning origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "posixlt-predicate-dispatch"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "posixlt-nan-method-values"
+            }
+          ],
+          "remainingGaps": [
+            "Direct method output and the observed converted-object predicate path are visible; a complete visibility matrix is unfinished."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
+        "The method relies on bounded conversion; it does not establish full POSIXlt or datetime compatibility."
+      ]
     },
     {
       "binding": "base::is.null",

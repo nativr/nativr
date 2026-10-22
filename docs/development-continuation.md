@@ -1751,3 +1751,36 @@ assigned. This purpose-only increment leaves profile 0.384, callable overlap, 16
 partial dimensions and all incomplete domains unchanged. It was verified with inventory validators
 and generated inventory/status consistency checks. The active semantic step remains bounded UTC/GMT
 POSIXlt conversion and dispatch.
+
+### Bounded POSIXlt conversion increment (profile 0.385)
+
+Implemented shared UTC/GMT POSIXlt conversion, lazy as.POSIXct generic/numeric/default/POSIXlt
+routes and three numeric-predicate methods. The converter preserves observed storage, masks, year
+names, attributes, warning/validation order, missingness and reference results. Independent
+Gregorian arithmetic admits the documented wide-year range and explicitly rejects unsupported finite
+fields. Empty-zone arithmetic is deterministic UTC; named timezone/DST parity, broad parsing, vector
+origins and full implicit S3 chains remain unfinished.
+
+All 206 focused tests pass (191 native fixtures, four strict conversion-order regressions, eight
+shared arithmetic cases and three range/resource/recovery cases), alongside 144 existing related
+regressions. The full check passes 2,943 tests with 94 opt-in skips and both TypeScript gates.
+Checked-in/live/recursive conformance passes 1,447 / 1,374 / 360, with 169 causal-linked bindings.
+The separate native fixture validation passes 286 checks; 22 maintained native gap controls plus
+three arithmetic/coercion gap families receive no passing compatibility credit. Separate arithmetic
+validation passes thirteen native checks; its exact graph case has no qualified operator-binding
+credit. Seven matrices add 42 partial dimensions, bringing the inventory to 90 across fifteen
+bindings. All thirteen domains remain open.
+
+The [24-package checkpoint](../compatibility/package-check-evidence/corpus-0.385.0.json) preserves
+all 178 input hashes, outcomes, stage statuses and repeatability flags from 0.384. Tiers remain
+unchanged and Formula was not evaluated. Worker browser checks pass 9/9, including UTC/nonfinite and
+wide-year fractional conversion without network traffic. Required examples take 12.5 / 16.1 / 53.7
+seconds within the unchanged timeout. Worker gzip is 491.1/512 KiB; all bundle caps pass.
+Performance and pack evidence remain at 0.380. Public API and protocol are unchanged.
+
+Next measurable increment: close the independently reproduced implicit S3 class-chain gap shared by
+UseMethod/NextMethod and conversion generics. Establish integer/double numeric fallback,
+matrix/array storage chains, explicit-class precedence and method metadata with independent native
+fixtures and causal controls. Keep internal/group-generic dispatch rules distinct and preserve the
+original input identity. Continue the wider semantic-domain, dataset, testing-runner and platform
+work under the existing boundaries; no new user input is required for this local step.

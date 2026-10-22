@@ -9,18 +9,18 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.384, the inventory contains 2,553 bindings: 2,525 reference exports and 28
-registrations absent from that export snapshot. There are 817 registrations and 789 exact qualified
-overlaps. The existing 790 distinct-name overlaps measure a different relationship: registering a
+At profile 0.385, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
+overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
 
-All 162 bindings with existing causal links have explicit domain assignments. Reviewed purpose
+All 169 bindings with existing causal links have explicit domain assignments. Reviewed purpose
 assignments add 430 bindings from graphics, graphics devices and object-system methods, and 572
 previously unclassified owned registrations. The bounded formatC increment adds one assignment. The
-classified total is 1,228, including all 817 registered bindings. Another 1,325 reference bindings
+classified total is 1,234, including all 823 registered bindings. Another 1,319 reference bindings
 remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
-Eight bindings have 48 reviewed, partial behavioral-dimension declarations. Each declaration
+Fifteen bindings have 90 reviewed, partial behavioral-dimension declarations. Each declaration
 references existing executable cases and retains explicit remaining gaps. No domain or callable is
 complete; all undeclared dimensions remain pending. Even a callable with a partial declaration in
 all seven dimensions still has an unfinished matrix.
@@ -92,6 +92,12 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+Seven date/time callable matrices add 42 partial dimensions for the shared UTC/GMT POSIXlt
+converter, lazy as.POSIXct routes and numeric predicates. Evidence includes actual epochs, storage,
+masks, names, attributes, dispatch/forcing/warning order and shared reference results. Native range,
+non-scalar origin, full implicit class-chain, parsing and timezone gaps remain explicit. The owned
+range-rejection case supplies no differential matrix or platform-exclusion credit.
 
 The sprintf declaration adds six partial dimensions for ordinary directives/recycling, nonfinite and
 precision boundaries, forcing errors, basic attribute loss, visibility and side effects. It does not

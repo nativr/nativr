@@ -3066,6 +3066,9 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   numericPredicateBuiltin("is.finite"),
   numericPredicateBuiltin("is.infinite"),
   numericPredicateBuiltin("is.nan"),
+  posixLtPredicateBuiltin("is.finite"),
+  posixLtPredicateBuiltin("is.infinite"),
+  posixLtPredicateBuiltin("is.nan"),
   defineBuiltin("list", ["..."], "behavioral", builtinList),
   defineBuiltin("alist", ["..."], "behavioral", builtinAlist, "special"),
   defineBuiltin("as.list", ["x", "..."], "behavioral", builtinAsList),
@@ -4940,7 +4943,10 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       { name: "tz", defaultValue: { kind: "StringLiteral", value: "UTC", span: SYNTHETIC_SPAN } },
     ],
   ),
-  defineBuiltin("as.POSIXct", ["x", "tz", "origin"], "numeric", builtinAsPosix),
+  posixCtBuiltin("as.POSIXct", builtinAsPosix),
+  posixCtBuiltin("as.POSIXct.POSIXlt", builtinAsPosixPosixLt),
+  posixCtBuiltin("as.POSIXct.numeric", builtinAsPosixNumeric),
+  posixCtBuiltin("as.POSIXct.default", builtinAsPosixDefault),
   defineBuiltin("as.POSIXlt", ["x", "tz", "..."], "behavioral", builtinAsPosixLt),
   defineBuiltin("weekdays", ["x", "abbreviate"], "behavioral", builtinWeekdays),
   defineBuiltin("weekdays.Date", ["x", "abbreviate"], "behavioral", builtinWeekdaysDate),
@@ -25561,7 +25567,7 @@ function numericPredicateBuiltin(name: NumericPredicateName): BuiltinDefinition 
       ),
       [
         "Mixed real/imaginary NA provenance requires the pending complex value-model extension.",
-        "POSIXlt predicate methods and their full date-time conversion behavior remain incomplete.",
+        "POSIXlt predicates use bounded UTC/GMT conversion; complete date-time conversion remains incomplete.",
         "S4 numeric-predicate dispatch remains incomplete.",
         "General S3 continuation and complete condition-call attribution remain incomplete.",
       ],
@@ -56611,36 +56617,503 @@ async function builtinAsDate(invocation: BuiltinInvocation): Promise<RValue> {
   return withClasses(doubleVector(values, compactMask(missing)), ["Date"]);
 }
 
+// Existing strict ISO parsing and POSIXlt construction helpers deliberately remain separate.
+
+function posixCtBuiltin(
+  name: "as.POSIXct" | "as.POSIXct.POSIXlt" | "as.POSIXct.numeric" | "as.POSIXct.default",
+  implementation: BuiltinDefinition["implementation"],
+): BuiltinDefinition {
+  const numeric = name === "as.POSIXct.numeric";
+  return {
+    ...withBuiltinFormals(
+      withUnsupportedBehavior(
+        defineBuiltin(
+          name,
+          numeric ? ["x", "tz", "origin", "..."] : ["x", "tz", "..."],
+          "behavioral",
+          implementation,
+        ),
+        [
+          "Named timezones, DST and native host-local timezone equivalence; empty timezone uses deterministic UTC arithmetic.",
+          "POSIXlt calendar values beyond the documented bounded Gregorian normalization range.",
+          "Complete implicit S3 class fallback, S4 dispatch and condition-call attribution.",
+          "Full Date conversion, character formats, origin recycling and classed-origin arithmetic.",
+        ],
+      ),
+      [
+        { name: "x" },
+        { name: "tz", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+        ...(numeric ? [{ name: "origin" }] : []),
+        { name: "..." },
+      ],
+    ),
+    reflectiveFrame: true,
+    ...(name === "as.POSIXct"
+      ? {}
+      : { s3Method: { generic: "as.POSIXct", className: name.slice("as.POSIXct.".length) } }),
+  };
+}
+
+function posixLtPredicateBuiltin(name: NumericPredicateName): BuiltinDefinition {
+  return {
+    ...withBuiltinFormals(
+      withUnsupportedBehavior(
+        defineBuiltin(`${name}.POSIXlt`, ["x"], "behavioral", (invocation) =>
+          builtinPosixLtPredicate(invocation, name),
+        ),
+        ["Date-time conversion beyond the bounded UTC/GMT as.POSIXct methods remains incomplete."],
+      ),
+      [{ name: "x" }],
+    ),
+    reflectiveFrame: true,
+    s3Method: { generic: name, className: "POSIXlt" },
+  };
+}
+
+async function posixMethodArgument(invocation: BuiltinInvocation, name: string): Promise<RValue> {
+  const promise = invocation.functionArgument(name);
+  if (promise === undefined)
+    throw new REvaluationError("NRE2103", `argument "${name}" is missing, with no default`);
+  return invocation.force(promise);
+}
+
+async function posixLibraryCall(
+  invocation: BuiltinInvocation,
+  name: string,
+  arguments_: readonly BuiltinCallArgument[],
+): Promise<RValue> {
+  const callable = await invocation.namespaceBinding("base", name);
+  if (callable === undefined) throw new Error(`Missing base date-time dependency: ${name}`);
+  return invocation.invokeLazy(callable, arguments_);
+}
+
+function posixForcedArgument(invocation: BuiltinInvocation, input: RValue): BuiltinCallArgument {
+  const expression: AstNode = { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN };
+  return {
+    promise: {
+      ...createForcedPromise(
+        input,
+        invocation.functionEnvironment() ?? invocation.currentEnvironment(),
+      ),
+      expression,
+    },
+  };
+}
+
+async function builtinPosixLtPredicate(
+  invocation: BuiltinInvocation,
+  name: NumericPredicateName,
+): Promise<RValue> {
+  const input = await posixMethodArgument(invocation, "x");
+  const converted = await posixLibraryCall(invocation, "as.POSIXct", [
+    posixForcedArgument(invocation, input),
+  ]);
+  // Use the normal primitive so converted classes can dispatch and the primitive sets visibility.
+  return posixLibraryCall(invocation, name, [posixForcedArgument(invocation, converted)]);
+}
+
 async function builtinAsPosix(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x", "tz", "origin"]);
-  const input = required(matched, "x", "as.POSIXct");
-  const timezone =
-    matched.get("tz") === undefined ? "UTC" : characterScalar(matched.get("tz") as RValue, "tz");
-  if (timezone !== "UTC" && timezone !== "GMT") {
+  const input = await posixMethodArgument(invocation, "x");
+  const result = await invocation.dispatchS3IfPresent(
+    "as.POSIXct",
+    input,
+    invocation.arguments,
+    false,
+    -1,
+  );
+  if (result !== undefined) return result;
+  // The shared implicit-class chain currently omits integer -> numeric. Preserve the original
+  // promises and input object while selecting the owned numeric fallback explicitly.
+  if (objectClasses(input) === undefined && (input.type === "integer" || input.type === "double")) {
+    return posixLibraryCall(invocation, "as.POSIXct.numeric", invocation.arguments);
+  }
+  const fallback = await invocation.dispatchS3IfPresent(
+    "as.POSIXct",
+    input,
+    invocation.arguments,
+    true,
+    -1,
+    undefined,
+    undefined,
+    true,
+  );
+  if (fallback !== undefined) return fallback;
+  throw new Error("Missing base as.POSIXct.default method.");
+}
+
+async function posixRequestedTimezone(invocation: BuiltinInvocation): Promise<string> {
+  return posixTimezoneValue(await posixMethodArgument(invocation, "tz"));
+}
+
+function posixTimezoneValue(value: RValue): string {
+  if (value.type !== "character" || value.length !== 1 || isMissing(value, 0)) {
+    throw new RTypeMismatchError("NRT3137", "invalid 'tz' value");
+  }
+  const timezone = value.values[0]!;
+  if (timezone !== "" && timezone !== "UTC" && timezone !== "GMT") {
     throw new RUnsupportedFeatureError("NRU6113", "as.POSIXct() currently supports UTC/GMT only.");
   }
-  if (input.type !== "character" && input.type !== "integer" && input.type !== "double") {
-    throw new RTypeMismatchError("NRT3137", "as.POSIXct() requires character or numeric input.");
+  return timezone;
+}
+
+async function builtinAsPosixDefault(invocation: BuiltinInvocation): Promise<RValue> {
+  const input = await posixMethodArgument(invocation, "x");
+  const alreadyPosixCt =
+    (input.type === "integer" || input.type === "double") &&
+    vectorClasses(input)?.includes("POSIXct") === true;
+  const timezonePromise = invocation.functionArgument("tz");
+  // Missing controls can be forwarded through a caller's missing formal. Preserve the original
+  // object before forcing that promise; an explicitly supplied empty string still replaces tzone.
+  if (
+    alreadyPosixCt &&
+    (timezonePromise === undefined || isMissingArgumentBinding(timezonePromise, new Set()))
+  )
+    return input;
+  const timezone = await posixRequestedTimezone(invocation);
+  if (alreadyPosixCt) return withAttribute(input, "tzone", characterVector([timezone]));
+  if (input.type !== "null" && input.type !== "character") {
+    const promise = invocation.functionArgument("x");
+    const expression = promise?.sourceExpression ?? promise?.expression;
+    const label = expression == null ? "x" : deparseDiagnosticAst(expression);
+    throw new RTypeMismatchError(
+      "NRT3137",
+      `do not know how to convert '${label}' to class "POSIXct"`,
+    );
   }
-  if (input.type === "double" && vectorClasses(input)?.includes("POSIXct")) return input;
-  let origin = 0;
-  if (input.type !== "character") {
-    origin = parseDateOrigin(required(matched, "origin", "as.POSIXct")) * 86_400;
-  }
+  if (input.type === "null")
+    return withAttribute(
+      withClasses(integerVector([]), ["POSIXct", "POSIXt"]),
+      "tzone",
+      characterVector([timezone]),
+    );
   invocation.context.allocate(input.length);
   const values = new Float64Array(input.length);
   const missing = new Uint8Array(input.length);
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
-    if (isMissing(input, index)) {
+    if (isMissing(input, index)) missing[index] = 1;
+    else values[index] = parseIsoDateTime(input.values[index] ?? "");
+  }
+  let output = doubleVector(values, compactMask(missing));
+  const names = input.attributes.get("names");
+  if (names !== undefined) output = withAttribute(output, "names", names);
+  return withAttribute(
+    withClasses(output, ["POSIXct", "POSIXt"]),
+    "tzone",
+    characterVector([timezone]),
+  );
+}
+
+async function builtinAsPosixNumeric(invocation: BuiltinInvocation): Promise<RValue> {
+  const originPromise = invocation.functionArgument("origin");
+  const suppliedOrigin =
+    originPromise !== undefined && !isMissingArgumentBinding(originPromise, new Set());
+  let origin: RValue | undefined;
+  if (suppliedOrigin) {
+    const value = await invocation.force(originPromise);
+    origin = await posixLibraryCall(invocation, "as.POSIXct", [
+      posixForcedArgument(invocation, value),
+    ]);
+  }
+  const input = await posixMethodArgument(invocation, "x");
+  if (input.type === "null")
+    throw new RTypeMismatchError("NRT3137", "attempt to set an attribute on NULL");
+  if (input.type !== "integer" && input.type !== "double") {
+    throw new RUnsupportedFeatureError(
+      "NRU6257",
+      "as.POSIXct.numeric() currently requires integer or double storage.",
+    );
+  }
+  const timezone = await posixRequestedTimezone(invocation);
+  if (origin === undefined) {
+    return withAttribute(
+      withClasses(input, ["POSIXct", "POSIXt"]),
+      "tzone",
+      characterVector([timezone]),
+    );
+  }
+  if ((origin.type !== "integer" && origin.type !== "double") || origin.length !== 1) {
+    throw new RUnsupportedFeatureError(
+      "NRU6257",
+      "as.POSIXct.numeric() currently requires a scalar numeric or ISO character origin.",
+    );
+  }
+  const output = jsReferenceOperators.binary(
+    invocation.context,
+    "+",
+    withoutClasses(origin),
+    withoutClasses(input),
+  );
+  if (output.type !== "integer" && output.type !== "double")
+    throw new Error("Unexpected date-time arithmetic result.");
+  return withAttribute(
+    withClasses(output, ["POSIXct", "POSIXt"]),
+    "tzone",
+    characterVector([timezone]),
+  );
+}
+
+const POSIXLT_FIELDS = Object.freeze([
+  "sec",
+  "min",
+  "hour",
+  "mday",
+  "mon",
+  "year",
+  "wday",
+  "yday",
+  "isdst",
+] as const);
+type PosixLtNumericComponent = RIntegerVector | RDoubleVector;
+
+interface PosixLtConversionFields {
+  readonly seconds: PosixLtNumericComponent;
+  readonly integers: readonly RIntegerVector[];
+  readonly year: PosixLtNumericComponent;
+  readonly length: number;
+}
+
+function posixLtIntegerComponent(
+  input: PosixLtNumericComponent,
+  invocation: BuiltinInvocation,
+): RIntegerVector {
+  if (input.type === "integer") return input;
+  invocation.context.allocate(input.length);
+  const values = new Int32Array(input.length);
+  const missing = new Uint8Array(input.length);
+  let rangeWarning = false;
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    const value = input.values[index]!;
+    if (isMissing(input, index) || Number.isNaN(value)) {
       missing[index] = 1;
-    } else if (input.type === "character") {
-      values[index] = parseIsoDateTime(input.values[index] ?? "");
-    } else {
-      values[index] = origin + (input.values[index] ?? 0);
+      continue;
+    }
+    const integer = Math.trunc(value);
+    if (!Number.isFinite(value) || integer < -2_147_483_647 || integer > 2_147_483_647) {
+      missing[index] = 1;
+      rangeWarning = true;
+    } else values[index] = integer;
+  }
+  if (rangeWarning)
+    invocation.context.warn({
+      code: "NRW1007",
+      message: "NAs introduced by coercion to integer range",
+    });
+  return integerVector(values, compactMask(missing));
+}
+
+function validatedPosixLtComponents(
+  input: RValue,
+  invocation: BuiltinInvocation,
+): PosixLtConversionFields {
+  if (input.type !== "list" || input.length < 9)
+    throw new RTypeMismatchError(
+      "NRT3109",
+      'a valid "POSIXlt" object is a list of at least 9 elements',
+    );
+  const names = input.attributes.get("names");
+  if (names?.type !== "character")
+    throw new RTypeMismatchError("NRT3109", 'a valid "POSIXlt" object has names');
+  const source: PosixLtNumericComponent[] = [];
+  let length = 0;
+  for (let index = 0; index < POSIXLT_FIELDS.length; index += 1) {
+    invocation.context.checkpoint();
+    const expected = POSIXLT_FIELDS[index]!;
+    const actual = isMissing(names, index) ? "NA" : (names.values[index] ?? "");
+    if (actual !== expected)
+      throw new RTypeMismatchError(
+        "NRT3109",
+        `a valid "POSIXlt" object has element ${index + 1} with name '${actual}' which should be '${expected}'`,
+      );
+  }
+  for (let index = 0; index < POSIXLT_FIELDS.length; index += 1) {
+    invocation.context.checkpoint();
+    const expected = POSIXLT_FIELDS[index]!;
+    const component = input.values[index]!;
+    if (component.type !== "integer" && component.type !== "double")
+      throw new RTypeMismatchError(
+        "NRT3109",
+        `a valid "POSIXlt" object has a numeric element ${expected}`,
+      );
+    source.push(component);
+    if (index < 6 || index === 8) length = Math.max(length, component.length);
+  }
+  const integers: RIntegerVector[] = [];
+  for (let index = 1; index < source.length; index += 1) {
+    integers.push(posixLtIntegerComponent(source[index]!, invocation));
+  }
+  return { seconds: source[0]!, integers, year: source[5]!, length };
+}
+
+function validatePosixLtLengths(
+  fields: PosixLtConversionFields,
+  invocation: BuiltinInvocation,
+): void {
+  if (fields.length === 0) return;
+  for (let index = 0; index < POSIXLT_FIELDS.length; index += 1) {
+    invocation.context.checkpoint();
+    const component = index === 0 ? fields.seconds : fields.integers[index - 1]!;
+    if (component.length === 0 && (index < 6 || index === 8)) {
+      throw new RTypeMismatchError(
+        "NRT3109",
+        `zero-length component [[${index + 1}]] in non-empty "POSIXlt" structure`,
+      );
     }
   }
-  return withClasses(doubleVector(values, compactMask(missing)), ["POSIXct", "POSIXt"]);
+}
+
+function posixLtTimezone(input: RList, requested: string, omitted: boolean): string {
+  const attribute = input.attributes.get("tzone");
+  if (attribute !== undefined && attribute.type !== "character")
+    throw new RTypeMismatchError("NRT3137", "invalid 'attr(x, \"tzone\")'");
+  if (attribute?.type === "character" && attribute.length !== 1 && attribute.length !== 3)
+    throw new RTypeMismatchError("NRT3137", 'attr(x, "tzone") should have length 1 or 3');
+  if (attribute?.type === "character" && isMissing(attribute, 0))
+    throw new RUnsupportedFeatureError(
+      "NRU6257",
+      "Missing POSIXlt timezone metadata is not yet supported.",
+    );
+  const timezone = omitted && attribute?.type === "character" ? attribute.values[0]! : requested;
+  if (timezone !== "" && timezone !== "UTC" && timezone !== "GMT")
+    throw new RUnsupportedFeatureError("NRU6113", "as.POSIXct() currently supports UTC/GMT only.");
+  return timezone;
+}
+
+function posixLtNormalizedSeconds(
+  yearOffset: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  seconds: number,
+): number {
+  if (
+    yearOffset < -1000 ||
+    yearOffset > 1_000_000 ||
+    month < -1200 ||
+    month > 1200 ||
+    day < -3660 ||
+    day > 3660 ||
+    hour < -10000 ||
+    hour > 10000 ||
+    minute < -10000 ||
+    minute > 10000 ||
+    seconds < -1_000_000 ||
+    seconds > 1_000_000
+  ) {
+    throw new RUnsupportedFeatureError(
+      "NRU6257",
+      "POSIXlt calendar normalization exceeds the documented UTC/GMT range.",
+    );
+  }
+  const year = yearOffset + 1900 + Math.floor(month / 12);
+  const month0 = month - Math.floor(month / 12) * 12;
+  const daysBeforeYear = (value: number): number => {
+    const prior = value - 1;
+    return 365 * prior + Math.floor(prior / 4) - Math.floor(prior / 100) + Math.floor(prior / 400);
+  };
+  const starts = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days =
+    daysBeforeYear(year) -
+    daysBeforeYear(1970) +
+    starts[month0]! +
+    (leap && month0 >= 2 ? 1 : 0) +
+    day -
+    1;
+  return days * 86400 + hour * 3600 + minute * 60 + seconds;
+}
+
+function posixLtYearNames(
+  output: RDoubleVector,
+  year: PosixLtNumericComponent,
+  invocation: BuiltinInvocation,
+): RDoubleVector {
+  const names = year.attributes.get("names");
+  if (names?.type !== "character") return output;
+  invocation.context.allocate(output.length);
+  const values: string[] = [];
+  const missing = new Uint8Array(output.length);
+  const encodings: RCharacterEncoding[] = [];
+  const bytes: Uint8Array[] = [];
+  for (let index = 0; index < output.length; index += 1) {
+    invocation.context.checkpoint();
+    const absent = index >= names.length || isMissing(names, index);
+    values.push(absent ? "" : names.values[index]!);
+    if (absent) missing[index] = 1;
+    encodings.push(absent ? "unknown" : characterEncodingAt(names, index));
+    bytes.push(absent ? new Uint8Array() : characterBytesAt(names, index));
+  }
+  return withAttribute(
+    output,
+    "names",
+    characterVector(values, compactMask(missing), encodings, bytes),
+  );
+}
+
+async function builtinAsPosixPosixLt(invocation: BuiltinInvocation): Promise<RValue> {
+  const input = await posixMethodArgument(invocation, "x");
+  // Force the control before validation; its value is validated after all component conversions.
+  const timezonePromise = invocation.functionArgument("tz");
+  const timezoneOmitted =
+    timezonePromise === undefined || isMissingArgumentBinding(timezonePromise, new Set());
+  const requestedTimezone = timezoneOmitted
+    ? characterVector([""])
+    : await invocation.force(timezonePromise);
+  const fields = validatedPosixLtComponents(input, invocation);
+  const timezone = posixLtTimezone(
+    input as RList,
+    posixTimezoneValue(requestedTimezone),
+    timezoneOmitted,
+  );
+  validatePosixLtLengths(fields, invocation);
+  invocation.context.allocate(fields.length);
+  const values = new Float64Array(fields.length);
+  const missing = new Uint8Array(fields.length);
+  for (let index = 0; index < fields.length; index += 1) {
+    invocation.context.checkpoint();
+    const position = index % fields.seconds.length;
+    if (isMissing(fields.seconds, position)) {
+      missing[index] = 1;
+      continue;
+    }
+    const seconds = fields.seconds.values[position]!;
+    if (!Number.isFinite(seconds)) {
+      values[index] = seconds;
+      continue;
+    }
+    const calendar: number[] = [];
+    let calendarMissing = false;
+    for (let field = 0; field < 5; field += 1) {
+      const component = fields.integers[field]!;
+      const row = index % component.length;
+      if (isMissing(component, row)) calendarMissing = true;
+      calendar.push(component.values[row]!);
+    }
+    if (calendarMissing) {
+      missing[index] = 1;
+      continue;
+    }
+    values[index] = posixLtNormalizedSeconds(
+      calendar[4]!,
+      calendar[3]!,
+      calendar[2]!,
+      calendar[1]!,
+      calendar[0]!,
+      seconds,
+    );
+  }
+  const output = posixLtYearNames(
+    doubleVector(values, compactMask(missing)),
+    fields.year,
+    invocation,
+  );
+  return withAttribute(
+    withClasses(output, ["POSIXct", "POSIXt"]),
+    "tzone",
+    characterVector([timezone]),
+  );
 }
 
 async function builtinAsPosixLt(invocation: BuiltinInvocation): Promise<RValue> {

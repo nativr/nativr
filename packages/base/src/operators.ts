@@ -300,7 +300,11 @@ function arithmeticAttributes(
         ? new Map([...left.attributes, ...right.attributes])
         : new Map(right.attributes);
   }
-  if (dimensions !== undefined) attributes.delete("names");
+  // Arithmetic restores vector names after copying ordinary attributes. Retain the
+  // original names value so metadata references survive the immutable map copy.
+  const names = attributes.get("names");
+  attributes.delete("names");
+  if (dimensions === undefined && names !== undefined) attributes.set("names", names);
   return attributes;
 }
 

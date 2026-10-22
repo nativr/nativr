@@ -40,6 +40,18 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#result")).toHaveText('"1.25"');
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
+  await page.locator("#source").fill(`local({
+    lt <- function(sec, year=70L) structure(list(sec=sec, min=0L, hour=0L, mday=1L,
+      mon=0L, year=year, wday=0L, yday=0L, isdst=0L),
+      class=c("POSIXlt", "POSIXt"), tzone="UTC")
+    x <- lt(c(0, Inf, NA_real_))
+    c(identical(as.numeric(as.POSIXct(x)), c(0, Inf, NA_real_)),
+      identical(is.finite(x), c(TRUE, FALSE, FALSE)),
+      as.numeric(as.POSIXct(lt(.125, 1000000L))) == 31554743011200.125)
+  })`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true]");
+  expect(evaluationRequests).toEqual([]);
   await page
     .locator("#source")
     .fill(

@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.384.0",
-  "capabilityManifestHash": "c626facca1336a1c185a2359de7bedbc63748cf30c2e5cd5810cf868b7b80af6",
+  "semanticProfileVersion": "0.385.0",
+  "capabilityManifestHash": "453df8587e84c4c0dd9735d9175f20518a641d35a13d226b7387adece1416385",
   "evidence": {
-    "checkedInConformanceCases": 1425,
-    "liveREligibleCases": 1353,
+    "checkedInConformanceCases": 1447,
+    "liveREligibleCases": 1374,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 337,
-    "recursiveBehaviorallyProvenBindings": 162,
+    "recursiveOracleV2Cases": 360,
+    "recursiveBehaviorallyProvenBindings": 169,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -86,6 +86,44 @@
       },
       { "binding": "base::as.name", "cases": ["logical-mode-symbol"] },
       { "binding": "base::as.ordered", "cases": ["factor-coercion-nondispatch-and-signatures"] },
+      {
+        "binding": "base::as.POSIXct",
+        "cases": [
+          "posixlt-generic-lazy-owned-dispatch",
+          "posixlt-generic-numeric-origin-values",
+          "posixlt-review-generic-preservation"
+        ]
+      },
+      {
+        "binding": "base::as.POSIXct.default",
+        "cases": [
+          "posixlt-default-null-values",
+          "posixlt-review-default-character-values",
+          "posixlt-review-default-posixct-preservation"
+        ]
+      },
+      {
+        "binding": "base::as.POSIXct.numeric",
+        "cases": [
+          "posixlt-direct-conversion-forcing",
+          "posixlt-direct-numeric-origin-values",
+          "posixlt-numeric-retained-reference-graph",
+          "posixlt-review-numeric-origin-values"
+        ]
+      },
+      {
+        "binding": "base::as.POSIXct.POSIXlt",
+        "cases": [
+          "posixlt-conversion-component-warnings",
+          "posixlt-direct-conversion-forcing",
+          "posixlt-review-coercion-and-zone-labels",
+          "posixlt-review-stage-warning-values",
+          "posixlt-review-wide-fraction-values",
+          "posixlt-utc-accepted-range-values",
+          "posixlt-utc-epoch-normalization",
+          "posixlt-utc-recycling-and-metadata"
+        ]
+      },
       { "binding": "base::as.single", "cases": ["logical-mode-single"] },
       { "binding": "base::as.single.default", "cases": ["logical-mode-single"] },
       { "binding": "base::as.symbol", "cases": ["logical-mode-symbol"] },
@@ -253,6 +291,14 @@
         ]
       },
       {
+        "binding": "base::is.finite.POSIXlt",
+        "cases": [
+          "posixlt-finite-method-values",
+          "posixlt-predicate-global-conversion-dispatch",
+          "posixlt-predicate-returned-reference-graph"
+        ]
+      },
+      {
         "binding": "base::is.infinite",
         "cases": [
           "numeric-predicates-attributes",
@@ -261,6 +307,14 @@
           "numeric-predicates-dispatched-reference-graph",
           "numeric-predicates-review-dispatch",
           "numeric-predicates-values"
+        ]
+      },
+      {
+        "binding": "base::is.infinite.POSIXlt",
+        "cases": [
+          "posixlt-infinite-method-values",
+          "posixlt-predicate-global-conversion-dispatch",
+          "posixlt-predicate-returned-reference-graph"
         ]
       },
       {
@@ -273,6 +327,14 @@
           "numeric-predicates-nan-independent",
           "numeric-predicates-review-dispatch",
           "numeric-predicates-values"
+        ]
+      },
+      {
+        "binding": "base::is.nan.POSIXlt",
+        "cases": [
+          "posixlt-nan-method-values",
+          "posixlt-predicate-global-conversion-dispatch",
+          "posixlt-predicate-returned-reference-graph"
         ]
       },
       {
@@ -761,23 +823,23 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 817,
-    "gnuRNameOverlaps": 790,
+    "registeredBindings": 823,
+    "gnuRNameOverlaps": 796,
     "referenceCoreCallableNames": 2522
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "d83b0ea9996190c66b1e1ece8effac638f3bff58082c1e5a1678bb8c6a419295",
+    "sha256": "32b0b905bbad3995cc3d5d8b2f46d527aed10b595cf0cf4e40793530c81ec530",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 817,
-    "qualifiedOverlaps": 789,
+    "registeredBindings": 823,
+    "qualifiedOverlaps": 795,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 1228,
-    "classificationPendingBindings": 1325,
-    "recursiveLinkedBindings": 162,
-    "bindingsWithDeclaredMatrixEvidence": 8,
+    "classifiedBindings": 1234,
+    "classificationPendingBindings": 1319,
+    "recursiveLinkedBindings": 169,
+    "bindingsWithDeclaredMatrixEvidence": 15,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."
