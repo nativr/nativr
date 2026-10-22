@@ -4233,7 +4233,8 @@ export class Evaluator {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
     }
     const callFrame = this.#closureCallFrames.at(-1);
-    let arguments_ = callFrame?.arguments ?? [];
+    // A supplied selector chooses the method; the method receives the original actuals.
+    const arguments_ = callFrame?.arguments ?? [];
     let dispatchObject = object;
     if (dispatchObject === undefined) {
       const first = callFrame?.matchedByPosition.get(0) ?? arguments_[0];
@@ -4244,20 +4245,6 @@ export class Evaluator {
         );
       }
       dispatchObject = await this.#force(first.promise, context);
-    } else if (arguments_.length === 0) {
-      arguments_ = [
-        {
-          promise: createForcedPromise(dispatchObject, this.#globalEnvironment),
-        },
-      ];
-    } else {
-      arguments_ = [
-        {
-          ...arguments_[0],
-          promise: createForcedPromise(dispatchObject, this.#globalEnvironment),
-        },
-        ...arguments_.slice(1),
-      ];
     }
     return this.#invokeS3Method(
       generic,

@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-22 at verified semantic profile **0.386.0**. Canonical counts are generated in
+Last assessed 2026-10-22 at verified semantic profile **0.387.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -11,15 +11,15 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                                                                           | Status              |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Production check                   | Profile 0.386: 3,000 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                                                  | Passed              |
-| Conformance                        | 1,454 checked-in, 1,381 live GNU R 4.6.1, 368 recursive cases; 169 bindings linked with causal controls                                                                                                   | Passed              |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                              | Passed              |
-| Browser e2e                        | Profile 0.386 on Windows: 9/9 pass across Chromium, Firefox and WebKit, including Worker S3 continuation and class history; required examples take 12.5 / 15.1 / 56.3 s within the unchanged 120 s budget | Passed on this host |
-| Packed consumer                    | Profile 0.380: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                                        | Passed              |
-| Fixed bundle limits                | Profile 0.386: client 17.6/150 KiB gzip; Worker 491.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                                       | Passed              |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                                | Open                |
+| Gate                               | Latest evidence                                                                                                                                                                                               | Status              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Production check                   | Profile 0.387: 3,022 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                                                      | Passed              |
+| Conformance                        | 1,458 checked-in, 1,385 live GNU R 4.6.1, 373 recursive cases; 169 bindings linked with causal controls                                                                                                       | Passed              |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                                  | Passed              |
+| Browser e2e                        | Profile 0.387 on Windows: 9/9 pass across Chromium, Firefox and WebKit, including explicit S3 selector forwarding and laziness; required examples take 12.5 / 15.7 / 66.5 s within the unchanged 120 s budget | Passed on this host |
+| Packed consumer                    | Profile 0.380: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                                            | Passed              |
+| Fixed bundle limits                | Profile 0.387: client 17.6/150 KiB gzip; Worker 491.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                                           | Passed              |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                                    | Open                |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
 broader workload coverage, latency acceptance budgets, the declared OS matrix, CI and release
@@ -48,10 +48,11 @@ made GNU R file.access reject readable fixtures. These are harness constraints, 
 deviations.
 
 No Worker/protocol/playground interface changed in stabilization. E2e has now been refreshed at
-profile 0.386 on Windows, including formatting recovery, UTC conversion and bounded S3 class
-history. The earlier fixture typing errors are repaired, and `pnpm typecheck:all` checks production
-sources, tests and build configurations without emitting files as part of `pnpm check`. The packed
-consumer now checks its public declarations strictly before its browser build.
+profile 0.387 on Windows, including formatting recovery, UTC conversion, S3 class history and
+explicit-selector argument forwarding. The earlier fixture typing errors are repaired, and
+`pnpm typecheck:all` checks production sources, tests and build configurations without emitting
+files as part of `pnpm check`. The packed consumer now checks its public declarations strictly
+before its browser build.
 
 The [0.380 offline pack checkpoint](../compatibility/platform-evidence/pack-windows-0.380.0.json)
 records both tarball digests and the smoke-script inputs. It reused the existing production build
@@ -62,12 +63,12 @@ package-tools tarball CLI all passed. This does not establish registry or remote
 
 All 24 development/regression archives matched their pinned hashes and were rerun with the original
 package entrypoints, explicit RNG initialization and native repeatability observations. The
-[0.386 checkpoint](../compatibility/package-check-evidence/corpus-0.386.0.json) links all 24
+[0.387 checkpoint](../compatibility/package-check-evidence/corpus-0.387.0.json) links all 24
 redacted reports with no checker aborts. Summaries contain allowlisted metadata, digests, capture
 statuses and counts; source, output and diagnostic strings are omitted. Formula was untouched.
 
 All 178 script input hashes, execution/comparison outcomes, stage statuses and repeatability flags
-match the complete 0.385 evidence. Tiers remain unchanged. prettyunits retains P5: all eight
+match the complete 0.386 evidence. Tiers remain unchanged. prettyunits retains P5: all eight
 examples execute, seven match, and its original test stage is the first P6 blocker. The time_ago
 mismatch and withr timezone native repeatability failure remain explicit. Original test entrypoints
 remain authoritative; no substitute runner receives tier credit. The
@@ -90,6 +91,31 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Profile 0.387 verification (2026-10-22)
+
+The explicit-selector baseline reproduced 18 mismatches in 21 independent native cases. The runtime
+now retains the generic's original actual argument objects and uses its explicit selector only for
+method selection. All 21 focused tests and 655 related regressions pass. The evidence covers
+selected forcing order, lazy originals, named/positional rematching, owned call metadata,
+zero-actual defaults/missing flags and NextMethod continuation with original or changed references.
+Omitted selectors, nonlocal return, visibility and the complete S3 matrix remain unfinished.
+
+Four foundation groups and five exact recursive graphs add evidence. Native validation passes 46
+checks, including fourteen strict causal controls and two identity invariants. Seventeen new links
+merge into nine existing UseMethod/NextMethod dimensions; the inventory retains 107 partial
+dimensions on nineteen bindings, 169 causal-linked bindings and no completed callable or domain. Six
+maintained neighboring observations receive no compatibility credit.
+
+The full check passes 3,022 tests with 94 opt-in skips. Checked-in/live/recursive conformance passes
+1,458 / 1,385 / 373; the live gate skips 55 NativR-only cases. All 24 cached package reports
+preserve the 178 inputs, outcomes, stages and repeatability flags from 0.386. Tiers are unchanged.
+The [Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.387.0.json)
+passes 9/9, including original-argument laziness and selector class history through the Worker with
+no evaluation network traffic. Required examples take 12.5 / 15.7 / 66.5 seconds under the unchanged
+timeout; this is not release-performance acceptance. Worker gzip remains 491.4/512 KiB and all fixed
+caps pass. Performance and pack evidence remain at 0.380. Public API/protocol and existing download,
+holdout, Linux and remote-action boundaries are unchanged.
 
 ### Profile 0.386 verification (2026-10-22)
 
@@ -1217,24 +1243,39 @@ normative numerical gates.
 reports the enclosing closure call. _Acceptance:_ cases for direct, nested, and apply-driven
 coercions.
 
-**R11 (P2): CI coverage.** `pnpm package:check` is not run in any workflow, and the native jobs run
-only on Ubuntu. _Acceptance:_ a scheduled job runs the abind and numDeriv checks with the RNG policy
-and uploads the redacted summaries. The oracle platform follows the R1 decision.
+**R11 (P2): reproducible CI evidence.** The scheduled conformance workflow runs native conformance
+and selected unchanged-package external tests on Ubuntu. It does not run comprehensive
+`pnpm package:check` for abind/numDeriv or retain their redacted stage summaries. Browser CI runs
+all three engines on Ubuntu but lacks a redacted success checkpoint and repeated performance report.
+Main CI also duplicates an older subset of `pnpm check`. _Acceptance:_ maintain and locally verify
+an offline evidence command with pinned inputs, RNG/repeatability settings, artifact validation and
+safe summaries; align CI with the canonical checks and artifact contract. Remote execution remains
+separate, and normative evidence requires RFC-0007's pinned Linux/glibc gate.
 
 **R12 (P2): re-verify recorded corpus blockers** with the external suite, and evaluate the holdout
 only at a release gate.
 
-**R13 (P3): toolchain discovery.** `findRscript()` searches only `Program Files\R`, not per-user
-installs. `docs/development.md` should state that a pinned Node 24 and GNU R 4.6.1 are required for
-the full gates.
+**R13 (P3): consistent oracle discovery and instructions.** Both conformance runners try `Rscript`
+on PATH and then Windows `Program Files/R`; they do not discover per-user installations or accept
+`NATIVR_RSCRIPT` directly. Package checking already accepts that variable and `--rscript`.
+Development documentation already requires Node 24 and pnpm 11. _Acceptance:_ share tested
+discovery/override rules and document GNU R 4.6.1 selection and optional-oracle skips consistently.
+GNU R remains optional for ordinary development and is never a runtime dependency.
 
 ## Next steps
 
-1. With the maintainer's authorization: push to `origin`, let CI pass on Ubuntu, and carry out the
-   publication bootstrap in [releasing.md](releasing.md) (A7).
-2. Milestone B, in order: RFC-0007 adoption (the module now ships as a verified asset), then the
-   Linux oracle switch (pin `ubuntu-24.04`, rerun the evidence); then numDeriv toward P7 using the
-   RFC-0008 stages; then callable closure (Phase 3 of the plan).
+1. Continue verified local development against all five completion criteria: close reusable semantic
+   gaps, retain native/recursive causal evidence and pinned corpus checks, add independent datasets
+   and isolated testing support, and commit verified increments locally.
+2. Maintain offline package/browser evidence tooling, align CI configuration with canonical checks,
+   and refresh startup, interruption/recovery and fixed numDeriv measurements on a stable build.
+   Preserve bundle limits and distinguish observed timings from performance acceptance.
+3. After separate authorization, execute RFC-0007's normative gate with pinned `ubuntu-24.04`, GNU R
+   4.6.1 and recorded glibc; rerun conformance/corpus evidence and independently verify numerical
+   deviations. Complete the declared browser/OS matrix. Formula remains untouched until its
+   separately authorized holdout gate.
+4. New downloads, remote workflow runs, pushes and publication require their separate approvals.
+   Follow [releasing.md](releasing.md) when publication is authorized.
 
 Estimates are uncertain. Each package-check stage has needed several increments in the past, and
 RFC-0007 step 5 reruns all oracle evidence on a new platform.

@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.386.0",
+  "semanticProfileVersion": "0.387.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "12b9e5cbc281c7fd3164bae84c13d26ec1acd088d62f28a88dada5ea9041cef0",
+    "capabilities": "4e99c7704125e43a92f9cd566b01753531d6383dec6b8001ce3aedbca7a2d9bb",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "f62e0b2407e4c8411488662522cd6ad4d1aba531e1fab418e0be927a18742a05",
-    "oracleV2": "db11eb97bb615fa12c8849bec1465b6e4be7ca3accb3ca1297bc0cdf4ddff4f2",
+    "foundation": "6168151598b97e38ad5bf944ed9c1ab2d575d20e41725fd1b2b48b6c877b8508",
+    "oracleV2": "146b1f7429de7f31266c9f6c53770874233aac6c18308d442e15e2d11dedff5c",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "4cfc735becc20f377144934bea94efec57ef0b4911264d27c929de74494446ae"
+    "annotations": "5fdcc8c2f9776d7b6618daca6873873bae90cfdeddef69dc88080fd46ba03db6"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -2973,7 +2973,9 @@
         "s3-units-replacement-chain-reference-graph",
         "s3-usemethod-explicit-class-precedence",
         "s3-usemethod-nextmethod-class-history",
-        "s3-usemethod-public-labels-and-forcing"
+        "s3-usemethod-public-labels-and-forcing",
+        "usemethod-selector-nextmethod-forwarding",
+        "usemethod-selector-original-reference-graph"
       ],
       "matrix": [
         {
@@ -2987,10 +2989,15 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-nextmethod-forwarding"
             }
           ],
           "remainingGaps": [
-            "Actual prior .Class suffixes retain nested previous history without invented skipped-method frames; complete call/environment metadata and user mutation remain unfinished."
+            "Actual prior .Class suffixes retain nested previous history without invented skipped-method frames; complete call/environment metadata and user mutation remain unfinished.",
+            "Selected .Class previous history and .Method follow the explicit selector even when method actuals differ or are reassigned; arbitrary metadata mutation and full call/environment attribution remain unfinished."
           ]
         },
         {
@@ -3017,9 +3024,14 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-units-replacement-chain-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-original-reference-graph"
             }
           ],
           "remainingGaps": [
+            "The explicit-selector continuation retains the original environment alias or the method's replacement environment alias as observed; arbitrary reference kinds and direct-method identity remain unfinished.",
             "The owned units replacement continuation returns the shared environment unchanged; arbitrary returned objects and direct-method identity behavior remain unfinished."
           ]
         },
@@ -3046,10 +3058,15 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-nextmethod-forwarding"
             }
           ],
           "remainingGaps": [
-            "Selected closure and opted-in library-generic continuations are covered; direct builtin methods and the complete continuation matrix remain unfinished."
+            "Selected closure and opted-in library-generic continuations are covered; direct builtin methods and the complete continuation matrix remain unfinished.",
+            "Selected continuation from an explicit integer selector retains original actual values and follows the selector's integer/numeric chain; arbitrary selectors, complete continuation and direct-method behavior remain unfinished."
           ]
         },
         {
@@ -3063,10 +3080,19 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-public-labels-and-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-nextmethod-forwarding"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-original-reference-graph"
             }
           ],
           "remainingGaps": [
-            "Changed x is forwarded using the original dispatch chain and an unused replacement value stays lazy; general dots, missing/default and side-effect behavior remain unfinished."
+            "Changed x is forwarded using the original dispatch chain and an unused replacement value stays lazy; general dots, missing/default and side-effect behavior remain unfinished.",
+            "Selected method-local formal changes are forwarded without changing the selector's dispatch chain; additional NextMethod arguments and complete missing/default/dots reconstruction remain unfinished."
           ]
         }
       ],
@@ -3877,7 +3903,12 @@
         "s3-usemethod-implicit-dispatch-classes",
         "s3-usemethod-nextmethod-class-history",
         "s3-usemethod-public-labels-and-forcing",
-        "s3-usemethod-returned-reference-graph"
+        "s3-usemethod-returned-reference-graph",
+        "usemethod-selector-class-forcing-values",
+        "usemethod-selector-missing-default-values",
+        "usemethod-selector-nextmethod-forwarding",
+        "usemethod-selector-original-call-metadata",
+        "usemethod-selector-original-reference-graph"
       ],
       "matrix": [
         {
@@ -3895,10 +3926,19 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-public-labels-and-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-nextmethod-forwarding"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-original-call-metadata"
             }
           ],
           "remainingGaps": [
-            "Selected .Class suffix/previous history, .Method/.Generic/.Group and unchanged public class labels are observed; arbitrary metadata mutation and full call/environment attribution remain unfinished."
+            "Selected .Class suffix/previous history, .Method/.Generic/.Group and unchanged public class labels are observed; arbitrary metadata mutation and full call/environment attribution remain unfinished.",
+            "Selected source expressions, match.call/sys.call argument metadata and selector-derived .Class history survive original-actual forwarding; arbitrary call attributes, metadata mutation and full call/environment attribution remain unfinished."
           ]
         },
         {
@@ -3912,9 +3952,18 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-class-forcing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-missing-default-values"
             }
           ],
           "remainingGaps": [
+            "A supplied NULL selector and selected zero-actual, literal-missing and forwarded-missing flags are observed without injecting the selector as an argument; omitted-selector, invalid/explicitly missing selector, broader default and diagnostic boundaries remain unfinished.",
             "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished."
           ]
         },
@@ -3925,10 +3974,15 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-returned-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-original-reference-graph"
             }
           ],
           "remainingGaps": [
-            "An owned implicit numeric method preserves the returned environment reference; supplied-selector original-argument identity and complete identity behavior remain unfinished."
+            "An explicit integer selector preserves the original environment reference through the selected method and NextMethod; replacing the method formal forwards the second environment reference while retaining the selector chain. Arbitrary returned objects and complete identity behavior remain unfinished.",
+            "Owned implicit and explicitly selected numeric methods preserve tested returned environment references; arbitrary selector/reference combinations and complete identity behavior remain unfinished."
           ]
         },
         {
@@ -3946,9 +4000,26 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-implicit-dispatch-classes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-class-forcing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-missing-default-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-nextmethod-forwarding"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-original-call-metadata"
             }
           ],
           "remainingGaps": [
+            "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished.",
             "Selected scalar, array and explicit-class method selection is covered; arbitrary objects and the complete generic-call matrix remain unfinished."
           ]
         },
@@ -3959,10 +4030,23 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-public-labels-and-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-class-forcing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-missing-default-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-selector-nextmethod-forwarding"
             }
           ],
           "remainingGaps": [
-            "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished."
+            "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished.",
+            "Selected selector/name/original forcing order, unused original laziness, second-promise reuse, method-default selection and changed-method-argument continuation are observed; arbitrary control flow, visibility, dots reconstruction and missing/default forcing remain unfinished."
           ]
         }
       ],

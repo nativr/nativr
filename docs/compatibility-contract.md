@@ -38,6 +38,34 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Explicit UseMethod selectors and original arguments (profile 0.387)
+
+A supplied `UseMethod` selector chooses the method and class history while the method receives the
+generic's original actual arguments. Selected integer and NULL selectors preserve distinct original
+values, promises, argument tags/order and returned environment references. Method formals rematch
+the original positional, named, partial and dots arguments. The tested `substitute`, `match.call`
+and `sys.call` observations retain owned source expressions and call metadata.
+
+An unused original promise remains lazy. A selector that aliases a second actual forces that promise
+once for selection; the method subsequently forces the first actual only if needed. The observed
+generic-name/selector/original forcing order is preserved. An explicit selector adds no actual to a
+zero-argument call: empty dots and missing flags survive, and a method's default can apply without
+forcing an omitted generic default. Literal and forwarded missing flags are covered.
+
+`NextMethod` follows the selector's original class chain while forwarding original or method-local
+replacement values. Exact recursive graphs verify unchanged and replaced environment aliases. The
+implementation removes the selector replacement/insertion paths; it adds no allocation path and
+retains the existing class-search, metadata and call-depth limits.
+
+Evidence covers twenty-one independent native fixtures, four foundation groups and five exact
+recursive graphs with strict causal controls. Generic bodies in this bounded set end directly with
+`UseMethod`; complete nonlocal-return and visibility behavior are not established. Omitted
+selectors, arbitrary selector objects, invalid/explicitly missing selectors, broad default/dots
+reconstruction, full condition attribution, S4/group interactions and direct-method continuation
+remain unfinished. The
+[neighboring observations](../conformance/probes/usemethod-selector-neighboring-gaps.R) grant no
+compatibility credit and do not imply every recorded control currently fails.
+
 ### Bounded implicit S3 class chains (profile 0.386)
 
 Ordinary closure `UseMethod` and the modeled `units`, `units<-` and `as.POSIXct` generics use the
@@ -67,11 +95,12 @@ Resource checks are owned browser-runtime acceptance evidence, not native alloca
 
 Independent fixtures and exact recursive graphs cover selected scalar/array chains, explicit-class
 precedence, default/history metadata, forcing, changed-argument continuation and returned identity.
-Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, arbitrary language
-objects, complete visibility/condition origins, S4/group interactions and direct-method continuation
-remain unfinished. The [neighboring probes](../conformance/probes/implicit-s3-neighboring-gaps.R)
-record native expectations without granting compatibility credit or asserting that every neighboring
-guard currently fails. This increment does not establish complete S3 or object-system compatibility.
+Explicit dispatch selectors gain the bounded evidence above in 0.387.
+Omitted/forwarded-missing/default corner cases, arbitrary language objects, complete
+visibility/condition origins, S4/group interactions and direct-method continuation remain
+unfinished. The [neighboring probes](../conformance/probes/implicit-s3-neighboring-gaps.R) record
+native expectations without granting compatibility credit or asserting that every neighboring guard
+currently fails. This increment does not establish complete S3 or object-system compatibility.
 
 ### Bounded POSIXlt conversion and numeric predicates (profile 0.385)
 

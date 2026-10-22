@@ -2692,5 +2692,35 @@
     "policy": "exact",
     "bindingEvidence": ["base::UseMethod"],
     "code": "local({shared<-new.env(parent=emptyenv());shared$marker<-37L;g<-function(x,y)UseMethod(\"g\");g.numeric<-function(x,y)list(returned=y,classes=.Class,method=.Method);list(shared=shared,result=g(1L,shared))})"
+  },
+  {
+    "id": "usemethod-selector-class-forcing-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(case_1=local({g<-function(x)UseMethod(\"g\",1L);g.integer<-function(x)list(value=x,type=typeof(x),classes=.Class,method=.Method);g(\"original\")}),case_2=local({g<-function(x)UseMethod(\"g\",NULL);g.NULL<-function(x)list(value=x,classes=.Class,method=.Method);g(\"original\")}),case_3=local({events<-character();selector<-function(){events<<-c(events,\"selector\");1L};g<-function(x)UseMethod(\"g\",selector());g.integer<-function(x)list(missing=missing(x),events=events,classes=.Class);g(stop(\"original forced\"))}),case_4=local({events<-character();mark<-function(k,v){events<<-c(events,k);v};g<-function(x,y)UseMethod(\"g\",y);g.integer<-function(x,y)list(x=x,y=y,events=events,classes=.Class);g(mark(\"x\",\"original\"),mark(\"y\",1L))}),case_5=local({events<-character();mark<-function(k,v){events<<-c(events,k);v};g<-function(x)UseMethod(mark(\"generic\",\"g\"),mark(\"selector\",1L));g.integer<-function(x)list(x=x,events=events);g(mark(\"original\",\"value\"))}))})"
+  },
+  {
+    "id": "usemethod-selector-original-call-metadata",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(case_1=local({g<-function(alpha,beta)UseMethod(\"g\",1L);g.integer<-function(alpha,beta)list(alpha=alpha,beta=beta,call=match.call(),actual=sys.call());g(beta=2L,alpha=\"original\")}),case_2=local({g<-function(alpha,beta)UseMethod(\"g\",1L);g.integer<-function(alpha,beta)list(alpha=alpha,beta=beta,call=match.call(),actual=sys.call());g(be=2L,al=\"original\")}),case_3=local({g<-function(alpha,beta)UseMethod(\"g\",1L);g.integer<-function(beta,alpha)list(alpha=alpha,beta=beta,call=match.call());g(10L,20L)}),case_4=local({g<-function(alpha,beta)UseMethod(\"g\",1L);g.integer<-function(beta,alpha)list(alpha=alpha,beta=beta,call=match.call());g(alpha=10L,beta=20L)}),case_5=local({g<-function(x,...)UseMethod(\"g\",1L);g.integer<-function(x,...)list(x=x,dots=list(...),call=match.call());g(\"original\",z=3L,2L,a=1L)}),case_6=local({events<-character();mark<-function(k,v){events<<-c(events,k);v};g<-function(x)UseMethod(\"g\",1L);g.integer<-function(x)list(source=substitute(x),events=events,missing=missing(x));g(mark(\"original\",\"value\"))}))})"
+  },
+  {
+    "id": "usemethod-selector-missing-default-values",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod"],
+    "code": "local({list(case_1=local({g<-function()UseMethod(\"g\",1L);g.integer<-function(...)list(dots=list(...),call=match.call(),classes=.Class);g()}),case_2=local({g<-function(x)UseMethod(\"g\",1L);g.integer<-function(x)list(missing=missing(x),call=match.call(),classes=.Class);g()}),case_3=local({events<-character();g<-function(x=stop(\"generic default forced\"))UseMethod(\"g\",1L);g.integer<-function(x={events<<-c(events,\"method default\");7L})list(missing=missing(x),value=x,events=events);g()}),case_4=local({g<-function(x)UseMethod(\"g\",1L);g.integer<-function(x)list(missing=missing(x),classes=.Class);h<-function(x)g(x);h()}),case_5=local({g<-function(x)UseMethod(\"g\",1L);g.integer<-function(x)list(missing=missing(x),classes=.Class);g(x=)}),case_6=local({g<-function()UseMethod(\"g\",structure(1,class=\"owned_absent\"));g.default<-function(...)list(dots=list(...),call=match.call(),classes=.Class,method=.Method);g()}))})"
+  },
+  {
+    "id": "usemethod-selector-nextmethod-forwarding",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod", "base::NextMethod"],
+    "code": "local({list(case_1=local({g<-function(x,y)UseMethod(\"g\",1L);g.integer<-function(x,y)list(first=list(x=x,y=y,classes=.Class),tail=NextMethod());g.numeric<-function(x,y)list(x=x,y=y,classes=.Class,method=.Method);g(\"original\",2L)}),case_2=local({g<-function(x,y)UseMethod(\"g\",1L);g.integer<-function(x,y){x<-\"changed\";y<-9L;NextMethod()};g.numeric<-function(x,y)list(x=x,y=y,classes=.Class,method=.Method);g(\"original\",2L)}))})"
+  },
+  {
+    "id": "usemethod-selector-original-reference-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::UseMethod", "base::NextMethod"],
+    "code": "local({first<-new.env(parent=emptyenv());first$marker<-43L;second<-new.env(parent=emptyenv());second$marker<-47L;g<-function(x)UseMethod(\"g\",1L);g.integer<-function(x)list(first=x,tail=NextMethod());g.numeric<-function(x)x;unchanged<-g(first);g.integer<-function(x){x<-second;NextMethod()};changed<-g(first);list(first=first,second=second,unchanged=unchanged,changed=changed)})"
   }
 ]

@@ -9,7 +9,7 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.386, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.387, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
 overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
@@ -104,6 +104,11 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+Explicit-selector forwarding adds seventeen evidence links to nine existing UseMethod/NextMethod
+dimensions, preserving all prior evidence and the total of 107 partial dimensions on nineteen
+bindings. Selected actual values, forcing, call metadata and reference continuation are covered;
+omitted selectors, arbitrary selector objects, visibility and complete S3 behavior remain open.
 
 Five S3 callable matrices add 21 partial dimension links for implicit search chains, class history,
 selected forcing and returned-reference behavior. Four dimensions merge with existing as.POSIXct

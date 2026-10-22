@@ -63,6 +63,19 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
+  await page.locator("#source").fill(`local({
+    events <- 0L
+    original <- function() { events <<- events + 1L; "original" }
+    g <- function(x, y) UseMethod("g", 1L)
+    g.integer <- function(x, y) NextMethod()
+    g.numeric <- function(x, y) list(value=x, classes=.Class)
+    value <- g(original(), stop("unused original forced"))
+    c(identical(value$value, "original"), identical(events, 1L),
+      identical(value$classes, structure("numeric", previous=c("integer", "numeric"))))
+  })`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true]");
+  expect(evaluationRequests).toEqual([]);
   await page
     .locator("#source")
     .fill(

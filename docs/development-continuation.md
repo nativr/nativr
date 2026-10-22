@@ -1826,3 +1826,34 @@ Next measurable increment: fix explicit UseMethod selectors so selecting a metho
 or inject original call arguments. Verify original promises, names/order, laziness, reference
 identity and NextMethod continuation with independent native cases and exact causal evidence. Keep
 omitted-dispatch/default and other neighboring gaps separate until independently addressed.
+
+### Explicit UseMethod selector increment (profile 0.387)
+
+The explicit-selector baseline reproduced 18 mismatches in 21 independent native cases. The runtime
+now retains the generic's original actual argument objects and uses its explicit selector only for
+method selection. All 21 focused tests and 655 related regressions pass. The evidence covers
+selected forcing order, lazy originals, named/positional rematching, owned call metadata,
+zero-actual defaults/missing flags and NextMethod continuation with original or changed references.
+Omitted selectors, nonlocal return, visibility and the complete S3 matrix remain unfinished.
+
+Four foundation groups and five exact recursive graphs add evidence. Native validation passes 46
+checks, including fourteen strict causal controls and two identity invariants. Seventeen new links
+merge into nine existing UseMethod/NextMethod dimensions; the inventory retains 107 partial
+dimensions on nineteen bindings, 169 causal-linked bindings and no completed callable or domain. Six
+maintained neighboring observations receive no compatibility credit.
+
+The full check passes 3,022 tests with 94 opt-in skips. Checked-in/live/recursive conformance passes
+1,458 / 1,385 / 373; the live gate skips 55 NativR-only cases. All 24 cached package reports
+preserve the 178 inputs, outcomes, stages and repeatability flags from 0.386. Tiers are unchanged.
+The [Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.387.0.json)
+passes 9/9, including original-argument laziness and selector class history through the Worker with
+no evaluation network traffic. Required examples take 12.5 / 15.7 / 66.5 seconds under the unchanged
+timeout; this is not release-performance acceptance. Worker gzip remains 491.4/512 KiB and all fixed
+caps pass. Performance and pack evidence remain at 0.380. Public API/protocol and existing download,
+holdout, Linux and remote-action boundaries are unchanged.
+
+Next measurable increment: reproduce omitted-selector behavior for zero actuals, generic defaults
+and literal missing arguments. Preserve original promises, method defaults, local-reassignment
+behavior and references. Admit only independently verified NULL or missing-symbol dispatch cases;
+keep forwarded-missing diagnostics, nonlocal return and visibility separate. Continue all wider
+completion work under the existing boundaries. No user input is needed for this local step.
