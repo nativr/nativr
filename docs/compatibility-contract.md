@@ -38,6 +38,32 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### UseMethod generic-name admission and diagnostic precedence (profile 0.392)
+
+The `generic` argument of direct `UseMethod` calls must have character storage and length one.
+Absent and literally missing generic actuals report `there must be a 'generic' argument`.
+Noncharacter values and character vectors of other lengths report
+`'generic' argument must be a character string`. A supplied expression referring to a missing outer
+formal retains that formal's ordinary missing-argument error; it is not treated as a literally
+absent generic. The actual is forced once and an error it raises propagates unchanged.
+
+Names, custom attributes/classes and dimensions do not reject a character scalar or invoke character
+coercion. A missing character scalar names the generic `"NA"`; an empty character scalar names the
+empty generic. Independently owned `NA.integer` and `.integer` methods establish these two routing
+cases. Original actuals and the existing method-search order remain unchanged.
+
+Validation precedes the existing active-loop and interpreted-promise context checks, independently
+of named-actual order. Missing or invalid names therefore win over context rejection; valid names,
+including NA and empty names, reach context admission. Rejection at either stage leaves a supplied
+selector unforced. The change is local to `UseMethod`; shared character-scalar validation and other
+builtin/internal/group dispatch entry points retain their existing contracts.
+
+Forty-eight independent native fixtures cover this bounded behavior, including fifteen prior passing
+guards. General no-applicable-method diagnostics, duplicate/partial/unused argument matching,
+selector-missing diagnostics, native-wrapper/library/evaluation and no-closure admission, complete
+condition origins and full S3/S4/group behavior remain unfinished. No callable or semantic domain is
+complete; public APIs and the Worker protocol are unchanged.
+
 ### UseMethod admission in interpreted promise contexts (profile 0.391)
 
 A direct `UseMethod` expression forced from another environment by an interpreted closure raises the
@@ -59,10 +85,10 @@ finite invisible dispatch; it does not establish GNU R interrupted-promise warni
 
 This increment changes only interpreted closure admission with an explicit call environment.
 Library/evaluation frames and absent origin metadata retain their existing routes. Direct native
-wrapper, eval/evalq/local, handler and no-closure contexts, arbitrary generic diagnostics, full
+wrapper, eval/evalq/local, handler and no-closure contexts, complete generic diagnostics, full
 condition origins, direct NextMethod visibility and complete S3/S4/group behavior remain unfinished.
-No callable or semantic domain is complete; the public session API and Worker protocol are
-unchanged.
+Generic-name admission and diagnostic precedence have the bounded evidence above in 0.392. No
+callable or semantic domain is complete; the public session API and Worker protocol are unchanged.
 
 ### UseMethod admission in active loops (profile 0.390)
 
@@ -88,11 +114,12 @@ While-condition cases remain foundation-only to keep the successful-value contro
 meaningful.
 
 This is a bounded direct-loop rule. Selected interpreted promise contexts gain the evidence above in
-0.391; native wrapper, eval/evalq/local, handler and no-closure contexts, arbitrary generic argument
-diagnostics, complete condition origins, S4/group interactions, free-variable forwarding and direct
-NextMethod visibility remain unfinished. Calling an ordinary generic through a wrapper is a
-preservation control, not evidence for direct UseMethod inside that wrapper. No complete callable or
-semantic domain is established.
+0.391, and generic-name admission gains the bounded evidence above in 0.392. Native wrapper,
+eval/evalq/local, handler and no-closure contexts, complete generic argument diagnostics, complete
+condition origins, S4/group interactions, free-variable forwarding and direct NextMethod visibility
+remain unfinished. Calling an ordinary generic through a wrapper is a preservation control, not
+evidence for direct UseMethod inside that wrapper. No complete callable or semantic domain is
+established.
 
 ### Direct UseMethod completion in closures (profile 0.389)
 

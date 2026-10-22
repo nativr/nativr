@@ -9,7 +9,7 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.391, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.392, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
 overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
@@ -104,6 +104,16 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+Profile 0.392 adds eleven recursive evidence links across four existing UseMethod dimensions:
+ordinary, boundaries, errors and side effects. Selected character storage/length validation,
+literal-versus-forwarded missingness, NA/empty method names and generic validation before context
+admission and selector forcing are covered. Three foundation groups retain 48 assertions and three
+recursive groups retain 48 raw components with six strict group-level causal controls. Counts stay
+at 109 partial dimensions on nineteen bindings; no new callable or dimension is added. Input
+attributes are admitted in selected cases, with no attribute-preservation or identity credit.
+Complete method search, no-applicable-method diagnostics, generic matching/encodings, condition
+origins and broader contexts remain unfinished. No completion or exclusion claim is added.
 
 Profile 0.391 adds six recursive evidence links across four existing UseMethod dimensions: ordinary,
 boundaries, errors and side effects. Interpreted-closure promise-origin rejection, generic-first

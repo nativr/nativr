@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.391.0",
+  "semanticProfileVersion": "0.392.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "aa5bc56e3a9ba6ccb03727900472006b865906be1d5b2c2abc42187167b95a0e",
+    "capabilities": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "4fe7a56cedad12c61e0d534b99f79e98b83f3e73321de483b3e8dfa52e8f9c52",
-    "oracleV2": "d33c1f33888305507ab689b4e4630a12ebe254ee01599dc6a795c24a7075843d",
+    "foundation": "6b88bf0e13caf2698d884f502d16829f1cb11add0c35fb1e60a3409a36bd1c83",
+    "oracleV2": "22e8438916b14295d1f9e00e6920cce980e218da4f0b44dc5685c9f6be1ce658",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "9f6d0cbb8f01224252d209098b2458931b0b8547175bc2b7a85f2bf14c781fcf"
+    "annotations": "4d875cf7564fb87a1872eed006d503daba50551052f7439d2ef6c2be19d3e336"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -3912,6 +3912,9 @@
         "usemethod-control-nested-nextmethod-values",
         "usemethod-control-original-reference-graph",
         "usemethod-control-visibility-values",
+        "usemethod-generic-before-context-values",
+        "usemethod-generic-missing-and-name-routing-values",
+        "usemethod-generic-storage-and-shape-values",
         "usemethod-omitted-literal-missing-values",
         "usemethod-omitted-original-actuals-and-forcing",
         "usemethod-omitted-original-reference-graph",
@@ -4000,6 +4003,18 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-generic-before-context-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-missing-and-name-routing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-storage-and-shape-values"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-omitted-literal-missing-values"
             },
             {
@@ -4029,7 +4044,8 @@
             "Direct cleanup return replacement and caller continuation are observed; native wrapper/evaluation contexts and full error origins remain unfinished.",
             "Selected active same-closure loop bodies reject while for-sequence dispatch, completed loops and new inner generic frames remain admitted. Arbitrary context composition, no-closure behavior and complete generic diagnostics remain unfinished.",
             "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished.",
-            "Selected zero-formal/empty-dots calls, forced or unforced generic defaults, local rebinding and literal-missing actuals retain the original argument list; outside-generic invocation, complete missing/default behavior and full diagnostic origins remain unfinished."
+            "Selected zero-formal/empty-dots calls, forced or unforced generic defaults, local rebinding and literal-missing actuals retain the original argument list; outside-generic invocation, complete missing/default behavior and full diagnostic origins remain unfinished.",
+            "Selected zero/multiple character lengths, noncharacter storage, literal and forwarded missing names, scalar NA/empty names and attributed/classed character admission are observed. Complete name boundaries, encodings, argument matching and arbitrary context composition remain unfinished."
           ]
         },
         {
@@ -4046,6 +4062,18 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-generic-before-context-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-missing-and-name-routing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-storage-and-shape-values"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-promise-origin-forcing-cleanup-values"
             },
             {
@@ -4054,6 +4082,7 @@
             }
           ],
           "remainingGaps": [
+            "Selected absent/literal missing, forwarded-missing and invalid storage/length diagnostics are observed with their precedence over existing loop/interpreted admission. No-applicable-method diagnostics, selector missingness, condition calls/classes and native-wrapper/evaluation/no-closure behavior remain unfinished.",
             "Selected interpreted-helper promise origins raise the observed inappropriate-context diagnostic before selector/original forcing, while an owned generic-expression error wins. Interrupted-promise warning parity, malformed generic diagnostics and complete condition attribution remain unfinished.",
             "Selected same-closure active-loop calls produce the observed inappropriate-context diagnostic after generic validation and before selector/original forcing. Native messages for arbitrary malformed/missing generic arguments, native wrapper/evaluation/no-closure contexts and complete condition attribution remain unfinished."
           ]
@@ -4116,6 +4145,14 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-generic-missing-and-name-routing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-storage-and-shape-values"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-omitted-literal-missing-values"
             },
             {
@@ -4151,6 +4188,7 @@
             "A separate generic invoked from selected caller loops retains its own function frame. Direct UseMethod inside evaluation/handler wrappers and complete generic contexts remain unfinished.",
             "Direct owned generic completion and nested/helper return targets are observed; unusual evaluation contexts, complete S3 dispatch and free-variable forwarding remain unfinished.",
             "Owned default promises and ordinary generic calls passed through interpreted helpers retain their observed dispatch. Complete default/forwarding behavior, native wrappers and all generic contexts remain unfinished.",
+            "Selected character scalar inputs and owned methods named NA.integer or .integer are observed without character coercion. Arbitrary method search, generic-name encodings and complete S3 behavior remain unfinished.",
             "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished.",
             "Selected omitted-selector calls inside owned generics choose NULL when no actual was supplied and name for a literal missing selected actual; existing matched-first-formal and first-supplied fallback behavior remains observed. Arbitrary objects, generic-call contexts and complete S3 dispatch remain unfinished.",
             "Selected scalar, array and explicit-class method selection is covered; arbitrary objects and the complete generic-call matrix remain unfinished."
@@ -4175,6 +4213,18 @@
             {
               "suite": "oracle-v2",
               "caseId": "usemethod-control-completion-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-before-context-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-missing-and-name-routing-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-generic-storage-and-shape-values"
             },
             {
               "suite": "oracle-v2",
@@ -4204,6 +4254,7 @@
           "remainingGaps": [
             "Direct generic continuation is suppressed and method/generic/caller cleanup order is observed. Unusual evaluation contexts, active-binding behavior and full condition/control interaction remain unfinished.",
             "Generic-first forcing, selector/original laziness before loop rejection, cleanup and completed expression loops have bounded observations. Complete promise, error-origin and control-flow behavior remains unfinished.",
+            "Selected generic validation precedes admission and selector forcing, including named-selector-first calls; an owned as.character method is not invoked. Arbitrary promise, matching, active-binding and control effects remain unfinished.",
             "Selected generic-default forcing does not invent a supplied actual; method defaults, local rebinding order and memoized original promises retain their observed behavior. General promise/control-flow behavior, nonlocal return, visibility and full condition attribution remain unfinished.",
             "Selected generic-first forcing, rejected selector/original laziness and helper-before-origin cleanup are observed for interpreted forwarding. Native wrappers, retained-promise warning behavior and complete control effects remain unfinished.",
             "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished.",
@@ -4232,6 +4283,7 @@
         "Closure UseMethod search classes remain distinct from public class()/inherits() labels and internal/group generic policy.",
         "Direct completion, selected same-closure loops and interpreted-closure promise-origin admission have bounded causal evidence. Native wrapper/library/evaluation/no-closure contexts, full generic diagnostics, direct NextMethod visibility and complete S3 control behavior remain unfinished.",
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "Selected generic storage/shape, literal versus forwarded missingness and NA/empty owned method names have bounded native observations. Complete generic matching, no-applicable-method diagnostics, condition origins, encodings and arbitrary call contexts remain unfinished.",
         "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished."
       ]
     },

@@ -292,7 +292,11 @@ describe("measured feature boundary coverage", () => {
     await expect(runtime.eval("m <- matrix(1:4, 2)\nm[NA, 1] <- 3")).rejects.toMatchObject({
       code: "NRE2212",
     });
-    await expect(runtime.eval('UseMethod("")')).rejects.toMatchObject({ code: "NRE2213" });
+    await expect(
+      runtime.eval(
+        'local({ .integer <- function(x) 19L; g <- function(x) UseMethod("", 1L); g(1L) })',
+      ),
+    ).resolves.toBe(19);
     await expect(runtime.eval('UseMethod("missing")')).rejects.toMatchObject({ code: "NRE2214" });
     await expect(runtime.eval("NextMethod()")).rejects.toMatchObject({ code: "NRE2215" });
     await expect(runtime.eval('setGeneric("bad", 1)')).rejects.toMatchObject({ code: "NRT3160" });

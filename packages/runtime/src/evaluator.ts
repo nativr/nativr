@@ -4255,9 +4255,6 @@ export class Evaluator {
     object: RValue | undefined,
     context: EvaluationContext,
   ): Promise<RValue> {
-    if (generic.length === 0) {
-      throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
-    }
     const callFrame = this.#closureCallFrames.at(-1);
     // A supplied selector chooses the method; the method receives the original actuals.
     const arguments_ = callFrame?.arguments ?? [];

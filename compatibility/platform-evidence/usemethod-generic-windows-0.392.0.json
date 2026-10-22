@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-usemethod-generic-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.392.0",
+  "sourceCommit": "273acaa4f8f4d0cedd157ddee9f2d48e1f73c8ad",
+  "sourceState": "Uncommitted candidate over sourceCommit; repository-relative source digests identify the recorded state",
+  "platform": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "oracleVersion": "4.6.1",
+    "oracleLocale": "C"
+  },
+  "scope": "Bounded UseMethod generic storage/length, missingness and NA/empty name admission before context and selector processing; Windows advisory evidence, not complete S3 or RFC-0007 Linux validation",
+  "provenance": {
+    "sources": [
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "d618df6c572f6d01525128e5c3498399484d7a9365d9d44884210038e77d722d"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "86682981bcad9b8d4218d5581208dacf1f92e8d7946b1cceb28d2a1141fcdb8d"
+      },
+      {
+        "path": "packages/runtime/src/values.ts",
+        "sha256": "cf57f44fbf91aed6166d4cda18eefc794dbc5e6f4dc7c3a64976ffb8702aea33"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "50788cccddddab9ad4e1a24ebd56ef6d73240bc733f72720d4a5c7e80b04a54d"
+      },
+      {
+        "path": "packages/nativr/test/usemethod-generic-name.test.ts",
+        "sha256": "3c90e358273a471d70329fde385058d964adffa52a1dd5b7cc6b83130b9bc29d"
+      },
+      {
+        "path": "packages/nativr/test/feature-boundaries.test.ts",
+        "sha256": "cedb02e61d652b195fe5869a2b139bd2ca9cc2d4e893a13b117076463df40b50"
+      },
+      {
+        "path": "packages/nativr/test/usemethod-loop-context.test.ts",
+        "sha256": "947b191f3570e8e3daa8faac992ac55c224c73c22f7ec21da48ad56ee8908abe"
+      },
+      {
+        "path": "packages/nativr/test/usemethod-control-flow.test.ts",
+        "sha256": "e723c3ddf41b92fc874fc28a710e9aa997d084803e15b75401ce3f42896f1a57"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "20e2813e78ad62c18735c832716dddd35bc1eb4f930632e28eeb532ea28d0523"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "6b88bf0e13caf2698d884f502d16829f1cb11add0c35fb1e60a3409a36bd1c83"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "22e8438916b14295d1f9e00e6920cce980e218da4f0b44dc5685c9f6be1ce658"
+      },
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "4d875cf7564fb87a1872eed006d503daba50551052f7439d2ef6c2be19d3e336"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "7dd47b5477a1d4824417328d296d540f8ea4ce31e33a263f8aec69266040cb28"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "0be8ad9ee28ee20cb838d3a3b2a2a3f671126772adeaaf03e1c889173afa81b3"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "da6d1edd0299ea2b8e9d3b4c946e31f53e5b700fa807f88020d763f6e4669efb"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "draftDigests": [
+      {
+        "label": "finalized-foundation.json",
+        "sha256": "92c25a5fc644a0c7ce32cddb05bb4bf8b2388c594a43543776ac3ab558dfe363"
+      },
+      {
+        "label": "finalized-oracle-v2.json",
+        "sha256": "9d1119f1cdfa9bff989a9d0eedf9a0a678a60223262dc409ba406fed41ca6271"
+      },
+      {
+        "label": "finalized-native-checks.json",
+        "sha256": "cb2cdabaee6796a311e91f8ced517c5a36751e177a9023a699296aeaf8aba7c6"
+      },
+      {
+        "label": "finalized-provenance.json",
+        "sha256": "fb4251a2aff902fd8b734f8e5f8f6c6fae60f08fcd0c01cfb137e28513c0f2f0"
+      }
+    ],
+    "nativeValidationSha256": "468a727dd4d5b0ea11c95c6c78bc2bd015f12c8ea1ef261a09fea0fe2b3266eb",
+    "originalFrozenMatrixSha256": "df1ede874cdc273e739cccd7dc764ffa43b3fc2b4bfaa74f0a147a916344944e",
+    "nativeTools": {
+      "bindingHelperSha256": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46",
+      "observerSha256": "591c9e75b85aac4af34a32148543b70f6ee4fddccb92b1889595da0b3ac1e2e6",
+      "adapterSha256": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e"
+    },
+    "draftPromotionExact": true,
+    "maintainedSourceTest": {
+      "cases": 48,
+      "exactFrozenStrings": true,
+      "path": "packages/nativr/test/usemethod-generic-name.test.ts",
+      "sha256": "3c90e358273a471d70329fde385058d964adffa52a1dd5b7cc6b83130b9bc29d"
+    },
+    "whitespaceNormalization": "Inherited CRLF/CR layout normalized to LF in assembled foundation/recursive and expected-value source; original 48 fixture strings unchanged",
+    "redaction": "Only case identities, counts, status checks, source/report/log digests and repository-relative evidence links; no expressions, implementation bodies, raw output or absolute host paths"
+  },
+  "baseline": {
+    "profile": "0.391.0",
+    "reportSha256": "ab0f6d78a5f0ac7f1c9f3906ba6d82b994844f4aab977ff4ccbab324b383c2a3",
+    "snapshotSha256": "fbea50d2bbb5e122266682149b04cdfbba05de757b2c6646a6bfb6e2b92d03d2",
+    "stableInputsAndArtifacts": true,
+    "counts": { "total": 48, "pass": 15, "mismatch": 33, "error": 0 },
+    "mismatchedCaseIds": [
+      "direct-character-empty-vector",
+      "direct-character-multiple",
+      "direct-character-multiple-leading-na",
+      "direct-null",
+      "direct-logical",
+      "direct-integer",
+      "direct-double",
+      "direct-complex",
+      "direct-raw",
+      "direct-list",
+      "direct-symbol",
+      "direct-closure",
+      "direct-builtin",
+      "direct-factor",
+      "missing-absent",
+      "missing-object-only",
+      "missing-literal",
+      "missing-named-literal",
+      "named-selector-before-invalid",
+      "na-name-owned-method",
+      "empty-name-owned-method",
+      "loop-missing-absent",
+      "interpreted-missing-absent",
+      "loop-missing-literal",
+      "interpreted-missing-literal",
+      "loop-noncharacter",
+      "interpreted-noncharacter",
+      "loop-character-empty-vector",
+      "interpreted-character-empty-vector",
+      "loop-character-multiple",
+      "interpreted-character-multiple",
+      "loop-na-name",
+      "interpreted-na-name"
+    ],
+    "interpretation": "33 reproduced defects and 15 passing guards, not a completion measure"
+  },
+  "independentNative": {
+    "counts": {
+      "assembledGroups": 6,
+      "assembledGroupsPassed": 6,
+      "foundationAssertions": 48,
+      "foundationAssertionsPassed": 48,
+      "recursiveComponentChecks": 48,
+      "recursiveComponentChecksPassed": 48,
+      "nativeStrictCausalControls": 6,
+      "nativeStrictCausalControlsPassed": 6
+    },
+    "cases": [
+      {
+        "id": "usemethod-generic-storage-and-shape",
+        "suite": "foundation",
+        "codeSha256": "20e85a870ecab3a1ad8a578e591254ad1ccad8a1d2eaf4e2d9f829886605074c",
+        "components": 18,
+        "nativeExpectedGraphSha256": "457cca44531fa7b086c787d5b16416bad7ce298f4f99b50ea79f7bf86977c46f"
+      },
+      {
+        "id": "usemethod-generic-missing-and-name-routing",
+        "suite": "foundation",
+        "codeSha256": "66a033b964729789b2f75854f9f2600a225f9f5bb01f3d963c57c27244ba55f5",
+        "components": 12,
+        "nativeExpectedGraphSha256": "e9f7472816c75b88c6a8625eaf2b5dc2b7182d4a46d0b1f3445793efeac658c8"
+      },
+      {
+        "id": "usemethod-generic-before-context",
+        "suite": "foundation",
+        "codeSha256": "4ba3d7be1815d4e55340038aaf25c4f827bd5851f760c124eb84cbc21707e48a",
+        "components": 18,
+        "nativeExpectedGraphSha256": "457cca44531fa7b086c787d5b16416bad7ce298f4f99b50ea79f7bf86977c46f"
+      },
+      {
+        "id": "usemethod-generic-storage-and-shape-values",
+        "suite": "oracle-v2",
+        "codeSha256": "54742787b21acb537cab922a09f238577b43b1d72418ccfc907ec0ebad39907e",
+        "components": 18,
+        "nativeExpectedGraphSha256": "73db956c65abb60fdcdb90a0b17dbc6745f98492138356c5d4a3c8d208964d7d"
+      },
+      {
+        "id": "usemethod-generic-missing-and-name-routing-values",
+        "suite": "oracle-v2",
+        "codeSha256": "d7b412c06068f0fda060959a5175b3a1b427503000f2f47f8723b6a9bc5a5299",
+        "components": 12,
+        "nativeExpectedGraphSha256": "27bb025bd34ccd55156cb4f5555154ea7ff0e37d1f3eba7681427e09b362acc3"
+      },
+      {
+        "id": "usemethod-generic-before-context-values",
+        "suite": "oracle-v2",
+        "codeSha256": "a0e67d8aeb8b6bf282fcef09632e931fd19a747ee9ebd3d5270c5985afa33b7c",
+        "components": 18,
+        "nativeExpectedGraphSha256": "3bed11b8dbb099866785d556c8a01ddab2b9e6cf09fe49c05d7abe4ce6b35f00"
+      }
+    ],
+    "causalControls": [
+      {
+        "id": "usemethod-generic-storage-and-shape-values",
+        "binding": "base::UseMethod",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "efb71056cf82670eb528ef4bd33037c57d31b5656104f09bc8153c3a73b11726",
+        "valueObservationSha256": "8c6b03e6366a8da9161af1add3e6896a846e3b06f52b8255969979fd88c9ebad"
+      },
+      {
+        "id": "usemethod-generic-missing-and-name-routing-values",
+        "binding": "base::UseMethod",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "225058023a3f55a31b94b446765af23fcde1083d1ad5740d39e8236c1d95302d",
+        "valueObservationSha256": "c1574c251027edb80f7d0df105494c20dc6ee835b367537d76c2c6fcad44f6fe"
+      },
+      {
+        "id": "usemethod-generic-before-context-values",
+        "binding": "base::UseMethod",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "7a393d9046c48d5d8f4cc52990ec0c6330d8a691a404758021c0596588f73f3c",
+        "valueObservationSha256": "a390b7452c6ac3a9d7e63f362abb280a25cd29ca5361fe39f90f04bce568a7cb"
+      }
+    ],
+    "causalScope": "Three composite base::UseMethod associations, each with two strict controls; not 48 individual causal proofs",
+    "workerExpression": {
+      "receiptSha256": "feae980b6f29ae9bcb72532b94070bab949e5147cc2eaae08ef2bcf42acf67fa",
+      "sourceSha256": "2ee87bb91dc39ef0b4ff90fe3008922599706f51a601be24f5b25392c296f2d1",
+      "normalizedExpressionSha256": "8fa95dc90355a47655e9ff5ff68830903cd741d076ee73766381fd73aa9b9316",
+      "assertions": 4,
+      "exactMaintainedTemplate": true,
+      "browserExecutionCredit": false
+    },
+    "correctedExistingBoundary": {
+      "assertions": 1,
+      "exactMaintainedSourceAndExpectedValue": true,
+      "receiptSha256": "543b829abf303e8c4fb62dc48cf8d38a20dc5f3b4947c8839377f7bceab9ff81",
+      "sourceSha256": "5aa86fe5e7f4f6db0e51486d5f1eab5264c21f11070ca771c27ec53414aef753",
+      "maintainedTestPath": "packages/nativr/test/feature-boundaries.test.ts",
+      "maintainedTestSha256": "cedb02e61d652b195fe5869a2b139bd2ca9cc2d4e893a13b117076463df40b50",
+      "separateFromFrozenMatrix": true
+    },
+    "boundary": "Native-side checks only; matching NativR execution is separately established by the recursive gate footer"
+  },
+  "gates": [
+    {
+      "command": "pnpm check",
+      "logSha256": "a9d8ac4ab0c196308866d334dbaab77580ba4e16c5742ca442c42a28442354f0",
+      "verification": "exact unit summary plus completed build/manifest/status/browser/bundle pipeline tail",
+      "unitPassed": 3215,
+      "unitSkipped": 94
+    },
+    {
+      "command": "pnpm conformance",
+      "logSha256": "73b45d809b20725f7f4baec275da02e79b83e83f0423a08894f7e2d1fa1b74ad",
+      "verification": "exact successful footer and new case pass lines",
+      "passed": 1476
+    },
+    {
+      "command": "pnpm conformance:r",
+      "logSha256": "9c2c0f61ebdf588a445db0959d93050fd01e62ad32358395e45c3abec187dc8e",
+      "verification": "exact successful footer and new case pass lines",
+      "passed": 1403,
+      "nativrOnlySkipped": 55
+    },
+    {
+      "command": "pnpm conformance:r:v2",
+      "logSha256": "993450e886db24e775adb9ca2d4b030bc891ac8c8e85bf5c713bd94045985241",
+      "verification": "exact successful recursive footer and new case pass lines",
+      "passed": 391,
+      "causallyLinkedBindings": 169
+    }
+  ],
+  "relatedEvidence": {
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.392.0.json",
+      "sha256": "cd0741428ec0e4b540e350529ac64d6c2567308bc281004ada5fabd210fad7e1",
+      "passed": 12,
+      "inputsStable": true
+    },
+    "originalPackages": {
+      "path": "compatibility/platform-evidence/offline-packages-windows-0.392.0/index.json",
+      "sha256": "019a52acf3e86bc45f765e736c298c0c6777026379d8b4672253f214d013338b",
+      "stableArtifacts": true,
+      "observationBaselineProfile": "0.389.0",
+      "comparedPriorPair": {
+        "path": "compatibility/platform-evidence/offline-packages-windows-0.391.0/index.json",
+        "sha256": "76fecac03e358ecda0d79ba580b3dd91704f7209175f4e36324e84e5d0f0453e",
+        "profile": "0.391.0"
+      },
+      "packages": [
+        {
+          "name": "abind",
+          "path": "compatibility/platform-evidence/offline-packages-windows-0.392.0/abind.json",
+          "sha256": "d334cadfcd515c60e585e00b9e8ae52fc16ec729c976c87506ede478b6cf9dcb",
+          "comparedWith": [
+            {
+              "path": "compatibility/package-check-evidence/0.389.0/abind.json",
+              "sha256": "8347e3eadb5abe4f1ed505d1199c1969cdd00b8241bf96c0de8b238f095162ce",
+              "profile": "0.389.0",
+              "scope": "full-corpus baseline"
+            },
+            {
+              "path": "compatibility/platform-evidence/offline-packages-windows-0.391.0/abind.json",
+              "sha256": "6d4176c9e9343bd0cd4f6a612192eef9deb2c9e943a34946bdf67b3fcb235a0f",
+              "profile": "0.391.0",
+              "scope": "two-package regression pair"
+            }
+          ],
+          "observationsUnchanged": 10,
+          "stagesUnchanged": 15,
+          "comparisonSummary": {
+            "total": 10,
+            "outcomes": { "match": 10 },
+            "repeatability": { "repeatable": 10, "nonrepeatable": 0, "unobserved": 0 }
+          },
+          "localP7Eligible": true,
+          "normativeTierCredit": false
+        },
+        {
+          "name": "numDeriv",
+          "path": "compatibility/platform-evidence/offline-packages-windows-0.392.0/numDeriv.json",
+          "sha256": "5551b31a30a5e4dadb3f228679addbb5044de4e1f706c29aeebf66baae70a508",
+          "comparedWith": [
+            {
+              "path": "compatibility/package-check-evidence/0.389.0/numDeriv.json",
+              "sha256": "fbda91c6de87fc031122ddb7d28b4272c382652c60df5135f8503668326f4e93",
+              "profile": "0.389.0",
+              "scope": "full-corpus baseline"
+            },
+            {
+              "path": "compatibility/platform-evidence/offline-packages-windows-0.391.0/numDeriv.json",
+              "sha256": "23316b387c2793eae29333bd2a0ee880e828b3144f6419b19a04a2ff9fb9bbc6",
+              "profile": "0.391.0",
+              "scope": "two-package regression pair"
+            }
+          ],
+          "observationsUnchanged": 11,
+          "stagesUnchanged": 15,
+          "comparisonSummary": {
+            "total": 11,
+            "outcomes": { "mismatch": 6, "match": 5 },
+            "repeatability": { "repeatable": 9, "nonrepeatable": 2, "unobserved": 0 }
+          },
+          "localP7Eligible": false,
+          "normativeTierCredit": false
+        }
+      ],
+      "normativeTierCredit": false
+    }
+  },
+  "qualification": {
+    "completeCallable": false,
+    "completeDomain": false,
+    "fullCorpusRefresh": false,
+    "linuxGate": false,
+    "releaseReady": false
+  },
+  "limitations": [
+    "Only two regression packages were rerun; this is not a 24-package refreshed corpus claim",
+    "Native-wrapper/library/evaluation/handler/no-closure contexts, complete generic diagnostics and interrupted-promise retry warnings remain unfinished",
+    "Two no-applicable-method diagnostic observations remain excluded; existing generic matching, condition origins and broader S3 behavior remain unfinished",
+    "Log summaries are checked and hashed; this recorder does not rerun gates or infer process exit receipts",
+    "Linux execution, the Formula holdout, publication and remote changes remain separately authorized work"
+  ]
+}

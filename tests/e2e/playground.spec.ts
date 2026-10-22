@@ -168,6 +168,42 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[true, true, true, true]");
   expect(evaluationRequests).toEqual([]);
+
+  await page.locator("#source").fill(`local({
+  trace <- character()
+  selector <- function() { trace <<- c(trace, "selector"); 1L }
+  message_of <- function(value) tryCatch(value, error = function(e) conditionMessage(e))
+  missing_name <- function(x) UseMethod(object = selector())
+  invalid_name <- function(x) UseMethod(1L, selector())
+  admission <- identical(message_of(missing_name(1L)), "there must be a 'generic' argument") &&
+    identical(message_of(invalid_name(1L)), "'generic' argument must be a character string") &&
+    identical(trace, character())
+
+  NA.integer <- function(x) 17L
+  .integer <- function(x) 19L
+  na_name <- function(x) UseMethod(NA_character_, selector())
+  empty_name <- function(x) UseMethod("", selector())
+  routing <- identical(c(na_name(1L), empty_name(1L)), c(17L, 19L)) &&
+    identical(trace, c("selector", "selector"))
+
+  trace <- character()
+  helper <- function(value) value
+  invalid_loop <- function(x) { for (i in 1L) UseMethod(1L, selector()); 99L }
+  invalid_actual <- function(x) helper(UseMethod(character(), selector()))
+  invalid_first <- identical(message_of(invalid_loop(1L)), "'generic' argument must be a character string") &&
+    identical(message_of(invalid_actual(1L)), "'generic' argument must be a character string") &&
+    identical(trace, character())
+
+  valid_loop <- function(x) { for (i in 1L) UseMethod(NA_character_, selector()); 99L }
+  valid_actual <- function(x) helper(UseMethod(NA_character_, selector()))
+  context_next <- identical(message_of(valid_loop(1L)), "'UseMethod' used in an inappropriate fashion") &&
+    identical(message_of(valid_actual(1L)), "'UseMethod' used in an inappropriate fashion") &&
+    identical(trace, character())
+  c(admission, routing, invalid_first, context_next)
+})`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true, true]");
+  expect(evaluationRequests).toEqual([]);
   await page
     .locator("#source")
     .fill(

@@ -2139,3 +2139,67 @@ extending the isolated runner's documented parity, and closing the semantic and 
 Full condition origins, arbitrary generic diagnostics, direct NextMethod visibility and complete S3
 behavior remain unfinished. Linux, holdout, downloads and remote actions retain their existing
 boundaries.
+
+### UseMethod generic-name validation (profile 0.392)
+
+The 48 independently native-verified assertions reproduce 33 mismatches on 0.391 and retain fifteen
+passing guards. Generic arguments require character storage and length one. Names, classes and
+attributes do not trigger coercion or rejection; missing/empty character scalars route to owned
+NA.integer and .integer methods. Absent or literal missing actuals have their observed diagnostic;
+forwarded missing expressions retain their ordinary originating-formal error. Generic validation
+precedes context admission, which precedes selector forcing even when named actuals are reordered.
+
+The implementation changes only local UseMethod validation and the direct dispatcher's empty-name
+check. Shared character validation, internal/group dispatch and general method search remain
+unchanged. All 48 source fixtures pass. Three foundation and three exact recursive groups preserve
+48 assertions and 48 raw components. Native assembly and six strict causal controls pass; these
+controls qualify three composite binding associations, not 48 independent component-level proofs.
+Eleven links extend ordinary, boundary, error and side-effect evidence. The inventory retains 109
+partial dimensions on nineteen bindings and 169 bindings with causal links; no complete callable or
+domain is claimed.
+
+The canonical check passes 3,215 unit tests with 94 opt-in skips, both typechecks, tooling, serial
+build and fixed bundle caps. Checked-in/live/recursive conformance passes 1,476 / 1,403 / 391, with
+55 NativR-only live skips. Client/Worker gzip sizes are 17.6/491.6 KiB; parser and elementary Wasm
+are 671.9/311.2 KiB raw. The
+[Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.392.0.json) passes
+12/12. Four native-verified assertions added inside the existing Worker test cover name validation,
+NA/empty method routing and validation/admission order. Required examples take 12.6 / 14.0 / 59.8
+seconds for Chromium / Firefox / WebKit under the unchanged 120-second budget. These advisory
+timings were collected alongside other verification gates; they are not an isolated performance
+benchmark.
+
+The
+[two-package checkpoint](../compatibility/platform-evidence/offline-packages-windows-0.392.0/index.json)
+uses the maintained 0.389 full-corpus baseline and additionally agrees with the 0.391 partial pair:
+all 21 observation objects, stage arrays and repeatability values match. abind retains ten matching
+observations and P7 eligibility. numDeriv retains five matches, six mismatches, two nonrepeatable
+observations and its test-output blocker. Cached pins and regression partitions stay unchanged. The
+full 24-package corpus remains at 0.389, performance at 0.389 and packed-consumer evidence at 0.388.
+Formula remains untouched; isolated-runner results receive no original package-tier credit.
+
+Next work remains independently reproducing broader native-wrapper/library and evaluation-context
+admission, general method-search diagnostics, and the remaining semantic and platform ledger.
+Complete generic matching, condition origins, direct NextMethod visibility and full S3 behavior
+remain unfinished. Linux, holdout, downloads and remote actions retain their existing boundaries.
+
+### Next implementation queue after 0.392
+
+A review of the maintained 0.389 corpus summaries and owned implementation identifies the next
+bounded work. The newer abind/numDeriv pair does not refresh the other 22 packages.
+
+- Profile the existing required-example test with per-run attribution, unchanged real clicks,
+  assertions and the 120-second limit. Keep diagnostic overhead and overlapping timings explicit.
+- Reproduce recursive `unlist` handling of non-atomic leaves with owned closures, environments and
+  language values. Verify result types, names, metadata and reference identity before changing the
+  recursive collector. Package causality remains unproven until affected cached checks are rerun.
+- Follow with source-aware parsing/parse metadata and the missing browser platform adapters used by
+  withr, using independent fixtures and explicit host-capability boundaries.
+- Continue independently licensed datasets and isolated testing-runner parity. New downloads need
+  approval; substitute-runner outcomes remain separate from original package tiers.
+
+The original missing-function leads for difftime units, numeric predicates, `formatC` and
+`sys.nframe` now have bounded evidence; use their remaining matrices instead of treating them as
+absent. Plotting already recognizes `bty`, so its old corpus lead needs a fresh reproduction. The
+nine P5 packages have blocked or incomplete original test stages, and all thirteen domains remain
+unfinished. Linux, Formula holdout, remote actions and publication retain their existing boundaries.

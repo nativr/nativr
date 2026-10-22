@@ -60338,9 +60338,13 @@ async function builtinUseMethod(invocation: BuiltinInvocation): Promise<RValue> 
     genericArgument === undefined ||
     (genericArgument.promise.missing && genericArgument.promise.expression === null)
   ) {
-    throw new REvaluationError("NRE2103", 'argument "generic" is missing, with no default');
+    throw new REvaluationError("NRE2103", "there must be a 'generic' argument");
   }
-  const generic = characterScalar(await invocation.force(genericArgument.promise), "generic");
+  const genericValue = await invocation.force(genericArgument.promise);
+  if (genericValue.type !== "character" || genericValue.length !== 1) {
+    throw new RTypeMismatchError("NRT3122", "'generic' argument must be a character string");
+  }
+  const generic = isMissing(genericValue, 0) ? "NA" : (genericValue.values[0] ?? "");
   // Generic validation precedes admission; a rejected context never forces the selector.
   invocation.assertUseMethodContext();
   const objectArgument = matched.get("object");
