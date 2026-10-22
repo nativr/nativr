@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.379.0",
+  "semanticProfileVersion": "0.380.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "d17342bd7e0c355874afbd42eb115c6530a41847705f8e1f46af25259ea10432",
+    "capabilities": "0a24210b99b8a9b405bb53e284ab147889c092847b58fc0d041cc82931e53413",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "e69fbfe3f8d8a67a88bb46bb45ef922130ab814a5f2a84d825271b4210e8d6d5",
-    "oracleV2": "9b03561a9518263780a64cfe794a29a463f968a829bf7c408d95615390d5dce4",
+    "foundation": "aada5dc56bfabe171721caa69f7df224577a7fd2682f68258f3645ae1b6ff93c",
+    "oracleV2": "1eaaab2d1d031b17760cd0874aa7052735242ca0a3bb97a6f11ed5ab1ed0c991",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "8e74f709841a8b60b5392dc925ec9e1ca3ea525df9b1113cf9e3652e86c67195"
+    "annotations": "f0b5d555714a84b69381e8b205e5f271337af2cb3502ed1625b912378ca2dd5a"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -47,12 +47,12 @@
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 809,
-    "qualifiedOverlaps": 781,
+    "registeredBindings": 810,
+    "qualifiedOverlaps": 782,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 581,
-    "classificationPendingBindings": 1972,
-    "recursiveLinkedBindings": 151,
+    "classifiedBindings": 583,
+    "classificationPendingBindings": 1970,
+    "recursiveLinkedBindings": 153,
     "bindingsWithDeclaredMatrixEvidence": 6,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
@@ -108,42 +108,42 @@
       "label": "Value types",
       "requirement": "NULL, logical, integer, double, complex, character, raw, list, pairlist, expression, symbol, language, environment, closure, builtin/special, promise, external pointer, weak reference, and S4 shapes.",
       "completion": "incomplete",
-      "assignedBindings": 68,
-      "recursiveLinkedBindings": 16,
+      "assignedBindings": 69,
+      "recursiveLinkedBindings": 17,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "errors",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "identity",
-          "pendingBindings": 68,
+          "pendingBindings": 69,
           "partialDeclaredBindings": 0
         }
       ]
@@ -153,42 +153,42 @@
       "label": "Calls and promises",
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
-      "assignedBindings": 122,
-      "recursiveLinkedBindings": 37,
+      "assignedBindings": 124,
+      "recursiveLinkedBindings": 39,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 120,
+          "pendingBindings": 122,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 120,
+          "pendingBindings": 122,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "errors",
-          "pendingBindings": 120,
+          "pendingBindings": 122,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 120,
+          "pendingBindings": 122,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 120,
+          "pendingBindings": 122,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 120,
+          "pendingBindings": 122,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "identity",
-          "pendingBindings": 121,
+          "pendingBindings": 123,
           "partialDeclaredBindings": 1
         }
       ]
@@ -198,42 +198,42 @@
       "label": "Environments",
       "requirement": "Lexical lookup, superassignment, locks, active bindings, namespaces, search path, and parent manipulation.",
       "completion": "incomplete",
-      "assignedBindings": 154,
-      "recursiveLinkedBindings": 18,
+      "assignedBindings": 155,
+      "recursiveLinkedBindings": 19,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "errors",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "identity",
-          "pendingBindings": 154,
+          "pendingBindings": 155,
           "partialDeclaredBindings": 0
         }
       ]
@@ -243,42 +243,42 @@
       "label": "Vector semantics",
       "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type.",
       "completion": "incomplete",
-      "assignedBindings": 92,
-      "recursiveLinkedBindings": 56,
+      "assignedBindings": 93,
+      "recursiveLinkedBindings": 57,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 86,
+          "pendingBindings": 87,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 86,
+          "pendingBindings": 87,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "errors",
-          "pendingBindings": 86,
+          "pendingBindings": 87,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 86,
+          "pendingBindings": 87,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 88,
+          "pendingBindings": 89,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 87,
+          "pendingBindings": 88,
           "partialDeclaredBindings": 5
         },
         {
           "dimension": "identity",
-          "pendingBindings": 90,
+          "pendingBindings": 91,
           "partialDeclaredBindings": 2
         }
       ]
@@ -333,42 +333,42 @@
       "label": "Object systems",
       "requirement": "Full S3/group generics, S4 classes/generics/method selection/slots, and compatible external object packages.",
       "completion": "incomplete",
-      "assignedBindings": 253,
-      "recursiveLinkedBindings": 41,
+      "assignedBindings": 254,
+      "recursiveLinkedBindings": 42,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 249,
+          "pendingBindings": 250,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 249,
+          "pendingBindings": 250,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "errors",
-          "pendingBindings": 249,
+          "pendingBindings": 250,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 249,
+          "pendingBindings": 250,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 251,
+          "pendingBindings": 252,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 250,
+          "pendingBindings": 251,
           "partialDeclaredBindings": 3
         },
         {
           "dimension": "identity",
-          "pendingBindings": 252,
+          "pendingBindings": 253,
           "partialDeclaredBindings": 1
         }
       ]
@@ -747,11 +747,27 @@
         "formals": null,
         "signature": "unknown"
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "environments", "object-systems", "vector-semantics"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "dollar-replacement-attributes",
+        "dollar-replacement-coercion",
+        "dollar-replacement-continuation",
+        "dollar-replacement-dispatch",
+        "dollar-replacement-evaluation",
+        "dollar-replacement-missing",
+        "dollar-replacement-shared-reference-graph",
+        "dollar-replacement-storage"
+      ],
+      "remainingGaps": [
+        "Bounded first-class calls share member storage and lazy interpreted S3 dispatch. Named/attributed expressions, attributed language, final attributed-pairlist deletion, active-binding callback counts, nested extraction, exact warning calls and full NextMethod dots/defaults remain incomplete."
+      ]
     },
     {
       "binding": "base::$<-.POSIXlt",
@@ -2721,6 +2737,7 @@
       "completion": "incomplete",
       "recursiveCaseIds": [
         "combine-next-method-primitive-fallback",
+        "dollar-replacement-continuation",
         "names-dispatch-member",
         "names-dispatch-next-method",
         "next-method-default-reentry",
@@ -4029,9 +4046,14 @@
         "compatibility": "behavioral"
       },
       "classification": {
-        "status": "pending"
+        "status": "assigned",
+        "domains": ["calls-promises", "value-types"]
       },
-      "completion": "incomplete"
+      "completion": "incomplete",
+      "recursiveCaseIds": ["dollar-replacement-missing"],
+      "remainingGaps": [
+        "Missing actuals now retain missing symbols in bounded replacement evidence; the complete quotation, attributes, dots and reflection matrix remains incomplete."
+      ]
     },
     {
       "binding": "base::all",

@@ -4836,6 +4836,21 @@
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
       ]
+    },
+
+    {
+      "binding": "base::$<-",
+      "domains": ["vector-semantics", "calls-promises", "object-systems", "environments"],
+      "remainingGaps": [
+        "Bounded first-class calls share member storage and lazy interpreted S3 dispatch. Named/attributed expressions, attributed language, final attributed-pairlist deletion, active-binding callback counts, nested extraction, exact warning calls and full NextMethod dots/defaults remain incomplete."
+      ]
+    },
+    {
+      "binding": "base::alist",
+      "domains": ["value-types", "calls-promises"],
+      "remainingGaps": [
+        "Missing actuals now retain missing symbols in bounded replacement evidence; the complete quotation, attributes, dots and reflection matrix remains incomplete."
+      ]
     }
   ]
 }

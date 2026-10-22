@@ -38,6 +38,39 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### First-class member replacement (profile 0.380)
+
+The base `$<-` binding is a special primitive with unknown `args()` metadata. It checks arity and
+member syntax before evaluating the target. Identifier members are literal names; embedded symbol
+and length-one character members are accepted. Computed member expressions are rejected. The default
+path evaluates the target before the replacement and ignores argument tags. A classed target can
+dispatch while the replacement remains lazy; methods retain supplied tags, source expressions,
+matched-call syntax and generic metadata. Direct results are visible.
+
+Direct calls and assignment syntax share default storage. Exact list/pairlist members replace or
+delete the first match. Omitted members append unnamed entries; an explicit empty character name
+errors on the default path after replacement evaluation. Environments retain reference identity and
+NULL bindings. Omitted values retain missing symbols in lists and missing bindings in environments.
+`alist()` now represents omitted actuals as missing symbols, and `NextMethod()` preserves an
+unchanged omitted formal through its default continuation.
+
+Atomic targets warn before conversion to lists, retaining names while dropping other container
+attributes. Plain expressions append through list conversion and retain expression type for absent
+deletion. List dimensions survive same-length replacement and are dropped when length changes;
+pairlist dimensions remain attached. Element references remain shared under the immutable value
+model. Growth, conversion and recursive dispatch retain allocation, cancellation and step limits.
+
+Ninety-two independently authored GNU R parity fixtures, shared-storage unit tests and session
+recovery tests cover this increment. Nine foundation groups and ten recursive groups include causal
+controls and an explicit shared-environment graph. Metadata and diagnostic-only groups claim no
+causal coverage. This bounded matrix does not establish full replacement compatibility.
+Named/attributed expressions and attributed language remain open, with owned reproductions in
+[dollar-member-gaps.R](../conformance/probes/dollar-member-gaps.R). Final deletion from an
+attributed pairlist also remains incomplete: native R can attach its attributes to NULL, which the
+immutable NULL model does not reproduce. Active-binding callback counts, nested extraction dispatch,
+exact warning-call origins, complete data-frame replacement, and general NextMethod dots/defaults
+remain unfinished. The earlier domain and platform gates still apply.
+
 ### Names and member-replacement dispatch (profile 0.379)
 
 names and names<- force primitive actuals in source order before arity checks and class dispatch.
@@ -65,9 +98,9 @@ metadata and diagnostic-only groups do not claim causal evidence. This does not 
 names, member replacement or POSIXlt compatibility. Native active-binding replacement makes extra
 get/set callbacks that remain unmatched; the owned
 [active-binding probe](../conformance/probes/member-active-binding.R) preserves that reproduction.
-Broader nested extraction dispatch, direct first-class dollar-replacement calls,
-malformed/attributed objects, full condition-call origins and general NextMethod dots/default
-behavior remain unfinished, together with the earlier domain/platform gaps.
+Broader nested extraction dispatch, direct first-class dollar-replacement calls (subsequently
+bounded by profile 0.380), malformed/attributed objects, full condition-call origins and general
+NextMethod dots/default behavior remain unfinished, together with the earlier domain/platform gaps.
 
 ### Replication family controls and interpreted dispatch (profile 0.378)
 

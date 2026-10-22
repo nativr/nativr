@@ -92,6 +92,7 @@ import {
   replaceCoordinateMatrix,
   replaceDimensions,
   replaceListMember,
+  prepareListMemberTarget,
   replaceVectorElement,
   replaceVectorSubset,
   subsetCoordinateMatrix,
@@ -2057,25 +2058,30 @@ export class Evaluator {
 
   async #replaceMemberValue(
     target: RValue,
-    member: string,
+    member: string | undefined,
     replacement: RValue,
     environment: REnvironment,
     context: EvaluationContext,
     sourceExpression?: AstNode,
     dispatch = true,
+    warningCall?: AstNode,
   ): Promise<RValue> {
     context.checkpoint();
     if (dispatch && objectClasses(target) !== undefined) {
       const temporary: AstNode = { kind: "Identifier", name: "*tmp*", span: SYNTHETIC_SPAN };
-      const memberExpression: AstNode = { kind: "Identifier", name: member, span: SYNTHETIC_SPAN };
+      const memberExpression: AstNode = {
+        kind: "Identifier",
+        name: member ?? "",
+        span: SYNTHETIC_SPAN,
+      };
       const valueExpression = embeddedValueAst(replacement, () => context.checkpoint());
       const arguments_: BuiltinCallArgument[] = [
         { promise: { ...createForcedPromise(target, environment), expression: temporary } },
         {
           promise: {
-            ...createForcedPromise(characterVector([member]), environment),
+            ...createForcedPromise(characterVector([member ?? ""]), environment),
             expression: memberExpression,
-            sourceExpression: { kind: "StringLiteral", value: member, span: SYNTHETIC_SPAN },
+            sourceExpression: { kind: "StringLiteral", value: member ?? "", span: SYNTHETIC_SPAN },
           },
         },
         {
@@ -2110,17 +2116,41 @@ export class Evaluator {
       if (result !== undefined) return result.value;
     }
     if (target.type === "environment") {
-      await this.#assignBinding(target, member, replacement, context);
+      if (
+        replacement.type === "symbol" &&
+        replacement.name === "" &&
+        target.bindings.get(member ?? "")?.type !== "active-binding"
+      ) {
+        setBinding(target, member ?? "", createMissingPromise(target, member ?? ""));
+        return target;
+      }
+      await this.#assignBinding(target, member ?? "", replacement, context);
       return target;
     }
     if (target.type === "null") {
       if (replacement.type === "null") return R_NULL;
       context.allocate(1);
-      return listValue([replacement], [member]);
+      return listValue([replacement], [member ?? ""]);
     }
     if (target.type === "language")
       return replaceLanguageMember(target, member, replacement, context);
-    return replaceListMember(target, member, replacement, context);
+    if (target.type === "expression" && replacement.type === "null") return target;
+    if (isAtomic(target)) {
+      const warning = { code: "NRW3304", message: "Coercing LHS to a list" };
+      const condition = withClasses(
+        listValue(
+          [
+            characterVector([warning.message]),
+            warningCall === undefined ? R_NULL : { type: "language", expression: warningCall },
+          ],
+          ["message", "call"],
+        ),
+        [...SIMPLE_WARNING_CLASSES],
+      );
+      await this.#signalWarning(condition, warning, context);
+    }
+    const prepared = prepareListMemberTarget(target, context, quoteLanguageNode);
+    return replaceListMember(prepared.target, member, replacement, context);
   }
 
   async #applyPreparedSubsetReplacement(
@@ -2792,6 +2822,17 @@ export class Evaluator {
             this.#evaluateLanguageValueResult(value, environment, context, options),
           assignBinding: async (target, name, value) =>
             this.#assignBinding(target, name, value, context),
+          replaceMember: async (target, name, value) =>
+            this.#replaceMemberValue(
+              target,
+              name,
+              value,
+              callerEnvironment ?? args[0]?.promise.environment ?? this.#globalEnvironment,
+              context,
+              undefined,
+              false,
+              call,
+            ),
           signalCondition: async (classes, condition, muffleRestart) =>
             muffleRestart === undefined
               ? this.#signalCondition(classes, condition, context)
@@ -5331,6 +5372,15 @@ export class Evaluator {
             const name = formalByArgument.get(argument);
             if (name === undefined || active.environment.bindings.get(name) === argument.promise)
               return argument;
+            const current = active.environment.bindings.get(name);
+            // A fresh formal placeholder still denotes the original omitted actual.
+            if (
+              argument.promise.missing &&
+              current?.type === "promise" &&
+              current.missing &&
+              current.expression === null
+            )
+              return argument;
             return {
               ...argument,
               promise: createPromise(
@@ -5385,22 +5435,6 @@ export class Evaluator {
     );
     if (result !== undefined) return result;
     if (allowPrimitiveFallback) {
-      if (generic === "$<-" && arguments_.length === 3) {
-        const target = await this.#force(arguments_[0]!.promise, context);
-        const member = await this.#force(arguments_[1]!.promise, context);
-        const value = await this.#force(arguments_[2]!.promise, context);
-        if (member.type !== "character" || member.length !== 1 || isMissing(member, 0))
-          throw new RTypeMismatchError("NRT3305", "invalid subscript type");
-        return this.#replaceMemberValue(
-          target,
-          member.values[0]!,
-          value,
-          callerEnvironment ?? this.#globalEnvironment,
-          context,
-          undefined,
-          false,
-        );
-      }
       const definition = this.#builtins.find(
         (entry) => entry.package === "base" && entry.name === generic,
       );

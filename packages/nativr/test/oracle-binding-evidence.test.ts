@@ -25,22 +25,30 @@ function fixture(name: string) {
   };
 }
 
-it("links registered replacement methods and emits a quoted shadow binding", () => {
-  const { cases, capabilities, surface } = fixture("names<-.POSIXlt");
-  expect(collectOracleV2BindingEvidence(cases, capabilities, surface)).toEqual([
-    { binding: "base::names<-.POSIXlt", cases: ["owned-replacement-method"] },
-  ]);
-  expect(shadowedOracleV2Code("TRUE", "base::names<-.POSIXlt", "owned-marker", "error")).toBe(
-    '`names<-.POSIXlt` <- function(...) stop("owned-marker")\nTRUE',
-  );
-});
-
-it.each(["names<-.POSIXlt`", 'names<-.POSIXlt"', "names<-.POSIXlt;stop()", "names<-.POSIX lt"])(
-  "rejects unsafe or unsupported shadow names: %s",
+it.each(["names<-.POSIXlt", "$<-"])(
+  "links registered replacement binding %s and quotes it",
   (name) => {
     const { cases, capabilities, surface } = fixture(name);
-    expect(() => collectOracleV2BindingEvidence(cases, capabilities, surface)).toThrow(
-      "non-shadowable binding",
+    expect(collectOracleV2BindingEvidence(cases, capabilities, surface)).toEqual([
+      { binding: `base::${name}`, cases: ["owned-replacement-method"] },
+    ]);
+    expect(shadowedOracleV2Code("TRUE", `base::${name}`, "owned-marker", "error")).toBe(
+      "`" + name + '` <- function(...) stop("owned-marker")\nTRUE',
     );
   },
 );
+
+it.each([
+  "names<-.POSIXlt`",
+  'names<-.POSIXlt"',
+  "names<-.POSIXlt;stop()",
+  "names<-.POSIX lt",
+  "$<-`",
+  "$<-;stop()",
+  "$<-owned",
+])("rejects unsafe or unsupported shadow names: %s", (name) => {
+  const { cases, capabilities, surface } = fixture(name);
+  expect(() => collectOracleV2BindingEvidence(cases, capabilities, surface)).toThrow(
+    "non-shadowable binding",
+  );
+});

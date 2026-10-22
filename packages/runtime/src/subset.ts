@@ -1,3 +1,5 @@
+import type { AstNode } from "@nativr/ast";
+
 import { REvaluationError, RTypeMismatchError } from "./errors.js";
 import {
   R_NULL,
@@ -617,10 +619,63 @@ function replaceVectorElementResolved(
   );
 }
 
-/** Replace or append one exact list member. */
+/** Prepare ordinary `$<-` storage after dispatch; the evaluator signals any coercion warning. */
+export function prepareListMemberTarget(
+  target: RValue,
+  context: OperatorContext,
+  quoteNode: (node: AstNode) => RValue,
+): { readonly target: ListLike; readonly coercedAtomic: boolean } {
+  context.checkpoint();
+  if (target.type === "list" || target.type === "pairlist") {
+    return { target, coercedAtomic: false };
+  }
+  if (isAtomic(target)) {
+    context.allocate(target.length);
+    let output = listValue(
+      Array.from({ length: target.length }, (_, position) =>
+        subsetAtomic(target, [position], undefined, context),
+      ),
+    );
+    const names = target.attributes.get("names");
+    if (names !== undefined) output = withAttribute(output, "names", names);
+    return { target: output, coercedAtomic: true };
+  }
+  if (target.type === "expression") {
+    // General attributed expression storage remains outside the current runtime value model.
+    context.allocate(target.values.length);
+    return {
+      target: listValue(
+        target.values.map((node) => {
+          context.checkpoint();
+          return quoteNode(node);
+        }),
+      ),
+      coercedAtomic: false,
+    };
+  }
+  const type =
+    target.type === "builtin"
+      ? target.definition.formals !== undefined
+        ? "closure"
+        : target.definition.kind === "special"
+          ? "special"
+          : "builtin"
+      : target.type === "formula"
+        ? "language"
+        : target.type === "null"
+          ? "NULL"
+          : target.type === "dots"
+            ? "..."
+            : target.type;
+  throw new RTypeMismatchError("NRT3304", `object of type '${type}' is not subsettable`);
+}
+
+/** Replace one exact member, or append an unnamed member when its name is omitted.
+ * The caller distinguishes an omitted name from an invalid explicitly empty character name.
+ */
 export function replaceListMember(
   target: RValue,
-  name: string,
+  name: string | undefined,
   replacement: RValue,
   context: OperatorContext,
 ): RValue {
@@ -630,13 +685,14 @@ export function replaceListMember(
   const existingNames = vectorNames(target) ?? Array.from({ length: target.length }, () => "");
   const names = [...existingNames];
   const values = [...target.values];
-  const position = names.indexOf(name);
+  const position = name === undefined ? -1 : names.indexOf(name);
   if (replacement.type === "null") {
     if (position < 0) return target;
     names.splice(position, 1);
     values.splice(position, 1);
     context.allocate(values.length);
-    return cloneListLike(
+    if (target.type === "pairlist" && values.length === 0) return R_NULL;
+    return cloneMemberListLike(
       target,
       values,
       names,
@@ -650,13 +706,26 @@ export function replaceListMember(
       ? normalizeDataFrameColumn(target, replacement, context)
       : replacement;
   if (position < 0) {
-    names.push(name);
+    names.push(name ?? "");
     values.push(value);
   } else {
     values[position] = value;
   }
   context.allocate(values.length);
-  return cloneListLike(target, values, names);
+  return cloneMemberListLike(target, values, names);
+}
+
+function cloneMemberListLike<T extends ListLike>(
+  target: T,
+  values: readonly RValue[],
+  names: readonly string[],
+  sourcePositions?: readonly number[],
+): T {
+  if (target.type !== "pairlist") return cloneListLike(target, values, names, sourcePositions);
+  // Pairlist member replacement retains all attributes, even dimensions after its length changes.
+  const attributes = new Map(target.attributes);
+  attributes.set("names", replacementNames(target, names, sourcePositions));
+  return { ...target, values: Object.freeze([...values]), length: values.length, attributes };
 }
 
 function resolveSubsetIndices(target: IndexableValue, index: RValue | undefined): SelectedIndex[] {

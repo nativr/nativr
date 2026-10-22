@@ -2334,6 +2334,16 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   },
   defineBuiltin("subset", ["x", "subset", "select", "drop", "..."], "behavioral", builtinSubset),
   defineBuiltin("$", ["x", "name"], "behavioral", builtinDollar, "special"),
+  {
+    ...defineBuiltin(
+      "$<-",
+      ["x", "name", "value"],
+      "behavioral",
+      builtinDollarReplacement,
+      "special",
+    ),
+    s3DefaultImplementation: (invocation) => builtinDollarReplacement(invocation, false),
+  },
   defineBuiltin(".subset", ["x", "..."], "behavioral", (invocation) =>
     builtinInternalSubset(invocation, false),
   ),
@@ -18578,6 +18588,71 @@ async function builtinLocal(invocation: BuiltinInvocation): Promise<RValue> {
   );
 }
 
+/** `$<-` treats its member as syntax and leaves the replacement lazy for an S3 method. */
+async function builtinDollarReplacement(
+  invocation: BuiltinInvocation,
+  dispatch = true,
+): Promise<RValue> {
+  const count = invocation.arguments.length;
+  if (count !== 3)
+    throw new REvaluationError(
+      "NRE2102",
+      `${count} argument${count === 1 ? "" : "s"} passed to '$<-' which requires 3`,
+    );
+  const [targetArgument, nameArgument, valueArgument] = invocation.arguments;
+  const expression = nameArgument!.promise.expression;
+  let name: string | undefined;
+  if (nameArgument!.promise.missing) name = undefined;
+  else if (!dispatch) name = dollarReplacementName(await invocation.force(nameArgument!.promise));
+  else if (expression?.kind === "Identifier") name = expression.name;
+  else if (expression?.kind === "UnsupportedExpression" && expression.feature === "dots")
+    name = "...";
+  else if (expression === null || expression?.kind === "ConstantExpression")
+    name = dollarReplacementName(await invocation.force(nameArgument!.promise));
+  else name = dollarReplacementName(quoteAst(expression));
+  const target = await invocation.force(targetArgument!.promise);
+  if (dispatch && objectClasses(target) !== undefined) {
+    const member = characterVector([name ?? ""]);
+    const arguments_ = [
+      targetArgument!,
+      {
+        ...nameArgument!,
+        promise: {
+          ...createForcedPromise(member, nameArgument!.promise.environment),
+          expression: expression ?? embeddedValueAst(member),
+          sourceExpression: {
+            kind: "StringLiteral",
+            value: name ?? "",
+            span: SYNTHETIC_SPAN,
+          } as AstNode,
+        },
+      },
+      valueArgument!,
+    ];
+    const result = await invocation.dispatchS3IfPresent("$<-", target, arguments_, true, -1);
+    if (result !== undefined) {
+      invocation.setResultVisibility("visible");
+      return result;
+    }
+  }
+  const value = valueArgument!.promise.missing
+    ? { type: "symbol" as const, name: "" }
+    : await invocation.force(valueArgument!.promise);
+  if (name === "")
+    throw new REvaluationError("NRE2103", "attempt to use zero-length variable name");
+  return invocation.replaceMember(target, name, value);
+}
+
+function dollarReplacementName(value: RValue): string | undefined {
+  if (value.type === "symbol") return value.name === "" ? undefined : value.name;
+  if (value.type === "character") {
+    if (value.length !== 1) throw new RTypeMismatchError("NRT3305", "invalid subscript length");
+    return isMissing(value, 0) ? "NA" : value.values[0]!;
+  }
+  const type = valueTypeName(value);
+  throw new RTypeMismatchError("NRT3305", `invalid subscript type '${type}'`);
+}
+
 async function builtinDollar(invocation: BuiltinInvocation): Promise<RValue> {
   if (invocation.arguments.length !== 2)
     throw new REvaluationError("NRE2102", "$ requires two arguments");
@@ -25431,14 +25506,7 @@ function builtinAlist(invocation: BuiltinInvocation): RList {
   const values = invocation.arguments.map((argument) => {
     const expression = argument.promise.expression;
     return expression === null
-      ? ({
-          type: "language",
-          expression: {
-            kind: "UnsupportedExpression",
-            feature: "missing argument",
-            span: SYNTHETIC_SPAN,
-          },
-        } satisfies RLanguage)
+      ? ({ type: "symbol", name: "" } satisfies RSymbol)
       : quoteAst(expression);
   });
   const hasNames = invocation.arguments.some((argument) => argument.name !== undefined);

@@ -7,8 +7,8 @@ export const CAPABILITIES = Object.freeze({
   nativrVersion: "0.1.1",
   protocolVersion: PROTOCOL_VERSION,
   targetRVersion: "4.6.1",
-  semanticProfileVersion: "0.379.0",
-  languageSubsetVersion: "0.379.0",
+  semanticProfileVersion: "0.380.0",
+  languageSubsetVersion: "0.380.0",
   syntax: {
     literals: "supported",
     assignment: "supported",
@@ -95,6 +95,7 @@ export const CAPABILITIES = Object.freeze({
     baseLetterConstants: "supported",
     productAggregation: "supported",
     inverseTrigonometricFunctions: "supported",
+    firstClassMemberReplacement: "supported",
     nestedNamesReplacement: "supported",
     topLevelErrorContinuation: "supported",
     topLevelConditionCallTraces: "supported",

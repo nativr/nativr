@@ -5,19 +5,33 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.379.0",
-  "capabilityManifestHash": "1e7e54e5bc4222beb852e8ffc746ddfcb803bc6a249649aa9886df7d03349e6c",
+  "semanticProfileVersion": "0.380.0",
+  "capabilityManifestHash": "6bddb311df1581192eed2e82ef1060c29dbdf1f83bb485ae7d4b7f91548cd600",
   "evidence": {
-    "checkedInConformanceCases": 1375,
-    "liveREligibleCases": 1306,
+    "checkedInConformanceCases": 1384,
+    "liveREligibleCases": 1315,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 287,
-    "recursiveBehaviorallyProvenBindings": 151,
+    "recursiveOracleV2Cases": 297,
+    "recursiveBehaviorallyProvenBindings": 153,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::{", "cases": ["first-class-loop-blocks"] },
+      {
+        "binding": "base::$<-",
+        "cases": [
+          "dollar-replacement-attributes",
+          "dollar-replacement-coercion",
+          "dollar-replacement-continuation",
+          "dollar-replacement-dispatch",
+          "dollar-replacement-evaluation",
+          "dollar-replacement-missing",
+          "dollar-replacement-shared-reference-graph",
+          "dollar-replacement-storage"
+        ]
+      },
       { "binding": "base::addNA", "cases": ["addNA-ordered-reconstruction-and-unchanged-values"] },
+      { "binding": "base::alist", "cases": ["dollar-replacement-missing"] },
       {
         "binding": "base::all.equal",
         "cases": [
@@ -333,6 +347,7 @@
         "binding": "base::NextMethod",
         "cases": [
           "combine-next-method-primitive-fallback",
+          "dollar-replacement-continuation",
           "names-dispatch-member",
           "names-dispatch-next-method",
           "next-method-default-reentry",
@@ -662,22 +677,22 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 809,
-    "gnuRNameOverlaps": 782,
+    "registeredBindings": 810,
+    "gnuRNameOverlaps": 783,
     "referenceCoreCallableNames": 2522
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "8e707604b1437b2e4439f7870bfa5a462e0d8a51eac657f452ada64162fc1ccc",
+    "sha256": "998b6e614d9a520592ccd0f0097b53d15bd1fcb03ef72453154e82790cc4aa59",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 809,
-    "qualifiedOverlaps": 781,
+    "registeredBindings": 810,
+    "qualifiedOverlaps": 782,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 581,
-    "classificationPendingBindings": 1972,
-    "recursiveLinkedBindings": 151,
+    "classifiedBindings": 583,
+    "classificationPendingBindings": 1970,
+    "recursiveLinkedBindings": 153,
     "bindingsWithDeclaredMatrixEvidence": 6,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,

@@ -318,6 +318,8 @@ export interface BuiltinInvocation {
     },
   ): Promise<{ readonly value: RValue; readonly visible: boolean }>;
   assignBinding(environment: REnvironment, name: string, value: RValue): Promise<void>;
+  /** Shared default `$<-` storage, after the caller has handled dispatch and argument syntax. */
+  replaceMember(target: RValue, name: string | undefined, value: RValue): Promise<RValue>;
   /**
    * Signal a condition through the dynamically scoped handler stack. Returns true when a muffling
    * frame (suppressWarnings/suppressMessages semantics) consumed it; an exiting handler unwinds.

@@ -97,7 +97,7 @@ export function replaceLanguageElement(
 /** Replace or append one named call argument. */
 export function replaceLanguageMember(
   target: RLanguage,
-  name: string,
+  name: string | undefined,
   replacement: RValue,
   context: OperatorContext,
 ): RValue {

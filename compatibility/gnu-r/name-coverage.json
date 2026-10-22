@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 809,
-    "overlappingNames": 782,
-    "missingReferenceNames": 1740,
+    "nativrRegisteredNames": 810,
+    "overlappingNames": 783,
+    "missingReferenceNames": 1739,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.310071
+    "nameCoverage": 0.310468
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 588, "nameCoverage": 0.430139 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 589, "nameCoverage": 0.430871 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -39,6 +39,7 @@
     "!.hexmode",
     "!=",
     "$",
+    "$<-",
     "%%",
     "%/%",
     "%in%",
@@ -822,7 +823,6 @@
     "!.octmode",
     "$.DLLInfo",
     "$.package_version",
-    "$<-",
     "$<-.POSIXlt",
     "$<-.data.frame",
     "%*%",

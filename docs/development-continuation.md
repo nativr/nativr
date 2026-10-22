@@ -1495,3 +1495,46 @@ Next measurable inventory step: classify remaining core-namespace exports by sem
 retaining absent runtime registrations and explicit gaps, then audit bounded matrix declarations
 against maintained tests and passing evidence. Continue shared semantic blockers, dataset/testing
 support and browser/platform gates. Linux and Formula remain separately authorized boundaries.
+
+### Profile 0.380 verification (2026-10-22)
+
+First-class base dollar replacement now shares default member storage with assignment syntax. Owned
+native probes establish arity/member validation order, positional default arguments, lazy S3
+replacement values, visible results, original method tags/call syntax and NextMethod continuation.
+Missing values retain symbols or environment bindings, and unchanged omitted method formals survive
+NextMethod. alist now represents omitted actuals with missing symbols. Atomic coercion warnings,
+ordinary list/pairlist/call operations, dimension rules, environment/reference identity and plain
+expression append/no-op behavior have bounded evidence.
+
+All 92 independently authored parity fixtures pass, with ten shared-storage unit tests and a
+session-limit/recovery test. The full check passes 2,329 tests with 93 opt-in skips; both production
+and all-source TypeScript gates pass. Checked-in/live/recursive conformance passes 1,384 / 1,315 /
+297, with 153 causal-linked bindings. The subsequent checkpoint-integrity suite passes 27 tests.
+Client and Worker bundles are 17.6/150 and 485.1/512 KiB gzip; parser and elementary Wasm remain
+671.9/1,536 and 311.2/384 KiB raw. Public API and Worker protocol are unchanged.
+
+The [0.380 checkpoint](../compatibility/package-check-evidence/corpus-0.380.0.json) records all 24
+digest-pinned cached development/regression packages, original entrypoints and native repeatability.
+All 178 input hashes, execution/comparison outcomes and repeatability flags match 0.379; stages and
+tiers are unchanged. pkgconfig and abind remain P7, numDeriv P6, eight packages P5, twelve P4 and BH
+P3. The withr timezone case retains its native repeatability failure and mismatch. Formula and all
+partition/archive/artifact pins are unchanged. No substitute testing runner receives P6/P7 credit.
+
+The inventory now classifies 583 of 2,553 qualified bindings; 1,970 remain pending. It records 35
+partial dimension declarations across six bindings. All thirteen domains and every callable remain
+incomplete. Distinct-name overlap is 783/2,522 and does not measure completion. Attributed/named
+expression and language behavior, final attributed-pairlist deletion, active-binding callbacks,
+nested extraction, complete data-frame replacement and general NextMethod/condition origins remain
+open. Owned gap probes are retained under conformance/probes. Browser, packed-consumer and platform
+measurements were not refreshed by this semantic increment. Linux remains deferred. No downloads,
+pushes or publication occurred; no GNU R implementation bodies were used.
+
+### Next measured platform increment
+
+Profile the required WebKit Worker-example test at the existing 120-second budget. The preserved
+failure trace shows substantial click actionability/stability waits; measure frame cadence, button
+geometry and evaluation timing before choosing a fix. Preserve network-free execution assertions,
+real UI interaction, and all examples. Then refresh the declared browser matrix. Continue the
+remaining semantic domains, callable classification, independent datasets and isolated runner. The
+full five-criterion goal remains unfinished. No additional input is needed for this local work;
+Linux, Formula and new downloads retain their separate authorization boundaries.
