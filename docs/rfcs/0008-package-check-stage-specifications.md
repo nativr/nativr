@@ -251,6 +251,36 @@ vignette outputs, installed files from inst/doc and sizes of PDF files under ins
 
 Both adaptations are recorded in `compatibility/profiles.json`.
 
+## package-tests (normative evidence policy, nested-execution-closure-v1)
+
+The checker executes original top-level `tests/*.[Rr]` entrypoints. Completion of an entrypoint
+establishes its captured outcome; it does not establish execution of every nested R file. All nested
+`tests/**/*.[Rr]` paths are coverage obligations in the package-test stage, alongside top-level
+entrypoints and unsupported `.Rin` inputs. Only captured top-level paths enter the executed
+inventory. Output, condition and ordering inventories describe those actual captures.
+
+The current observer has no positive nested execution proof. A nonempty nested inventory therefore
+leaves the package-test stage `unexecuted`, unless an observed failure makes it `failed`. An
+installed dependency, a framework name, a guard's source spelling, or a successful top-level result
+cannot close that gap. Nested files may be helpers or fixtures; this rule does not label each as a
+failed independent test. It conservatively withholds credit even when a top-level script genuinely
+sources a nested helper. A future coverage observer needs its own specification and evidence.
+
+Direct tests without nested files retain the existing pass route, subject to complete inventories,
+native observations and all other package-check gates. Missing entrypoints, selected subsets and
+unsupported inputs remain incomplete. A real execution failure takes precedence over missing
+coverage. Current original-report admission requires agreement between the archive-path inventory
+and declared nested R files, rejects duplicate nested paths, and rejects contradictory passed/P7
+claims with nested inventory. Historical redacted artifacts remain intact and must be qualified
+separately.
+
+Independently authored fixtures cover directly sourced nested code, a guard around an unavailable
+invented runner, no entrypoint, direct tests without nested files, and an actual top-level failure.
+These observations distinguish execution facts from the narrower report's coverage proof. This
+host-side evidence policy leaves the runtime semantic profile and public API unchanged. The
+[Windows checkpoint](../../compatibility/platform-evidence/nested-test-coverage-windows-0.393.0.json)
+records the five native fixtures, focused checks and three repeated cached-package controls.
+
 ## First P7 package
 
 With these specifications, `pnpm package:check --package abind --oracle-repeat` reports

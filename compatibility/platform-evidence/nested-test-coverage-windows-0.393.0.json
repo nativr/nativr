@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-host-checker-verification",
+  "policy": "nested-execution-closure-v1",
+  "semanticProfile": "0.393.0",
+  "runtimeSemanticsChanged": false,
+  "recordedAt": "2026-10-22T23:08:06.008Z",
+  "sourceHead": "97467cbfccf58df2958658676a6f0ea979a691f2",
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "node": "v24.19.0",
+    "oracle": "GNU R 4.6.1",
+    "locale": "C"
+  },
+  "fullGate": {
+    "command": "pnpm check",
+    "exitCode": 0,
+    "parentExecCompletion": "ecd1c7",
+    "unitPassed": 3267,
+    "optInUnitSkipped": 94,
+    "scope": "Complete gate before the final scripts-only inventory.paths/nestedRFiles admission correction. Production runtime files were unchanged throughout this checker increment."
+  },
+  "finalGates": {
+    "parentExecCompletion": "cb25d3",
+    "exitCode": 0,
+    "commands": [
+      "pnpm evidence:packages:test",
+      "NATIVR_RUN_NATIVE_PACKAGE_COVERAGE=1 pnpm package:coverage:test",
+      "pnpm exec vitest run packages/package-tools/test/package-test-coverage.test.ts",
+      "pnpm typecheck:all",
+      "targeted ESLint over all changed JavaScript and TypeScript files",
+      "pnpm format:check"
+    ],
+    "evidenceAndProcessTests": 65,
+    "coveragePolicyTests": 24,
+    "nativeFixtures": 5,
+    "nativeParentTest": 1,
+    "reconciliationTests": 4,
+    "allTypes": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "scope": "These targeted gates were executed after the final admission correction. The five native fixture children plus their parent account for six of the 30 package:coverage:test results."
+  },
+  "corpus": {
+    "path": "compatibility/package-check-evidence/nested-test-closure-0.393.0/index.json",
+    "bytes": 284590,
+    "sha256": "52ceed7de41c158e713ebd1a35ed6af3fda9d4836d32dee8cd501c95e5e12128",
+    "packages": 3,
+    "observations": 31,
+    "inputsStable": true,
+    "executionAndComparisonMetadataChanged": false,
+    "controls": [
+      {
+        "package": "pkgconfig",
+        "previousCheckerP7Eligible": true,
+        "checkerP7Eligible": false,
+        "previousTestStage": "passed",
+        "testStage": "unexecuted",
+        "nestedFiles": 4,
+        "discovered": 5,
+        "executedTopLevel": 1,
+        "nestedExecutionCredit": false
+      },
+      {
+        "package": "abind",
+        "previousCheckerP7Eligible": true,
+        "checkerP7Eligible": true,
+        "previousTestStage": "passed",
+        "testStage": "passed",
+        "nestedFiles": 0,
+        "discovered": 5,
+        "executedTopLevel": 5,
+        "nestedExecutionCredit": false
+      },
+      {
+        "package": "crayon",
+        "previousCheckerP7Eligible": false,
+        "checkerP7Eligible": false,
+        "previousTestStage": "failed",
+        "testStage": "failed",
+        "nestedFiles": 12,
+        "discovered": 13,
+        "executedTopLevel": 1,
+        "nestedExecutionCredit": false
+      }
+    ]
+  },
+  "nativeFixtures": {
+    "perChildTimeoutMs": 15000,
+    "maxOutputBytes": 65536,
+    "inputsStable": true,
+    "files": [
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/direct-nested/tests/helpers/nested.R",
+        "bytes": 124,
+        "sha256": "0d326a064f8584ec4ef5cc31c7801376532b26c1a296d55ba2954271b51f2aec"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/direct-nested/tests/top.R",
+        "bytes": 146,
+        "sha256": "fd388b10dbedb9783abe06fa5dc7b76d8bfa52aa5f35b55084ec15d0d0ff0b53"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/direct-only/tests/top.R",
+        "bytes": 127,
+        "sha256": "ca783a7579fe8f3676e73c5ee93fe11e5bd71ce23f51d014c04910de99877dc9"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/guarded-unavailable/tests/helpers/nested.R",
+        "bytes": 124,
+        "sha256": "0d326a064f8584ec4ef5cc31c7801376532b26c1a296d55ba2954271b51f2aec"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/guarded-unavailable/tests/top.R",
+        "bytes": 279,
+        "sha256": "abe6640f68d81736d7d4561a46416a3299daf517a609cd016d38d5b3159deb0b"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/no-entrypoint/tests/helpers/nested.R",
+        "bytes": 124,
+        "sha256": "0d326a064f8584ec4ef5cc31c7801376532b26c1a296d55ba2954271b51f2aec"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/top-failure/tests/helpers/nested.R",
+        "bytes": 124,
+        "sha256": "0d326a064f8584ec4ef5cc31c7801376532b26c1a296d55ba2954271b51f2aec"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/cases/top-failure/tests/top.R",
+        "bytes": 73,
+        "sha256": "c5279d74a52952f4e307ad8dc80c6415393007a5a636c20d08210e4c59d216d2"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/native-harness.R",
+        "bytes": 1481,
+        "sha256": "638e460b2aff1b5ffb77940b07bff60fb1665676ba38faff1b1c1c7387c20ead"
+      },
+      {
+        "path": "scripts/test/fixtures/package-test-coverage/README.md",
+        "bytes": 2477,
+        "sha256": "b70ae31a4020abff72c44eb13a94d0ff1f896774507e5d9c63fb29b0ec8cb04d"
+      }
+    ]
+  },
+  "inputs": [
+    {
+      "path": "package.json",
+      "bytes": 4895,
+      "sha256": "5d5c54dcd55950b37978551227f319518be0bf7f0feb0c245e6cbe0aea272dc0"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "bytes": 912,
+      "sha256": "a8667344d9f8562d1b2345f6cd25eae40d24558b1e88c6376d3b559530d0cb58"
+    },
+    {
+      "path": "scripts/lib/package-test-coverage.mjs",
+      "bytes": 2959,
+      "sha256": "2ef74ae37ccd742b46020b0d20ae77608a0319c5e5af4020398442f08c67c889"
+    },
+    {
+      "path": "scripts/lib/package-test-coverage.d.mts",
+      "bytes": 547,
+      "sha256": "c41c642cf57e6d3f7c58d7da546008a3d1b44f59db2c96cee560aecff8297015"
+    },
+    {
+      "path": "scripts/lib/package-evidence.mjs",
+      "bytes": 22480,
+      "sha256": "94cbb0a8ca6f04910552c53fd77f8bf634e783e91f6501dc2531cb965167f66f"
+    },
+    {
+      "path": "scripts/package-check.mjs",
+      "bytes": 45445,
+      "sha256": "2a891e2defa960094fad84ea23487052e0de3d1f28439e6237067bb216198706"
+    },
+    {
+      "path": "scripts/test/package-test-coverage.test.mjs",
+      "bytes": 4099,
+      "sha256": "583e9bb67a8fe9d5d941fe18835bdbd54a847d9ff174b48202fb1ca5ed3d572f"
+    },
+    {
+      "path": "scripts/test/package-test-coverage.native.test.mjs",
+      "bytes": 2962,
+      "sha256": "6c922d601883431d851d570c900b4f59fee0d5c7afef0f1986b473b82ab2ce62"
+    },
+    {
+      "path": "scripts/test/package-evidence.test.mjs",
+      "bytes": 33491,
+      "sha256": "32d07c1753e1cdbb9ba30ad217e48befceb60ef4480af8e0c77a8d227e975c2f"
+    },
+    {
+      "path": "packages/package-tools/test/package-test-coverage.test.ts",
+      "bytes": 3942,
+      "sha256": "909f1af5ad29466e6ce0a50a55f0bfdc5366d2d71388d65e2d3f2981711e31a7"
+    }
+  ],
+  "logs": {
+    "check": {
+      "path": ".tmp/nested-coverage-check.log",
+      "bytes": 33927,
+      "sha256": "077dc33c528adab6c785b1bad7b4f00378e2e3471ebb8e941b8b20e38cbc1087"
+    },
+    "final-admission": {
+      "path": ".tmp/nested-coverage-final-admission.log",
+      "bytes": 5251,
+      "sha256": "3ce7065e2382ea7ea2dc7ad7c892402e9eb4befa90ed037929e32a3252f8e37f"
+    },
+    "final-native": {
+      "path": ".tmp/nested-coverage-final-native.log",
+      "bytes": 2712,
+      "sha256": "045d02d0448a05ec83442fc2d5430f266330d623934710559dd7c1be57648b46"
+    },
+    "final-reconciliation": {
+      "path": ".tmp/nested-coverage-final-reconciliation.log",
+      "bytes": 216,
+      "sha256": "920454c8f5b3e409f42ee51456274f5482e42fc59ececac0e84ed1bc2d876a8b"
+    },
+    "final-types": {
+      "path": ".tmp/nested-coverage-final-types.log",
+      "bytes": 67,
+      "sha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b"
+    },
+    "final-lint": {
+      "path": ".tmp/nested-coverage-final-lint.log",
+      "bytes": 188,
+      "sha256": "b44d367cb40e490b995eba1561bfb4d67aa7e2667908ceddad336df45c00ae62"
+    },
+    "final-format": {
+      "path": ".tmp/nested-coverage-final-format.log",
+      "bytes": 83,
+      "sha256": "642fb4650a114478010fe876a3cbaa04ceacec3cfbc88cc0125f0f7b6347d6bc"
+    }
+  },
+  "limits": [
+    "Nested execution remains unverified, including genuinely sourced nested helpers. No new positive closure observer or substitute-runner tier credit.",
+    "Three cached controls only; the existing 24-package checkpoint and its qualified tier distribution remain historical evidence.",
+    "No runtime, public API, Worker protocol or packaging change; browser, conformance and packed-consumer evidence is not newly executed by this checkpoint.",
+    "Windows evidence is advisory; Linux, Formula holdout, downloads, publication and remote actions retain their authorization boundaries."
+  ]
+}

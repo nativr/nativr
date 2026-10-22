@@ -150,7 +150,10 @@ function reportFixture(entry = packages[0], p7Eligible = true) {
         conditionEvidence: "complete",
       },
     })),
-    inventory: { nestedRFiles: [] },
+    inventory: {
+      paths: ["DESCRIPTION", "NAMESPACE", "R/owned.R", "man/owned.Rd", "tests/owned.R"],
+      nestedRFiles: [],
+    },
     runners: { tests: { outcome: "completed" }, examples: { outcome: "completed" } },
   };
 }
@@ -551,6 +554,86 @@ test("P7 cannot hide empty, incomplete, extra, or invalidly inapplicable stage i
     assertCode(
       () => validatePackageReport(encoded(report), expectedFor(), 0),
       "EVIDENCE_P7_INCONSISTENT",
+    );
+  }
+});
+
+test("current reports cannot hide unverified nested closure behind a passed stage", () => {
+  for (const status of ["passed", "inapplicable"]) {
+    const report = reportFixture(packages[0], false);
+    report.firstBlocker.stage = "documentation";
+    report.stages.find((stage) => stage.id === "documentation").status = "failed";
+    const stage = report.stages.find((stage) => stage.id === "package-tests");
+    stage.status = status;
+    report.inventory.nestedRFiles = ["tests/helpers/owned.R"];
+    report.inventory.paths.push("tests/helpers/owned.R");
+    stage.discovered.push("tests/helpers/owned.R");
+    assertCode(
+      () => validatePackageReport(encoded(report), expectedFor(), 1),
+      "EVIDENCE_NESTED_TEST_COVERAGE",
+    );
+  }
+  const report = reportFixture();
+  report.inventory.nestedRFiles = ["tests/helpers/owned.R"];
+  report.inventory.paths.push("tests/helpers/owned.R");
+  assertCode(
+    () => validatePackageReport(encoded(report), expectedFor(), 0),
+    "EVIDENCE_NESTED_TEST_COVERAGE",
+  );
+});
+
+test("current nested reports retain failed or unexecuted stages without invented execution", () => {
+  for (const status of ["failed", "unexecuted"]) {
+    const report = reportFixture(packages[0], false);
+    report.inventory.nestedRFiles = ["tests/helpers/owned.R"];
+    report.inventory.paths.push("tests/helpers/owned.R");
+    const stage = report.stages.find((stage) => stage.id === "package-tests");
+    stage.status = status;
+    stage.discovered.push("tests/helpers/owned.R");
+    assert.equal(validatePackageReport(encoded(report), expectedFor(), 1).p7Eligible, false);
+    for (const fault of ["absent", "executed", "duplicate", "invalid"]) {
+      const mutated = structuredClone(report);
+      const target = mutated.stages.find((candidate) => candidate.id === "package-tests");
+      if (fault === "absent") target.discovered = [marker];
+      if (fault === "executed") target.executed.push("tests/helpers/owned.R");
+      if (fault === "duplicate") mutated.inventory.nestedRFiles.push("tests/helpers/owned.R");
+      if (fault === "invalid") mutated.inventory.nestedRFiles = ["tests/../outside.R"];
+      assertCode(
+        () => validatePackageReport(encoded(mutated), expectedFor(), 1),
+        "EVIDENCE_NESTED_TEST_COVERAGE",
+      );
+    }
+  }
+});
+
+test("current raw inventory cannot omit or invent nested R paths", () => {
+  for (const fault of ["omitted-declaration", "invented-declaration", "duplicate-path"]) {
+    const report = reportFixture();
+    if (fault !== "invented-declaration") report.inventory.paths.push("tests/helpers/owned.R");
+    if (fault !== "omitted-declaration")
+      report.inventory.nestedRFiles.push("tests/helpers/owned.R");
+    if (fault === "duplicate-path") report.inventory.paths.push("tests/helpers/owned.R");
+    assertCode(
+      () => validatePackageReport(encoded(report), expectedFor(), 0),
+      "EVIDENCE_NESTED_TEST_COVERAGE",
+    );
+  }
+  const report = reportFixture(packages[0], false);
+  report.inventory.paths.push("tests/helpers/a.R", "tests/helpers/a.R");
+  report.inventory.nestedRFiles = ["tests/helpers/a.R", "tests/helpers/b.R"];
+  const stage = report.stages.find((candidate) => candidate.id === "package-tests");
+  stage.status = "unexecuted";
+  stage.discovered.push(...report.inventory.nestedRFiles);
+  assertCode(
+    () => validatePackageReport(encoded(report), expectedFor(), 1),
+    "EVIDENCE_NESTED_TEST_COVERAGE",
+  );
+  for (const paths of [undefined, null, [null], [42]]) {
+    const report = reportFixture();
+    report.inventory.paths = paths;
+    assertCode(
+      () => validatePackageReport(encoded(report), expectedFor(), 0),
+      "EVIDENCE_REPORT_INVENTORY",
     );
   }
 });

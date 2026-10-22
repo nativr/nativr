@@ -18,6 +18,7 @@ for (const command of [
   ["conformance:r:v2:test"],
   ["oracle:discovery:test"],
   ["evidence:packages:test"],
+  ["package:coverage:test"],
   ["testing:assisted:test"],
   ["inventory:check"],
   ["lint"],

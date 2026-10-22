@@ -11,15 +11,15 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                                                    | Status              |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Production check                   | Profile 0.393: 3,262 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                           | Passed              |
-| Conformance                        | 1,480 checked-in, 1,407 live GNU R 4.6.1, 395 recursive cases; 169 bindings linked with causal controls                                                                            | Passed              |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                       | Passed              |
-| Browser e2e                        | Profile 0.393 on Windows: 12/12 pass across Chromium, Firefox and WebKit, including recursive unlist; required examples take 13.3 / 15.3 / 72.0 s under the unchanged 120 s budget | Passed on this host |
-| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                 | Passed              |
-| Fixed bundle limits                | Profile 0.393: client 17.6/150 KiB gzip; Worker 492.9/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                | Passed              |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                         | Open                |
+| Gate                               | Latest evidence                                                                                                                                                                                | Status              |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Production check                   | Profile 0.393: 3,267 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass; final checker admission correction has separate focused verification | Passed              |
+| Conformance                        | 1,480 checked-in, 1,407 live GNU R 4.6.1, 395 recursive cases; 169 bindings linked with causal controls                                                                                        | Passed              |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                   | Passed              |
+| Browser e2e                        | Profile 0.393 on Windows: 12/12 pass across Chromium, Firefox and WebKit, including recursive unlist; required examples take 13.3 / 15.3 / 72.0 s under the unchanged 120 s budget             | Passed on this host |
+| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                             | Passed              |
+| Fixed bundle limits                | Profile 0.393: client 17.6/150 KiB gzip; Worker 492.9/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                            | Passed              |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                     | Open                |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
 broader workload coverage, latency acceptance budgets, the declared OS matrix, CI and release
@@ -40,6 +40,29 @@ closure, broad package evidence and platform verification. See the maintained
 [development continuation](development-continuation.md) for the ordered implementation queue.
 
 ## Verification environment
+
+### Nested package-test coverage correction
+
+The host checker now includes nested R files as unverified coverage obligations and rejects current
+reports whose archive-path and nested-file inventories disagree. It does not infer nested execution
+from a successful entrypoint or available dependency. Actual failures retain precedence; direct
+tests without nested files retain their existing pass route. Runtime profile 0.393 is unchanged.
+
+The
+[verification record](../compatibility/platform-evidence/nested-test-coverage-windows-0.393.0.json)
+distinguishes the complete 3,267-test production gate from the final admission correction's focused
+checks: 65 evidence/process tests, 24 policy tests, five native fixtures, four reconciliation tests,
+all-source types, lint and formatting pass. The native suite also counts its parent test separately.
+No browser, conformance or packaging rerun is claimed for this host-only correction.
+
+The
+[three-package checkpoint](../compatibility/package-check-evidence/nested-test-closure-0.393.0/index.json)
+preserves all 31 execution and comparison observations with stable inputs. pkgconfig's test stage is
+now unexecuted with four nested files; abind remains P7-eligible; crayon retains its actual test
+failure with twelve nested files. Qualified tiers remain P5, P7 and P4 respectively. The earlier
+24-package refresh, its qualified distribution and all historical artifacts remain intact.
+
+### Toolchain
 
 Node 24.19.0, pnpm 11.17.0 and GNU R 4.6.1 on Windows x64, with C locale settings. Existing compiler
 and Wasm caches were reused. Unit-test temporary files were moved outside Dropbox after EBUSY

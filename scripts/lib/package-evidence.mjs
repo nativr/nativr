@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { redactPackageCheck } from "./package-check-summary.mjs";
+import { hasAdmissibleNestedTestCoverage } from "./package-test-coverage.mjs";
 
 export const PACKAGE_NAMES = Object.freeze(["abind", "numDeriv"]);
 export const STAGES = Object.freeze([
@@ -534,8 +535,28 @@ export function validatePackageReport(raw, expected, exitCode) {
       "EVIDENCE_P7_INCONSISTENT",
     );
   need(
-    object(report.inventory) && Array.isArray(report.inventory.nestedRFiles),
+    object(report.inventory) &&
+      Array.isArray(report.inventory.paths) &&
+      report.inventory.paths.every((file) => typeof file === "string") &&
+      Array.isArray(report.inventory.nestedRFiles),
     "EVIDENCE_REPORT_INVENTORY",
+  );
+  const inventoriedNestedFiles = report.inventory.paths.filter((file) =>
+    /^tests\/(?:[^/]+\/)+[^/]+\.[Rr]$/u.test(file),
+  );
+  need(
+    new Set(inventoriedNestedFiles).size === inventoriedNestedFiles.length &&
+      inventoriedNestedFiles.length === report.inventory.nestedRFiles.length &&
+      inventoriedNestedFiles.every((file) => report.inventory.nestedRFiles.includes(file)),
+    "EVIDENCE_NESTED_TEST_COVERAGE",
+  );
+  need(
+    hasAdmissibleNestedTestCoverage(
+      report.inventory.nestedRFiles,
+      report.stages.find((stage) => stage.id === "package-tests"),
+      report.p7Eligible,
+    ),
+    "EVIDENCE_NESTED_TEST_COVERAGE",
   );
   for (const name of ["tests", "examples"])
     need(

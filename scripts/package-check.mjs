@@ -14,6 +14,7 @@ import { observePackageAuthors } from "./lib/package-authors-observer.mjs";
 import { observePackageAuthorFields } from "./lib/package-author-fields-observer.mjs";
 import { observePackageDocumentation } from "./lib/package-documentation-observer.mjs";
 import { assessEffectiveAuthorFields } from "./lib/package-author-validation.mjs";
+import { packageTestCoverageStage } from "./lib/package-test-coverage.mjs";
 import {
   decodePackageConditions,
   packageConditionObserverRead,
@@ -818,13 +819,12 @@ try {
         examplePaths,
         attempted("example"),
       ),
-      stage(
-        "package-tests",
-        testPaths.length === 0 ? "unexecuted" : "passed",
-        "Top-level R scripts execute unchanged in fresh sessions with copied tests fixtures. Unsupported .Rin and absent entrypoints do not prove the package-test stage.",
-        testPaths,
-        attempted("test"),
-      ),
+      packageTestCoverageStage({
+        entrypoints: tests.entrypoints,
+        nestedRFiles: tests.nestedRFiles,
+        unsupportedInputs: unsupportedTestInputs,
+        executedEntrypoints: attempted("test"),
+      }),
       stage(
         "test-output",
         "passed",

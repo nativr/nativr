@@ -38,6 +38,28 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Nested package-test execution evidence (runtime profile 0.393 unchanged)
+
+The host checker applies `nested-execution-closure-v1`: its package-test inventory includes nested R
+files, while execution credit remains limited to captured top-level entrypoints. Without a positive
+nested coverage observer, a successful entrypoint cannot establish complete nested execution. The
+stage remains `unexecuted`; an observed execution failure still makes it `failed`. Dependency
+availability and test-framework names do not establish coverage. Output and condition comparisons
+remain limited to the scripts actually captured.
+
+This is deliberately conservative for nested helpers that do execute. Independently authored native
+fixtures distinguish direct sourcing from a skipped guard, absent entrypoints, direct-only tests and
+real failures. Current report admission rejects passed/P7 nested claims unsupported by the capture
+schema. Historical artifacts retain their original results and are qualified separately. The policy
+does not implement a native runner, award assisted-runner tier credit, or change runtime semantics.
+The full rules are in [RFC-0008](rfcs/0008-package-check-stage-specifications.md). Admission also
+requires the archive-path inventory and declared nested-file inventory to agree, without duplicate
+nested paths or fabricated execution credit. The
+[verification record](../compatibility/platform-evidence/nested-test-coverage-windows-0.393.0.json)
+separates the full production gate from final focused checks after the admission correction. Three
+cached package controls retain all 31 execution/comparison observations: pkgconfig's test stage is
+now unexecuted, abind remains P7-eligible, and crayon's actual test failure remains failed.
+
 ### Recursive unlist across heterogeneous leaves (profile 0.393)
 
 The profile 0.393 acceptance boundary extends recursive `unlist` of lists and pairlists to sampled

@@ -2256,7 +2256,8 @@ controls. See the
 
 The corpus refresh corrects historical pkgconfig P7 credit to P5: its guarded entrypoint completes,
 but four nested test files remain unverified and testthat is unavailable. Inapplicable examples
-receive no execution claim. The checker still incorrectly marks this narrower result P7-eligible.
+receive no execution claim. At the initial 0.393 refresh, the checker still incorrectly marked this
+narrower result P7-eligible; the subsequent coverage-policy checkpoint below corrects that defect.
 The evaluate set_hooks example now completes where 0.389 failed, but its repeatable output remains
 different from GNU R; its P4 tier is unchanged. No isolated cause is inferred from this refresh.
 
@@ -2267,3 +2268,31 @@ constructor attribute-order and named-expression representation gaps remain exec
 Continue independent datasets and isolated testing-runner parity without awarding original
 test-stage credit. All thirteen domain matrices remain incomplete. Linux, holdout, downloads, push
 and publication retain the existing authorization boundaries.
+
+### Nested test execution closure (runtime profile 0.393 unchanged)
+
+The checker correction is verified: all nested R files are coverage obligations, while only captured
+top-level entrypoints receive execution credit. Real execution failures retain precedence over
+uncertainty. Current raw-report admission also rejects contradictory archive/nested inventories and
+unsupported passed/P7 nested claims. Five maintained owned native fixtures make the conservative
+under-credit of genuinely sourced helpers explicit.
+
+The
+[verification record](../compatibility/platform-evidence/nested-test-coverage-windows-0.393.0.json)
+records a complete pnpm check with 3,267 passing tests and 94 opt-in skips. After the final
+host-side admission correction, 65 evidence/process tests, 24 policy tests, five native fixtures and
+four reconciliation tests pass, along with all-source types, lint and formatting. The existing
+browser, semantic conformance and packaging results are unchanged historical gates for this
+correction.
+
+Three cached package controls retain all 31 execution/comparison observations with stable inputs.
+pkgconfig is now correctly ineligible for P7 with an unexecuted nested closure; abind retains P7;
+crayon's actual test failure remains failed. Qualified corpus tiers and all holdout pins stay
+unchanged. Original dependency-closure and assisted-runner evidence remain separate.
+
+Next measurable semantic increment: independently reproduce expression names and attributes, then
+implement a bounded internal representation prerequisite for source-aware parsing. Preserve host
+snapshot/API boundaries, exact evaluation and metadata behavior, reference identity and resource
+limits. Select acceptance cases from native observations, reproduce the current-runtime baseline,
+and complete the semantic and affected-package gates before the next local semantic commit. Full
+parse-data/source-reference behavior remains subsequent work. All thirteen domains remain open.
