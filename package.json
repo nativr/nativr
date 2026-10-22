@@ -28,6 +28,7 @@
     "lint": "eslint .",
     "boundaries": "node scripts/check-boundaries.mjs",
     "typecheck": "node scripts/typecheck.mjs",
+    "typecheck:all": "tsc --project tsconfig.eslint.json --noEmit --incremental false",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",

@@ -14,6 +14,7 @@ import {
   withNames,
 } from "@nativr/runtime";
 import { describe, expect, it } from "vitest";
+import type { RValueSnapshot } from "@nativr/protocol";
 
 import {
   NA,
@@ -230,8 +231,12 @@ describe("public value conversion boundary", () => {
   });
 
   it("transports symbols and quoted language without exposing normalized AST nodes", () => {
-    const symbol = { version: 1, type: "symbol" as const, name: "alpha" };
-    const language = { version: 1, type: "language" as const, source: "(1 + alpha)" };
+    const symbol = { version: 1, type: "symbol", name: "alpha" } satisfies RValueSnapshot;
+    const language = {
+      version: 1,
+      type: "language",
+      source: "(1 + alpha)",
+    } satisfies RValueSnapshot;
     const symbolValue = snapshotToJs(symbol);
     const languageValue = snapshotToJs(language);
     expect(symbolValue).toEqual({ __nativr__: "symbol", name: "alpha" });
@@ -240,6 +245,8 @@ describe("public value conversion boundary", () => {
     expect(isLanguage(languageValue)).toBe(true);
     expect(isSymbol(languageValue)).toBe(false);
     expect(isLanguage(symbolValue)).toBe(false);
+    if (!isSymbol(symbolValue) || !isLanguage(languageValue))
+      throw new Error("Expected symbol and language conversion markers");
     expect(inputToSnapshot(symbolValue)).toEqual(symbol);
     expect(inputToSnapshot(languageValue)).toEqual(language);
     expect(valueToSnapshot(snapshotToValue(symbol))).toEqual(symbol);
@@ -251,9 +258,9 @@ describe("public value conversion boundary", () => {
   it("transports expression vectors as immutable diagnostic source arrays", () => {
     const snapshot = {
       version: 1,
-      type: "expression" as const,
+      type: "expression",
       sources: ["x", "(1 + y)"],
-    };
+    } satisfies RValueSnapshot;
     const value = snapshotToJs(snapshot);
     expect(value).toEqual({
       __nativr__: "expression",
@@ -261,6 +268,7 @@ describe("public value conversion boundary", () => {
     });
     expect(isExpression(value)).toBe(true);
     expect(isExpression({ __nativr__: "expression", sources: ["x", 1] })).toBe(false);
+    if (!isExpression(value)) throw new Error("Expected expression conversion marker");
     expect(inputToSnapshot(value)).toEqual(snapshot);
     expectErrorCode(() => snapshotToValue(snapshot), "NRT3206");
     expect(snapshotTransferables(snapshot)).toEqual([]);

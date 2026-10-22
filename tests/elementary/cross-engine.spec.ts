@@ -56,9 +56,10 @@ test("elementary.wasm returns identical bits in Chromium, Firefox and WebKit", a
   ) as Fixture;
   const wasm = await readFile(path.join(root, ".tmp", "elementary", lock.output.file));
   const jobs = buildJobs(lock.functions, fixture);
+  const input: [string, readonly Job[]] = [wasm.toString("base64"), jobs];
   const total = jobs.reduce((sum, job) => sum + job.inputs.length, 0);
 
-  const node = await evaluateElementary([wasm.toString("base64"), jobs]);
+  const node = await evaluateElementary(input);
   const engines: [string, BrowserType][] = [
     ["chromium", chromium],
     ["firefox", firefox],
@@ -69,7 +70,7 @@ test("elementary.wasm returns identical bits in Chromium, Firefox and WebKit", a
     const browser = await type.launch();
     try {
       const page = await browser.newPage();
-      results.set(label, await page.evaluate(evaluateElementary, [wasm.toString("base64"), jobs]));
+      results.set(label, await page.evaluate(evaluateElementary, input));
     } finally {
       await browser.close();
     }

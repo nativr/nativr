@@ -8,7 +8,9 @@ export default defineConfig({
     cspSafeTreeSitter(),
     dts({
       entryRoot: "src",
-      rollupTypes: true,
+      bundleTypes: {
+        bundledPackages: ["@nativr/ast", "@nativr/protocol", "@nativr/runtime"],
+      },
       tsconfigPath: "tsconfig.json",
     }),
   ],

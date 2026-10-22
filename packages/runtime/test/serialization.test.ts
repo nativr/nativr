@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_RUNTIME_LIMITS,
   EvaluationContext,
   RResourceLimitError,
   RUnsupportedFeatureError,
@@ -121,7 +122,13 @@ describe("GNU R serialization decoder", () => {
       decodeRSerializationFile(
         hex(FIXTURES.compressedWorkspace),
         new EvaluationContext(
-          { maxSteps: 100, maxCallDepth: 10, maxVectorLength: 1_000, maxOutputBytes: 32 },
+          {
+            ...DEFAULT_RUNTIME_LIMITS,
+            maxSteps: 100,
+            maxCallDepth: 10,
+            maxVectorLength: 1_000,
+            maxOutputBytes: 32,
+          },
           { cancelled: false },
         ),
       ),
@@ -165,7 +172,13 @@ describe("GNU R serialization decoder", () => {
 
 function context(): EvaluationContext {
   return new EvaluationContext(
-    { maxSteps: 10_000, maxCallDepth: 100, maxVectorLength: 10_000, maxOutputBytes: 100_000 },
+    {
+      ...DEFAULT_RUNTIME_LIMITS,
+      maxSteps: 10_000,
+      maxCallDepth: 100,
+      maxVectorLength: 10_000,
+      maxOutputBytes: 100_000,
+    },
     { cancelled: false },
   );
 }

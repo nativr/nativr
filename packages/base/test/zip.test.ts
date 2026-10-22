@@ -1,4 +1,4 @@
-import { EvaluationContext, decodeRBase64Resource } from "@nativr/runtime";
+import { DEFAULT_RUNTIME_LIMITS, EvaluationContext, decodeRBase64Resource } from "@nativr/runtime";
 import { describe, expect, it } from "vitest";
 
 import { extractZipMember } from "../src/zip.js";
@@ -11,6 +11,7 @@ const STORED_ARCHIVE =
 function context(maxOutputBytes = 10_000): EvaluationContext {
   return new EvaluationContext(
     {
+      ...DEFAULT_RUNTIME_LIMITS,
       maxSteps: 10_000,
       maxCallDepth: 10,
       maxVectorLength: 1_000,

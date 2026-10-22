@@ -1469,3 +1469,13 @@ active-binding/member-replacement reproduction as an open semantic lead. Resume 
 blockers and the independently licensed offline datasets/testing runner after the inventory exposes
 coverage and gaps. Linux and Formula still need separate authorization; downloads need approval. The
 full five-criterion target remains unfinished; this next local work needs no additional input.
+
+### Test/config typecheck and package declarations (2026-10-22)
+
+The broader test/config TypeScript errors are repaired. pnpm typecheck:all now runs without emit as
+a required pnpm check step; the full check passes 2,222 tests with 93 opt-in skips. The installed
+declaration plugin uses bundleTypes, including internal AST/protocol/runtime type definitions.
+Strict packed-consumer checking reproduced the missing workspace declarations and passes after the
+fix. Offline browser-consumer and package-tools CLI smoke checks pass. All four runtime JavaScript
+hashes match the verified 0.379 build, so no semantic-profile bump or repeated native/corpus run is
+needed for this typing/packaging increment. Continue the callable/domain inventory next.

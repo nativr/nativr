@@ -67,7 +67,8 @@ try {
       'import { createR } from "@nativr/nativr";',
       "async function main() {",
       "  const runtime = await createR();",
-      '  document.querySelector("#app").textContent = String(await runtime.eval("1 + 1"));',
+      '  const app = document.querySelector("#app");',
+      '  if (app !== null) app.textContent = String(await runtime.eval("1 + 1"));',
       "  await runtime.dispose();",
       "}",
       "void main();",
@@ -86,6 +87,31 @@ try {
       cwd: root,
     },
   );
+  await writeFile(
+    path.join(consumerRoot, "tsconfig.json"),
+    `${JSON.stringify(
+      {
+        compilerOptions: {
+          strict: true,
+          noEmit: true,
+          target: "ES2022",
+          module: "ESNext",
+          moduleResolution: "Bundler",
+          lib: ["ES2022", "DOM"],
+          types: [],
+          skipLibCheck: false,
+        },
+        include: ["src/**/*.ts"],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  await runNode(path.join(root, "node_modules", "typescript", "bin", "tsc"), [
+    "--project",
+    path.join(consumerRoot, "tsconfig.json"),
+  ]);
+  console.log("Packed consumer declaration typecheck: passed");
   await runPnpm(["--config.verify-deps-before-run=false", "--dir", consumerRoot, "build"], {
     cwd: root,
   });

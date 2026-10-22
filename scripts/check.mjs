@@ -14,6 +14,7 @@ for (const command of [
   ["lint"],
   ["boundaries"],
   ["typecheck"],
+  ["typecheck:all"],
   ["grammar:build"],
   ["test"],
   ["build"],

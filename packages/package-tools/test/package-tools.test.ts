@@ -474,7 +474,7 @@ describe("pure-R package packager", () => {
         ),
       ).resolves.toEqual([21, false]);
       await expect(runtime.eval("c(slow, never)")).resolves.toEqual([12, 999]);
-      const lines = await runtime.eval<string[]>(
+      const lines = await runtime.eval(
         "utils::example(square, package = 'demopkg', give.lines = TRUE, echo = FALSE)",
       );
       expect(lines).toEqual(
@@ -861,7 +861,10 @@ describe("pure-R package packager", () => {
     ]);
     const corrupted = await readFile(archive);
     // A reader that drains to the later entry reaches the corrupt gzip trailer.
-    corrupted[corrupted.length - 8] ^= 0xff;
+    const trailerOffset = corrupted.length - 8;
+    const trailerByte = corrupted[trailerOffset];
+    if (trailerByte === undefined) throw new Error("Expected gzip archive trailer");
+    corrupted[trailerOffset] = trailerByte ^ 0xff;
     await writeFile(archive, corrupted);
 
     await expect(inspectPackage(archive, { limits: { maxFileBytes: 8 } })).rejects.toThrow(
@@ -1522,7 +1525,7 @@ async function fixturePackage(name = "demopkg", version = "1.2.3"): Promise<stri
   return packageRoot;
 }
 
-async function archivePackage(packageRoot: string): Promise<Uint8Array> {
+async function archivePackage(packageRoot: string): Promise<Uint8Array<ArrayBuffer>> {
   const archive = path.join(
     path.dirname(packageRoot),
     `${path.basename(packageRoot)}_${randomUUID()}.tar.gz`,

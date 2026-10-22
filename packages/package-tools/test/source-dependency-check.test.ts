@@ -42,7 +42,9 @@ describe("owned AST source dependency inventory", () => {
     for (const [dependencies, expected] of cases) {
       const assessment = inspect(source, dependencies);
       expect(assessment.references.map((reference) => reference.status)).toEqual(expected);
-      expect(assessment.status).toBe(expected.includes("failed") ? "failed" : "passed");
+      expect(assessment.status).toBe(
+        expected.some((status) => status === "failed") ? "failed" : "passed",
+      );
       expect(assessment.references.map((reference) => reference.package)).toEqual(
         Array(5).fill("boot"),
       );

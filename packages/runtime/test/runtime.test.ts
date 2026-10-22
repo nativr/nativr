@@ -2,6 +2,7 @@ import type { AstNode } from "@nativr/ast";
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_RUNTIME_LIMITS,
   Evaluator,
   EvaluationContext,
   REvaluationError,
@@ -103,6 +104,7 @@ describe("runtime foundations", () => {
           span,
         },
         environment,
+        attributes: new Map(),
       }),
     ).toBe(560);
   });
@@ -156,7 +158,13 @@ describe("runtime foundations", () => {
 
   it("enforces step and vector limits", () => {
     const context = new EvaluationContext(
-      { maxSteps: 1, maxCallDepth: 1, maxVectorLength: 2, maxOutputBytes: 100 },
+      {
+        ...DEFAULT_RUNTIME_LIMITS,
+        maxSteps: 1,
+        maxCallDepth: 1,
+        maxVectorLength: 2,
+        maxOutputBytes: 100,
+      },
       { cancelled: false },
     );
     context.checkpoint();
@@ -166,7 +174,13 @@ describe("runtime foundations", () => {
 
   it("captures selected output streams with nesting and independent size bounds", () => {
     const context = new EvaluationContext(
-      { maxSteps: 100, maxCallDepth: 10, maxVectorLength: 100, maxOutputBytes: 10 },
+      {
+        ...DEFAULT_RUNTIME_LIMITS,
+        maxSteps: 100,
+        maxCallDepth: 10,
+        maxVectorLength: 100,
+        maxOutputBytes: 10,
+      },
       { cancelled: false },
     );
     context.beginOutputCapture(["stdout"]);

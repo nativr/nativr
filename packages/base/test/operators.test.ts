@@ -1,4 +1,5 @@
 import {
+  DEFAULT_RUNTIME_LIMITS,
   EvaluationContext,
   characterVector,
   complexVector,
@@ -13,6 +14,7 @@ import { jsReferenceOperators, recycledLength } from "../src/index.js";
 function context(): EvaluationContext {
   return new EvaluationContext(
     {
+      ...DEFAULT_RUNTIME_LIMITS,
       maxSteps: 1_000,
       maxCallDepth: 10,
       maxVectorLength: 1_000,

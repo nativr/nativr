@@ -11,15 +11,15 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                      | Status                    |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Production check                   | Profile 0.379: 2,221 unit tests pass, 93 opt-in tests skipped; build, boundaries, production types and bundle audit pass                             | Passed                    |
-| Conformance                        | 1,375 checked-in, 1,306 live GNU R 4.6.1, 287 recursive cases; 151 bindings linked with causal controls                                              | Passed                    |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                         | Passed                    |
-| Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open                      |
-| Packed consumer                    | Historical pack smoke pass; not refreshed in these increments                                                                                        | Revalidate before release |
-| Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 484.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed                    |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                           | Open                      |
+| Gate                               | Latest evidence                                                                                                                                      | Status |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Production check                   | Profile 0.379: 2,222 unit tests pass, 93 opt-in tests skipped; production/test/config types, build and bundle audit pass                             | Passed |
+| Conformance                        | 1,375 checked-in, 1,306 live GNU R 4.6.1, 287 recursive cases; 151 bindings linked with causal controls                                              | Passed |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                         | Passed |
+| Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open   |
+| Packed consumer                    | Profile 0.379: offline strict declaration check, browser consumer build and package-tools CLI pass                                                   | Passed |
+| Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 484.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                           | Open   |
 
 **Readiness:** release verification is incomplete. Browser timing, the declared OS matrix, CI and
 release packaging need current evidence. The approved roadmap does not authorize push or
@@ -47,10 +47,10 @@ cleanup failures. Native oracle runs used ordinary Windows permissions because s
 made GNU R file.access reject readable fixtures. These are harness constraints, not accepted
 deviations.
 
-No Worker/protocol/playground or packaging interface changed in stabilization. E2e and pack smoke
-were not rerun for that increment. A supplemental all-test TypeScript check found existing fixture
-typing errors; the required production typecheck passes. That broader check needs cleanup before
-being adopted as a release gate.
+No Worker/protocol/playground interface changed in stabilization. E2e was not rerun for these
+increments. The earlier fixture typing errors are now repaired, and `pnpm typecheck:all` checks
+production sources, tests and build configurations without emitting files as part of `pnpm check`.
+The packed consumer now checks its public declarations strictly before its browser build.
 
 ## Cached package checkpoint
 
@@ -76,6 +76,21 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Test types and packed declarations (2026-10-22, profile 0.379 unchanged)
+
+Eleven test files now use complete runtime-limit fixtures, valid optional properties, discriminated
+snapshot/AST narrowing, ArrayBuffer-backed archive bytes and a typed browser argument tuple. Focused
+tests pass 158 cases with 13 opt-in skips; the full check passes 2,222 tests with 93 opt-in skips.
+The broader non-emitting TypeScript check passes and is now a required check step.
+
+The declaration plugin's obsolete rollupTypes option was replaced with bundleTypes and explicit
+bundling of the AST, protocol and runtime type dependencies. The strict packed-consumer test first
+reproduced missing internal-package declarations, then passed after the fix. Offline pack smoke also
+passes the browser consumer build and package-tools CLI. Four runtime JavaScript artifacts retain
+exactly the same hashes as the verified semantic build, so profile 0.379 and its native/corpus
+evidence remain applicable. The installed API Extractor emits an advisory that its TypeScript 5.9.3
+engine is older than the project's 6.0.3; the actual TypeScript 6.0.3 packed-consumer check passes.
 
 ### Profile 0.379 verification (2026-10-22)
 

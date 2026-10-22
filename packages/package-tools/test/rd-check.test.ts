@@ -64,15 +64,12 @@ const nativeFailed = [
 
 function functionsOf(source: string): DocumentationInput["functions"] {
   const result = new Map<string, { name: string; defaultValue?: unknown }[]>();
-  const ast = parser.parse(source).ast as { body: Record<string, unknown>[] };
+  const ast = parser.parse(source).ast;
   for (const statement of ast.body) {
-    const target = statement.target as { name?: string } | undefined;
-    const value = statement.value as
-      { kind: string; parameters: { name: string; defaultValue?: unknown }[] } | undefined;
-    if (statement.kind === "AssignmentExpression" && value?.kind === "FunctionExpression")
+    if (statement.kind === "AssignmentExpression" && statement.value.kind === "FunctionExpression")
       result.set(
-        target?.name ?? "",
-        value.parameters.map((parameter) => ({
+        statement.target.kind === "Identifier" ? statement.target.name : "",
+        statement.value.parameters.map((parameter) => ({
           name: parameter.name,
           ...(parameter.defaultValue === undefined ? {} : { defaultValue: parameter.defaultValue }),
         })),

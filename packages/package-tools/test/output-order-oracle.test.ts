@@ -246,6 +246,7 @@ describe.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
         { stream: "stderr", text: transport("m\n", windows) },
         { stream: "stdout", text: transport("e\n", windows) },
       ]);
+      if (result.outputOrder === undefined) throw new Error("Expected captured output order");
       const expected: PackageCheckObservation = {
         status: "completed",
         freshSession: true,

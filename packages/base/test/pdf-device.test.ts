@@ -202,16 +202,15 @@ function graphicsEvents(): RGraphicsEvent[] {
           label: "line",
           textColor: "#000000FF",
           color: "#FF00FFFF",
-          lineType: index % 2 === 0 ? "44" : undefined,
           lineWidth: 1,
-          pointSymbol: index % 2 === 0 ? "1" : undefined,
+          ...(index % 2 === 0 ? { lineType: "44", pointSymbol: "1" } : {}),
         },
       ],
       box: index % 2 === 0,
       background: index % 2 === 0 ? "#FFFFFFFF" : "#00000000",
       columns: 1,
       cex: 0.6,
-      title: index === 0 ? "Key" : undefined,
+      ...(index === 0 ? { title: "Key" } : {}),
     })),
   ];
 }
