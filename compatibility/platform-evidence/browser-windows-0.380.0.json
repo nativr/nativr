@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-browser-host-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.380.0",
+  "sourceCommit": "9776d74bbaf21ff7fc4edaff1b452d526242ac0a",
+  "scope": "Windows cached-browser advisory evidence; not a complete browser/OS or release-performance matrix",
+  "environment": {
+    "os": "win32",
+    "osRelease": "10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "playwright": "1.62.0",
+    "browsers": [
+      { "name": "chromium", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "chromium-headless-shell", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "firefox", "revision": "1538", "browserVersion": "153.0" },
+      { "name": "webkit", "revision": "2336", "browserVersion": "26.5" }
+    ]
+  },
+  "provenance": {
+    "sources": [
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "8d73bbaa94e85216f28555a1222bc2a8025805c5fa2d8842ff382342b17008b8"
+      },
+      {
+        "path": "playwright.config.ts",
+        "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "0a24210b99b8a9b405bb53e284ab147889c092847b58fc0d041cc82931e53413"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "runtimeJavaScript": [
+      {
+        "path": "packages/nativr/dist/assets/worker-entry-DWBv2-LG.js",
+        "sha256": "56a4b1d8a5084a26ec5ab56dbcee0adde4394d550cccbe2666a0dcf47c347583"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/conversion-hqUUaSZc.js",
+        "sha256": "275e6ed904955f257de90948f294bfa251cb1a34317973d1dfcaf4bece4f39ce"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/runtime-host-BABKn0dY.js",
+        "sha256": "4a8770c0dc95d8070d4c9e707ec4481502596ad82dcca48e11789b725523b1b0"
+      },
+      {
+        "path": "packages/nativr/dist/index.js",
+        "sha256": "822783f7d5c724d6c426b261b5023a751f1d459b8704a854b737f877c60f4747"
+      }
+    ],
+    "runLogSha256": "b04ead90d6cbaa5bf11fc5f9dc708f6d6d643f4f58cfb40d5a45c25e4b65b7ed",
+    "redaction": "Only owned test names, status, timing, tool revisions and source/artifact digests; no bodies, browser traces, console output or local user paths"
+  },
+  "execution": {
+    "command": "pnpm test:e2e --workers=1",
+    "precondition": "Serial production build; existing cached browser revisions; NATIVR_E2E_SKIP_BUILD=1; no reused preview server",
+    "workers": 1,
+    "retries": 0,
+    "requiredExamplesTimeoutMs": 120000,
+    "otherTestsTimeoutMs": 60000,
+    "viewportPolicy": "Unchanged configured desktop viewports",
+    "timingPrecision": "Playwright list reporter rounded individual durations",
+    "tests": [
+      {
+        "browser": "chromium",
+        "name": "tests\\e2e\\playground.spec.ts:5:1 › runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 10400
+      },
+      {
+        "browser": "chromium",
+        "name": "tests\\e2e\\playground.spec.ts:1190:1 › surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1000
+      },
+      {
+        "browser": "chromium",
+        "name": "tests\\e2e\\playground.spec.ts:1226:1 › loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 344
+      },
+      {
+        "browser": "firefox",
+        "name": "tests\\e2e\\playground.spec.ts:5:1 › runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 11700
+      },
+      {
+        "browser": "firefox",
+        "name": "tests\\e2e\\playground.spec.ts:1190:1 › surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1300
+      },
+      {
+        "browser": "firefox",
+        "name": "tests\\e2e\\playground.spec.ts:1226:1 › loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 462
+      },
+      {
+        "browser": "webkit",
+        "name": "tests\\e2e\\playground.spec.ts:5:1 › runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 41500
+      },
+      {
+        "browser": "webkit",
+        "name": "tests\\e2e\\playground.spec.ts:1190:1 › surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 3000
+      },
+      {
+        "browser": "webkit",
+        "name": "tests\\e2e\\playground.spec.ts:1226:1 › loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 542
+      }
+    ]
+  },
+  "webkitBaseline": {
+    "status": "passed",
+    "requiredExamplesDurationMs": 42600,
+    "timeoutMs": 120000,
+    "traceEnabled": true
+  },
+  "activationDiagnostic": {
+    "sampleCount": 8,
+    "method": "Four alternating pairs of genuine Run clicks and supported Ctrl+Enter; distinct owned arithmetic results; geometry sampling enabled",
+    "viewport": {
+      "visibility": "visible",
+      "scrollX": 0,
+      "scrollY": 0,
+      "viewportWidth": 1280,
+      "viewportHeight": 720,
+      "runRect": {
+        "x": 308.78125,
+        "y": 724.03125,
+        "width": 112.859375,
+        "height": 41,
+        "bottom": 765.03125
+      }
+    },
+    "initializationToReadyMs": 211.48219999999998,
+    "initialFrameDeltasMs": [3, 16, 17, 16, 16, 16, 16, 16, 16, 16, 16, 16],
+    "buttonMedianActionMs": 163.28845,
+    "shortcutMedianActionMs": 24.10419999999999,
+    "recordSha256": "ab5b9ff042193459bc90ec517c8d93b41f81a18aaca3bcac660377d08f2137ec",
+    "interpretation": "Current samples do not reproduce historical half-second stability waits. One initial scroll brings Run into view; subsequent geometry is stable. No layout, activation, viewport or timeout changes were made.",
+    "limits": "Single host/session and small arithmetic examples; not representative startup, cancellation or package performance acceptance."
+  },
+  "remaining": [
+    "Historical WebKit timeout cause not established",
+    "Repeated startup/cancellation and representative numDeriv measurements",
+    "Declared additional OS/platform coverage",
+    "Separately authorized GNU R Linux normative gate",
+    "Reproducible remote CI and publication remain separate"
+  ]
+}

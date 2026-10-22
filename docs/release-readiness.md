@@ -11,19 +11,19 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                      | Status |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Production check                   | Profile 0.380: 2,329 unit tests pass, 93 opt-in tests skipped; production/test/config types, build and bundle audit pass                             | Passed |
-| Conformance                        | 1,384 checked-in, 1,315 live GNU R 4.6.1, 297 recursive cases; 153 bindings linked with causal controls                                              | Passed |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                         | Passed |
-| Browser e2e                        | Historical 6/6 pass reported at 0.353; WebKit also exceeded the 120 s required-example budget in later runs (R14). Not refreshed in these increments | Open   |
-| Packed consumer                    | Profile 0.379: offline strict declaration check, browser consumer build and package-tools CLI pass                                                   | Passed |
-| Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 485.1/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                 | Passed |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                           | Open   |
+| Gate                               | Latest evidence                                                                                                                                       | Status              |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Production check                   | Profile 0.380: 2,329 unit tests pass, 93 opt-in tests skipped; production/test/config types, build and bundle audit pass                              | Passed              |
+| Conformance                        | 1,384 checked-in, 1,315 live GNU R 4.6.1, 297 recursive cases; 153 bindings linked with causal controls                                               | Passed              |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                          | Passed              |
+| Browser e2e                        | Profile 0.380 on Windows: 9/9 pass across Chromium, Firefox and WebKit; required examples take 10.4 / 11.7 / 41.5 s within the unchanged 120 s budget | Passed on this host |
+| Packed consumer                    | Profile 0.379: offline strict declaration check, browser consumer build and package-tools CLI pass                                                    | Passed              |
+| Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 485.1/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                  | Passed              |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                            | Open                |
 
-**Readiness:** release verification is incomplete. Browser timing, the declared OS matrix, CI and
-release packaging need current evidence. The approved roadmap does not authorize push or
-publication.
+**Readiness:** release verification is incomplete. Repeated workload timings, the declared OS
+matrix, CI and release packaging need current evidence. The approved roadmap does not authorize push
+or publication.
 
 ## B. Full browser-admissible GNU R 4.6.1 compatibility
 
@@ -47,10 +47,11 @@ cleanup failures. Native oracle runs used ordinary Windows permissions because s
 made GNU R file.access reject readable fixtures. These are harness constraints, not accepted
 deviations.
 
-No Worker/protocol/playground interface changed in stabilization. E2e was not rerun for these
-increments. The earlier fixture typing errors are now repaired, and `pnpm typecheck:all` checks
-production sources, tests and build configurations without emitting files as part of `pnpm check`.
-The packed consumer now checks its public declarations strictly before its browser build.
+No Worker/protocol/playground interface changed in stabilization. E2e has now been refreshed at
+profile 0.380 on Windows. The earlier fixture typing errors are repaired, and `pnpm typecheck:all`
+checks production sources, tests and build configurations without emitting files as part of
+`pnpm check`. The packed consumer now checks its public declarations strictly before its browser
+build.
 
 ## Cached package checkpoint
 
@@ -76,6 +77,22 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Windows browser checkpoint (2026-10-22, profile 0.380)
+
+The unchanged nine-test suite passes with one worker using the cached Playwright 1.62.0 browser
+revisions. Chromium, Firefox and WebKit retain their configured desktop viewports, real clicks,
+network assertions and timeouts. The required-example test passes in 10.4, 11.7 and 41.5 seconds; an
+earlier isolated WebKit baseline with tracing also passes in 42.6 seconds. The
+[redacted checkpoint](../compatibility/platform-evidence/browser-windows-0.380.0.json) records
+source/runtime digests, browser revisions, commands and individual results.
+
+A separate eight-activation WebKit diagnostic records roughly 16 ms initial frames, stable button
+geometry after its first scroll, median real-click action time of 163.3 ms and supported-shortcut
+time of 24.1 ms. The historical half-second stability waits do not reproduce on this run. No layout,
+test-activation, viewport or timeout changes were needed. This does not establish the cause of the
+historical timeout or representative workload performance. Repeated startup, cancellation and
+numDeriv measurements, additional OS coverage and the separately authorized Linux gate remain open.
 
 ### Profile 0.380 verification (2026-10-22)
 

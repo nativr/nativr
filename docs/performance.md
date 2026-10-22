@@ -1,5 +1,28 @@
 # Performance and bundle discipline
 
+## Current Windows browser observation (profile 0.380, 2026-10-22)
+
+All nine maintained e2e tests pass across the cached Chromium, Firefox and WebKit revisions, with
+one test worker and unchanged timeouts/viewports. Required Worker examples take 10.4 / 11.7 / 41.5
+seconds respectively against the existing 120-second budget. An isolated unchanged WebKit run also
+passes in 42.6 seconds. The
+[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.380.0.json) binds these
+rounded reporter timings to test/config/runtime hashes and browser revisions.
+
+Historical WebKit traces contained substantial element-stability waits. A current eight-activation
+diagnostic records approximately 16 ms initial animation frames, stable Run geometry after one
+scroll, 163.3 ms median button-action time and 24.1 ms supported-shortcut action time. These samples
+do not reproduce the prior half-second baseline, and do not establish its cause. The unchanged
+maintained suite keeps all real clicks, examples and assertions; no timeout or layout fix was
+needed.
+
+The diagnostic's single 211.5 ms navigation-to-ready observation is advisory and includes playground
+initialization. It is not a repeated Worker-startup benchmark. Repeated startup, interrupt/restart
+latency, representative numDeriv workloads, additional OS coverage and Linux normative verification
+remain separate acceptance work.
+
+## Measurement and budgets
+
 The JavaScript reference backend uses typed arrays and tight loops. It is a correctness baseline,
 not a final optimized kernel. `pnpm benchmark` measures short parse/evaluation, scalar arithmetic,
 100,000-element mean, typed assignment, and raw snapshots after a build.

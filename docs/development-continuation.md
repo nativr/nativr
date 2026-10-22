@@ -1538,3 +1538,17 @@ real UI interaction, and all examples. Then refresh the declared browser matrix.
 remaining semantic domains, callable classification, independent datasets and isolated runner. The
 full five-criterion goal remains unfinished. No additional input is needed for this local work;
 Linux, Formula and new downloads retain their separate authorization boundaries.
+
+### Windows browser verification after profile 0.380
+
+All nine maintained browser tests pass with one worker across cached Chromium, Firefox and WebKit.
+Required examples take 10.4 / 11.7 / 41.5 seconds within the unchanged 120-second budget. An
+unchanged isolated WebKit baseline also passes in 42.6 seconds. Current frame/geometry measurements
+do not reproduce the historical half-second click-stability waits, so no product or test workaround
+was introduced. Source hashes, browser revisions and redacted timings are retained in
+[the browser checkpoint](../compatibility/platform-evidence/browser-windows-0.380.0.json).
+
+Next performance work measures public Worker startup, interrupt rejection separately from Worker
+restart/recovery, and cached numDeriv workloads. Small arithmetic activation timing is not evidence
+of representative package performance. The broader browser/OS and separately authorized Linux gates
+remain incomplete.
