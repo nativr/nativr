@@ -38,6 +38,35 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Bounded sprintf formatting work (profile 0.384)
+
+`sprintf` checks cumulative UTF-8 output bytes across literals, conversions and returned vector
+elements. Width, integer precision and growing floating-point output are checked before padding or
+large string expansion. These checks also apply when an enclosing expression consumes the string and
+returns a small result. Missing format elements retain their missing mask; zero-length results
+retain existing argument forcing and produce no formatted text.
+
+A deterministic scanner recognizes the existing fixed-conversion grammar and checkpoints while
+scanning long fields and processing directives. Atomic character precision walks a bounded
+code-point prefix, without spreading the entire input into an array. Ordinary supported flags,
+recycling, signs and formatting remain unchanged; unsupported directives retain their existing
+passthrough behavior, which is not GNU R parser parity.
+
+The shared exact binary64 formatter bounds internal decimal arithmetic to terminating expansion
+limits. Fixed and exponential conversions preserve requested trailing zeros after checking their
+length; alternate general formatting also preserves significant zeros. Nonalternate general
+formatting can use at most 1,075 significant digits internally without losing an exact binary64
+digit or changing the notation decision. This is an arithmetic bound, not a native precision cap.
+The independent formatC caps remain 324/50. Huge precision fields that produce short text need not
+fail resource checks, while expanding paths reject excessive output explicitly.
+
+Owned resource tests cover intermediate results, aggregate bytes, Unicode text, long invalid fields,
+directive work and session recovery. They do not claim native huge-field parsing or error parity.
+Recursive list/language text construction still uses a helper that can allocate before final output
+checks; its early allocation and cancellation behavior remain unfinished. General argument matching,
+complete format syntax, Unicode field widths, metadata and Windows high-precision oracle differences
+also retain their existing boundaries.
+
 ### Bounded numeric and character formatting (profile 0.383)
 
 `formatC` provides a reusable formatting path for the confirmed prettyunits example blocker. Its

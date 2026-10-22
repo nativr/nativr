@@ -27,6 +27,19 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#errors")).toContainText("NRL4004");
   expect(evaluationRequests).toEqual([]);
+  for (const source of [
+    'nchar(sprintf("%100000000000000000000000000000s", "x"))',
+    'nchar(sprintf("%.100000000000000000000000000000f", 0.125))',
+  ]) {
+    await page.locator("#source").fill(source);
+    await page.getByRole("button", { name: /^Run/u }).click();
+    await expect(page.locator("#errors")).toContainText("NRL4007");
+  }
+  await page.locator("#source").fill('sprintf("%.100000000000000000000000000000g", 1.25)');
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText('"1.25"');
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
   await page
     .locator("#source")
     .fill(

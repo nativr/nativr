@@ -1705,3 +1705,35 @@ ordinary C99 behavior and distinguish unbounded recursive list/deparse work expl
 the reusable POSIXlt conversion/dispatch prerequisite for numeric predicates; seconds-only
 classification is insufficient. Continue all five completion criteria and the remaining domain,
 dataset, testing-runner and platform work. No new user input is needed for these local steps.
+
+### Bounded sprintf resource increment (profile 0.384)
+
+Closed the reproduced intermediate-width/precision and aggregate formatted-output gap. Deterministic
+scanning checkpoints long fields and directives; the exact formatter bounds decimal arithmetic and
+preflights expanding zero tails. UTF-8 accounting includes literals, conversions and vector rows,
+with correct same-row surrogate pairing and padding boundaries. Huge short-output precision remains
+bounded. Recursive list/language early text construction, full native grammar and Unicode field
+semantics remain explicit gaps.
+
+All 200 focused tests pass (37 pure formatter, six resource/recovery, 25 native parity, 132
+formatC). The full check passes 2,736 tests with 94 opt-in skips and both TypeScript gates.
+Checked-in, live and recursive conformance pass 1,425 / 1,353 / 337, with 162 causal-linked
+bindings. The full
+[24-package checkpoint](../compatibility/package-check-evidence/corpus-0.384.0.json) preserves all
+178 script hashes, outcomes, stage statuses and repeatability flags; tiers and partitions are
+unchanged. Formula remains untouched. The browser suite passes 9/9 with Worker errors/recovery and
+no evaluation network traffic; its checkpoint records exact source/runtime hashes. Required examples
+take 12.0 / 15.4 / 59.5 seconds within the unchanged timeout. All bundle caps pass; Worker gzip is
+489.0/512 KiB. Performance and pack evidence remain at 0.380.
+
+The inventory retains 817 registered and 1,163 classified bindings, with 1,390 pending; eight
+bindings now have 48 partial dimensions. All thirteen domains and the five completion criteria
+remain open. Public API and Worker protocol are unchanged.
+
+Next measurable increment: implement shared bounded UTC/GMT POSIXlt-to-POSIXct conversion, lazy
+as.POSIXct generic/numeric/default/POSIXlt routes and the three numeric-predicate methods. Reuse the
+independent calendar, metadata, forcing, warning and dispatch fixtures, add resource recovery and
+recursive causal evidence, and explicitly reject unsupported calendar ranges/timezones. Preserve
+existing character conversion and input identity; defer standalone Date method metadata without
+behavior. Then continue the remaining domain, dataset, testing-runner and platform work under the
+existing download, Linux, holdout and remote-action boundaries. No input is needed for this step.

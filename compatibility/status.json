@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.383.0",
-  "capabilityManifestHash": "ccd2f05d31bca715373442595418433f2332b5688a5d2523c5e93653ae738963",
+  "semanticProfileVersion": "0.384.0",
+  "capabilityManifestHash": "c626facca1336a1c185a2359de7bedbc63748cf30c2e5cd5810cf868b7b80af6",
   "evidence": {
-    "checkedInConformanceCases": 1416,
-    "liveREligibleCases": 1347,
+    "checkedInConformanceCases": 1425,
+    "liveREligibleCases": 1353,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 331,
-    "recursiveBehaviorallyProvenBindings": 161,
+    "recursiveOracleV2Cases": 337,
+    "recursiveBehaviorallyProvenBindings": 162,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -552,6 +552,17 @@
       },
       { "binding": "base::split", "cases": ["factor-na-label-coercion-grouping-and-matching"] },
       {
+        "binding": "base::sprintf",
+        "cases": [
+          "sprintf-resource-parity-boundaries",
+          "sprintf-resource-parity-dyadic-precision",
+          "sprintf-resource-parity-forcing",
+          "sprintf-resource-parity-nonfinite",
+          "sprintf-resource-parity-recycling",
+          "sprintf-resource-parity-scanner"
+        ]
+      },
+      {
         "binding": "base::stop",
         "cases": [
           "nested-caller-calls-suppressed-explicitly",
@@ -756,7 +767,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "fd334921d9599d672aece36d6788595afc09d06e864ac6dc94573e6da34109cd",
+    "sha256": "b18cbfbbb70d6ac4f3135b009680e07f1070bc8f0509befdb9fcd5584f4bdd4f",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -765,8 +776,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1163,
     "classificationPendingBindings": 1390,
-    "recursiveLinkedBindings": 161,
-    "bindingsWithDeclaredMatrixEvidence": 7,
+    "recursiveLinkedBindings": 162,
+    "bindingsWithDeclaredMatrixEvidence": 8,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

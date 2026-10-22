@@ -18832,5 +18832,75 @@
     "expected": true,
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-parity-scanner",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"prefix %% %+05d %-4s %.2f|%.1e|%.3g suffix\",3L,\"x\",0.125,1.25,12.5),\"prefix % +0003 x    0.12|1.2e+00|12.5 suffix\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%d %i %x %X %o\",-7L,7L,-1L,255L,8L),\"-7 7 ffffffff FF 10\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.f|%.e|%.g\",2.5,2.5,2.5),\"2|2e+00|2\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%#.0f|%#.0e|%#.3g\",3,2,1),\"3.|2.e+00|1.00\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%8.4d\",-7L),\"   -0007\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%8.3s\",\"abcdef\"),\"     abc\")}))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-parity-recycling",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(c(\"%02d:%s\",\"%d-%s\"),1:4,c(\"a\",\"b\")),c(\"01:a\",\"2-b\",\"03:a\",\"4-b\"))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(c(\"left %%\",\"right %%\")),c(\"left %\",\"right %\"))}))",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-parity-nonfinite",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%+08.2f\",c(NA_real_,NaN,Inf,-Inf)),c(\"      NA\",\"     NaN\",\"    +Inf\",\"    -Inf\"))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%+08.2f\",c(-1,1)/Inf),c(\"-0000.00\",\"+0000.00\"))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"[%5s]\",c(\"x\",NA_character_)),c(\"[    x]\",\"[   NA]\"))}))",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-parity-boundaries",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1f\",structure(c(a=1.25,b=2.5),note=\"drop\",class=\"owned\")),c(\"1.2\",\"2.5\"))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%d\",integer()),character())}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(character(),1L),character())}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.2s\",\"ab\\u00e9\\U0001f600\"),\"ab\")}))",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-parity-forcing",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(withVisible(sprintf(\"%d\",1L)),list(value=\"1\",visible=TRUE))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(local({events<-character();m<-function(k,x){events<<-c(events,k);x};value<-sprintf(m(\"fmt\",\"%d:%s\"),m(\"first\",1L),m(\"second\",\"a\"));list(value,events)}),list(\"1:a\",c(\"fmt\",\"first\",\"second\")))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(sprintf(stop(\"owned format\"),stop(\"owned value\"))),\"owned format\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(sprintf(character(),stop(\"owned value\"))),\"owned value\")}))",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-parity-dyadic-precision",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1073f\",0.125),paste0(\"0.125\",strrep(\"0\",1070)))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1073e\",0.125),paste0(\"1.25\",strrep(\"0\",1071),\"e-01\"))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1074f\",0.125),paste0(\"0.125\",strrep(\"0\",1071)))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1074e\",0.125),paste0(\"1.25\",strrep(\"0\",1072),\"e-01\"))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1075f\",0.125),paste0(\"0.125\",strrep(\"0\",1072)))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(sprintf(\"%.1075e\",0.125),paste0(\"1.25\",strrep(\"0\",1073),\"e-01\"))}))",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "sprintf-resource-huge-intermediate-width",
+    "code": "nchar(sprintf(\"%100000000000000000000000000000s\", \"x\"))",
+    "expectedError": {
+      "code": "NRL4007"
+    },
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false,
+    "rOracleReason": "NativR-owned intermediate output limit; huge allocation controls are not sent to the native oracle."
+  },
+  {
+    "id": "sprintf-resource-huge-intermediate-precision",
+    "code": "nchar(sprintf(\"%.100000000000000000000000000000f\", 0.125))",
+    "expectedError": {
+      "code": "NRL4007"
+    },
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false,
+    "rOracleReason": "NativR-owned intermediate output limit; huge allocation controls are not sent to the native oracle."
+  },
+  {
+    "id": "sprintf-resource-huge-short-general-precision",
+    "code": "sprintf(\"%.100000000000000000000000000000g\", 1.25)",
+    "expected": "1.25",
+    "expectedCompatibility": "explicit-deviation",
+    "rOracle": false,
+    "rOracleReason": "NativR resource contract permits short nonalternate general output using bounded exact arithmetic; huge precision is not a native parser parity claim."
   }
 ]

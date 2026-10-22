@@ -2463,5 +2463,41 @@
         ]
       ]
     }
+  },
+  {
+    "id": "sprintf-resource-parity-scanner",
+    "policy": "exact",
+    "bindingEvidence": ["base::sprintf"],
+    "code": "list(case_01=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"prefix %% %+05d %-4s %.2f|%.1e|%.3g suffix\",3L,\"x\",0.125,1.25,12.5)}),case_02=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%d %i %x %X %o\",-7L,7L,-1L,255L,8L)}),case_03=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.f|%.e|%.g\",2.5,2.5,2.5)}),case_04=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%#.0f|%#.0e|%#.3g\",3,2,1)}),case_05=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%8.4d\",-7L)}),case_06=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%8.3s\",\"abcdef\")}))"
+  },
+  {
+    "id": "sprintf-resource-parity-recycling",
+    "policy": "exact",
+    "bindingEvidence": ["base::sprintf"],
+    "code": "list(case_01=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(c(\"%02d:%s\",\"%d-%s\"),1:4,c(\"a\",\"b\"))}),case_02=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(c(\"left %%\",\"right %%\"))}))"
+  },
+  {
+    "id": "sprintf-resource-parity-nonfinite",
+    "policy": "exact",
+    "bindingEvidence": ["base::sprintf"],
+    "code": "list(case_01=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%+08.2f\",c(NA_real_,NaN,Inf,-Inf))}),case_02=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%+08.2f\",c(-1,1)/Inf)}),case_03=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"[%5s]\",c(\"x\",NA_character_))}))"
+  },
+  {
+    "id": "sprintf-resource-parity-boundaries",
+    "policy": "exact",
+    "bindingEvidence": ["base::sprintf"],
+    "code": "list(case_01=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1f\",structure(c(a=1.25,b=2.5),note=\"drop\",class=\"owned\"))}),case_02=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%d\",integer())}),case_03=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(character(),1L)}),case_04=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.2s\",\"ab\\u00e9\\U0001f600\")}))"
+  },
+  {
+    "id": "sprintf-resource-parity-forcing",
+    "policy": "exact",
+    "bindingEvidence": ["base::sprintf"],
+    "code": "list(case_01=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);withVisible(sprintf(\"%d\",1L))}),case_02=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({events<-character();m<-function(k,x){events<<-c(events,k);x};value<-sprintf(m(\"fmt\",\"%d:%s\"),m(\"first\",1L),m(\"second\",\"a\"));list(value,events)})}),case_03=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);err(sprintf(stop(\"owned format\"),stop(\"owned value\")))}),case_04=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);err(sprintf(character(),stop(\"owned value\")))}))"
+  },
+  {
+    "id": "sprintf-resource-parity-dyadic-precision",
+    "policy": "exact",
+    "bindingEvidence": ["base::sprintf"],
+    "code": "list(case_01=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1073f\",0.125)}),case_02=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1073e\",0.125)}),case_03=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1074f\",0.125)}),case_04=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1074e\",0.125)}),case_05=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1075f\",0.125)}),case_06=local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);sprintf(\"%.1075e\",0.125)}))"
   }
 ]

@@ -3287,7 +3287,11 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     builtinCharacterCase(invocation, "upper"),
   ),
   defineBuiltin("strrep", ["x", "times"], "behavioral", builtinStrrep),
-  defineBuiltin("sprintf", ["fmt", "..."], "behavioral", builtinSprintf),
+  withUnsupportedBehavior(defineBuiltin("sprintf", ["fmt", "..."], "behavioral", builtinSprintf), [
+    "attributes beyond basic type/length",
+    "recursive list/language text construction can allocate before the final byte and padding checks",
+    "format syntax beyond the current fixed conversions and complete native malformed-field diagnostics",
+  ]),
   {
     ...withUnsupportedBehavior(
       withBuiltinFormals(
@@ -30081,6 +30085,265 @@ function strrepCharacterSource(input: RValue, invocation: BuiltinInvocation): RC
   );
 }
 
+interface SprintfDirective {
+  readonly end: number;
+  readonly kind: string;
+  readonly flags: number;
+  readonly width: number;
+  readonly precision: number | undefined;
+}
+
+const SPRINTF_LEFT = 1;
+const SPRINTF_PLUS = 2;
+const SPRINTF_SPACE = 4;
+const SPRINTF_ZERO = 8;
+const SPRINTF_ALTERNATE = 16;
+
+/** Deterministic recognition of the existing fixed sprintf grammar, without regex backtracking. */
+function sprintfDirective(
+  text: string,
+  start: number,
+  invocation: BuiltinInvocation,
+): SprintfDirective | undefined {
+  let cursor = start + 1;
+  let flags = 0;
+  const checkpoint = (): void => {
+    if ((cursor - start) % 256 === 0) invocation.context.checkpoint();
+  };
+  while (cursor < text.length) {
+    const character = text[cursor];
+    const flag =
+      character === "-"
+        ? SPRINTF_LEFT
+        : character === "+"
+          ? SPRINTF_PLUS
+          : character === " "
+            ? SPRINTF_SPACE
+            : character === "0"
+              ? SPRINTF_ZERO
+              : character === "#"
+                ? SPRINTF_ALTERNATE
+                : 0;
+    if (flag === 0) break;
+    flags |= flag;
+    cursor += 1;
+    checkpoint();
+  }
+  const number = (): { readonly present: boolean; readonly value: number } => {
+    let value = 0;
+    const begin = cursor;
+    while (cursor < text.length) {
+      const code = text.charCodeAt(cursor);
+      if (code < 48 || code > 57) break;
+      // Infinity is a size sentinel. Expansion paths reject it before allocation; ignored
+      // precision and bounded nonalternate-g/string paths do not need to allocate that size.
+      value = value > Number.MAX_SAFE_INTEGER / 10 ? Infinity : value * 10 + code - 48;
+      if (!Number.isSafeInteger(value)) value = Infinity;
+      cursor += 1;
+      checkpoint();
+    }
+    return { present: cursor > begin, value };
+  };
+  const width = number();
+  let precision: number | undefined;
+  if (text[cursor] === ".") {
+    cursor += 1;
+    precision = number().value;
+  }
+  const kind = text[cursor];
+  if (kind === undefined || !"%sdifFeEgGxXo".includes(kind)) return undefined;
+  return { end: cursor + 1, kind, flags, width: width.present ? width.value : 0, precision };
+}
+
+interface SprintfOutputBudget {
+  check(bytes: number, firstCodeUnit?: number): void;
+  measure(text: string, start?: number, end?: number): number;
+  appendKnown(text: string, bytes: number, chunks: string[]): void;
+  appendRange(text: string, start: number, end: number, chunks: string[]): void;
+  startRow(): void;
+}
+
+function sprintfOutputBudget(invocation: BuiltinInvocation): SprintfOutputBudget {
+  let outputBytes = 0;
+  let trailingCodeUnit: number | undefined;
+  const boundaryCredit = (bytes: number, firstCodeUnit?: number): number =>
+    bytes > 0 &&
+    trailingCodeUnit !== undefined &&
+    trailingCodeUnit >= 0xd800 &&
+    trailingCodeUnit <= 0xdbff &&
+    firstCodeUnit !== undefined &&
+    firstCodeUnit >= 0xdc00 &&
+    firstCodeUnit <= 0xdfff
+      ? 2
+      : 0;
+  const check = (bytes: number, firstCodeUnit?: number): void => {
+    // Separate unpaired surrogate halves cost three bytes each; adjoining them in this row
+    // produces one four-byte code point. Apply that exact boundary credit, never a generic slack.
+    const total = outputBytes + bytes - boundaryCredit(bytes, firstCodeUnit);
+    if (
+      !Number.isSafeInteger(bytes) ||
+      bytes < 0 ||
+      total > invocation.context.limits.maxOutputBytes
+    ) {
+      throw new RResourceLimitError("NRL4007", "sprintf() output byte limit exceeded.", {
+        details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, outputBytes: total },
+      });
+    }
+  };
+  const measure = (text: string, start = 0, end = text.length): number => {
+    let bytes = 0;
+    let work = 0;
+    const firstCodeUnit = start < end ? text.charCodeAt(start) : undefined;
+    for (let index = start; index < end;) {
+      if (work++ % 256 === 0) {
+        invocation.context.checkpoint();
+        check(bytes, firstCodeUnit);
+      }
+      const point = text.codePointAt(index) ?? 0;
+      bytes += utf8ByteLength(point);
+      index += point > 0xffff ? 2 : 1;
+    }
+    check(bytes, firstCodeUnit);
+    return bytes;
+  };
+  const appendKnown = (text: string, bytes: number, chunks: string[]): void => {
+    const firstCodeUnit = text.length > 0 ? text.charCodeAt(0) : undefined;
+    check(bytes, firstCodeUnit);
+    outputBytes += bytes - boundaryCredit(bytes, firstCodeUnit);
+    if (text.length > 0) {
+      trailingCodeUnit = text.charCodeAt(text.length - 1);
+      invocation.context.allocate(1);
+      chunks.push(text);
+    }
+  };
+  return {
+    check,
+    measure,
+    appendKnown,
+    startRow() {
+      trailingCodeUnit = undefined;
+    },
+    appendRange(text, start, end, chunks) {
+      if (start === end) return;
+      const bytes = measure(text, start, end);
+      appendKnown(text.slice(start, end), bytes, chunks);
+    },
+  };
+}
+
+function sprintfCharacterPrefix(
+  text: string,
+  precision: number | undefined,
+  budget: SprintfOutputBudget,
+  invocation: BuiltinInvocation,
+): { readonly text: string; readonly bytes: number } {
+  if (precision === undefined) return { text, bytes: budget.measure(text) };
+  let end = 0;
+  let characters = 0;
+  let bytes = 0;
+  while (end < text.length && characters < precision) {
+    if (characters % 256 === 0) {
+      invocation.context.checkpoint();
+      budget.check(bytes, text.charCodeAt(0));
+    }
+    const point = text.codePointAt(end) ?? 0;
+    end += point > 0xffff ? 2 : 1;
+    bytes += utf8ByteLength(point);
+    characters += 1;
+  }
+  budget.check(bytes, end > 0 ? text.charCodeAt(0) : undefined);
+  return { text: end === text.length ? text : text.slice(0, end), bytes };
+}
+
+function sprintfConversion(
+  directive: SprintfDirective,
+  value: AtomicVector | RList | RPairlist,
+  position: number,
+  budget: SprintfOutputBudget,
+  invocation: BuiltinInvocation,
+): { readonly text: string; readonly bytes: number } {
+  const { kind, precision, width, flags } = directive;
+  budget.check(width);
+  let text: string;
+  let bytes: number;
+  let zeroPaddable = true;
+  if (value.type === "list" || value.type === "pairlist") {
+    if (kind !== "s") {
+      throw new RTypeMismatchError(
+        "NRT3162",
+        "sprintf() list and pairlist values support only the '%s' conversion.",
+      );
+    }
+    // Recursive list/language construction still has its existing separate resource limitation.
+    // This patch bounds final bytes and padding, without claiming that helper's early allocation.
+    text = sprintfListElementText(value.values[position] ?? R_NULL);
+    bytes = budget.measure(text);
+  } else if (isMissing(value, position)) {
+    text = "NA";
+    bytes = 2;
+    zeroPaddable = false;
+  } else if (kind === "s") {
+    const source = isFactor(value)
+      ? (factorLevels(value)[(value.values[position] ?? 0) - 1] ?? "")
+      : stringAt(value, position);
+    ({ text, bytes } = sprintfCharacterPrefix(source, precision, budget, invocation));
+  } else {
+    const numeric = numberAt(value, position);
+    const negative = numeric < 0 || Object.is(numeric, -0);
+    const signed = kind !== "x" && kind !== "X" && kind !== "o";
+    const integerZero = (kind === "d" || kind === "i") && Math.trunc(numeric) === 0;
+    const sign =
+      !signed || Number.isNaN(numeric)
+        ? ""
+        : negative && !integerZero
+          ? "-"
+          : flags & SPRINTF_PLUS
+            ? "+"
+            : flags & SPRINTF_SPACE
+              ? " "
+              : "";
+    if (!Number.isFinite(numeric)) {
+      text = Number.isNaN(numeric) ? "NaN" : "Inf";
+      zeroPaddable = false;
+    } else if (kind === "x" || kind === "X" || kind === "o") {
+      const unsigned = Math.trunc(numeric) >>> 0;
+      text = unsigned.toString(kind === "o" ? 8 : 16);
+      if (kind === "X") text = text.toUpperCase();
+    } else if (kind === "d" || kind === "i") {
+      text = String(Math.abs(Math.trunc(numeric)));
+      if (precision !== undefined) {
+        budget.check(Math.max(text.length, precision) + sign.length);
+        text = text.padStart(precision, "0");
+      }
+    } else {
+      text = formatFloatingMagnitude(
+        numeric,
+        kind as "f" | "F" | "e" | "E" | "g" | "G",
+        precision,
+        (flags & SPRINTF_ALTERNATE) !== 0,
+        (length) => budget.check(length + sign.length),
+      );
+    }
+    text = sign + text;
+    bytes = text.length;
+  }
+  const paddingLength = Math.max(0, width - text.length);
+  const left = (flags & SPRINTF_LEFT) !== 0;
+  const firstCodeUnit = paddingLength === 0 || left ? text.charCodeAt(0) : undefined;
+  budget.check(bytes + paddingLength, firstCodeUnit);
+  if (paddingLength > 0) {
+    invocation.context.checkpoint();
+    const zero = (flags & SPRINTF_ZERO) !== 0 && !left && zeroPaddable;
+    const padding = (zero ? "0" : " ").repeat(paddingLength);
+    text = left
+      ? text + padding
+      : zero && ["+", "-", " "].includes(text[0] ?? "")
+        ? text[0] + padding + text.slice(1)
+        : padding + text;
+  }
+  return { text, bytes: bytes + paddingLength };
+}
+
 async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
   let formatArgument: BuiltinCallArgument | undefined;
   const valueArguments: BuiltinCallArgument[] = [];
@@ -30089,9 +30352,7 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
       formatArgument = argument;
     } else if (argument.name === "fmt") {
       throw new REvaluationError("NRE2102", "Argument 'fmt' matched more than once.");
-    } else {
-      valueArguments.push(argument);
-    }
+    } else valueArguments.push(argument);
   }
   if (formatArgument === undefined) {
     throw new REvaluationError("NRE2103", "Argument 'fmt' is missing in sprintf().");
@@ -30114,99 +30375,55 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
       : Math.max(formats.length, ...values.map((value) => value.length));
   invocation.context.allocate(length);
   const missing = new Uint8Array(length);
-  const output = Array.from({ length }, (_, index) => {
+  const output = new Array<string>(length);
+  const budget = sprintfOutputBudget(invocation);
+  for (let index = 0; index < length; index += 1) {
     invocation.context.checkpoint();
+    budget.startRow();
     const formatIndex = index % formats.length;
     if (isMissing(formats, formatIndex)) {
       missing[index] = 1;
-      return "";
+      output[index] = "";
+      continue;
     }
+    const format = formats.values[formatIndex] ?? "";
+    const chunks: string[] = [];
+    let literalStart = 0;
+    let cursor = 0;
     let argumentIndex = 0;
-    return (formats.values[formatIndex] ?? "").replace(
-      /%([-+ 0#]*)(\d+)?(?:\.(\d*))?([%sdifFeEgGxXo])/gu,
-      (
-        token,
-        flags: string,
-        widthText: string | undefined,
-        precisionText: string | undefined,
-        kind: string,
-      ) => {
-        if (kind === "%") return "%";
-        const value = values[argumentIndex];
-        argumentIndex += 1;
-        if (value === undefined) {
+    while (cursor < format.length) {
+      if (cursor % 256 === 0) invocation.context.checkpoint();
+      if (format[cursor] !== "%") {
+        cursor += 1;
+        continue;
+      }
+      invocation.context.checkpoint();
+      const directive = sprintfDirective(format, cursor, invocation);
+      if (directive === undefined) {
+        cursor += 1;
+        continue;
+      }
+      budget.appendRange(format, literalStart, cursor, chunks);
+      if (directive.kind === "%") budget.appendKnown("%", 1, chunks);
+      else {
+        const value = values[argumentIndex++];
+        if (value === undefined)
           throw new REvaluationError("NRE2125", "Too few arguments for sprintf() format.");
-        }
-        const position = index % value.length;
-        // C allows "%.f"; an empty precision means zero.
-        const precision = precisionText === undefined ? undefined : Number(precisionText || "0");
-        let formatted: string;
-        let zeroPaddable = true;
-        if (value.type === "list" || value.type === "pairlist") {
-          if (kind !== "s") {
-            throw new RTypeMismatchError(
-              "NRT3162",
-              "sprintf() list and pairlist values support only the '%s' conversion.",
-            );
-          }
-          formatted = sprintfListElementText(value.values[position] ?? R_NULL);
-        } else if (isMissing(value, position)) {
-          formatted = "NA";
-          zeroPaddable = false;
-        } else if (kind === "s") {
-          formatted = isFactor(value)
-            ? (factorLevels(value)[(value.values[position] ?? 0) - 1] ?? "")
-            : stringAt(value, position);
-          if (precision !== undefined) formatted = [...formatted].slice(0, precision).join("");
-        } else {
-          const numeric = numberAt(value, position);
-          const negative = numeric < 0 || Object.is(numeric, -0);
-          if (!Number.isFinite(numeric)) {
-            formatted = Number.isNaN(numeric) ? "NaN" : "Inf";
-            zeroPaddable = false;
-          } else if (kind === "x" || kind === "X" || kind === "o") {
-            // Two's-complement 32-bit digits, as for C unsigned conversions of an R integer.
-            const unsigned = Math.trunc(numeric) >>> 0;
-            formatted = unsigned.toString(kind === "o" ? 8 : 16);
-            if (kind === "X") formatted = formatted.toUpperCase();
-          } else if (kind === "d" || kind === "i") {
-            formatted = String(Math.abs(Math.trunc(numeric)));
-            if (precision !== undefined) formatted = formatted.padStart(precision, "0");
-          } else {
-            formatted = formatFloatingMagnitude(
-              numeric,
-              kind as "f" | "F" | "e" | "E" | "g" | "G",
-              precision,
-              flags.includes("#"),
-            );
-          }
-          if (kind !== "x" && kind !== "X" && kind !== "o") {
-            if (
-              negative &&
-              !(
-                Number.isNaN(numeric) ||
-                ((kind === "d" || kind === "i") && Math.trunc(numeric) === 0)
-              )
-            ) {
-              formatted = `-${formatted}`;
-            } else if (flags.includes("+") && !Number.isNaN(numeric)) formatted = `+${formatted}`;
-            else if (flags.includes(" ") && !Number.isNaN(numeric)) formatted = ` ${formatted}`;
-          }
-        }
-        const width = widthText === undefined ? 0 : Number(widthText);
-        if (formatted.length < width) {
-          const zeroPad = flags.includes("0") && !flags.includes("-") && zeroPaddable;
-          const padding = (zeroPad ? "0" : " ").repeat(width - formatted.length);
-          if (zeroPad && ["+", "-", " "].includes(formatted[0] ?? "")) {
-            formatted = `${formatted[0]}${padding}${formatted.slice(1)}`;
-          } else {
-            formatted = flags.includes("-") ? `${formatted}${padding}` : `${padding}${formatted}`;
-          }
-        }
-        return formatted;
-      },
-    );
-  });
+        const converted = sprintfConversion(
+          directive,
+          value,
+          index % value.length,
+          budget,
+          invocation,
+        );
+        budget.appendKnown(converted.text, converted.bytes, chunks);
+      }
+      cursor = directive.end;
+      literalStart = cursor;
+    }
+    budget.appendRange(format, literalStart, format.length, chunks);
+    output[index] = chunks.join("");
+  }
   return characterVector(output, compactMask(missing));
 }
 

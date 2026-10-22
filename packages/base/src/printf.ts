@@ -13,6 +13,9 @@ interface ExactDecimal {
   readonly exponent: number;
 }
 
+/** Optional ASCII length preflight supplied by resource-aware callers; no runtime dependency. */
+export type FloatingLengthGuard = (length: number) => void;
+
 const VIEW = new DataView(new ArrayBuffer(8));
 
 function exactDecimal(value: number): ExactDecimal {
@@ -51,12 +54,25 @@ function decimalExponent(decimal: ExactDecimal): number {
   return decimal.digits === 0n ? 0 : decimal.digits.toString().length - 1 + decimal.exponent;
 }
 
-function fixedDigits(value: number, precision: number, alternate: boolean): string {
-  const text = roundToPlaces(exactDecimal(value), precision)
+function fixedDigits(
+  value: number,
+  precision: number,
+  alternate: boolean,
+  guard?: FloatingLengthGuard,
+): string {
+  guard?.(precision > 0 ? precision + 2 : alternate ? 2 : 1);
+  // Every finite binary64 fractional expansion terminates by decimal place 1,074. Additional
+  // requested digits are zeros; keeping them out of BigInt arithmetic preserves exact rounding.
+  const arithmeticPrecision = Math.min(precision, 1_074);
+  const text = roundToPlaces(exactDecimal(value), arithmeticPrecision)
     .toString()
-    .padStart(precision + 1, "0");
+    .padStart(arithmeticPrecision + 1, "0");
+  const extraZeros = precision - arithmeticPrecision;
+  const length = text.length + (precision > 0 || alternate ? 1 : 0) + extraZeros;
+  guard?.(length);
   if (precision === 0) return alternate ? `${text}.` : text;
-  return `${text.slice(0, -precision)}.${text.slice(-precision)}`;
+  const prefix = `${text.slice(0, -arithmeticPrecision)}.${text.slice(-arithmeticPrecision)}`;
+  return extraZeros === 0 ? prefix : prefix + "0".repeat(extraZeros);
 }
 
 /** Significand digits (precision + 1 of them) and the decimal exponent after rounding. */
@@ -78,11 +94,15 @@ function exponentialText(
   exponent: number,
   upper: boolean,
   alternate: boolean,
+  extraZeros = 0,
+  guard?: FloatingLengthGuard,
 ): string {
-  const significand =
-    digits.length === 1 ? (alternate ? `${digits}.` : digits) : `${digits[0]}.${digits.slice(1)}`;
   const magnitude = String(Math.abs(exponent)).padStart(2, "0");
-  return `${significand}${upper ? "E" : "e"}${exponent < 0 ? "-" : "+"}${magnitude}`;
+  const hasDecimal = digits.length + extraZeros > 1 || alternate;
+  guard?.(digits.length + extraZeros + (hasDecimal ? 1 : 0) + magnitude.length + 2);
+  const significand =
+    digits.length === 1 ? (hasDecimal ? `${digits}.` : digits) : `${digits[0]}.${digits.slice(1)}`;
+  return `${significand}${extraZeros > 0 ? "0".repeat(extraZeros) : ""}${upper ? "E" : "e"}${exponent < 0 ? "-" : "+"}${magnitude}`;
 }
 
 /**
@@ -94,26 +114,58 @@ export function formatFloatingMagnitude(
   conversion: "f" | "F" | "e" | "E" | "g" | "G",
   precisionOrDefault: number | undefined,
   alternate: boolean,
+  guard?: FloatingLengthGuard,
 ): string {
   const magnitude = Math.abs(value);
   const precision = precisionOrDefault ?? 6;
-  if (conversion === "f" || conversion === "F") return fixedDigits(magnitude, precision, alternate);
+  if (conversion === "f" || conversion === "F")
+    return fixedDigits(magnitude, precision, alternate, guard);
   if (conversion === "e" || conversion === "E") {
-    const parts = exponentialParts(magnitude, precision);
-    return exponentialText(parts.digits, parts.exponent, conversion === "E", alternate);
+    guard?.(precision > 0 ? precision + 6 : alternate ? 6 : 5);
+    const arithmeticPrecision = Math.min(precision, 1_074);
+    const parts = exponentialParts(magnitude, arithmeticPrecision);
+    return exponentialText(
+      parts.digits,
+      parts.exponent,
+      conversion === "E",
+      alternate,
+      precision - arithmeticPrecision,
+      guard,
+    );
   }
-  const significant = precision === 0 ? 1 : precision;
-  const parts = exponentialParts(magnitude, significant - 1);
+  // Without alternate form, extra exact zeros are removed. 1,075 significant digits retain every
+  // binary64 digit and exceed its maximum decimal exponent, so the notation decision is unchanged.
+  const significant = alternate
+    ? precision === 0
+      ? 1
+      : precision
+    : Math.min(precision === 0 ? 1 : precision, 1_075);
+  if (alternate) guard?.(significant);
+  const arithmeticSignificant = Math.min(significant, 1_075);
+  const parts = exponentialParts(magnitude, arithmeticSignificant - 1);
   let text =
     significant > parts.exponent && parts.exponent >= -4
-      ? fixedDigits(magnitude, significant - 1 - parts.exponent, alternate)
-      : exponentialText(parts.digits, parts.exponent, conversion === "G", alternate);
+      ? fixedDigits(
+          magnitude,
+          significant - 1 - parts.exponent,
+          alternate,
+          alternate ? guard : undefined,
+        )
+      : exponentialText(
+          parts.digits,
+          parts.exponent,
+          conversion === "G",
+          alternate,
+          significant - arithmeticSignificant,
+          alternate ? guard : undefined,
+        );
   if (!alternate) {
     // %g removes trailing fractional zeros and a then-bare decimal point.
     text = text.replace(/\.(\d*?)0+(?=$|[eE])/u, (_, kept: string) =>
       kept.length > 0 ? `.${kept}` : "",
     );
   }
+  guard?.(text.length);
   return text;
 }
 

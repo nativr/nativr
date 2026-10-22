@@ -9,18 +9,18 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.383, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.384, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 817 registrations and 789 exact qualified
 overlaps. The existing 790 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
 
-All 161 bindings with existing causal links have explicit domain assignments. Reviewed purpose
+All 162 bindings with existing causal links have explicit domain assignments. Reviewed purpose
 assignments add 430 bindings from graphics, graphics devices and object-system methods, and 572
 previously unclassified owned registrations. The bounded formatC increment adds one assignment. The
 classified total is 1,163, including all 817 registered bindings. Another 1,390 reference bindings
 remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
-Seven bindings have 42 reviewed, partial behavioral-dimension declarations. Each declaration
+Eight bindings have 48 reviewed, partial behavioral-dimension declarations. Each declaration
 references existing executable cases and retains explicit remaining gaps. No domain or callable is
 complete; all undeclared dimensions remain pending. Even a callable with a partial declaration in
 all seven dimensions still has an unfinished matrix.
@@ -77,6 +77,12 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+The sprintf declaration adds six partial dimensions for ordinary directives/recycling, nonfinite and
+precision boundaries, forcing errors, basic attribute loss, visibility and side effects. It does not
+claim identity evidence. Native byte-field semantics, complete grammar/diagnostics and coercion
+matrices remain unfinished; NativR-only resource cases are deliberately excluded from differential
+matrix credit.
 
 The formatC declaration links all seven dimensions to its owned foundation and recursive cases:
 ordinary conversions, precision/width boundaries, diagnostics, numeric/character attributes,

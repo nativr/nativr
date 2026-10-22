@@ -32,6 +32,7 @@ it.each([
   "0.381.0",
   "0.382.0",
   "0.383.0",
+  "0.384.0",
 ])("pins checkpoint %s without evaluating the holdout", async (profile) => {
   const read = async (path: string) =>
     JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
