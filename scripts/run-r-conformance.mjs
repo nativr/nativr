@@ -1,12 +1,16 @@
 import { spawn } from "node:child_process";
 import { spawnSync } from "node:child_process";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const rscript = await findRscript();
+import { findRscript, parseRscriptArguments } from "./lib/rscript-discovery.mjs";
+
+const rscript = await findRscript(parseRscriptArguments(process.argv.slice(2)));
 if (rscript === undefined) {
-  console.log("SKIP optional R oracle: Rscript is not installed or not on PATH.");
+  console.log(
+    "SKIP optional R oracle: Rscript was not found by automatic discovery (PATH or standard Windows installations).",
+  );
   process.exit(0);
 }
 assertNormativeR(rscript);
@@ -247,33 +251,4 @@ function assertNormativeR(rscript) {
   throw new Error(
     `The release-gating oracle requires GNU R 4.6.1; found ${detected}. Set NATIVR_ALLOW_NON_NORMATIVE_R=1 only for advisory local investigation.`,
   );
-}
-
-async function findRscript() {
-  const availability = spawnSync("Rscript", ["--version"], { windowsHide: true });
-  if (availability.error === undefined && availability.status === 0) return "Rscript";
-  if (process.platform !== "win32") return undefined;
-
-  const programFiles = process.env.ProgramFiles ?? String.raw`C:\Program Files`;
-  const rRoot = path.join(programFiles, "R");
-  let installations;
-  try {
-    installations = await readdir(rRoot, { withFileTypes: true });
-  } catch {
-    return undefined;
-  }
-  const candidates = installations
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(rRoot, entry.name, "bin", "Rscript.exe"))
-    .sort()
-    .reverse();
-  for (const candidate of candidates) {
-    try {
-      await access(candidate);
-      return candidate;
-    } catch {
-      // Keep looking for an installed R distribution.
-    }
-  }
-  return undefined;
 }

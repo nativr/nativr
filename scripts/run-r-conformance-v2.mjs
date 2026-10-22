@@ -1,7 +1,9 @@
 import { spawn, spawnSync } from "node:child_process";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
+import { findRscript, parseRscriptArguments } from "./lib/rscript-discovery.mjs";
 
 import { snapshotToPlain } from "./lib/oracle-v2-snapshot.mjs";
 import {
@@ -52,9 +54,11 @@ for (const testCase of cases) {
   validateObservationAssertions(testCase);
 }
 
-const rscript = await findRscript();
+const rscript = await findRscript(parseRscriptArguments(process.argv.slice(2)));
 if (rscript === undefined) {
-  console.log("SKIP recursive R oracle v2: Rscript is not installed or not on PATH.");
+  console.log(
+    "SKIP recursive R oracle v2: Rscript was not found by automatic discovery (PATH or standard Windows installations).",
+  );
   process.exit(0);
 }
 assertNormativeR(rscript);
@@ -492,30 +496,4 @@ function assertNormativeR(rscript) {
   throw new Error(
     `The recursive release-gating oracle requires GNU R 4.6.1; found ${detected}. Set NATIVR_ALLOW_NON_NORMATIVE_R=1 only for advisory local investigation.`,
   );
-}
-
-async function findRscript() {
-  const availability = spawnSync("Rscript", ["--version"], { windowsHide: true });
-  if (availability.error === undefined && availability.status === 0) return "Rscript";
-  if (process.platform !== "win32") return undefined;
-  const rRoot = path.join(process.env.ProgramFiles ?? String.raw`C:\Program Files`, "R");
-  let installations;
-  try {
-    installations = await readdir(rRoot, { withFileTypes: true });
-  } catch {
-    return undefined;
-  }
-  for (const candidate of installations
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => path.join(rRoot, entry.name, "bin", "Rscript.exe"))
-    .sort()
-    .reverse()) {
-    try {
-      await access(candidate);
-      return candidate;
-    } catch {
-      // Continue to the next installed R version.
-    }
-  }
-  return undefined;
 }

@@ -1287,12 +1287,16 @@ separate, and normative evidence requires RFC-0007's pinned Linux/glibc gate.
 **R12 (P2): re-verify recorded corpus blockers** with the external suite, and evaluate the holdout
 only at a release gate.
 
-**R13 (P3): consistent oracle discovery and instructions.** Both conformance runners try `Rscript`
-on PATH and then Windows `Program Files/R`; they do not discover per-user installations or accept
-`NATIVR_RSCRIPT` directly. Package checking already accepts that variable and `--rscript`.
-Development documentation already requires Node 24 and pnpm 11. _Acceptance:_ share tested
-discovery/override rules and document GNU R 4.6.1 selection and optional-oracle skips consistently.
-GNU R remains optional for ordinary development and is never a runtime dependency.
+**R13 (P3): oracle discovery closed locally (2026-10-22).** Both native conformance runners and
+package checking now share explicit CLI/environment precedence, PATH discovery and Windows
+per-user/system discovery. Invalid overrides fail without fallback; optional absence remains an
+explicit skip only for conformance. Existing exact-version gates remain intact. All 41 discovery and
+CLI checks pass, including wrong-engine rejection, and a live metadata-only check finds the
+installed per-user oracle with PATH empty. The full check passes 3,044 unit tests with 94 opt-in
+skips, both typechecks, build and fixed bundle caps. [Development instructions](development.md)
+document GNU R 4.6.1 selection and skip meaning. This development-tooling change retains profile
+0.388 and adds no new native semantic or platform evidence. GNU R remains optional for ordinary
+development and is never a runtime dependency.
 
 ## Next steps
 

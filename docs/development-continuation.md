@@ -1894,3 +1894,25 @@ infrastructure failures. Then advance the isolated clean-room runner using a sep
 assisted-report contract that cannot confer original P6/P7 credit. Continue bounded S3 control-flow
 and all wider domain work afterward. Local configuration/tooling work needs no new approval;
 downloads, Linux execution, holdout evaluation and remote actions retain their existing boundaries.
+
+### Shared optional-oracle discovery (development tooling)
+
+The two native conformance commands and package checker now use one tested executable resolver. CLI
+selection takes precedence over NATIVR_RSCRIPT, then PATH and Windows per-user/system installations.
+Empty, invalid or unavailable explicit choices fail rather than falling back or silently skipping
+evidence. Availability probes are bounded, shell-free and metadata-only; each caller retains its
+exact GNU R 4.6.1 gate. Package checking requires an oracle before preparing an archive, while
+optional conformance absence remains an explicit skip.
+
+All 41 owned unit/CLI checks pass, including wrong-engine rejection after a successful availability
+probe. A live metadata-only check confirms that explicit selection and automatic per-user discovery
+with PATH empty choose the installed oracle. The full check passes 3,044 unit tests with 94 opt-in
+skips, both typechecks, build, generated-report checks and fixed bundle caps. The current browser
+checkpoint remains bound to the same source/runtime artifacts. No runtime semantics changed; profile
+0.388 and its existing conformance/corpus evidence remain unchanged. R13 is closed locally.
+
+Next measurable increment remains the offline abind/numDeriv evidence command: validate exact cached
+pins and observation inventories, keep raw output quarantined, reject assisted reports and
+distinguish complete blocked-package evidence from infrastructure failures. Complete its independent
+review and local execution before committing. Isolated testing-runner development continues against
+independently authored fixtures; original P6/P7 credit remains separate.

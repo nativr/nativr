@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createPackageOracle } from "./lib/package-oracle.mjs";
+import { findRscript } from "./lib/rscript-discovery.mjs";
 import { observePackageDependencies } from "./lib/package-dependency-observer.mjs";
 import { observePackageLifecycle } from "./lib/package-lifecycle-observer.mjs";
 import { observeCleanBaseLoad } from "./lib/package-clean-base-observer.mjs";
@@ -30,6 +31,7 @@ if (entry === undefined || entry.partition === "holdout" || !entry.artifactSha25
     "Select an already evaluated, artifact-pinned development or regression package.",
   );
 }
+const rscript = await findRscript({ rscript: args.rscript, required: true });
 const {
   createPackageCheckReport,
   inspectPackageDescription,
@@ -153,7 +155,7 @@ try {
   const capabilities = await probe.capabilities();
   await probe.dispose();
   oracle = await createPackageOracle({
-    rscript: args.rscript,
+    rscript,
     archive,
     expectedPackage: { name: entry.package, version: entry.version },
     expectedSourceSha256: sourceSha256,
@@ -1021,7 +1023,7 @@ function parseArguments(values) {
     skipExamples: false,
     oracleRepeat: false,
     rngSeed: 20261016,
-    rscript: process.env.NATIVR_RSCRIPT ?? "Rscript",
+    rscript: undefined,
     maxSteps: 300_000_000,
     maxVectorLength: 50_000_000,
   };

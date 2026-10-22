@@ -38,6 +38,7 @@
     "conformance:r": "node scripts/run-r-conformance.mjs",
     "conformance:r:v2": "node scripts/run-r-conformance-v2.mjs",
     "conformance:r:v2:test": "node --test scripts/test/oracle-v2-snapshot.test.mjs",
+    "oracle:discovery:test": "node --test scripts/test/rscript-discovery.test.mjs scripts/test/rscript-discovery-cli.test.mjs",
     "size": "node scripts/check-bundle-size.mjs",
     "pack:smoke": "node scripts/smoke-pack.mjs",
     "package:check": "node scripts/package-check.mjs",
