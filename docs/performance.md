@@ -17,9 +17,76 @@ maintained suite keeps all real clicks, examples and assertions; no timeout or l
 needed.
 
 The diagnostic's single 211.5 ms navigation-to-ready observation is advisory and includes playground
-initialization. It is not a repeated Worker-startup benchmark. Repeated startup, interrupt/restart
-latency, representative numDeriv workloads, additional OS coverage and Linux normative verification
-remain separate acceptance work.
+initialization. It is not a repeated Worker-startup benchmark. The separate repeated measurements
+below cover startup, interrupt/restart and fixed numDeriv workloads on this host. Additional OS
+coverage, broader workloads, agreed latency budgets and Linux normative verification remain open.
+
+## Repeated Worker measurements (profile 0.380, 2026-10-22)
+
+The
+[Windows performance checkpoint](../compatibility/platform-evidence/performance-windows-0.380.0.json)
+retains all samples, browser versions, runtime/tool digests, package pins and validation results.
+Each browser completed seven fresh-context starts, seven same-document starts and seven
+interrupt/recovery cycles. Every startup returned the expected value and semantic profile.
+Interruption rejected with NRL4005, recreated the Worker, removed a previously verified sentinel and
+successfully evaluated a recovery expression. No external requests or page errors occurred.
+
+| Median wall time (ms)              | Chromium | Firefox | WebKit |
+| ---------------------------------- | -------: | ------: | -----: |
+| New-context createR                |     54.8 |     113 |     80 |
+| Same-document createR              |     52.4 |     113 |     76 |
+| Interrupt rejection                |      0.3 |       1 |      0 |
+| Interrupt through restart ready    |     58.4 |     108 |     75 |
+| Interrupt through checked recovery |       62 |     109 |     84 |
+
+Five independently authored polynomial workloads use the unchanged pinned numDeriv archive as an
+opaque execution input. Each receives two warmups and nine retained samples; analytical derivative
+and dimension assertions pass for every evaluation. These fixed small and moderate workloads do not
+establish performance for arbitrary package inputs or alter numDeriv's P6/P7 evidence.
+
+| Median evalDetailed wall time (ms) | Chromium | Firefox | WebKit |
+| ---------------------------------- | -------: | ------: | -----: |
+| Simple gradient, 4 variables       |      2.3 |       6 |     15 |
+| Simple Jacobian, 2 variables       |      1.5 |       5 |     16 |
+| Richardson Hessian, 4 variables    |     11.6 |      92 |     15 |
+| Complex Hessian, 4 variables       |     16.4 |     127 |     15 |
+| Complex Hessian, 12 variables      |     64.9 |     616 |     76 |
+
+These local-loopback timings exclude browser launch, internet delivery and true OS cold-cache
+effects. HTTP responses use no-store. Independent module imports are recorded for fresh contexts;
+the same-document samples share one separately recorded import. Returned evaluatorElapsedMs uses the
+runtime's Date.now clock and excludes parsing, serialization and transport. Browser timers are
+quantized: a zero-millisecond sample means below observed clock resolution. The report's
+nearest-rank empirical p95 values describe these small samples, not population estimates or release
+thresholds. The 100 ms delay before interrupt verifies pending status; the API has no
+execution-start acknowledgement. No latency or bundle budget changed.
+
+### Reproducing the offline measurements
+
+After a serial production build, use already installed Playwright browsers and the pinned cached
+numDeriv archive. The runner never installs, downloads or builds. On hosts using a shared browser
+cache, set PLAYWRIGHT_BROWSERS_PATH to that existing directory.
+
+```sh
+pnpm benchmark:browser --archive /path/to/numDeriv_2016.8-1.1.tar.gz
+pnpm benchmark:browser --archive /path/to/numDeriv_2016.8-1.1.tar.gz --run --pilot
+pnpm benchmark:browser --archive /path/to/numDeriv_2016.8-1.1.tar.gz --run
+```
+
+The default is preflight only; the default archive directory is .tmp/handoff/pkgsrc. Reports go to
+.tmp/browser-performance unless --output specifies another directory. A pilot is labeled separately
+and is not pooled with the fixed-count run. The dedicated loopback host serves exact owned assets
+and the opaque package bundle; browser contexts block external requests and service workers. Each
+complete document has a 180-second administrative watchdog, navigation/readiness a 30-second bound
+and each evaluation a 60-second timeout. These bounds prevent a hung measurement and do not define
+product performance acceptance.
+
+Thirty-seven pure validator tests cover incomplete/stale reports, sample counts, cancellation,
+changed artifacts/tooling, invalid timings and redaction; pnpm check runs them. Failed runs retain
+safe partial evidence and fail validation. One preparatory repeated run was rejected because the
+validator changed during measurement; the accepted checkpoint was rerun with tooling frozen. No
+package implementation bodies, output, arbitrary diagnostic text or local user paths enter the
+report. The public API, Worker protocol and runtime distribution did not change in this increment.
 
 ## Measurement and budgets
 

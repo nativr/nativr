@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-offline-pack-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.380.0",
+  "sourceCommit": "a13e570",
+  "command": "pnpm pack:smoke -- --skip-build",
+  "environment": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "pnpm": "11.17.0",
+    "npm_config_offline": true
+  },
+  "preconditions": [
+    "Existing serial production build from verified profile 0.380.0",
+    "Existing local pnpm cache; no downloads",
+    "Ordinary Windows local-cache permissions"
+  ],
+  "checks": {
+    "strictConsumerDeclarations": "passed",
+    "browserConsumerBuild": "passed",
+    "packageToolsTarballCli": "passed"
+  },
+  "artifacts": [
+    {
+      "name": "nativr-nativr-0.1.1.tgz",
+      "bytes": 3586006,
+      "sha256": "746dd84898324edc63c801c56b4f56eb18dcdcff3fe7366271e6f1e0c2cb5e46"
+    },
+    {
+      "name": "nativr-package-tools-0.0.0.tgz",
+      "bytes": 121541,
+      "sha256": "166f094857ed8b0317c01ed5e50fc83f9dea03529b33dc27afba4b64c9a8c03f"
+    }
+  ],
+  "provenance": {
+    "sources": [
+      {
+        "path": "scripts/smoke-pack.mjs",
+        "sha256": "dc349f0f3683711f2e7028e8536866a4e5e1f7d392a4a2af390b0ae05f13dde5"
+      },
+      {
+        "path": "packages/nativr/package.json",
+        "sha256": "3f5b0436902964e0d8694893f96fcbe0fec404854b75018ea8ca35ae1ec355c3"
+      },
+      {
+        "path": "packages/nativr/vite.config.ts",
+        "sha256": "3e382a2ef2ad7b1e27cc53ec3cacb18d5dbaad4d4fc7d0babd6950a07c6de6b0"
+      },
+      {
+        "path": "packages/package-tools/package.json",
+        "sha256": "11400431f0e9f0d95cfc666d6067336fa0d9447b22c6cddaac31c1e891f4a3fa"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "runLogSha256": "f4e86b796207906cc70036c581f32970ceb523557cb7e6ec67da3a8f12f891dd",
+    "redaction": "Only package identities, checks, versions and digests; no implementation bodies or local user paths"
+  },
+  "limitations": [
+    "Local packed-consumer smoke only; no registry publication, remote CI, release upload or additional OS coverage"
+  ]
+}

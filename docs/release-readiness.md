@@ -17,13 +17,13 @@ compatibility claim follows from this preview.
 | Conformance                        | 1,384 checked-in, 1,315 live GNU R 4.6.1, 297 recursive cases; 153 bindings linked with causal controls                                               | Passed              |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                          | Passed              |
 | Browser e2e                        | Profile 0.380 on Windows: 9/9 pass across Chromium, Firefox and WebKit; required examples take 10.4 / 11.7 / 41.5 s within the unchanged 120 s budget | Passed on this host |
-| Packed consumer                    | Profile 0.379: offline strict declaration check, browser consumer build and package-tools CLI pass                                                    | Passed              |
+| Packed consumer                    | Profile 0.380: offline strict declaration check, browser consumer build and package-tools CLI pass                                                    | Passed              |
 | Fixed bundle limits                | Client 17.6/150 KiB gzip; Worker 485.1/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                  | Passed              |
 | CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                            | Open                |
 
-**Readiness:** release verification is incomplete. Repeated workload timings, the declared OS
-matrix, CI and release packaging need current evidence. The approved roadmap does not authorize push
-or publication.
+**Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
+broader workload coverage, latency acceptance budgets, the declared OS matrix, CI and release
+packaging remain open. The approved roadmap does not authorize push or publication.
 
 ## B. Full browser-admissible GNU R 4.6.1 compatibility
 
@@ -52,6 +52,11 @@ profile 0.380 on Windows. The earlier fixture typing errors are repaired, and `p
 checks production sources, tests and build configurations without emitting files as part of
 `pnpm check`. The packed consumer now checks its public declarations strictly before its browser
 build.
+
+The [0.380 offline pack checkpoint](../compatibility/platform-evidence/pack-windows-0.380.0.json)
+records both tarball digests and the smoke-script inputs. It reused the existing production build
+and local dependency cache; strict consumer declaration checking, the browser consumer build and the
+package-tools tarball CLI all passed. This does not establish registry or remote CI readiness.
 
 ## Cached package checkpoint
 
@@ -91,8 +96,12 @@ A separate eight-activation WebKit diagnostic records roughly 16 ms initial fram
 geometry after its first scroll, median real-click action time of 163.3 ms and supported-shortcut
 time of 24.1 ms. The historical half-second stability waits do not reproduce on this run. No layout,
 test-activation, viewport or timeout changes were needed. This does not establish the cause of the
-historical timeout or representative workload performance. Repeated startup, cancellation and
-numDeriv measurements, additional OS coverage and the separately authorized Linux gate remain open.
+historical timeout. The separate
+[performance checkpoint](../compatibility/platform-evidence/performance-windows-0.380.0.json)
+records repeated startup, cancellation and five fixed numDeriv workloads across all three engines.
+All assertions pass; runtime and tooling hashes remain stable. See [performance](performance.md) for
+sample counts, timings and limits. Additional OS coverage, broader workloads, latency acceptance
+budgets and the separately authorized Linux gate remain open.
 
 ### Profile 0.380 verification (2026-10-22)
 

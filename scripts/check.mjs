@@ -12,6 +12,7 @@ for (const command of [
   ["corpus:check"],
   ["compatibility:check"],
   ["inventory:test"],
+  ["benchmark:browser:test"],
   ["inventory:check"],
   ["lint"],
   ["boundaries"],

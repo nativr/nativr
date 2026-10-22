@@ -1552,3 +1552,22 @@ Next performance work measures public Worker startup, interrupt rejection separa
 restart/recovery, and cached numDeriv workloads. Small arithmetic activation timing is not evidence
 of representative package performance. The broader browser/OS and separately authorized Linux gates
 remain incomplete.
+
+### Repeated Windows performance and offline packaging (2026-10-22)
+
+The profile 0.380
+[performance checkpoint](../compatibility/platform-evidence/performance-windows-0.380.0.json)
+records seven fresh-context starts, seven same-document starts and seven interruption/recovery
+cycles per cached browser, plus two warmups and nine samples for each of five owned numDeriv
+workloads. All value, state-reset, profile, external-request and artifact-stability assertions pass.
+The runner and its 37 validation/redaction tests are maintained and wired into pnpm check. These
+measurements are advisory; no new latency budget, package tier or platform completion is inferred.
+The
+[offline packed-consumer checkpoint](../compatibility/platform-evidence/pack-windows-0.380.0.json)
+also passes strict declarations, browser build and package-tools CLI against current tarballs.
+
+Next bounded semantic step: reproduce and implement difftime units access/replacement using owned
+native fixtures, all five concrete units, attributes, argument matching, visibility and lazy S3
+dispatch; then rerun prettyunits and the required semantic gates. Continue numeric predicates,
+remaining domain evidence, independently sourced datasets and isolated testing support. Linux,
+Formula, new downloads and remote publication retain their existing authorization boundaries.

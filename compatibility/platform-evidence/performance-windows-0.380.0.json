@@ -1,0 +1,2078 @@
+{
+  "schemaVersion": 1,
+  "kind": "exploratory-browser-performance",
+  "ok": true,
+  "recordedAt": "2026-10-22T17:36:02.852Z",
+  "semanticProfileVersion": "0.380.0",
+  "settings": {
+    "pilot": false,
+    "startupFreshContextSamples": 7,
+    "startupSameDocumentSamples": 7,
+    "cancellationSamples": 7,
+    "packageWarmups": 2,
+    "packageSamples": 9,
+    "phaseWatchdogMs": 180000,
+    "navigationTimeoutMs": 30000,
+    "evaluationTimeoutMs": 60000,
+    "cancellationDelayMs": 100,
+    "headless": true
+  },
+  "package": {
+    "name": "numDeriv",
+    "version": "2016.8-1.1",
+    "partition": "regression",
+    "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+    "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45"
+  },
+  "archiveVerified": true,
+  "artifactVerified": true,
+  "head": "a13e570eb1a39fdc462a0d4a37bf90872d471b3e",
+  "playwrightVersion": "1.62.0",
+  "host": {
+    "os": "win32",
+    "release": "10.0.26200",
+    "arch": "x64",
+    "nodeVersion": "v24.19.0",
+    "cpuModelSha256": "e1f966e0c317f22921278683195098a2172dba5b69e075ce978bd4033bf7b276",
+    "logicalCpuCount": 32
+  },
+  "runnerSha256": "d1c0c1847a7097e32e908965aa9345fb3d214ec266499b4f480d4585fd746e7a",
+  "harnessSha256": "b5175c1a2dd0e789daf6c501afeaa3ce7c995e4abc027a03ded20a1e463443f1",
+  "reportHelperSha256": "1e0367b2080419cb0f56214c75714cb707d2a1d267daae4ec7c2ba2d1de9a5d5",
+  "distDigests": [
+    {
+      "path": "assets/elementary.manifest.json",
+      "bytes": 793,
+      "sha256": "a216ca5975235f29e340608a34bc49d771218e36b8312f37e874f7b853829de8"
+    },
+    {
+      "path": "assets/elementary.wasm",
+      "bytes": 318690,
+      "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+    },
+    {
+      "path": "assets/manifest.json",
+      "bytes": 464,
+      "sha256": "47dc809275689c1df347a14000500b3c681f5d82514832429f5f34520b932e1f"
+    },
+    {
+      "path": "assets/tree-sitter-r.wasm",
+      "bytes": 487030,
+      "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+    },
+    {
+      "path": "assets/web-tree-sitter.wasm",
+      "bytes": 201037,
+      "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+    },
+    {
+      "path": "assets/worker-entry-DWBv2-LG.js",
+      "bytes": 1690860,
+      "sha256": "56a4b1d8a5084a26ec5ab56dbcee0adde4394d550cccbe2666a0dcf47c347583"
+    },
+    {
+      "path": "chunks/conversion-hqUUaSZc.js",
+      "bytes": 42073,
+      "sha256": "275e6ed904955f257de90948f294bfa251cb1a34317973d1dfcaf4bece4f39ce"
+    },
+    {
+      "path": "chunks/runtime-host-BABKn0dY.js",
+      "bytes": 2000285,
+      "sha256": "4a8770c0dc95d8070d4c9e707ec4481502596ad82dcca48e11789b725523b1b0"
+    },
+    {
+      "path": "elementary.manifest.json",
+      "bytes": 793,
+      "sha256": "a216ca5975235f29e340608a34bc49d771218e36b8312f37e874f7b853829de8"
+    },
+    {
+      "path": "elementary.wasm",
+      "bytes": 318690,
+      "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+    },
+    {
+      "path": "index.js",
+      "bytes": 31198,
+      "sha256": "822783f7d5c724d6c426b261b5023a751f1d459b8704a854b737f877c60f4747"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 464,
+      "sha256": "47dc809275689c1df347a14000500b3c681f5d82514832429f5f34520b932e1f"
+    },
+    {
+      "path": "tree-sitter-r.wasm",
+      "bytes": 487030,
+      "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+    },
+    {
+      "path": "web-tree-sitter.wasm",
+      "bytes": 201037,
+      "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+    }
+  ],
+  "distStable": true,
+  "toolingStable": true,
+  "engines": [
+    {
+      "name": "chromium",
+      "version": "151.0.7922.34",
+      "ok": true,
+      "clockResolutionMs": 0.09999996423721313,
+      "freshContext": [
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 55.5,
+          "moduleImportMs": 12,
+          "firstEvaluation": {
+            "wallMs": 3.699999988079071,
+            "evaluatorElapsedMs": 1,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 54.80000001192093,
+          "moduleImportMs": 10.100000023841858,
+          "firstEvaluation": {
+            "wallMs": 3.600000023841858,
+            "evaluatorElapsedMs": 1,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 51.60000002384186,
+          "moduleImportMs": 10.5,
+          "firstEvaluation": {
+            "wallMs": 3.599999964237213,
+            "evaluatorElapsedMs": 1,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 62,
+          "moduleImportMs": 9.799999952316284,
+          "firstEvaluation": {
+            "wallMs": 3.699999988079071,
+            "evaluatorElapsedMs": 1,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 53.5,
+          "moduleImportMs": 9.800000011920929,
+          "firstEvaluation": {
+            "wallMs": 3.800000011920929,
+            "evaluatorElapsedMs": 1,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 70.79999995231628,
+          "moduleImportMs": 10.100000023841858,
+          "firstEvaluation": {
+            "wallMs": 3.700000047683716,
+            "evaluatorElapsedMs": 1,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 53.5,
+          "moduleImportMs": 10.199999988079071,
+          "firstEvaluation": {
+            "wallMs": 3.800000011920929,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        }
+      ],
+      "sameDocument": {
+        "moduleImportMs": 10.5,
+        "samples": [
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 61.60000002384186,
+            "firstEvaluation": {
+              "wallMs": 3.699999988079071,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 52.39999997615814,
+            "firstEvaluation": {
+              "wallMs": 3.5,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 54.30000001192093,
+            "firstEvaluation": {
+              "wallMs": 3.600000023841858,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 52,
+            "firstEvaluation": {
+              "wallMs": 3.400000035762787,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 52.30000001192093,
+            "firstEvaluation": {
+              "wallMs": 3.600000023841858,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 51.30000001192093,
+            "firstEvaluation": {
+              "wallMs": 3.600000023841858,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 56.39999997615814,
+            "firstEvaluation": {
+              "wallMs": 3.5,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          }
+        ]
+      },
+      "cancellation": {
+        "ok": true,
+        "samples": [
+          {
+            "submissionToInterruptMs": 110.20000004768372,
+            "rejectionLatencyMs": 0.2999999523162842,
+            "restartReadyMs": 57.09999996423721,
+            "totalRecoveryMs": 60.39999997615814,
+            "recovery": {
+              "wallMs": 3.300000011920929,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 111.80000001192093,
+            "rejectionLatencyMs": 0.19999998807907104,
+            "restartReadyMs": 52.5,
+            "totalRecoveryMs": 55.59999996423721,
+            "recovery": {
+              "wallMs": 3.099999964237213,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 115.09999996423721,
+            "rejectionLatencyMs": 0.19999998807907104,
+            "restartReadyMs": 53.69999998807907,
+            "totalRecoveryMs": 56.80000001192093,
+            "recovery": {
+              "wallMs": 3.100000023841858,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 101.90000003576279,
+            "rejectionLatencyMs": 0.30000001192092896,
+            "restartReadyMs": 58.39999997615814,
+            "totalRecoveryMs": 62,
+            "recovery": {
+              "wallMs": 3.600000023841858,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 110.10000002384186,
+            "rejectionLatencyMs": 0.2999999523162842,
+            "restartReadyMs": 62.5,
+            "totalRecoveryMs": 66.09999996423721,
+            "recovery": {
+              "wallMs": 3.599999964237213,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 106.10000002384186,
+            "rejectionLatencyMs": 0.19999998807907104,
+            "restartReadyMs": 69.39999997615814,
+            "totalRecoveryMs": 73.19999998807907,
+            "recovery": {
+              "wallMs": 3.800000011920929,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 114.90000003576279,
+            "rejectionLatencyMs": 0.2999999523162842,
+            "restartReadyMs": 77.39999997615814,
+            "totalRecoveryMs": 81.39999997615814,
+            "recovery": {
+              "wallMs": 4,
+              "evaluatorElapsedMs": 3,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          }
+        ]
+      },
+      "package": {
+        "ok": true,
+        "createRWithPackageMs": 91.5,
+        "namespaceLoad": {
+          "wallMs": 4.5,
+          "evaluatorElapsedMs": 4,
+          "runtimeReset": false
+        },
+        "workloads": [
+          {
+            "id": "gradient-simple-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 1.9000000357627869,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 2.899999976158142,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.600000023841858,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 3.299999952316284,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.9000000357627869,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.5999999642372131,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 2.800000011920929,
+                "evaluatorElapsedMs": 3,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 2.300000011920929,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 2.300000011920929,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 2.300000011920929,
+              "empiricalP95Ms": 3.299999952316284,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 2,
+              "empiricalP95Ms": 3,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "jacobian-simple-polynomial-2",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 1.5,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.399999976158142,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.4000000357627869,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 2.099999964237213,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.5,
+                "evaluatorElapsedMs": 0,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.5,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.300000011920929,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 1.800000011920929,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 2.100000023841858,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 1.5,
+              "empiricalP95Ms": 2.100000023841858,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 1,
+              "empiricalP95Ms": 2,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-richardson-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 11.600000023841858,
+                "evaluatorElapsedMs": 11,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 20.19999998807907,
+                "evaluatorElapsedMs": 20,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 10.899999976158142,
+                "evaluatorElapsedMs": 10,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 34.700000047683716,
+                "evaluatorElapsedMs": 34,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 14.599999964237213,
+                "evaluatorElapsedMs": 11,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 9.199999988079071,
+                "evaluatorElapsedMs": 8,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 9.800000011920929,
+                "evaluatorElapsedMs": 9,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 11.400000035762787,
+                "evaluatorElapsedMs": 11,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 13.299999952316284,
+                "evaluatorElapsedMs": 13,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 11.600000023841858,
+              "empiricalP95Ms": 34.700000047683716,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 11,
+              "empiricalP95Ms": 34,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-complex-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 16.399999976158142,
+                "evaluatorElapsedMs": 16,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16.100000023841858,
+                "evaluatorElapsedMs": 15,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 17.399999976158142,
+                "evaluatorElapsedMs": 17,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 16,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 14.900000035762787,
+                "evaluatorElapsedMs": 15,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 24.19999998807907,
+                "evaluatorElapsedMs": 24,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 25.899999976158142,
+                "evaluatorElapsedMs": 26,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 14.300000011920929,
+                "evaluatorElapsedMs": 14,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 18.30000001192093,
+                "evaluatorElapsedMs": 18,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 16.399999976158142,
+              "empiricalP95Ms": 25.899999976158142,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 16,
+              "empiricalP95Ms": 26,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-complex-quadratic-12",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 70.90000003576279,
+                "evaluatorElapsedMs": 71,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 88.5,
+                "evaluatorElapsedMs": 88,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 66.19999998807907,
+                "evaluatorElapsedMs": 65,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 68.09999996423721,
+                "evaluatorElapsedMs": 67,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 64.90000003576279,
+                "evaluatorElapsedMs": 64,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 56.09999996423721,
+                "evaluatorElapsedMs": 55,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 55.30000001192093,
+                "evaluatorElapsedMs": 55,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 59.19999998807907,
+                "evaluatorElapsedMs": 59,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 58.40000003576279,
+                "evaluatorElapsedMs": 58,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 64.90000003576279,
+              "empiricalP95Ms": 88.5,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 64,
+              "empiricalP95Ms": 88,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          }
+        ]
+      },
+      "summaries": {
+        "freshCreateR": {
+          "count": 7,
+          "medianMs": 54.80000001192093,
+          "empiricalP95Ms": 70.79999995231628,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "sameDocumentCreateR": {
+          "count": 7,
+          "medianMs": 52.39999997615814,
+          "empiricalP95Ms": 61.60000002384186,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "rejection": {
+          "count": 7,
+          "medianMs": 0.2999999523162842,
+          "empiricalP95Ms": 0.30000001192092896,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "restartReady": {
+          "count": 7,
+          "medianMs": 58.39999997615814,
+          "empiricalP95Ms": 77.39999997615814,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "totalRecovery": {
+          "count": 7,
+          "medianMs": 62,
+          "empiricalP95Ms": 81.39999997615814,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        }
+      },
+      "externalRequestCount": 0,
+      "pageErrorCount": 0
+    },
+    {
+      "name": "firefox",
+      "version": "153.0",
+      "ok": true,
+      "clockResolutionMs": 1,
+      "freshContext": [
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 113,
+          "moduleImportMs": 66,
+          "firstEvaluation": {
+            "wallMs": 1,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 105,
+          "moduleImportMs": 10,
+          "firstEvaluation": {
+            "wallMs": 0,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 108,
+          "moduleImportMs": 9,
+          "firstEvaluation": {
+            "wallMs": 0,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 115,
+          "moduleImportMs": 9,
+          "firstEvaluation": {
+            "wallMs": 0,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 123,
+          "moduleImportMs": 8,
+          "firstEvaluation": {
+            "wallMs": 1,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 111,
+          "moduleImportMs": 12,
+          "firstEvaluation": {
+            "wallMs": 1,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 131,
+          "moduleImportMs": 12,
+          "firstEvaluation": {
+            "wallMs": 1,
+            "evaluatorElapsedMs": 0,
+            "runtimeReset": false
+          }
+        }
+      ],
+      "sameDocument": {
+        "moduleImportMs": 11,
+        "samples": [
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 113,
+            "firstEvaluation": {
+              "wallMs": 0,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 123,
+            "firstEvaluation": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 124,
+            "firstEvaluation": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 112,
+            "firstEvaluation": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 243,
+            "firstEvaluation": {
+              "wallMs": 0,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 108,
+            "firstEvaluation": {
+              "wallMs": 0,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 106,
+            "firstEvaluation": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            }
+          }
+        ]
+      },
+      "cancellation": {
+        "ok": true,
+        "samples": [
+          {
+            "submissionToInterruptMs": 102,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 108,
+            "totalRecoveryMs": 110,
+            "recovery": {
+              "wallMs": 2,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 100,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 109,
+            "totalRecoveryMs": 111,
+            "recovery": {
+              "wallMs": 2,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 100,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 107,
+            "totalRecoveryMs": 108,
+            "recovery": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 101,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 109,
+            "totalRecoveryMs": 111,
+            "recovery": {
+              "wallMs": 2,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 100,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 107,
+            "totalRecoveryMs": 108,
+            "recovery": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 101,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 106,
+            "totalRecoveryMs": 108,
+            "recovery": {
+              "wallMs": 2,
+              "evaluatorElapsedMs": 1,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 101,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 108,
+            "totalRecoveryMs": 109,
+            "recovery": {
+              "wallMs": 1,
+              "evaluatorElapsedMs": 0,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          }
+        ]
+      },
+      "package": {
+        "ok": true,
+        "createRWithPackageMs": 125,
+        "namespaceLoad": {
+          "wallMs": 3,
+          "evaluatorElapsedMs": 3,
+          "runtimeReset": false
+        },
+        "workloads": [
+          {
+            "id": "gradient-simple-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 7,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 6,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 6,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 6,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 7,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 6,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 6,
+              "empiricalP95Ms": 7,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 5,
+              "empiricalP95Ms": 6,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "jacobian-simple-polynomial-2",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 4,
+                "evaluatorElapsedMs": 3,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 6,
+                "evaluatorElapsedMs": 5,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 4,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 4,
+                "evaluatorElapsedMs": 3,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 5,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 4,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 5,
+              "empiricalP95Ms": 6,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 4,
+              "empiricalP95Ms": 5,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-richardson-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 93,
+                "evaluatorElapsedMs": 91,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 92,
+                "evaluatorElapsedMs": 91,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 96,
+                "evaluatorElapsedMs": 95,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 89,
+                "evaluatorElapsedMs": 89,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 93,
+                "evaluatorElapsedMs": 92,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 92,
+                "evaluatorElapsedMs": 91,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 99,
+                "evaluatorElapsedMs": 99,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 86,
+                "evaluatorElapsedMs": 85,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 92,
+                "evaluatorElapsedMs": 91,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 92,
+              "empiricalP95Ms": 99,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 91,
+              "empiricalP95Ms": 99,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-complex-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 127,
+                "evaluatorElapsedMs": 126,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 127,
+                "evaluatorElapsedMs": 127,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 129,
+                "evaluatorElapsedMs": 127,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 128,
+                "evaluatorElapsedMs": 128,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 130,
+                "evaluatorElapsedMs": 129,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 127,
+                "evaluatorElapsedMs": 126,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 128,
+                "evaluatorElapsedMs": 127,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 125,
+                "evaluatorElapsedMs": 125,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 126,
+                "evaluatorElapsedMs": 125,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 127,
+              "empiricalP95Ms": 130,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 127,
+              "empiricalP95Ms": 129,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-complex-quadratic-12",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 633,
+                "evaluatorElapsedMs": 634,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 656,
+                "evaluatorElapsedMs": 655,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 613,
+                "evaluatorElapsedMs": 611,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 620,
+                "evaluatorElapsedMs": 619,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 617,
+                "evaluatorElapsedMs": 616,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 616,
+                "evaluatorElapsedMs": 615,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 613,
+                "evaluatorElapsedMs": 613,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 593,
+                "evaluatorElapsedMs": 590,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 606,
+                "evaluatorElapsedMs": 607,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 616,
+              "empiricalP95Ms": 656,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 615,
+              "empiricalP95Ms": 655,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          }
+        ]
+      },
+      "summaries": {
+        "freshCreateR": {
+          "count": 7,
+          "medianMs": 113,
+          "empiricalP95Ms": 131,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "sameDocumentCreateR": {
+          "count": 7,
+          "medianMs": 113,
+          "empiricalP95Ms": 243,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "rejection": {
+          "count": 7,
+          "medianMs": 1,
+          "empiricalP95Ms": 1,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "restartReady": {
+          "count": 7,
+          "medianMs": 108,
+          "empiricalP95Ms": 109,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "totalRecovery": {
+          "count": 7,
+          "medianMs": 109,
+          "empiricalP95Ms": 111,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        }
+      },
+      "externalRequestCount": 0,
+      "pageErrorCount": 0
+    },
+    {
+      "name": "webkit",
+      "version": "26.5",
+      "ok": true,
+      "clockResolutionMs": 1,
+      "freshContext": [
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 80,
+          "moduleImportMs": 15,
+          "firstEvaluation": {
+            "wallMs": 10,
+            "evaluatorElapsedMs": 2,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 80,
+          "moduleImportMs": 16,
+          "firstEvaluation": {
+            "wallMs": 12,
+            "evaluatorElapsedMs": 2,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 80,
+          "moduleImportMs": 16,
+          "firstEvaluation": {
+            "wallMs": 13,
+            "evaluatorElapsedMs": 3,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 82,
+          "moduleImportMs": 17,
+          "firstEvaluation": {
+            "wallMs": 9,
+            "evaluatorElapsedMs": 3,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 77,
+          "moduleImportMs": 16,
+          "firstEvaluation": {
+            "wallMs": 15,
+            "evaluatorElapsedMs": 3,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 82,
+          "moduleImportMs": 17,
+          "firstEvaluation": {
+            "wallMs": 9,
+            "evaluatorElapsedMs": 3,
+            "runtimeReset": false
+          }
+        },
+        {
+          "ok": true,
+          "semanticProfileVersion": "0.380.0",
+          "createRMs": 83,
+          "moduleImportMs": 17,
+          "firstEvaluation": {
+            "wallMs": 5,
+            "evaluatorElapsedMs": 2,
+            "runtimeReset": false
+          }
+        }
+      ],
+      "sameDocument": {
+        "moduleImportMs": 17,
+        "samples": [
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 76,
+            "firstEvaluation": {
+              "wallMs": 16,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 88,
+            "firstEvaluation": {
+              "wallMs": 4,
+              "evaluatorElapsedMs": 3,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 74,
+            "firstEvaluation": {
+              "wallMs": 4,
+              "evaluatorElapsedMs": 3,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 76,
+            "firstEvaluation": {
+              "wallMs": 4,
+              "evaluatorElapsedMs": 3,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 75,
+            "firstEvaluation": {
+              "wallMs": 16,
+              "evaluatorElapsedMs": 2,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 97,
+            "firstEvaluation": {
+              "wallMs": 8,
+              "evaluatorElapsedMs": 3,
+              "runtimeReset": false
+            }
+          },
+          {
+            "ok": true,
+            "semanticProfileVersion": "0.380.0",
+            "createRMs": 76,
+            "firstEvaluation": {
+              "wallMs": 15,
+              "evaluatorElapsedMs": 3,
+              "runtimeReset": false
+            }
+          }
+        ]
+      },
+      "cancellation": {
+        "ok": true,
+        "samples": [
+          {
+            "submissionToInterruptMs": 109,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 73,
+            "totalRecoveryMs": 82,
+            "recovery": {
+              "wallMs": 9,
+              "evaluatorElapsedMs": 5,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 110,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 75,
+            "totalRecoveryMs": 84,
+            "recovery": {
+              "wallMs": 9,
+              "evaluatorElapsedMs": 5,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 110,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 75,
+            "totalRecoveryMs": 83,
+            "recovery": {
+              "wallMs": 8,
+              "evaluatorElapsedMs": 5,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 111,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 71,
+            "totalRecoveryMs": 79,
+            "recovery": {
+              "wallMs": 8,
+              "evaluatorElapsedMs": 6,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 109,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 83,
+            "totalRecoveryMs": 94,
+            "recovery": {
+              "wallMs": 11,
+              "evaluatorElapsedMs": 5,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 109,
+            "rejectionLatencyMs": 1,
+            "restartReadyMs": 81,
+            "totalRecoveryMs": 93,
+            "recovery": {
+              "wallMs": 12,
+              "evaluatorElapsedMs": 5,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          },
+          {
+            "submissionToInterruptMs": 110,
+            "rejectionLatencyMs": 0,
+            "restartReadyMs": 75,
+            "totalRecoveryMs": 84,
+            "recovery": {
+              "wallMs": 9,
+              "evaluatorElapsedMs": 5,
+              "runtimeReset": false
+            },
+            "pendingAtInterrupt": true,
+            "stateLossVerified": true,
+            "interruptionCode": "NRL4005",
+            "runtimeReset": true
+          }
+        ]
+      },
+      "package": {
+        "ok": true,
+        "createRWithPackageMs": 86,
+        "namespaceLoad": {
+          "wallMs": 7,
+          "evaluatorElapsedMs": 6,
+          "runtimeReset": false
+        },
+        "workloads": [
+          {
+            "id": "gradient-simple-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 14,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 3,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 3,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 15,
+              "empiricalP95Ms": 16,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 2,
+              "empiricalP95Ms": 3,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "jacobian-simple-polynomial-2",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 3,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 1,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 4,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 2,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 16,
+              "empiricalP95Ms": 16,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 2,
+              "empiricalP95Ms": 4,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-richardson-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 14,
+                "evaluatorElapsedMs": 9,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 8,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 8,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 7,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 6,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 6,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 11,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 9,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 6,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 15,
+              "empiricalP95Ms": 16,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 8,
+              "empiricalP95Ms": 11,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-complex-quadratic-4",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 18,
+                "evaluatorElapsedMs": 18,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 13,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 19,
+                "evaluatorElapsedMs": 17,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 22,
+                "evaluatorElapsedMs": 21,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 16,
+                "evaluatorElapsedMs": 15,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 13,
+                "evaluatorElapsedMs": 12,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 12,
+                "evaluatorElapsedMs": 11,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 15,
+                "evaluatorElapsedMs": 13,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 13,
+                "evaluatorElapsedMs": 11,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 15,
+              "empiricalP95Ms": 22,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 13,
+              "empiricalP95Ms": 21,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          },
+          {
+            "id": "hessian-complex-quadratic-12",
+            "ok": true,
+            "warmupsCompleted": 2,
+            "samples": [
+              {
+                "wallMs": 115,
+                "evaluatorElapsedMs": 111,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 64,
+                "evaluatorElapsedMs": 61,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 76,
+                "evaluatorElapsedMs": 73,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 112,
+                "evaluatorElapsedMs": 106,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 67,
+                "evaluatorElapsedMs": 65,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 56,
+                "evaluatorElapsedMs": 54,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 114,
+                "evaluatorElapsedMs": 112,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 78,
+                "evaluatorElapsedMs": 76,
+                "runtimeReset": false
+              },
+              {
+                "wallMs": 75,
+                "evaluatorElapsedMs": 72,
+                "runtimeReset": false
+              }
+            ],
+            "wallSummary": {
+              "count": 9,
+              "medianMs": 76,
+              "empiricalP95Ms": 115,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            },
+            "evaluatorSummary": {
+              "count": 9,
+              "medianMs": 73,
+              "empiricalP95Ms": 112,
+              "method": "nearest-rank",
+              "interpretation": "small-sample-descriptive-only"
+            }
+          }
+        ]
+      },
+      "summaries": {
+        "freshCreateR": {
+          "count": 7,
+          "medianMs": 80,
+          "empiricalP95Ms": 83,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "sameDocumentCreateR": {
+          "count": 7,
+          "medianMs": 76,
+          "empiricalP95Ms": 97,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "rejection": {
+          "count": 7,
+          "medianMs": 0,
+          "empiricalP95Ms": 1,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "restartReady": {
+          "count": 7,
+          "medianMs": 75,
+          "empiricalP95Ms": 83,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        },
+        "totalRecovery": {
+          "count": 7,
+          "medianMs": 84,
+          "empiricalP95Ms": 94,
+          "method": "nearest-rank",
+          "interpretation": "small-sample-descriptive-only"
+        }
+      },
+      "externalRequestCount": 0,
+      "pageErrorCount": 0
+    }
+  ],
+  "limitations": [
+    "Local-loopback timings exclude browser process launch, internet delivery and OS cold-cache effects.",
+    "HTTP no-store is used; independent fresh-context imports and one reused same-document import are separate measurements.",
+    "Pending status is observable, but the public API has no Worker-execution-start acknowledgement.",
+    "evaluatorElapsedMs is evaluator-only Date.now time: it excludes parsing, snapshots, serialization and transport and may be quantized to whole milliseconds.",
+    "A zero duration means below the observed clock resolution, not instantaneous execution.",
+    "Median and nearest-rank empirical p95 describe these small samples; they are not population estimates or release thresholds.",
+    "Owned numerical workload success does not change corpus P6/P7 or normative platform evidence."
+  ],
+  "validationErrors": []
+}
