@@ -17,7 +17,7 @@ compatibility claim follows from this preview.
 | Conformance                        | 1,462 checked-in, 1,389 live GNU R 4.6.1, 377 recursive cases; 169 bindings linked with causal controls                                                                                                 | Passed              |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                            | Passed              |
 | Browser e2e                        | Profile 0.388 on Windows: 9/9 pass across Chromium, Firefox and WebKit, including omitted-selector NULL/missing dispatch; required examples take 12.6 / 15.6 / 66.7 s within the unchanged 120 s budget | Passed on this host |
-| Packed consumer                    | Profile 0.380: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                                      | Passed              |
+| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                                      | Passed              |
 | Fixed bundle limits                | Profile 0.388: client 17.6/150 KiB gzip; Worker 491.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                                     | Passed              |
 | CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                              | Open                |
 
@@ -54,7 +54,7 @@ errors are repaired, and `pnpm typecheck:all` checks production sources, tests a
 configurations without emitting files as part of `pnpm check`. The packed consumer now checks its
 public declarations strictly before its browser build.
 
-The [0.380 offline pack checkpoint](../compatibility/platform-evidence/pack-windows-0.380.0.json)
+The [0.388 offline pack checkpoint](../compatibility/platform-evidence/pack-windows-0.388.0.json)
 records both tarball digests and the smoke-script inputs. It reused the existing production build
 and local dependency cache; strict consumer declaration checking, the browser consumer build and the
 package-tools tarball CLI all passed. This does not establish registry or remote CI readiness.
@@ -1279,10 +1279,12 @@ coercions.
 and selected unchanged-package external tests on Ubuntu. It does not run comprehensive
 `pnpm package:check` for abind/numDeriv or retain their redacted stage summaries. Browser CI runs
 all three engines on Ubuntu but lacks a redacted success checkpoint and repeated performance report.
-Main CI also duplicates an older subset of `pnpm check`. _Acceptance:_ maintain and locally verify
-an offline evidence command with pinned inputs, RNG/repeatability settings, artifact validation and
-safe summaries; align CI with the canonical checks and artifact contract. Remote execution remains
-separate, and normative evidence requires RFC-0007's pinned Linux/glibc gate.
+Main CI configuration now invokes the canonical `pnpm check` plus its existing coverage gate and
+packed-consumer smoke; this configuration has not been pushed or run remotely. _Acceptance:_
+maintain and locally verify an offline evidence command with pinned inputs, RNG/repeatability
+settings, artifact validation and safe summaries; align CI with the canonical checks and artifact
+contract. Remote execution remains separate, and normative evidence requires RFC-0007's pinned
+Linux/glibc gate.
 
 **R12 (P2): re-verify recorded corpus blockers** with the external suite, and evaluate the holdout
 only at a release gate.

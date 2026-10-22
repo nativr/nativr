@@ -1916,3 +1916,17 @@ pins and observation inventories, keep raw output quarantined, reject assisted r
 distinguish complete blocked-package evidence from infrastructure failures. Complete its independent
 review and local execution before committing. Isolated testing-runner development continues against
 independently authored fixtures; original P6/P7 credit remains separate.
+
+### Canonical CI configuration and offline packed consumer
+
+Main CI configuration now invokes the canonical `pnpm check` and retains its additional coverage
+gate. Packed-consumer smoke reuses that verified build with `--skip-build`. This is a local
+configuration change; no workflow was pushed or executed remotely. Cross-platform and browser
+evidence requirements remain open.
+
+The
+[0.388 offline packed-consumer checkpoint](../compatibility/platform-evidence/pack-windows-0.388.0.json)
+records both tarball hashes and smoke-script inputs. With offline dependency resolution enabled,
+strict public declaration checking, the browser consumer build and the package-tools tarball CLI
+pass. No emitting build ran during the smoke. Performance measurements still need refreshing from
+0.380, and this packaging result does not establish publication or broader OS readiness.

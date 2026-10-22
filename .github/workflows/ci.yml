@@ -23,16 +23,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Digest-pinned CORE-MATH sources and wasi-sdk 29.0 for elementary.wasm (RFC-0007).
       - run: node scripts/build-elementary-wasm.mjs --fetch
-      - run: pnpm grammar:build
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm boundaries
-      - run: pnpm typecheck
+      # Keep this gate identical to local development, including inventories and evidence tooling.
+      - run: pnpm check
       - run: pnpm test:coverage
-      - run: pnpm build
-      - run: pnpm audit:browser
-      - run: pnpm size
-      - run: pnpm pack:smoke
+      - run: pnpm pack:smoke -- --skip-build
 
   cross-platform:
     strategy:
