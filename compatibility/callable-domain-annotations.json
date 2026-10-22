@@ -28,7 +28,99 @@
       "domains": ["object-systems"],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
-        "Omitted/default arguments and general dots continuation remain unfinished."
+        "Omitted/default arguments and general dots continuation remain unfinished.",
+        "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished.",
+        "Direct library-method continuation and general dots/default argument reconstruction remain unfinished."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-explicit-class-precedence"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-implicit-class-chains"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-as-posixct-implicit-class-chains"
+            }
+          ],
+          "remainingGaps": [
+            "Selected closure and opted-in library-generic continuations are covered; direct builtin methods and the complete continuation matrix remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-explicit-class-precedence"
+            }
+          ],
+          "remainingGaps": [
+            "Selected absent middle methods, initial skips, duplicate explicit classes and reached defaults are observed; class metadata mutation, malformed classes and recursive/resource boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-explicit-class-precedence"
+            }
+          ],
+          "remainingGaps": [
+            "Actual prior .Class suffixes retain nested previous history without invented skipped-method frames; complete call/environment metadata and user mutation remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-public-labels-and-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Changed x is forwarded using the original dispatch chain and an unused replacement value stays lazy; general dots, missing/default and side-effect behavior remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "The owned units replacement continuation returns the shared environment unchanged; arbitrary returned objects and direct-method identity behavior remain unfinished."
+          ]
+        }
       ]
     },
     {
@@ -49,7 +141,91 @@
       "binding": "base::UseMethod",
       "domains": ["object-systems"],
       "remainingGaps": [
-        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+        "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
+        "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished.",
+        "Closure UseMethod search classes remain distinct from public class()/inherits() labels and internal/group generic policy."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-implicit-dispatch-classes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-explicit-class-precedence"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "s3-usemethod-implicit-first-method"
+            }
+          ],
+          "remainingGaps": [
+            "Selected scalar, array and explicit-class method selection is covered; arbitrary objects and the complete generic-call matrix remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-explicit-class-precedence"
+            }
+          ],
+          "remainingGaps": [
+            "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-nextmethod-class-history"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-explicit-class-precedence"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-public-labels-and-forcing"
+            }
+          ],
+          "remainingGaps": [
+            "Selected .Class suffix/previous history, .Method/.Generic/.Group and unchanged public class labels are observed; arbitrary metadata mutation and full call/environment attribution remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-public-labels-and-forcing"
+            }
+          ],
+          "remainingGaps": [
+            "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-usemethod-returned-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "An owned implicit numeric method preserves the returned environment reference; supplied-selector original-argument identity and complete identity behavior remain unfinished."
+          ]
+        }
       ]
     },
     {
@@ -5081,14 +5257,114 @@
       "binding": "base::units",
       "domains": ["data-time", "object-systems", "calls-promises"],
       "remainingGaps": [
-        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete.",
+        "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished.",
+        "Existing difftime unit-value, S4, classed/malformed metadata, reflection and diagnostic limitations remain separate."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-implicit-class-chains"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "s3-units-implicit-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Selected implicit integer/double and dimensioned numeric dispatch is covered; arbitrary classes and default behavior remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-implicit-class-chains"
+            }
+          ],
+          "remainingGaps": [
+            "Selected integer-to-numeric continuation and matrix/array storage lookup are covered; missing/default argument and malformed-class boundaries remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-implicit-class-chains"
+            }
+          ],
+          "remainingGaps": [
+            "Selected method names and .Class previous histories are observed; arbitrary unit metadata and complete call/environment attribution remain unfinished."
+          ]
+        }
       ]
     },
     {
       "binding": "base::units<-",
       "domains": ["data-time", "object-systems", "calls-promises"],
       "remainingGaps": [
-        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
+        "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete.",
+        "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished.",
+        "Existing difftime value conversion, S4, malformed/classed unit metadata and reflection limitations remain separate."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "s3-units-implicit-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Selected integer-to-numeric replacement dispatch is covered; arbitrary classes and replacement routes remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Selected .Class/.Method metadata and nested previous history are observed; arbitrary metadata mutation and complete call/environment attribution remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "An unused supplied value remains lazy through integer-to-numeric NextMethod; broader missing/default/dots forcing and generic arithmetic remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-units-replacement-chain-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "The returned replacement value retains the shared environment identity; the complete object and aliasing matrix remains unfinished."
+          ]
+        }
       ]
     },
     {
@@ -5781,7 +6057,9 @@
         "Calendar/time-zone/locale, conversion, missing-value, class/subset and attribute/error behavior remains incompletely evidenced.",
         "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence.",
         "Named timezone/DST databases, host-local timezone equivalence, S4, full condition origins, unbounded calendar/native overflow and complete behavior remain unfinished.",
-        "Empty-zone arithmetic uses deterministic UTC; host-local timezone parity remains unclaimed. Direct Date behavior is deferred."
+        "Empty-zone arithmetic uses deterministic UTC; host-local timezone parity remains unclaimed. Direct Date behavior is deferred.",
+        "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished.",
+        "These additions cover generic dispatch only; existing UTC/GMT conversion, timezone/DST, character parsing, Date, calendar-range and numeric-origin limitations remain separate."
       ],
       "matrix": [
         {
@@ -5802,10 +6080,19 @@
             {
               "suite": "foundation",
               "caseId": "posixlt-utc-conversion-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-as-posixct-implicit-class-chains"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "s3-as-posixct-implicit-dispatch"
             }
           ],
           "remainingGaps": [
-            "Selected numeric, origin, NULL, owned dispatch, preserved character/POSIXct and UTC calendar paths are covered; implicit storage-class method selection and the full class/conversion matrix remain incomplete."
+            "Selected numeric, origin, NULL, owned dispatch, preserved character/POSIXct and UTC calendar paths are covered; explicit-selector/default corner cases and the full class/conversion matrix remain incomplete.",
+            "Owned double/numeric and integer matrix/array/storage methods are selected in native order; the full dispatch/conversion matrix remains unfinished."
           ]
         },
         {
@@ -5818,10 +6105,15 @@
             {
               "suite": "foundation",
               "caseId": "posixlt-utc-conversion-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-as-posixct-implicit-class-chains"
             }
           ],
           "remainingGaps": [
-            "Selected empty, typed missing, nonfinite, fraction and normalized calendar inputs are covered; broader character parsing, native overflow, timezone and malformed-control boundaries remain unfinished."
+            "Selected empty, typed missing, nonfinite, fraction and normalized calendar inputs are covered; broader character parsing, native overflow, timezone and malformed-control boundaries remain unfinished.",
+            "The selected double and integer-matrix continuation paths are covered; arbitrary rank/storage/class and missing/default boundaries remain unfinished."
           ]
         },
         {
@@ -5834,10 +6126,15 @@
             {
               "suite": "oracle-v2",
               "caseId": "posixlt-review-generic-preservation"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-as-posixct-implicit-class-chains"
             }
           ],
           "remainingGaps": [
-            "Selected numeric and character names, storage, POSIXct/POSIXt class, inherited POSIXct custom attributes and UTC/GMT timezone labels are observed; arbitrary metadata and all conversion branches remain incomplete."
+            "Selected numeric and character names, storage, POSIXct/POSIXt class, inherited POSIXct custom attributes and UTC/GMT timezone labels are observed; arbitrary metadata and all conversion branches remain incomplete.",
+            "Selected .Class/.Method chains retain original integer storage and dimensions; complete metadata mutation and call/environment attribution remain unfinished."
           ]
         },
         {
@@ -5850,10 +6147,15 @@
             {
               "suite": "foundation",
               "caseId": "posixlt-conversion-warning-order"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "s3-as-posixct-implicit-class-chains"
             }
           ],
           "remainingGaps": [
-            "Input-before-method events, lazy controls and component warnings are observed; general S3 continuation, coercion callbacks, reentrancy and condition origins remain unfinished."
+            "Input-before-method events, lazy controls and component warnings are observed; general S3 continuation, coercion callbacks, reentrancy and condition origins remain unfinished.",
+            "Owned methods can leave supplied timezone promises unforced; broader conversion/default/dots forcing remains unfinished."
           ]
         }
       ]

@@ -9,7 +9,7 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.385, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.386, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
 overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
@@ -20,7 +20,7 @@ previously unclassified owned registrations. The bounded formatC increment adds 
 classified total is 1,353, including all 823 registered bindings. Another 1,200 reference bindings
 remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
-Fifteen bindings have 90 reviewed, partial behavioral-dimension declarations. Each declaration
+Nineteen bindings have 107 reviewed, partial behavioral-dimension declarations. Each declaration
 references existing executable cases and retains explicit remaining gaps. No domain or callable is
 complete; all undeclared dimensions remain pending. Even a callable with a partial declaration in
 all seven dimensions still has an unfinished matrix.
@@ -104,6 +104,12 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+Five S3 callable matrices add 21 partial dimension links for implicit search chains, class history,
+selected forcing and returned-reference behavior. Four dimensions merge with existing as.POSIXct
+evidence; the other seventeen are new declarations. Explicit selector/default/missing corners,
+complete errors/visibility and S4/internal/group interactions remain unfinished. Existing evidence
+is preserved and no new callable registration or completed matrix is claimed.
 
 Seven date/time callable matrices add 42 partial dimensions for the shared UTC/GMT POSIXlt
 converter, lazy as.POSIXct routes and numeric predicates. Evidence includes actual epochs, storage,

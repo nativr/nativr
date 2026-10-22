@@ -1795,6 +1795,34 @@ annotations remain unchanged. No implementation bodies or examples were developm
 
 The inventory now has 1,353 assigned and 1,200 pending bindings. Runtime registrations, causal
 links, matrix dimensions, profile 0.385 and corpus tiers are unchanged. All domains and callable
-matrices remain incomplete. The active semantic step is the bounded implicit S3 class-chain fix.
-All 53 inventory validators and generated inventory/status checks pass; independent review confirms
-the exact documentation aliases and preservation of every previous annotation.
+matrices remain incomplete. The active semantic step is the bounded implicit S3 class-chain fix. All
+53 inventory validators and generated inventory/status checks pass; independent review confirms the
+exact documentation aliases and preservation of every previous annotation.
+
+### Bounded implicit S3 class-chain increment (profile 0.386)
+
+Closed the reproduced implicit-chain failures for ordinary UseMethod and modeled units, units<- and
+as.POSIXct generics. Integer/double numeric fallback, matrix/array storage chains, explicit-class
+precedence, .Class suffix/previous history and initial-versus-reached default metadata use a scoped
+policy. Original arguments and references are preserved. Internal/group generics and public
+class()/inherits() retain their separate behavior. Missing-method searches, environment traversal
+and metadata copies obey the runtime's step/allocation limits and recover after failures.
+
+The baseline had 37 failing bounded cases plus sixteen passing cases/guards. All 56 new tests now
+pass, including three resource/recovery cases; the combined related run passes 628. Native candidate
+validation passes 98 checks, including 28 strict causal controls. Seven foundation and eight exact
+recursive groups extend evidence. Five annotation matrices merge 21 partial links, resulting in 107
+partial dimensions across nineteen bindings. The 21 neighboring native observations remain separate,
+with no passing compatibility credit. All thirteen domains remain incomplete.
+
+Full pnpm check passes 3,000 tests with 94 opt-in skips, both type gates and all validators.
+Checked-in/live/recursive conformance passes 1,454 / 1,381 / 368, with 169 causal-linked bindings.
+The [24-package checkpoint](../compatibility/package-check-evidence/corpus-0.386.0.json) preserves
+all 178 inputs/outcomes/stages/repeatability flags from 0.385. Browser checks pass 9/9 with no
+evaluation network traffic; required examples take 12.5 / 15.1 / 56.3 seconds under the existing
+timeout. Worker gzip is 491.4/512 KiB. Public API/protocol and all boundaries remain unchanged.
+
+Next measurable increment: fix explicit UseMethod selectors so selecting a method does not replace
+or inject original call arguments. Verify original promises, names/order, laziness, reference
+identity and NextMethod continuation with independent native cases and exact causal evidence. Keep
+omitted-dispatch/default and other neighboring gaps separate until independently addressed.

@@ -4870,12 +4870,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
         ),
         [
           "S4 units-method dispatch",
-          "complete implicit S3 class fallback for double, integer/numeric and matrix/array storage classes",
+          "complete S3 argument, method-environment and direct-method continuation behavior",
         ],
       ),
       [{ name: "x" }],
     ),
     reflectiveFrame: true,
+    s3ClassPolicy: "use-method",
   },
   {
     ...withBuiltinFormals(
@@ -4885,12 +4886,13 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
         ),
         [
           "S4 units-method dispatch",
-          "complete implicit S3 class fallback for double, integer/numeric and matrix/array storage classes",
+          "complete S3 argument, method-environment and direct-method continuation behavior",
         ],
       ),
       [{ name: "x" }, { name: "value" }],
     ),
     reflectiveFrame: true,
+    s3ClassPolicy: "use-method",
   },
   {
     ...withBuiltinFormals(
@@ -56636,7 +56638,7 @@ function posixCtBuiltin(
         [
           "Named timezones, DST and native host-local timezone equivalence; empty timezone uses deterministic UTC arithmetic.",
           "POSIXlt calendar values beyond the documented bounded Gregorian normalization range.",
-          "Complete implicit S3 class fallback, S4 dispatch and condition-call attribution.",
+          "Complete S3 argument and direct-method continuation behavior, S4 dispatch and condition-call attribution.",
           "Full Date conversion, character formats, origin recycling and classed-origin arithmetic.",
         ],
       ),
@@ -56649,7 +56651,7 @@ function posixCtBuiltin(
     ),
     reflectiveFrame: true,
     ...(name === "as.POSIXct"
-      ? {}
+      ? { s3ClassPolicy: "use-method" as const }
       : { s3Method: { generic: "as.POSIXct", className: name.slice("as.POSIXct.".length) } }),
   };
 }
@@ -56718,26 +56720,10 @@ async function builtinAsPosix(invocation: BuiltinInvocation): Promise<RValue> {
     "as.POSIXct",
     input,
     invocation.arguments,
-    false,
+    true,
     -1,
   );
   if (result !== undefined) return result;
-  // The shared implicit-class chain currently omits integer -> numeric. Preserve the original
-  // promises and input object while selecting the owned numeric fallback explicitly.
-  if (objectClasses(input) === undefined && (input.type === "integer" || input.type === "double")) {
-    return posixLibraryCall(invocation, "as.POSIXct.numeric", invocation.arguments);
-  }
-  const fallback = await invocation.dispatchS3IfPresent(
-    "as.POSIXct",
-    input,
-    invocation.arguments,
-    true,
-    -1,
-    undefined,
-    undefined,
-    true,
-  );
-  if (fallback !== undefined) return fallback;
   throw new Error("Missing base as.POSIXct.default method.");
 }
 

@@ -506,6 +506,8 @@ export interface BuiltinDefinition {
   readonly controlSyntax?: "if" | "return" | "for" | "while" | "repeat" | "break" | "next" | "{";
   /** Execute an independently modeled library closure with observable formals and control scope. */
   readonly reflectiveFrame?: boolean;
+  /** Use ordinary UseMethod class search for this modeled closure generic's own name. */
+  readonly s3ClassPolicy?: "use-method";
   /** Unknown observable args() signature, distinct from an empty formal list. */
   readonly argumentSignature?: "unknown";
   /** Optional R-level formals for builtins that model an ordinary closure. */

@@ -107,6 +107,7 @@ import type {
   RBinding,
   RBrowseEvent,
   RClosure,
+  RCharacterVector,
   REnvironment,
   RDataViewEvent,
   RLanguage,
@@ -386,6 +387,7 @@ interface S3DispatchFrame {
   readonly group?: string;
   readonly methodName?: string;
   readonly previousClasses?: RValue;
+  readonly classPolicy?: "use-method";
   readonly genericEnvironment: REnvironment;
   readonly classes: readonly string[];
   readonly classIndex: number;
@@ -3013,6 +3015,7 @@ export class Evaluator {
               group,
               dispatchCall ?? call,
               defaultOnly,
+              callable.definition.name === generic ? callable.definition.s3ClassPolicy : undefined,
             );
             if (result === undefined) return undefined;
             resultVisibility = result.visible ? "visible" : "invisible";
@@ -3664,16 +3667,12 @@ export class Evaluator {
           ".GenericDefEnv",
           methodFrame.genericEnvironment === this.#baseEnvironment
             ? this.#baseNamespace
-            : this.#s3TopEnvironment(methodFrame.genericEnvironment),
+            : this.#s3TopEnvironment(
+                methodFrame.genericEnvironment,
+                methodFrame.classPolicy === "use-method" ? () => context.checkpoint() : undefined,
+              ),
         );
-        const classes = characterVector(methodFrame.classes.slice(methodFrame.classIndex));
-        setBinding(
-          frame,
-          ".Class",
-          methodFrame.previousClasses === undefined
-            ? classes
-            : withAttribute(classes, "previous", methodFrame.previousClasses),
-        );
+        setBinding(frame, ".Class", s3MethodClassValue(methodFrame, context));
       }
       const caller =
         callerEnvironment ?? this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment;
@@ -4024,14 +4023,7 @@ export class Evaluator {
       setBinding(environment, ".Generic", characterVector([methodFrame.generic]));
       setBinding(environment, ".Group", characterVector([methodFrame.group ?? ""]));
       setBinding(environment, ".Method", characterVector([methodFrame.methodName ?? ""]));
-      const classes = characterVector(methodFrame.classes.slice(methodFrame.classIndex));
-      setBinding(
-        environment,
-        ".Class",
-        methodFrame.previousClasses === undefined
-          ? classes
-          : withAttribute(classes, "previous", methodFrame.previousClasses),
-      );
+      setBinding(environment, ".Class", s3MethodClassValue(methodFrame, context));
       setBinding(environment, ".GenericCallEnv", caller);
       setBinding(
         environment,
@@ -4163,12 +4155,13 @@ export class Evaluator {
     return `${environment.id}:${generic}.${className}`;
   }
 
-  #s3TopEnvironment(environment: REnvironment): REnvironment {
+  #s3TopEnvironment(environment: REnvironment, checkWork?: () => void): REnvironment {
     for (
       let current: REnvironment | null = environment;
       current !== null;
       current = current.parent
     ) {
+      checkWork?.();
       if (current === this.#globalEnvironment || current === this.#baseEnvironment) return current;
       if (this.#namespaceNames.has(current)) return current;
       const nameAttribute = current.attributes.get("name");
@@ -4269,12 +4262,16 @@ export class Evaluator {
     return this.#invokeS3Method(
       generic,
       callFrame?.closure.environment ?? this.#baseEnvironment,
-      runtimeClassNames(dispatchObject),
+      useMethodClassNames(dispatchObject, context),
       0,
       arguments_,
       context,
       callFrame?.call,
       callFrame?.callerEnvironment,
+      false,
+      undefined,
+      undefined,
+      "use-method",
     );
   }
 
@@ -5203,6 +5200,7 @@ export class Evaluator {
     group?: string,
     call?: CallExpressionNode,
     defaultOnly = false,
+    classPolicy?: "use-method",
   ): Promise<EvaluationResult | undefined> {
     if (generic.length === 0) {
       throw new REvaluationError("NRE2213", "UseMethod() generic name must be non-empty.");
@@ -5225,7 +5223,11 @@ export class Evaluator {
     return this.#invokeS3MethodIfPresentResult(
       generic,
       this.#baseEnvironment,
-      defaultOnly ? [] : runtimeClassNames(object),
+      defaultOnly
+        ? []
+        : classPolicy === "use-method"
+          ? useMethodClassNames(object, context)
+          : runtimeClassNames(object),
       0,
       methodArguments,
       context,
@@ -5233,6 +5235,9 @@ export class Evaluator {
       call,
       callerEnvironment,
       group,
+      false,
+      undefined,
+      classPolicy,
     );
   }
 
@@ -5346,7 +5351,7 @@ export class Evaluator {
     }
     const repeatedGroupMember =
       Boolean(frame.group) && frame.methodName?.startsWith(`${frame.generic}.`);
-    const previous = characterVector(frame.classes.slice(frame.classIndex));
+    const previous = s3ClassSuffix(frame.classes, frame.classIndex, context, frame.classPolicy);
     let active: ClosureCallFrame | undefined;
     for (let index = this.#closureCallFrames.length - 1; index >= 0; index -= 1) {
       context.checkpoint();
@@ -5403,6 +5408,7 @@ export class Evaluator {
       frame.previousClasses === undefined
         ? previous
         : withAttribute(previous, "previous", frame.previousClasses),
+      frame.classPolicy,
     );
   }
 
@@ -5418,6 +5424,7 @@ export class Evaluator {
     allowPrimitiveFallback = false,
     group?: string,
     previousClasses?: RValue,
+    classPolicy?: "use-method",
   ): Promise<RValue> {
     const result = await this.#invokeS3MethodIfPresent(
       generic,
@@ -5432,6 +5439,7 @@ export class Evaluator {
       group,
       true,
       previousClasses,
+      classPolicy,
     );
     if (result !== undefined) return result;
     if (allowPrimitiveFallback) {
@@ -5474,6 +5482,7 @@ export class Evaluator {
     group?: string,
     preserveGroup = false,
     previousClasses?: RValue,
+    classPolicy?: "use-method",
   ): Promise<RValue | undefined> {
     return (
       await this.#invokeS3MethodIfPresentResult(
@@ -5489,6 +5498,7 @@ export class Evaluator {
         group,
         preserveGroup,
         previousClasses,
+        classPolicy,
       )
     )?.value;
   }
@@ -5506,34 +5516,48 @@ export class Evaluator {
     group?: string,
     preserveGroup = false,
     previousClasses?: RValue,
+    classPolicy?: "use-method",
   ): Promise<EvaluationResult | undefined> {
     const end = includeDefault ? classes.length : classes.length - 1;
+    const checkWork = classPolicy === "use-method" ? () => context.checkpoint() : undefined;
     for (let index = startIndex; index <= end; index += 1) {
+      checkWork?.();
       const className = classes[index];
       let methodName = className === undefined ? `${generic}.default` : `${generic}.${className}`;
       // Registration belongs to the defining frame; dispatch consults its top environment.
       let callable = await this.#findS3Method(
         methodName,
         this.#s3RegistrationKey(
-          this.#s3TopEnvironment(genericEnvironment),
+          this.#s3TopEnvironment(genericEnvironment, checkWork),
           generic,
           className ?? "default",
         ),
         callerEnvironment ?? this.#globalEnvironment,
         context,
+        checkWork,
       );
       let selectedGroup = preserveGroup ? group : group === undefined ? undefined : "";
       if (callable === undefined && group && className !== undefined) {
         methodName = `${group}.${className}`;
         callable = await this.#findS3Method(
           methodName,
-          this.#s3RegistrationKey(this.#s3TopEnvironment(genericEnvironment), group, className),
+          this.#s3RegistrationKey(
+            this.#s3TopEnvironment(genericEnvironment, checkWork),
+            group,
+            className,
+          ),
           callerEnvironment ?? this.#globalEnvironment,
           context,
+          checkWork,
         );
         selectedGroup = group;
       }
       if (callable === undefined) continue;
+      const selectedPrevious =
+        previousClasses ??
+        (classPolicy === "use-method" && index > startIndex && className !== undefined
+          ? s3ClassSuffix(classes, 0, context, classPolicy)
+          : undefined);
       const methodCall =
         call === undefined
           ? undefined
@@ -5545,7 +5569,8 @@ export class Evaluator {
         generic,
         methodName,
         ...(selectedGroup === undefined ? {} : { group: selectedGroup }),
-        ...(previousClasses === undefined ? {} : { previousClasses }),
+        ...(selectedPrevious === undefined ? {} : { previousClasses: selectedPrevious }),
+        ...(classPolicy === undefined ? {} : { classPolicy }),
         genericEnvironment,
         classes,
         classIndex: index,
@@ -5575,6 +5600,7 @@ export class Evaluator {
     registrationKey: string,
     callerEnvironment: REnvironment,
     context: EvaluationContext,
+    checkWork?: () => void,
   ): Promise<RClosure | RBuiltin | undefined> {
     const callableBinding = async (binding: RBinding | undefined) => {
       if (binding === undefined) return undefined;
@@ -5582,9 +5608,10 @@ export class Evaluator {
       return value.type === "closure" || value.type === "builtin" ? value : undefined;
     };
 
-    const topEnvironment = this.#s3TopEnvironment(callerEnvironment);
+    const topEnvironment = this.#s3TopEnvironment(callerEnvironment, checkWork);
     let current: REnvironment | null = callerEnvironment;
     while (current !== null) {
+      checkWork?.();
       const callable = await callableBinding(current.bindings.get(methodName));
       if (callable !== undefined) return callable;
       const atTopEnvironment = current === topEnvironment;
@@ -5596,6 +5623,7 @@ export class Evaluator {
     const registered = await callableBinding(this.#registeredS3Methods.get(registrationKey));
     if (registered !== undefined) return registered;
     while (current !== null) {
+      checkWork?.();
       const callable = await callableBinding(current.bindings.get(methodName));
       if (callable !== undefined) return callable;
       current = current.parent;
@@ -6289,6 +6317,47 @@ function unsupported(feature: string, span?: SourceSpan): RUnsupportedFeatureErr
     `The current NativR subset does not support ${feature}.`,
     span === undefined ? { details: { feature } } : { span, details: { feature } },
   );
+}
+
+function useMethodClassNames(value: RValue, context: EvaluationContext): readonly string[] {
+  if (!isVector(value) && value.type !== "pairlist") return runtimeClassNames(value);
+  const explicit = objectClasses(value);
+  if (explicit !== undefined) return explicit;
+  const storage =
+    value.type === "integer" || value.type === "double" ? [value.type, "numeric"] : [value.type];
+  const dimensionAttribute = value.attributes.get("dim");
+  if (dimensionAttribute?.type === "integer") context.checkpoint(dimensionAttribute.length);
+  const dimensions = vectorDimensions(value);
+  return dimensions === undefined
+    ? storage
+    : [...(dimensions.length === 2 ? ["matrix", "array"] : ["array"]), ...storage];
+}
+
+function s3ClassSuffix(
+  classes: readonly string[],
+  startIndex: number,
+  context: EvaluationContext,
+  classPolicy?: "use-method",
+): RCharacterVector {
+  if (classPolicy === "use-method") {
+    const length = Math.max(0, classes.length - startIndex);
+    context.checkpoint(length);
+    context.allocate(length);
+  }
+  return characterVector(classes.slice(startIndex));
+}
+
+function s3MethodClassValue(frame: S3DispatchFrame, context: EvaluationContext): RValue {
+  if (
+    frame.classPolicy === "use-method" &&
+    frame.classIndex === frame.classes.length &&
+    frame.previousClasses === undefined
+  )
+    return R_NULL;
+  const classes = s3ClassSuffix(frame.classes, frame.classIndex, context, frame.classPolicy);
+  return frame.previousClasses === undefined
+    ? classes
+    : withAttribute(classes, "previous", frame.previousClasses);
 }
 
 function runtimeClassNames(value: RValue): readonly string[] {

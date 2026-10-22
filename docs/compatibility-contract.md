@@ -38,6 +38,41 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Bounded implicit S3 class chains (profile 0.386)
+
+Ordinary closure `UseMethod` and the modeled `units`, `units<-` and `as.POSIXct` generics use the
+observed implicit search list. Integers search `integer`, then `numeric`; doubles search `double`,
+then `numeric`. Two-dimensional vectors prepend `matrix`, `array`; other dimensioned vectors prepend
+`array`. Supported explicit vector/list/pairlist classes replace that implicit list, preserving
+order and duplicate classes. Public `class()` and `inherits()` labels remain unchanged. The helper
+does not add attributes or coerce the dispatched object.
+
+The selected method sees the remaining `.Class` suffix. Skipped initial classes produce a `previous`
+attribute containing the full original list. `NextMethod` records the actual previous suffix,
+including its existing history; skipped intermediate methods add no invented frames. An initial
+default sees `.Class = NULL`; a default reached through continuation sees an empty character vector
+with previous history. Reassigning a method argument forwards the changed value without rebuilding
+the original dispatch list. `.Method`, `.Generic` and `.Group` retain their observed values.
+
+The three modeled generics opt into this policy for their own dispatch only. Their original promises
+and values reach selected methods, including lazy replacement values, unused timezone arguments and
+returned references. `as.POSIXct` now reaches its numeric method through shared dispatch; the
+temporary direct numeric fallback is removed. Internal/group generics and direct builtin-method
+continuation retain their separate policies.
+
+On this path, absent-method searches and environment traversal checkpoint, while visible class
+suffix/history construction checks work and allocation before copying. Step, aggregate allocation
+and call-depth failures preserve source attributes, unwind method frames and allow session recovery.
+Resource checks are owned browser-runtime acceptance evidence, not native allocation parity.
+
+Independent fixtures and exact recursive graphs cover selected scalar/array chains, explicit-class
+precedence, default/history metadata, forcing, changed-argument continuation and returned identity.
+Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, arbitrary language
+objects, complete visibility/condition origins, S4/group interactions and direct-method continuation
+remain unfinished. The [neighboring probes](../conformance/probes/implicit-s3-neighboring-gaps.R)
+record native expectations without granting compatibility credit or asserting that every neighboring
+guard currently fails. This increment does not establish complete S3 or object-system compatibility.
+
 ### Bounded POSIXlt conversion and numeric predicates (profile 0.385)
 
 `as.POSIXct` exposes lazy closure formals `(x, tz = "", ...)` and bounded numeric, default and

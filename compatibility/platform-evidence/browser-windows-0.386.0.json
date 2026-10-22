@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-browser-host-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.386.0",
+  "sourceCommit": "7f660f9b915272d7fc338b700418068975178ad6",
+  "sourceState": "Uncommitted candidate over sourceCommit; exact tested sources and runtime artifacts identified by the following digests",
+  "scope": "Windows cached-browser advisory evidence; not a complete browser/OS or release-performance matrix",
+  "environment": {
+    "os": "win32",
+    "osRelease": "10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "playwright": "1.62.0",
+    "browsers": [
+      { "name": "chromium", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "chromium-headless-shell", "revision": "1234", "browserVersion": "151.0.7922.34" },
+      { "name": "firefox", "revision": "1538", "browserVersion": "153.0" },
+      { "name": "webkit", "revision": "2336", "browserVersion": "26.5" }
+    ]
+  },
+  "provenance": {
+    "sources": [
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "60fe8347944292747fb03c5668a3183122392c2ee51d37c647670995c7459ea1"
+      },
+      {
+        "path": "playwright.config.ts",
+        "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "12b9e5cbc281c7fd3164bae84c13d26ec1acd088d62f28a88dada5ea9041cef0"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "runtimeJavaScript": [
+      {
+        "path": "packages/nativr/dist/assets/worker-entry-BGkwhYU5.js",
+        "sha256": "abd848e54bbbd9e8d75d2d7015843454e902b8e7e61d877dc9b476613ff5a534"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/conversion-hqUUaSZc.js",
+        "sha256": "275e6ed904955f257de90948f294bfa251cb1a34317973d1dfcaf4bece4f39ce"
+      },
+      {
+        "path": "packages/nativr/dist/chunks/runtime-host-gQ80DudL.js",
+        "sha256": "b8a30442d05c6d962191a56ce7e5aed010d7fbbac1c03c32b6a6cd858d857800"
+      },
+      {
+        "path": "packages/nativr/dist/index.js",
+        "sha256": "7d8fe4ee56c48ccc017935ca52e1061b5c9e8998f5915a56326ad28a0a571c0a"
+      }
+    ],
+    "runLogSha256": "12a8747bee315dbe6b4133c7e4691d457af806399d05049c3c978001b91f5dcf",
+    "reportSha256": "bc3f8d584d6f1606a9aaaaf43480b604e5ecade61a7d1f72bbe89da5b8a800e3",
+    "redaction": "Only owned test names, status, timing, tool revisions and source/artifact digests; no bodies, browser traces, console output or local user paths"
+  },
+  "execution": {
+    "command": "pnpm test:e2e --workers=1 --reporter=list,json",
+    "precondition": "Serial production build; existing cached browser revisions; NATIVR_E2E_SKIP_BUILD=1; no reused preview server",
+    "workers": 1,
+    "retries": 0,
+    "requiredExamplesTimeoutMs": 120000,
+    "otherTestsTimeoutMs": 60000,
+    "viewportPolicy": "Unchanged configured desktop viewports",
+    "timingPrecision": "Playwright JSON reporter milliseconds",
+    "tests": [
+      {
+        "browser": "chromium",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 12466
+      },
+      {
+        "browser": "chromium",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1173
+      },
+      {
+        "browser": "chromium",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 412
+      },
+      {
+        "browser": "firefox",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 15087
+      },
+      {
+        "browser": "firefox",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 1494
+      },
+      {
+        "browser": "firefox",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 740
+      },
+      {
+        "browser": "webkit",
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "status": "passed",
+        "durationMs": 56341
+      },
+      {
+        "browser": "webkit",
+        "name": "surfaces recycling warnings and reset clears assigned state",
+        "status": "passed",
+        "durationMs": 3369
+      },
+      {
+        "browser": "webkit",
+        "name": "loads the pinned elementary-function asset once per Worker session",
+        "status": "passed",
+        "durationMs": 615
+      }
+    ],
+    "resourceAssertions": [
+      "Oversized intermediate sprintf width is rejected in the Worker with NRL4007",
+      "Oversized intermediate sprintf fixed precision is rejected in the Worker with NRL4007",
+      "Same Worker session recovers with bounded short general formatting and no evaluation network traffic",
+      "UTC POSIXlt conversion preserves finite/Inf/NA classification through the Worker",
+      "POSIXlt numeric predicates and Gregorian wide-year fractional conversion work through the Worker",
+      "UseMethod preserves integer-to-numeric continuation and method class history through the Worker",
+      "Implicit S3 dispatch preserves public class labels and original integer storage"
+    ]
+  },
+  "remaining": [
+    "Historical WebKit timeout cause not established",
+    "Broader performance workloads and acceptance budgets; prior repeated measurements remain at profile 0.380",
+    "Declared additional OS/platform coverage",
+    "Separately authorized GNU R Linux normative gate",
+    "Reproducible remote CI and publication remain separate"
+  ]
+}

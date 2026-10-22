@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.385.0",
-  "capabilityManifestHash": "453df8587e84c4c0dd9735d9175f20518a641d35a13d226b7387adece1416385",
+  "semanticProfileVersion": "0.386.0",
+  "capabilityManifestHash": "b337da8ceb602c99b95e426fd3f5cb51d8ab68087e552edc64e69b324ac86a1e",
   "evidence": {
-    "checkedInConformanceCases": 1447,
-    "liveREligibleCases": 1374,
+    "checkedInConformanceCases": 1454,
+    "liveREligibleCases": 1381,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 360,
+    "recursiveOracleV2Cases": 368,
     "recursiveBehaviorallyProvenBindings": 169,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -91,7 +91,8 @@
         "cases": [
           "posixlt-generic-lazy-owned-dispatch",
           "posixlt-generic-numeric-origin-values",
-          "posixlt-review-generic-preservation"
+          "posixlt-review-generic-preservation",
+          "s3-as-posixct-implicit-class-chains"
         ]
       },
       {
@@ -462,7 +463,13 @@
           "names-dispatch-next-method",
           "next-method-default-reentry",
           "replication-family-next-method",
-          "replication-family-shared-s3"
+          "replication-family-shared-s3",
+          "s3-as-posixct-implicit-class-chains",
+          "s3-units-implicit-class-chains",
+          "s3-units-replacement-chain-reference-graph",
+          "s3-usemethod-explicit-class-precedence",
+          "s3-usemethod-nextmethod-class-history",
+          "s3-usemethod-public-labels-and-forcing"
         ]
       },
       {
@@ -745,7 +752,8 @@
         "cases": [
           "difftime-units-dispatch",
           "difftime-units-getter",
-          "difftime-units-missing-arguments"
+          "difftime-units-missing-arguments",
+          "s3-units-implicit-class-chains"
         ]
       },
       { "binding": "base::units.difftime", "cases": ["difftime-units-getter"] },
@@ -758,7 +766,8 @@
           "difftime-units-numerics",
           "difftime-units-retained-reference-graph",
           "difftime-units-same-unit",
-          "difftime-units-visibility"
+          "difftime-units-visibility",
+          "s3-units-replacement-chain-reference-graph"
         ]
       },
       {
@@ -767,7 +776,17 @@
       },
       { "binding": "base::unlist", "cases": ["unlist-shallow-values-types-and-names"] },
       { "binding": "base::unloadNamespace", "cases": ["unload-absent-namespace"] },
-      { "binding": "base::UseMethod", "cases": ["replication-family-shared-s3"] },
+      {
+        "binding": "base::UseMethod",
+        "cases": [
+          "replication-family-shared-s3",
+          "s3-usemethod-explicit-class-precedence",
+          "s3-usemethod-implicit-dispatch-classes",
+          "s3-usemethod-nextmethod-class-history",
+          "s3-usemethod-public-labels-and-forcing",
+          "s3-usemethod-returned-reference-graph"
+        ]
+      },
       {
         "binding": "base::vapply",
         "cases": [
@@ -829,7 +848,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "2660d8e2055b20840254722578f677862bcc045180c77abb86b870133a197cb4",
+    "sha256": "4aabbf881ae199d28808be4f990a31ae532be7af4e3b14d92b6814b58ab508f5",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -839,7 +858,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 169,
-    "bindingsWithDeclaredMatrixEvidence": 15,
+    "bindingsWithDeclaredMatrixEvidence": 19,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."
