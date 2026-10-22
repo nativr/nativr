@@ -1672,3 +1672,36 @@ Continue the native-backed formatC matrix and affected prettyunits repeatability
 POSIXlt conversion/dispatch and remaining semantic-domain work. The full five-criterion goal remains
 unfinished. Local commits remain authorized; downloads, Linux, Formula and remote actions retain
 their existing boundaries.
+
+### Bounded formatC increment (profile 0.383)
+
+Implemented reusable numeric/printable-character formatting with fifteen lazy formals, observed
+coercions, flags and widths, precision caps, nonfinite alignment, metadata retention and explicit
+resource limits. All 132 focused tests pass: 128 native-backed fixtures, an independent exact
+high-precision regression and three resource/deferred-behavior tests. Nine native gap probes retain
+optional controls and the Windows high-precision discrepancy; exact binary64 input bits and an
+independent rational expansion distinguish that discrepancy from a parser error. Linux verification
+remains deferred. The shared exact floating formatter is unchanged.
+
+The full check passes 2,666 tests with 94 opt-in skips, both TypeScript gates and all validators.
+Checked-in/live/recursive conformance passes 1,416 / 1,347 / 331 with 161 causal-linked bindings.
+The Worker is 488.0/512 KiB gzip; all bundle limits pass. The inventory assigns all 817 registered
+bindings and 1,163 of 2,553 total bindings, leaving 1,390 pending; seven bindings have 42 partial
+dimensions. All thirteen domains remain incomplete. Both profile identifiers and generated reports
+agree. Public API and Worker protocol are unchanged; browser/performance/pack evidence remains at
+0.380.
+
+The [affected-package checkpoint](../compatibility/package-check-evidence/corpus-0.383.0.json)
+reruns the pinned prettyunits archive with original entrypoints and native repeatability. All nine
+input hashes are unchanged. All eight examples execute and seven match, including pretty_p_value;
+time_ago still mismatches. prettyunits advances from P4 to P5, with its test stage now the first
+blocker. The other 23 non-holdout packages retain the complete 0.382 evidence. The subsequently
+extended saved-checkpoint integrity suite passes all 30 tests. No substitute runner, partition or
+pin changes receive tier credit.
+
+Next measurable increment: close the confirmed early width/precision allocation gap in sprintf using
+bounded arithmetic, aggregate output accounting and cancellation/recovery evidence. Preserve
+ordinary C99 behavior and distinguish unbounded recursive list/deparse work explicitly. Then close
+the reusable POSIXlt conversion/dispatch prerequisite for numeric predicates; seconds-only
+classification is insufficient. Continue all five completion criteria and the remaining domain,
+dataset, testing-runner and platform work. No new user input is needed for these local steps.

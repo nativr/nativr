@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.382.0",
-  "capabilityManifestHash": "6fc0780ae5b493f517f9b2138d3774e84187378c6ff257f9f5c129be1bee7632",
+  "semanticProfileVersion": "0.383.0",
+  "capabilityManifestHash": "ccd2f05d31bca715373442595418433f2332b5688a5d2523c5e93653ae738963",
   "evidence": {
-    "checkedInConformanceCases": 1405,
-    "liveREligibleCases": 1336,
+    "checkedInConformanceCases": 1416,
+    "liveREligibleCases": 1347,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 320,
-    "recursiveBehaviorallyProvenBindings": 160,
+    "recursiveOracleV2Cases": 331,
+    "recursiveBehaviorallyProvenBindings": 161,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -211,6 +211,20 @@
       {
         "binding": "base::format.default",
         "cases": ["default-boundary-zero-formatting", "generic-default-promises-format-controls"]
+      },
+      {
+        "binding": "base::formatC",
+        "cases": [
+          "formatc-attributes",
+          "formatc-characters-and-coercion",
+          "formatc-decimal-mark",
+          "formatc-forcing-and-laziness",
+          "formatc-reference-identity",
+          "formatc-rounding-and-precision",
+          "formatc-values-and-formats",
+          "formatc-visibility-and-dispatch",
+          "formatc-width-and-flags"
+        ]
       },
       { "binding": "base::getHook", "cases": ["hook-list-registration-and-clearing"] },
       {
@@ -736,23 +750,23 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 816,
-    "gnuRNameOverlaps": 789,
+    "registeredBindings": 817,
+    "gnuRNameOverlaps": 790,
     "referenceCoreCallableNames": 2522
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "0a5341279e98c701a21a49dbd07058bdb7df5d0c123c9419d54b6764ea4b759a",
+    "sha256": "fd334921d9599d672aece36d6788595afc09d06e864ac6dc94573e6da34109cd",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 816,
-    "qualifiedOverlaps": 788,
+    "registeredBindings": 817,
+    "qualifiedOverlaps": 789,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 1162,
-    "classificationPendingBindings": 1391,
-    "recursiveLinkedBindings": 160,
-    "bindingsWithDeclaredMatrixEvidence": 6,
+    "classifiedBindings": 1163,
+    "classificationPendingBindings": 1390,
+    "recursiveLinkedBindings": 161,
+    "bindingsWithDeclaredMatrixEvidence": 7,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."
@@ -767,7 +781,7 @@
       "P2": 24,
       "P3": 24,
       "P4": 23,
-      "P5": 11,
+      "P5": 12,
       "P6": 3,
       "P7": 2
     }

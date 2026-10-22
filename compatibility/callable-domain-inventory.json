@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.382.0",
+  "semanticProfileVersion": "0.383.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "ad2f76dbe6317c07863d133516e981d902f72fc81e3a75cd09e246840e9d365f",
+    "capabilities": "12852d6565d6d3ea910ec6bfeaf6bea5ffd53a3d584a4704e957ad561a8a29d1",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "d0527b1f251c3a66f99017b62dffa697d275bef9c3d790b31b426aa7a5e92254",
-    "oracleV2": "99a790dc73d0dbbc2bd87f0d672a783d61fc0b71d8fa9d77f07628e106324365",
+    "foundation": "439781a996cf7e147def7811753b6adf0beac2fa27f346056cef2f4676360f36",
+    "oracleV2": "377e55f00947cbb3088d570061ca121b14838cb8ca018ea0ade5d8e3786ef0db",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "e5ec2fb286aaa7cbc2c714983b795f817f31d666c5605bc3597395837e5a02d2"
+    "annotations": "677edd0afa204a914a0abf2ee5fea95f88a0aeabe10c91eceb019fed283af944"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -47,13 +47,13 @@
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 816,
-    "qualifiedOverlaps": 788,
+    "registeredBindings": 817,
+    "qualifiedOverlaps": 789,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 1162,
-    "classificationPendingBindings": 1391,
-    "recursiveLinkedBindings": 160,
-    "bindingsWithDeclaredMatrixEvidence": 6,
+    "classifiedBindings": 1163,
+    "classificationPendingBindings": 1390,
+    "recursiveLinkedBindings": 161,
+    "bindingsWithDeclaredMatrixEvidence": 7,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -153,43 +153,43 @@
       "label": "Calls and promises",
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
-      "assignedBindings": 155,
-      "recursiveLinkedBindings": 46,
+      "assignedBindings": 156,
+      "recursiveLinkedBindings": 47,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "errors",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "attributes",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "visibility",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 153,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "identity",
           "pendingBindings": 154,
-          "partialDeclaredBindings": 1
+          "partialDeclaredBindings": 2
         }
       ]
     },
@@ -243,43 +243,43 @@
       "label": "Vector semantics",
       "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type.",
       "completion": "incomplete",
-      "assignedBindings": 311,
-      "recursiveLinkedBindings": 60,
+      "assignedBindings": 312,
+      "recursiveLinkedBindings": 61,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 305,
-          "partialDeclaredBindings": 6
+          "partialDeclaredBindings": 7
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 305,
-          "partialDeclaredBindings": 6
+          "partialDeclaredBindings": 7
         },
         {
           "dimension": "errors",
           "pendingBindings": 305,
-          "partialDeclaredBindings": 6
+          "partialDeclaredBindings": 7
         },
         {
           "dimension": "attributes",
           "pendingBindings": 305,
-          "partialDeclaredBindings": 6
+          "partialDeclaredBindings": 7
         },
         {
           "dimension": "visibility",
           "pendingBindings": 307,
-          "partialDeclaredBindings": 4
+          "partialDeclaredBindings": 5
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 306,
-          "partialDeclaredBindings": 5
+          "partialDeclaredBindings": 6
         },
         {
           "dimension": "identity",
           "pendingBindings": 309,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         }
       ]
     },
@@ -423,43 +423,43 @@
       "label": "Numeric runtime",
       "requirement": "Complex arithmetic, special functions, linear algebra, FFT, distributions, optimizers, integration, and deterministic tolerances.",
       "completion": "incomplete",
-      "assignedBindings": 224,
-      "recursiveLinkedBindings": 10,
+      "assignedBindings": 225,
+      "recursiveLinkedBindings": 11,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "errors",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "attributes",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "visibility",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "identity",
           "pendingBindings": 224,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         }
       ]
     },
@@ -468,43 +468,43 @@
       "label": "Data and time",
       "requirement": "Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats.",
       "completion": "incomplete",
-      "assignedBindings": 188,
-      "recursiveLinkedBindings": 34,
+      "assignedBindings": 189,
+      "recursiveLinkedBindings": 35,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 186,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 186,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "errors",
           "pendingBindings": 186,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "attributes",
           "pendingBindings": 186,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "visibility",
           "pendingBindings": 188,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 187,
-          "partialDeclaredBindings": 1
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "identity",
           "pendingBindings": 187,
-          "partialDeclaredBindings": 1
+          "partialDeclaredBindings": 2
         }
       ]
     },
@@ -10507,11 +10507,148 @@
           "drop0trailing"
         ]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "data-time", "numeric-runtime", "vector-semantics"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "formatc-attributes",
+        "formatc-characters-and-coercion",
+        "formatc-decimal-mark",
+        "formatc-forcing-and-laziness",
+        "formatc-reference-identity",
+        "formatc-rounding-and-precision",
+        "formatc-values-and-formats",
+        "formatc-visibility-and-dispatch",
+        "formatc-width-and-flags"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-reference-identity"
+            }
+          ],
+          "remainingGaps": [
+            "Numeric versus character metadata retention, missing names and a shared reference attribute are observed; arbitrary malformed attributes, additional class combinations and all optional-formatting metadata transitions remain unaudited."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-rounding-and-precision"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-width-and-flags"
+            }
+          ],
+          "remainingGaps": [
+            "The observed precision caps and bounded widths are covered; exhaustive Unicode width, extreme output-size and all malformed-control boundaries remain incomplete.",
+            "Windows GNU R high-precision formatting of the exact binary64 value 1e-6 differs from exact rational rounding; the native discrepancy is retained separately and Linux verification remains deferred."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "formatc-matching-and-diagnostics"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-forcing-and-laziness"
+            }
+          ],
+          "remainingGaps": [
+            "Selected missing, duplicate, partial, unused, invalid mode/format/flag and control-length conditions are observed; complete condition-call origins and arbitrary classed controls remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-reference-identity"
+            }
+          ],
+          "remainingGaps": [
+            "A shared environment attribute survives numeric formatting and aliases its source; nested reference attributes, unusual classed controls and a general no-mutation guarantee remain unaudited."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "formatc-metadata"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-characters-and-coercion"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-values-and-formats"
+            }
+          ],
+          "remainingGaps": [
+            "The bounded real/integer/character f/e/E/g/G/d/s surface is covered; fg, grouping and optional zero/trailing-zero transformations remain unfinished.",
+            "The complete control-type and locale-dependent formatting matrix has not been established."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-decimal-mark"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-forcing-and-laziness"
+            }
+          ],
+          "remainingGaps": [
+            "Observed numeric, character and empty-input forcing order, unused controls, coercion warnings and OutDec lookup are covered; classed-control side effects, reentrancy, optional transforms and complete warning-origin behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-visibility-and-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Direct ordinary results are visible; exceptional paths and optional formatting branches do not yet have a complete visibility matrix."
+          ]
+        }
+      ],
+      "remainingGaps": [
+        "Bounded d/f/e/E/g/G/s formatting, binary64 rounding, lazy controls and metadata do not establish the complete formatting matrix. Fixed significant-digit fg, digit grouping, zero replacement, trailing-zero postprocessing, locale/Unicode display widths and malformed/classed controls remain unfinished. High-precision Windows oracle differences remain deferred pending normative Linux verification.",
+        "Owned function body reflection, complete condition origins and the full ordinary/boundary/error/attribute/visibility/side-effect/identity matrix remain incomplete."
+      ]
     },
     {
       "binding": "base::formatDL",

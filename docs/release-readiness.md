@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-22 at verified semantic profile **0.382.0**. Canonical counts are generated in
+Last assessed 2026-10-22 at verified semantic profile **0.383.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -13,12 +13,12 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                       | Status              |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Production check                   | Profile 0.382 after observer repair: 2,534 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass        | Passed              |
-| Conformance                        | 1,405 checked-in, 1,336 live GNU R 4.6.1, 320 recursive cases; 160 bindings linked with causal controls                                               | Passed              |
+| Production check                   | Profile 0.383: 2,666 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                              | Passed              |
+| Conformance                        | 1,416 checked-in, 1,347 live GNU R 4.6.1, 331 recursive cases; 161 bindings linked with causal controls                                               | Passed              |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                          | Passed              |
 | Browser e2e                        | Profile 0.380 on Windows: 9/9 pass across Chromium, Firefox and WebKit; required examples take 10.4 / 11.7 / 41.5 s within the unchanged 120 s budget | Passed on this host |
 | Packed consumer                    | Profile 0.380: offline strict declaration check, browser consumer build and package-tools CLI pass                                                    | Passed              |
-| Fixed bundle limits                | Profile 0.382: client 17.6/150 KiB gzip; Worker 486.2/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                   | Passed              |
+| Fixed bundle limits                | Profile 0.383: client 17.6/150 KiB gzip; Worker 488.0/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                   | Passed              |
 | CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                            | Open                |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
@@ -29,9 +29,9 @@ packaging remain open. The approved roadmap does not authorize push or publicati
 
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,162 assigned, 1,391 pending; all 816 registered bindings assigned; 35 partial dimensions on six bindings; matrices need closure                                                       | Not met                 |
-| Callable evidence/exclusions                     | 789/2,522 distinct names overlap; 160 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
-| Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 8 P5, 12 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
+| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,163 assigned, 1,390 pending; all 817 registered bindings assigned; 42 partial dimensions on seven bindings; matrices need closure                                                     | Not met                 |
+| Callable evidence/exclusions                     | 790/2,522 distinct names overlap; 161 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
+| Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 9 P5, 11 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
 | Agreement among ledger, capabilities and reports | Generated checks and this checkpoint agree. Future changes must regenerate capabilities, name coverage, callable inventory and status in order                                                                                                     | Met for this checkpoint |
 
@@ -70,18 +70,25 @@ All 178 script input hashes, execution/comparison outcomes and repeatability fla
 previous evidence (prettyunits at 0.381, the other 23 packages at 0.380). Tiers remain unchanged.
 prettyunits retains the units improvements: seven of eight examples execute and six match; pretty_dt
 and vague_dt match, while time_ago completes with a mismatch. pretty_p_value still fails and is the
-first P5 blocker, now reaching the missing formatC binding. The package stays P4. The withr timezone
-case retains its native repeatability failure and mismatch. Original test entrypoints remain
-authoritative; no substitute runner receives tier credit.
+first P5 blocker at that checkpoint, reaching the then-missing formatC binding. The package stays
+P4. The withr timezone case retains its native repeatability failure and mismatch. Original test
+entrypoints remain authoritative; no substitute runner receives tier credit.
 
-| Package group                                                                                                      | Highest demonstrated tier | First remaining work                                                                            |
-| ------------------------------------------------------------------------------------------------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------- |
-| pkgconfig 2.0.3; abind 1.4-8                                                                                       | P7                        | All specified stages pass or are inapplicable on this host; full platform gates remain separate |
-| numDeriv 2016.8-1.1                                                                                                | P6                        | Output comparison: 5 matches, 6 differences; deferred numerical/platform verification           |
-| generics; R6; labeling; praise; rprojroot; rstudioapi; rematch; ini                                                | P5                        | Tests unavailable, failed or not demonstrated; see each pinned entry                            |
-| withr; viridisLite; RColorBrewer; assertthat; crayon; prettyunits; evaluate; inline; whisker; zeallot; cpp11; otel | P4                        | Applicable examples or evidence collection remains blocked                                      |
-| BH 1.90.0-1                                                                                                        | P3                        | Representative workload/native build evidence unavailable; no oracle script observations        |
-| Formula 1.2-6                                                                                                      | P0                        | Holdout gate has not been authorized                                                            |
+The subsequent
+[0.383 affected-package checkpoint](../compatibility/package-check-evidence/corpus-0.383.0.json)
+advances prettyunits to P5. Its unchanged eight examples now execute, with seven native matches and
+the existing time_ago mismatch; pretty_p_value matches after the formatC increment. All nine input
+hashes are unchanged and observations repeat. Its original test stage is the first P6 blocker. The
+other 23 non-holdout entries retain their complete 0.382 evidence.
+
+| Package group                                                                                         | Highest demonstrated tier | First remaining work                                                                            |
+| ----------------------------------------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------- |
+| pkgconfig 2.0.3; abind 1.4-8                                                                          | P7                        | All specified stages pass or are inapplicable on this host; full platform gates remain separate |
+| numDeriv 2016.8-1.1                                                                                   | P6                        | Output comparison: 5 matches, 6 differences; deferred numerical/platform verification           |
+| generics; R6; labeling; praise; rprojroot; rstudioapi; rematch; ini; prettyunits                      | P5                        | Tests unavailable, failed or not demonstrated; see each pinned entry                            |
+| withr; viridisLite; RColorBrewer; assertthat; crayon; evaluate; inline; whisker; zeallot; cpp11; otel | P4                        | Applicable examples or evidence collection remains blocked                                      |
+| BH 1.90.0-1                                                                                           | P3                        | Representative workload/native build evidence unavailable; no oracle script observations        |
+| Formula 1.2-6                                                                                         | P0                        | Holdout gate has not been authorized                                                            |
 
 The inline checker abort from 0.356 was repaired at 0.357. Its current report is complete;
 applicable examples remain blocked, so it retains P4. A dispatch result of completed does not prove
@@ -90,6 +97,24 @@ credit merely because a guarded test entrypoint completes while testthat is unav
 tests are unverified. No substitute testing runner was used.
 
 ## Verification details and remaining defects
+
+### Profile 0.383 verification (2026-10-22)
+
+The bounded formatC implementation passes 132 focused tests: 128 native-backed fixtures, one
+independent exact-rendering regression and three resource/deferred-behavior tests. Eleven new
+foundation and eleven recursive groups cover conversions, precision/width/flags, nonfinite values,
+lazy controls, metadata and reference identity. Seven new behavioral dimensions remain partial. Nine
+native gap probes retain optional formatting and the independently confirmed Windows high-precision
+discrepancy; normative Linux verification remains deferred.
+
+The full check passes 2,666 unit tests with 94 opt-in skips, both TypeScript gates, 53 inventory
+validators, 37 browser-report validators and six observer-decoder tests. Checked-in/live/recursive
+conformance passes 1,416 / 1,347 / 331 with 161 causal-linked bindings. Bundle sizes remain inside
+their unchanged budgets. prettyunits reaches P5 with eight executable examples, seven native matches
+and repeatability; its test stage and time_ago output difference remain unfinished. The subsequently
+extended saved-checkpoint integrity suite passes all 30 tests. Public API and Worker protocol are
+unchanged. Browser, performance and packed-consumer evidence remains at 0.380. All thirteen domains
+and the full five-criterion goal remain incomplete.
 
 ### Windows browser checkpoint (2026-10-22, profile 0.380)
 
@@ -1083,9 +1108,12 @@ are not validated; `detach()` of a core package loads it; `file.access` tests th
 bits; invalid-UTF-8 byte-escaped strings compare equal. A claimed `[[Inf]]` defect was checked and
 is not a defect (GNU R also returns `NULL`).
 
-**R9 (P1): reusable formatting gaps.** `dnorm`, `formatC`, `sprintf` `%a`/`*`/positional arguments,
-GNU R's error for unknown directives, the `str()` label for unnamed list elements (`$ :`), and
-15th-digit ties in character coercion. _Acceptance:_ foundation cases from GNU R observations.
+**R9 (P1): reusable formatting gaps.** `dnorm`; formatC's remaining optional controls,
+locale/display widths and high-precision oracle discrepancies; `sprintf` `%a`/`*`/positional
+arguments, early padding/precision resource limits and GNU R's error for unknown directives; the
+`str()` label for unnamed list elements (`$ :`); and 15th-digit ties in character coercion.
+_Acceptance:_ independent foundation/recursive cases, resource recovery and separately authorized
+normative numerical gates.
 
 **R10 (P2): condition call attribution.** Coercion warnings report the builtin call where GNU R
 reports the enclosing closure call. _Acceptance:_ cases for direct, nested, and apply-driven

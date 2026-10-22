@@ -9476,6 +9476,126 @@
         "Delimited-text quoting/encoding/missingness, row/column coercion, connection/resource and error behavior remain incompletely evidenced.",
         "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
       ]
+    },
+    {
+      "binding": "base::formatC",
+      "domains": ["data-time", "numeric-runtime", "vector-semantics", "calls-promises"],
+      "remainingGaps": [
+        "Bounded d/f/e/E/g/G/s formatting, binary64 rounding, lazy controls and metadata do not establish the complete formatting matrix. Fixed significant-digit fg, digit grouping, zero replacement, trailing-zero postprocessing, locale/Unicode display widths and malformed/classed controls remain unfinished. High-precision Windows oracle differences remain deferred pending normative Linux verification.",
+        "Owned function body reflection, complete condition origins and the full ordinary/boundary/error/attribute/visibility/side-effect/identity matrix remain incomplete."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-values-and-formats"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-characters-and-coercion"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "formatc-metadata"
+            }
+          ],
+          "remainingGaps": [
+            "The bounded real/integer/character f/e/E/g/G/d/s surface is covered; fg, grouping and optional zero/trailing-zero transformations remain unfinished.",
+            "The complete control-type and locale-dependent formatting matrix has not been established."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-rounding-and-precision"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-width-and-flags"
+            }
+          ],
+          "remainingGaps": [
+            "The observed precision caps and bounded widths are covered; exhaustive Unicode width, extreme output-size and all malformed-control boundaries remain incomplete.",
+            "Windows GNU R high-precision formatting of the exact binary64 value 1e-6 differs from exact rational rounding; the native discrepancy is retained separately and Linux verification remains deferred."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "formatc-matching-and-diagnostics"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-forcing-and-laziness"
+            }
+          ],
+          "remainingGaps": [
+            "Selected missing, duplicate, partial, unused, invalid mode/format/flag and control-length conditions are observed; complete condition-call origins and arbitrary classed controls remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-attributes"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-reference-identity"
+            }
+          ],
+          "remainingGaps": [
+            "Numeric versus character metadata retention, missing names and a shared reference attribute are observed; arbitrary malformed attributes, additional class combinations and all optional-formatting metadata transitions remain unaudited."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-visibility-and-dispatch"
+            }
+          ],
+          "remainingGaps": [
+            "Direct ordinary results are visible; exceptional paths and optional formatting branches do not yet have a complete visibility matrix."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-forcing-and-laziness"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-decimal-mark"
+            }
+          ],
+          "remainingGaps": [
+            "Observed numeric, character and empty-input forcing order, unused controls, coercion warnings and OutDec lookup are covered; classed-control side effects, reentrancy, optional transforms and complete warning-origin behavior remain incomplete."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "formatc-reference-identity"
+            }
+          ],
+          "remainingGaps": [
+            "A shared environment attribute survives numeric formatting and aliases its source; nested reference attributes, unusual classed controls and a general no-mutation guarantee remain unaudited."
+          ]
+        }
+      ]
     }
   ]
 }

@@ -2,8 +2,8 @@
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
   "targetRVersion": "4.6.1",
-  "semanticProfileVersion": "0.382.0",
-  "languageSubsetVersion": "0.382.0",
+  "semanticProfileVersion": "0.383.0",
+  "languageSubsetVersion": "0.383.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -662,6 +662,7 @@
         { "name": "toupper", "compatibility": "behavioral" },
         { "name": "strrep", "compatibility": "behavioral" },
         { "name": "sprintf", "compatibility": "behavioral" },
+        { "name": "formatC", "compatibility": "behavioral" },
         { "name": "format", "compatibility": "behavioral" },
         { "name": "format.default", "compatibility": "behavioral" },
         { "name": "print", "compatibility": "behavioral" },

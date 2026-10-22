@@ -9,18 +9,18 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.382, the inventory contains 2,553 bindings: 2,525 reference exports and 28
-registrations absent from that export snapshot. There are 816 registrations and 788 exact qualified
-overlaps. The existing 789 distinct-name overlaps measure a different relationship: registering a
+At profile 0.383, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+registrations absent from that export snapshot. There are 817 registrations and 789 exact qualified
+overlaps. The existing 790 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
 
-All 160 bindings with existing causal links have explicit domain assignments. Reviewed purpose
+All 161 bindings with existing causal links have explicit domain assignments. Reviewed purpose
 assignments add 430 bindings from graphics, graphics devices and object-system methods, and 572
-previously unclassified owned registrations. The classified total is 1,162, including all 816
-registered bindings. Another 1,391 reference bindings remain classification-pending. Assignments may
-span domains, so per-domain counts cannot be summed.
+previously unclassified owned registrations. The bounded formatC increment adds one assignment. The
+classified total is 1,163, including all 817 registered bindings. Another 1,390 reference bindings
+remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
-Six bindings have 35 reviewed, partial behavioral-dimension declarations. Each declaration
+Seven bindings have 42 reviewed, partial behavioral-dimension declarations. Each declaration
 references existing executable cases and retains explicit remaining gaps. No domain or callable is
 complete; all undeclared dimensions remain pending. Even a callable with a partial declaration in
 all seven dimensions still has an unfinished matrix.
@@ -77,6 +77,13 @@ sequences.ts. Each assignment retains specific remaining gaps and an unfinished 
 This review adds no executable case, causal link, matrix declaration or completion claim.
 
 ## Bounded behavioral review
+
+The formatC declaration links all seven dimensions to its owned foundation and recursive cases:
+ordinary conversions, precision/width boundaries, diagnostics, numeric/character attributes,
+visibility, forcing effects and reference identity. Every dimension remains partial. Optional
+formatting controls, locale/display widths, malformed/classed inputs and high-precision Windows
+oracle differences retain explicit gaps; the complete matrix and normative Linux verification remain
+unfinished.
 
 The first matrix declarations review the existing replication and names fixtures from profiles 0.378
 and 0.379. Recursive references are already causally linked to the credited binding. A shared case's

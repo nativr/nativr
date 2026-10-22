@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-cached-corpus-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.383.0",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "affected-development-and-regression",
+  "runner": "original-package-entrypoints",
+  "summarizerPolicy": "allowlisted-metadata-sha256-v2",
+  "packages": [
+    {
+      "package": "prettyunits",
+      "version": "1.2.0",
+      "partition": "regression",
+      "sourceSha256": "f059f27e2a5c82e351fe05b87ad712f7afc273c651450453f59d99af5deeacea",
+      "artifactSha256": "69d93f2b9a1190f907f14d7fb03f8f8c1ab424570544d9e27a8d52aa4ecd9a18",
+      "previousTier": "P4",
+      "tier": "P5",
+      "firstBlocker": {
+        "tier": "P6",
+        "code": "test-execution-failed",
+        "path": "tests/testthat.R",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.383.0/prettyunits.json",
+      "summarySha256": "73f2680be4f5ada7e0221d83b6d7b32bab4944fe67b39c935bbac0db475a3729"
+    }
+  ]
+}

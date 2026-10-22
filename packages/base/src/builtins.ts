@@ -3288,6 +3288,26 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("strrep", ["x", "times"], "behavioral", builtinStrrep),
   defineBuiltin("sprintf", ["fmt", "..."], "behavioral", builtinSprintf),
+  {
+    ...withUnsupportedBehavior(
+      withBuiltinFormals(
+        defineBuiltin(
+          "formatC",
+          formatCFormals().map(({ name }) => name),
+          "behavioral",
+          builtinFormatC,
+        ),
+        formatCFormals(),
+      ),
+      [
+        "fixed significant-digit format='fg', digit grouping, custom zero.print/replace.zero and drop0trailing postprocessing",
+        "locale-dependent grouping/alternative digits, control-character/non-ASCII display widths and multi-character/non-ASCII decimal marks",
+        "exotic or class-dispatched control arguments and complete malformed-control/coercion diagnostics",
+        "complete high-precision native formatting parity; a Windows oracle decimal-rendering discrepancy remains deferred pending Linux verification",
+      ],
+    ),
+    reflectiveFrame: true,
+  },
   withBuiltinFormals(defineBuiltin("format", ["x", "..."], "behavioral", builtinFormat), [
     { name: "x" },
     { name: "..." },
@@ -30188,6 +30208,358 @@ async function builtinSprintf(invocation: BuiltinInvocation): Promise<RValue> {
     );
   });
   return characterVector(output, compactMask(missing));
+}
+
+function formatCFormals(): readonly { readonly name: string; readonly defaultValue?: AstNode }[] {
+  const string = (value: string): AstNode => ({
+    kind: "StringLiteral",
+    value,
+    span: SYNTHETIC_SPAN,
+  });
+  return [
+    { name: "x" },
+    ...["digits", "width", "format"].map((name) => ({ name, defaultValue: nullAst() })),
+    { name: "flag", defaultValue: string("") },
+    { name: "mode", defaultValue: nullAst() },
+    { name: "big.mark", defaultValue: string("") },
+    {
+      name: "big.interval",
+      defaultValue: { kind: "IntegerLiteral", value: 3, span: SYNTHETIC_SPAN },
+    },
+    { name: "small.mark", defaultValue: string("") },
+    {
+      name: "small.interval",
+      defaultValue: { kind: "IntegerLiteral", value: 5, span: SYNTHETIC_SPAN },
+    },
+    { name: "decimal.mark", defaultValue: getOptionDefaultAst("OutDec") },
+    { name: "preserve.width", defaultValue: string("individual") },
+    { name: "zero.print", defaultValue: nullAst() },
+    { name: "replace.zero", defaultValue: cauchyDefaultLogical(true) },
+    { name: "drop0trailing", defaultValue: cauchyDefaultLogical(false) },
+  ];
+}
+
+type FormatCConversion = "d" | "f" | "e" | "E" | "g" | "G";
+
+function formatCError(message: string): never {
+  throw new REvaluationError("NRE2260", message);
+}
+
+function formatCUnsupported(message: string): never {
+  throw new RUnsupportedFeatureError("NRU6256", `formatC(): ${message}`);
+}
+
+/** Every potentially large padding/precision request is checked before allocating its string. */
+function checkFormatCBytes(invocation: BuiltinInvocation, outputBytes: number): void {
+  if (
+    !Number.isSafeInteger(outputBytes) ||
+    outputBytes > invocation.context.limits.maxOutputBytes
+  ) {
+    throw new RResourceLimitError("NRL4007", "formatC() output byte limit exceeded.", {
+      details: { maxOutputBytes: invocation.context.limits.maxOutputBytes, outputBytes },
+    });
+  }
+}
+
+function formatCScalarLength(value: RValue): void {
+  if (valueLength(value) === 0) formatCError("argument is of length zero");
+  if (valueLength(value) > 1) formatCError("the condition has length > 1");
+  if (!isAtomic(value)) formatCUnsupported("non-atomic control arguments are not implemented.");
+  if (isMissing(value, 0) || (value.type === "double" && Number.isNaN(value.values[0]))) {
+    formatCError("missing value where TRUE/FALSE needed");
+  }
+}
+
+function formatCWidth(value: RValue): number | undefined {
+  if (value.type === "null") return undefined;
+  formatCScalarLength(value);
+  if (!isAtomic(value) || value.type === "complex" || value.type === "raw") {
+    return formatCUnsupported("this width control type is not implemented.");
+  }
+  const number = value.type === "character" ? Number(value.values[0]) : (value.values[0] ?? 0);
+  if (Number.isNaN(number))
+    return formatCUnsupported("non-numeric width strings are not implemented.");
+  return Math.trunc(number);
+}
+
+function formatCPrecision(value: RValue): number | undefined {
+  if (value.type === "null") return undefined;
+  formatCScalarLength(value);
+  if (value.type === "character") return formatCError("non-numeric argument to binary operator");
+  if (value.type !== "logical" && value.type !== "integer" && value.type !== "double") {
+    return formatCUnsupported("this digits control type is not implemented.");
+  }
+  const number = value.values[0] ?? 0;
+  return number < 0 ? 6 : Math.trunc(number);
+}
+
+function formatCControlString(value: RValue, name: "format" | "mode" | "decimal.mark"): string {
+  const length = valueLength(value);
+  if (length > 1 && name !== "mode") {
+    formatCError(`'length = ${length}' in coercion to 'logical(1)'`);
+  }
+  if (length === 0 && name !== "mode") formatCError("missing value where TRUE/FALSE needed");
+  formatCScalarLength(value);
+  if (value.type !== "character") {
+    if (name === "mode")
+      formatCError('\'mode\' must be "double" ("real"), "integer" or "character"');
+    return formatCUnsupported(`non-character ${name} controls are not implemented.`);
+  }
+  return value.values[0] ?? "";
+}
+
+function formatCAttributes(
+  input: AtomicVector,
+  characterPath: boolean,
+): ReadonlyMap<string, RValue> {
+  return new Map(
+    [...input.attributes].filter(([name]) =>
+      characterPath ? ["names", "dim", "dimnames"].includes(name) : name !== "class",
+    ),
+  );
+}
+
+function formatCCoerceInteger(input: AtomicVector, invocation: BuiltinInvocation): RIntegerVector {
+  if (input.type !== "double") return coerceAtomicToInteger(input, invocation);
+  // NA/NaN become integer NA silently; infinities still trigger the shared integer-range warning.
+  invocation.context.allocate(input.length);
+  const missing = input.missing?.slice() ?? new Uint8Array(input.length);
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (Number.isNaN(input.values[index])) missing[index] = 1;
+  }
+  return coerceAtomicToInteger({ ...input, missing }, invocation);
+}
+
+function formatCPad(
+  text: string,
+  width: number,
+  left: boolean,
+  zero: boolean,
+  invocation: BuiltinInvocation,
+  consumed: number,
+): string {
+  const paddingLength = Math.max(0, width - text.length);
+  checkFormatCBytes(invocation, consumed + text.length + paddingLength);
+  if (paddingLength === 0) return text;
+  invocation.context.checkpoint();
+  const padding = (zero && !left ? "0" : " ").repeat(paddingLength);
+  if (left) return text + padding;
+  if (zero && ["+", "-", " "].includes(text[0] ?? "")) return text[0] + padding + text.slice(1);
+  return padding + text;
+}
+
+function formatCFiniteMagnitude(
+  value: number,
+  conversion: Exclude<FormatCConversion, "d">,
+  precision: number,
+  alternate: boolean,
+  invocation: BuiltinInvocation,
+  consumed: number,
+): string {
+  if (conversion === "f") {
+    checkFormatCBytes(invocation, consumed + (precision > 0 ? precision + 2 : 1));
+  }
+  return formatFloatingMagnitude(value, conversion, precision, alternate);
+}
+
+async function builtinFormatC(invocation: BuiltinInvocation): Promise<RValue> {
+  const force = async (name: string): Promise<RValue> => {
+    const argument = invocation.functionArgument(name);
+    if (argument === undefined) formatCError(`argument "${name}" is missing, with no default`);
+    return invocation.force(argument);
+  };
+  const original = await force("x");
+  const flagValue = await force("flag");
+  if (flagValue.type !== "character" || flagValue.length !== 1) {
+    // NA is tested by the allowed-character check, before empty-input return.
+    if (isAtomic(flagValue) && flagValue.length === 1 && isMissing(flagValue, 0)) {
+      formatCError("'flag' should contain only characters from [0+- #'I]");
+    }
+    formatCError("'flag' must be a character string");
+  }
+  const flags = flagValue.values[0] ?? "";
+  if (isMissing(flagValue, 0) || /[^0+\- #'I]/u.test(flags)) {
+    formatCError("'flag' should contain only characters from [0+- #'I]");
+  }
+  if (valueLength(original) === 0) return characterVector([]);
+  if (flags.includes("'") || flags.includes("I")) {
+    formatCUnsupported(
+      "locale-dependent grouping and alternative-digit flags are not implemented.",
+    );
+  }
+  const modeValue = await force("mode");
+  let mode = modeValue.type === "null" ? original.type : formatCControlString(modeValue, "mode");
+  if (mode === "real") mode = "double";
+  if (modeValue.type !== "null" && !["double", "integer", "character"].includes(mode)) {
+    formatCError('\'mode\' must be "double" ("real"), "integer" or "character"');
+  }
+  if (!isAtomic(original)) {
+    formatCError(`default method not implemented for type '${valueTypeName(original)}'`);
+  }
+  if (mode !== "double" && mode !== "integer" && mode !== "character")
+    formatCError("unsupported type ");
+  // storage.mode-style conversion neither dispatches on class nor discards the original metadata.
+  invocation.context.allocate(original.length);
+  let input: AtomicVector = original;
+  if (mode !== input.type) {
+    input =
+      mode === "integer"
+        ? formatCCoerceInteger(input, invocation)
+        : mode === "double"
+          ? coerceAtomicToDouble(input, invocation)
+          : coerceAtomicToCharacter(withoutClasses(input), invocation);
+  }
+  let conversion: FormatCConversion | "s";
+  if (mode === "character") conversion = "s";
+  else {
+    const formatValue = await force("format");
+    const requested =
+      formatValue.type === "null"
+        ? mode === "integer"
+          ? "d"
+          : "g"
+        : formatCControlString(formatValue, "format");
+    if (requested === "fg")
+      formatCUnsupported("the fixed significant-digit 'fg' conversion is not implemented.");
+    if (!["d", "f", "e", "E", "g", "G", "s"].includes(requested)) {
+      formatCError('\'format\' must be one of {"f","e","E","g","G", "fg", "s"}');
+    }
+    conversion = requested as FormatCConversion | "s";
+    if (conversion === "s") {
+      invocation.context.warn({
+        code: "NRW1032",
+        message: 'coercing argument to "character" for format="s"',
+      });
+      input = coerceAtomicToCharacter(withoutClasses(input), invocation);
+    } else if (conversion === "d" && input.type !== "integer") {
+      input = formatCCoerceInteger(input, invocation);
+    }
+  }
+  const widthRequest = formatCWidth(await force("width"));
+  if (widthRequest !== undefined) checkFormatCBytes(invocation, Math.abs(widthRequest));
+  const left = (widthRequest ?? 0) < 0 || flags.includes("-");
+  if (conversion === "s") {
+    if (input.type !== "character")
+      throw new Error("formatC character conversion did not produce characters.");
+    const texts: string[] = [];
+    let longest = 0;
+    let rawBytes = 0;
+    for (let index = 0; index < input.length; index += 1) {
+      invocation.context.checkpoint();
+      const text = isMissing(input, index) ? "NA" : (input.values[index] ?? "");
+      rawBytes += text.length;
+      checkFormatCBytes(invocation, rawBytes);
+      if (/[^\x20-\x7e]/u.test(text))
+        formatCUnsupported("control-character/non-ASCII display widths are not implemented.");
+      longest = Math.max(longest, text.length);
+      texts.push(text);
+    }
+    const width =
+      widthRequest === undefined || widthRequest === 0 ? longest : Math.abs(widthRequest);
+    checkFormatCBytes(invocation, width * input.length);
+    let consumed = 0;
+    const output = texts.map((text) => {
+      invocation.context.checkpoint();
+      const padded = formatCPad(text, width, left, false, invocation, consumed);
+      consumed += padded.length;
+      return padded;
+    });
+    return { ...characterVector(output), attributes: formatCAttributes(original, true) };
+  }
+  const suppliedPrecision = formatCPrecision(await force("digits"));
+  let precision = suppliedPrecision ?? 4;
+  const precisionCap = conversion === "f" ? 324 : 50;
+  if (precision > precisionCap) {
+    invocation.context.warn({ code: "NRW1033", message: `'digits' reduced to ${precisionCap}` });
+    precision = precisionCap;
+  }
+  const width =
+    widthRequest === undefined
+      ? suppliedPrecision === undefined
+        ? 1
+        : precision + 1
+      : widthRequest === 0
+        ? precision
+        : Math.abs(widthRequest);
+  if (width === 0) formatCError("width cannot be zero");
+  checkFormatCBytes(invocation, width * input.length);
+  if (!Number.isSafeInteger(precision)) checkFormatCBytes(invocation, precision);
+
+  // Default postprocessing controls are deliberately lazy on the character/empty paths.
+  const bigMark = await force("big.mark");
+  const smallMark = await force("small.mark");
+  const decimalMark = formatCControlString(await force("decimal.mark"), "decimal.mark");
+  for (const [name, value] of [
+    ["big.mark", bigMark],
+    ["small.mark", smallMark],
+  ] as const) {
+    if (
+      value.type !== "character" ||
+      value.length !== 1 ||
+      isMissing(value, 0) ||
+      value.values[0] !== ""
+    ) {
+      formatCUnsupported(`${name} grouping is not implemented.`);
+    }
+  }
+  if (decimalMark.length !== 1 || !/[\x20-\x7e]/u.test(decimalMark)) {
+    formatCUnsupported("multi-character and non-ASCII decimal marks are not implemented.");
+  }
+  const zeroPrint = await force("zero.print");
+  const dropTrailing = await force("drop0trailing");
+  if (zeroPrint.type !== "null")
+    formatCUnsupported("custom zero.print/replace.zero formatting is not implemented.");
+  if (logicalCondition(dropTrailing))
+    formatCUnsupported("drop0trailing formatting is not implemented.");
+  // Unused grouping intervals, preserve.width and replace.zero remain unforced.
+  let nonfiniteWidth = width;
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) nonfiniteWidth = Math.max(nonfiniteWidth, 2);
+    else if (!Number.isFinite(numberAt(input, index)))
+      nonfiniteWidth = Math.max(nonfiniteWidth, numberAt(input, index) === -Infinity ? 4 : 3);
+  }
+  let consumed = 0;
+  const output: string[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    const missing = isMissing(input, index);
+    const numeric = numberAt(input, index);
+    const finite = !missing && Number.isFinite(numeric);
+    let text: string;
+    if (missing) text = "NA";
+    else if (Number.isNaN(numeric)) text = "NaN";
+    else if (!finite) text = numeric < 0 ? "-Inf" : "Inf";
+    else {
+      text =
+        conversion === "d"
+          ? String(Math.abs(numeric))
+          : formatCFiniteMagnitude(
+              numeric,
+              conversion,
+              precision,
+              flags.includes("#"),
+              invocation,
+              consumed,
+            );
+      if (numeric < 0 || Object.is(numeric, -0)) text = `-${text}`;
+      else if (flags.includes("+")) text = `+${text}`;
+      else if (flags.includes(" ")) text = ` ${text}`;
+      if (decimalMark !== ".") text = text.replace(".", decimalMark);
+    }
+    const padded = formatCPad(
+      text,
+      finite ? width : nonfiniteWidth,
+      finite ? left : (widthRequest ?? 0) < 0 || flags === "-",
+      finite && flags.includes("0"),
+      invocation,
+      consumed,
+    );
+    consumed += padded.length;
+    output.push(padded);
+  }
+  return { ...characterVector(output), attributes: formatCAttributes(original, false) };
 }
 
 async function builtinFormat(invocation: BuiltinInvocation): Promise<RValue> {

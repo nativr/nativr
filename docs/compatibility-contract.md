@@ -38,6 +38,38 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Bounded numeric and character formatting (profile 0.383)
+
+`formatC` provides a reusable formatting path for the confirmed prettyunits example blocker. Its
+fifteen observable formals use closure argument matching. Empty input validates `flag` and returns
+character(0) without forcing the remaining controls. Character formatting forces mode and width;
+numeric formatting additionally forces format, digits and the applicable postprocessing controls.
+Unused grouping intervals, preserve.width and replace.zero remain lazy under the supported defaults.
+Owned fixtures cover forcing order, partial/duplicate/unused arguments, visibility and
+non-dispatching mode coercion. Owned function body reflection remains incomplete.
+
+The bounded numeric surface covers d/f/e/E/g/G conversions, half-even binary64 decimal rounding,
+signed zero, alternate form, sign/space/zero/left flags, explicit widths, precision and nonfinite
+labels. The existing owned floating formatter supplies rounding and exponent rendering. Numeric
+results preserve input metadata except class; character results retain names, dimensions and
+dimnames. Printable ASCII character alignment and single-character printable ASCII decimal marks are
+supported. Native precision caps are 324 for f and 50 for the other numeric conversions, with the
+observed warning. Width and aggregate output requests are checked against session limits before
+padding; precision normalization prevents unbounded BigInt powers.
+
+The fixed significant-digit fg format, grouping marks and intervals, custom zero replacement,
+drop0trailing, locale-dependent flags, non-ASCII/control-character display widths and complete
+malformed/classed controls remain unfinished. Unsupported optional formatting is reported
+explicitly. Native gap probes retain these observations separately; bounded passing cases do not
+establish complete formatting, package or semantic-domain compatibility.
+
+High-precision decimal rendering also has a recorded Windows oracle difference. For the identical
+binary64 input bits `3eb0c6f7a0b5ed8d` (1e-6), independent exact rational expansion rounds to
+`9.999999999999999547481e-07` at 22 significant digits, while Windows GNU R formatC and sprintf
+produce `9.999999999999999547237e-07`. NativR retains the independently verified exact formatter.
+This case is a deferred native gap, with no exact-conformance credit; normative Linux validation and
+the broader numerical-deviation policy remain pending.
+
 ### Numeric classification primitives (profile 0.382)
 
 `is.finite`, `is.infinite` and `is.nan` share an eager primitive path with observable `(x)` argument
@@ -4216,7 +4248,8 @@ Known boundaries:
   exact or near ties (for example, 392878021113574.5 gives `...574`; GNU R gives `...575`).
 - `sprintf` `%a`, `*` widths, and `%n$` positional arguments are not implemented. Unknown directives
   still pass through unchanged instead of raising GNU R's format error.
-- `dnorm` and `formatC` are not registered.
+- `dnorm` remains unregistered. `formatC` has the bounded profile 0.383 surface described above; its
+  remaining controls and full formatting matrix are unfinished.
 - `cos(1.5707963267948966)` is correctly rounded in NativR (`6.123233995736766e-17`). The Windows
   oracle reports `6.12303176911189e-17`. Such libm deviations need an explicit platform-tolerance
   policy.
