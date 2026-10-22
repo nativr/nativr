@@ -3063,7 +3063,9 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
       defaultValue: { kind: "LogicalLiteral", value: false, span: SYNTHETIC_SPAN },
     },
   ]),
-  defineBuiltin("is.nan", ["x"], "behavioral", builtinIsNan),
+  numericPredicateBuiltin("is.finite"),
+  numericPredicateBuiltin("is.infinite"),
+  numericPredicateBuiltin("is.nan"),
   defineBuiltin("list", ["..."], "behavioral", builtinList),
   defineBuiltin("alist", ["..."], "behavioral", builtinAlist, "special"),
   defineBuiltin("as.list", ["x", "..."], "behavioral", builtinAsList),
@@ -25525,25 +25527,99 @@ function recursiveMissingAt(value: RValue, index: number, scalarOnly = false): b
   return false;
 }
 
-async function builtinIsNan(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const input = required(matched, "x", "is.nan");
+type NumericPredicateName = "is.finite" | "is.infinite" | "is.nan";
+
+function numericPredicateBuiltin(name: NumericPredicateName): BuiltinDefinition {
+  return {
+    ...withUnsupportedBehavior(
+      defineBuiltin(name, ["x"], "behavioral", (invocation) =>
+        builtinNumericPredicate(invocation, name),
+      ),
+      [
+        "Mixed real/imaginary NA provenance requires the pending complex value-model extension.",
+        "POSIXlt predicate methods and their full date-time conversion behavior remain incomplete.",
+        "S4 numeric-predicate dispatch remains incomplete.",
+        "General S3 continuation and complete condition-call attribution remain incomplete.",
+      ],
+    ),
+    s3DefaultImplementation: (invocation) => builtinNumericPredicate(invocation, name, false),
+  };
+}
+
+async function builtinNumericPredicate(
+  invocation: BuiltinInvocation,
+  name: NumericPredicateName,
+  dispatch = true,
+): Promise<RValue> {
+  const values = await forceCoercionArguments(invocation);
+  if (values.length !== 1) {
+    throw new REvaluationError(
+      "NRE2101",
+      `${values.length} arguments passed to '${name}' which requires 1`,
+    );
+  }
+  validateCoercionArgumentName(invocation, 0, "x");
+  const input = values[0]!;
+  if (dispatch && objectClasses(input) !== undefined) {
+    const result = await invocation.dispatchS3IfPresent(
+      name,
+      input,
+      namesDispatchArguments(invocation, values),
+      true,
+      -1,
+    );
+    if (result !== undefined) {
+      invocation.setResultVisibility("visible");
+      return result;
+    }
+  }
+  invocation.setResultVisibility("visible");
+  if (input.type === "null") return logicalVector([]);
   if (!isAtomic(input)) {
-    throw new RUnsupportedFeatureError("NRU6104", "is.nan() currently supports atomic vectors.");
+    throw new RTypeMismatchError(
+      "NRT3391",
+      `default method not implemented for type '${valueTypeName(input)}'`,
+    );
   }
   invocation.context.allocate(input.length);
   const output = new Uint8Array(input.length);
   for (let index = 0; index < input.length; index += 1) {
     invocation.context.checkpoint();
-    output[index] =
-      !isMissing(input, index) &&
-      ((input.type === "double" && Number.isNaN(input.values[index])) ||
-        (input.type === "complex" &&
-          (Number.isNaN(input.real[index]) || Number.isNaN(input.imaginary[index]))))
-        ? 1
-        : 0;
+    if (isMissing(input, index)) continue;
+    let matches = false;
+    if (input.type === "complex") {
+      const real = input.real[index]!;
+      const imaginary = input.imaginary[index]!;
+      matches =
+        name === "is.finite"
+          ? Number.isFinite(real) && Number.isFinite(imaginary)
+          : name === "is.infinite"
+            ? Math.abs(real) === Number.POSITIVE_INFINITY ||
+              Math.abs(imaginary) === Number.POSITIVE_INFINITY
+            : Number.isNaN(real) || Number.isNaN(imaginary);
+    } else if (input.type === "logical" || input.type === "integer" || input.type === "double") {
+      const value = input.values[index]!;
+      matches =
+        name === "is.finite"
+          ? Number.isFinite(value)
+          : name === "is.infinite"
+            ? Math.abs(value) === Number.POSITIVE_INFINITY
+            : Number.isNaN(value);
+    }
+    output[index] = matches ? 1 : 0;
   }
-  return withStructuralAttributes(logicalVector(output), input);
+  return numericPredicateAttributes(logicalVector(output), input);
+}
+
+function numericPredicateAttributes(value: RLogicalVector, source: AtomicVector): RLogicalVector {
+  // Array predicates retain shape metadata instead of a separate vector names attribute.
+  const attributes = new Map<string, RValue>();
+  const names = source.attributes.has("dim") ? ["dim", "dimnames"] : ["names"];
+  for (const name of names) {
+    const attribute = source.attributes.get(name);
+    if (attribute !== undefined) attributes.set(name, attribute);
+  }
+  return attributes.size === 0 ? value : { ...value, attributes };
 }
 
 function withStructuralAttributes<T extends RVector>(value: T, source: RVector | RPairlist): T {

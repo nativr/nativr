@@ -1603,3 +1603,39 @@ then rerun prettyunits and required semantic gates. Preserve mixed-component com
 method gaps explicitly. Continue the full five-criterion goal, including independent datasets,
 isolated testing support, remaining domain matrices and platform verification. No additional input
 is needed for this local work. Linux, Formula, downloads and remote actions retain their boundaries.
+
+### Profile 0.382 verification (2026-10-22)
+
+Implemented shared is.finite/is.infinite/is.nan primitives with eager source-order forcing, exact
+argument tags, visible owned S3 methods and NextMethod fallback. All 68 owned tests pass, covering
+real/integer/logical/character/raw/NULL classification, ordinary complex component combinations,
+names and dimensions, diagnostics, metadata, reference identity and session-limit recovery. Six
+native gap probes preserve mixed-component complex NA and POSIXlt method limitations. S4 and full S3
+continuation/condition origins remain incomplete.
+
+The full check passes 2,532 tests with 93 opt-in skips, both TypeScript gates, 53 inventory tests
+and 37 browser-report tests. Checked-in/live/recursive conformance passes 1,405 / 1,336 / 320 with
+160 causal-linked bindings. The Worker is 486.2/512 KiB gzip; client and Wasm sizes remain within
+their unchanged limits. The inventory classifies 590 of 2,553 bindings, with 1,963 pending; all
+thirteen domains remain incomplete. Distinct-name overlap 789/2,522 does not measure completion.
+
+The [complete 0.382 checkpoint](../compatibility/package-check-evidence/corpus-0.382.0.json) reruns
+all 24 cached development/regression packages with original entrypoints and native repeatability.
+All 178 input hashes and execution/comparison/repeatability outcomes match the prior evidence:
+prettyunits at 0.381 and the other packages at 0.380. Tiers are unchanged, including two P7 packages
+and prettyunits P4. All 29 saved-checkpoint integrity tests pass. pretty_p_value now reaches the
+missing formatC binding; time_ago still mismatches. The withr timezone repeatability failure remains
+explicit. No pins, partitions or Formula changed, and no substitute testing runner receives tier
+credit. Browser/performance/pack evidence remains at 0.380; public API and Worker protocol are
+unchanged.
+
+Next measurable work: correct the recursive observer's conflation of mixed-component complex NA with
+whole NA, without claiming the runtime representation is fixed; classify remaining owned
+registrations by domain; then close reusable formatC behavior behind prettyunits' next blocker.
+POSIXlt predicates require a shared conversion/dispatch increment. Their primary calendar fields,
+normalization and UTC/GMT behavior need independent evidence; inspecting only seconds is
+insufficient. The complex value-model repair also requires lossless structural/serialization paths
+and a deliberate API/Worker compatibility design before enabling new component masks. Continue
+remaining domains, independently licensed datasets and isolated testing support. Linux, Formula, new
+downloads and remote actions retain the existing boundaries. No additional input is needed for the
+current local observer, inventory or formatting work.

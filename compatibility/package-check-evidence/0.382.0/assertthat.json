@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 2,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "b3680cc2d411d1101eb5ba08fdf15267fd23c6b91addc919b540269c01459506",
+  "redaction": {
+    "policy": "allowlisted-metadata-sha256-v2",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "assertthat", "version": "0.2.1" },
+  "provenance": {
+    "sourceSha256": "85cf7fcc4753a8c86da9a6f454e46c2a58ffc70c4f47cac4d3e3bcefda2a9e9f",
+    "artifactSha256": "26678946c287baad27a9b359fb27ea64e349e0fd10a5e9b5346d1d8e38f69ca2",
+    "capabilitySha256": "6fc0780ae5b493f517f9b2138d3774e84187378c6ff257f9f5c129be1bee7632",
+    "semanticProfile": "0.382.0",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": false,
+  "inventory": { "nestedTestFiles": 7 },
+  "documentationMetadata": {
+    "policy": "loaded-documentation-signatures-v2",
+    "sourceSha256": "ca6678617b69785d101ff41959a0edd5d7ad1d985fa0772bfbbd10e9349659b7",
+    "exportsStatus": "passed",
+    "actual": {
+      "status": "completed",
+      "exportCount": 26,
+      "signatures": {
+        "match": 26,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "expected": {
+      "status": "completed",
+      "exportCount": 26,
+      "signatures": {
+        "match": 26,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "functions": { "passed": 26, "failed": 0, "unexecuted": 0 },
+    "usageOutcomes": { "OK": 11, "NOTE": 0, "WARNING": 0, "ERROR": 0 }
+  },
+  "dependencies": [
+    {
+      "name": "tools",
+      "actualVersion": "4.6.1",
+      "oracleVersion": "4.6.1",
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "testthat",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "covr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    }
+  ],
+  "firstBlocker": {
+    "stage": "examples",
+    "code": "execution-failed",
+    "path": "man/not_empty.Rd",
+    "messageSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690"
+  },
+  "runnerDispatch": {
+    "examples": { "outcome": "completed", "firstBlocker": null },
+    "tests": { "outcome": "completed", "firstBlocker": null }
+  },
+  "observations": [
+    {
+      "kind": "test",
+      "path": "tests/testthat.R",
+      "inputSha256": "9d3b96094cc9222fbaafeeaec44e0410b162ea199427865259c3a44c57d6862a",
+      "actual": "failed",
+      "expected": "failed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/are_equal.Rd",
+      "inputSha256": "e914ef3069c61a720e6aa3787ba0a8e7ee207a1c176aac74778ceded0268c7d8",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/assert-is.Rd",
+      "inputSha256": "9f9c5546c068f8838d10d90ac81c2d4f10cf36d0c0b67e2fe3e4a2b93ca08ee3",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/assert_that.Rd",
+      "inputSha256": "a36d7855b3acc9aaa999a7963aaad4effeae370824e7dec9068865968bbf500d",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/assertions-file.Rd",
+      "inputSha256": "67b53f386daf22f9c829bfd5a7d5b14d0af3a69b14d1efdd638603b421cc0816",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": false
+    },
+    {
+      "kind": "example",
+      "path": "man/has_args.Rd",
+      "inputSha256": "bf910177380b976359d88a88221978ba46c945385f28c7b3ed2c40391a5d0491",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/has_attr.Rd",
+      "inputSha256": "84f759edb9498969466be12ae7c520f6174fbc76428e61b173a7c2cb43a5cfa1",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/noNA.Rd",
+      "inputSha256": "757da1a08a49a91bb403531c3b0f515275c745792bed143a6b42ee225238ff29",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/not_empty.Rd",
+      "inputSha256": "922485d1ff1d2a650433e63cb24c9c16b1848d3ac1570fcc6c538f01333b372e",
+      "actual": "failed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/on_failure.Rd",
+      "inputSha256": "b23615ca5bb545763fb5eae48867e01b73aef3386bb8a6eb7bb474ccf882b0b0",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/scalar.Rd",
+      "inputSha256": "5db4aac4ed584c70cce473bfa62b3a45d6fcab81e5ed6aff9b59050c05694820",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/validate_that.Rd",
+      "inputSha256": "0b382be04050b1f79f8256625ae6103b93594b1c76c288a426cf2d7dc960bfcc",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    }
+  ],
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reasonSha256": "0312af7e14cc867a5c890b89532a0417aa767469482454231b79f3843169dee0",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "passed",
+      "reasonSha256": "8fd450bc4d91f0f301ff73fbbf900ea1c0ac272b147d2b3b7abec50eea40d656",
+      "discovered": 50,
+      "executed": 50
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reasonSha256": "6f17c2e70a7b6eb85e5057ba0070fc27a7942287afd73c0853099e1760871703",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "passed",
+      "reasonSha256": "412363eb41105c6c28bcb7e4057ea45eb230274390f88bbbe68b213df8bf6273",
+      "discovered": 32,
+      "executed": 32
+    },
+    {
+      "id": "documentation",
+      "status": "passed",
+      "reasonSha256": "57b09490f1c6debb46aac797ebbc7bdc5f9aecef043b7c666aa64a6d524329d0",
+      "discovered": 63,
+      "executed": 63
+    },
+    {
+      "id": "installed-documentation",
+      "status": "inapplicable",
+      "reasonSha256": "4dd671d369dd77e5dec484581aee548cf3414398fb93196c4519c284c3943346",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reasonSha256": "faa48c0fe336e4da224a483f2f2ea0b9b275608edcd9758ece9022acf3e808c3",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reasonSha256": "e57542648bf3f7c5c3a126240ed0af656faf096afb83caeb1c93da1034f1f8d5",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "failed",
+      "reasonSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690",
+      "discovered": 11,
+      "executed": 11
+    },
+    {
+      "id": "package-tests",
+      "status": "failed",
+      "reasonSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690",
+      "discovered": 1,
+      "executed": 1
+    },
+    {
+      "id": "test-output",
+      "status": "failed",
+      "reasonSha256": "dad6f2476489cc22612ba5821a6e5b9ac1bddac0575b7b8032baa5528e0fbe21",
+      "discovered": 12,
+      "executed": 12
+    },
+    {
+      "id": "output-order",
+      "status": "failed",
+      "reasonSha256": "8a6f1c2e98557128a45215d2ce6a539d0489f507c8d8b1847c9bd5451b16c928",
+      "discovered": 12,
+      "executed": 9
+    },
+    {
+      "id": "conditions",
+      "status": "unexecuted",
+      "reasonSha256": "f4e9e9534aa28827a8b111dee537e081c9143d15bcdd91fe67953b0493e27467",
+      "discovered": 12,
+      "executed": 12
+    },
+    {
+      "id": "vignettes",
+      "status": "inapplicable",
+      "reasonSha256": "f6b0c8eab5478f238094a84c2f79a814990223c04e27a8707b4805efa6ed723e",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reasonSha256": "2f0257c2bfff6f5cbf56a7ca5bed2d962fcca9da96711692ddea6cef736190e4",
+      "discovered": 11,
+      "executed": 11
+    }
+  ],
+  "comparisons": {
+    "total": 12,
+    "outcomes": { "mismatch": 11, "match": 1 },
+    "repeatability": { "repeatable": 11, "nonrepeatable": 1, "unobserved": 0 }
+  }
+}

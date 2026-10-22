@@ -4879,6 +4879,27 @@
       "remainingGaps": [
         "Bounded difftime units, closure/S3 matching, attributes, visibility and reference observations do not establish the complete behavioral matrix. S4 dispatch, classed or malformed unit metadata, library-body reflection, full diagnostic origins and broader generic arithmetic remain incomplete."
       ]
+    },
+    {
+      "binding": "base::is.finite",
+      "domains": ["numeric-runtime", "vector-semantics", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Bounded ordinary atomic/complex classification, eager forcing, attributes, visible owned S3 methods and NextMethod observations do not establish the complete matrix. Mixed-component complex NA provenance, POSIXlt methods, S4 dispatch and full condition-call origins remain incomplete."
+      ]
+    },
+    {
+      "binding": "base::is.infinite",
+      "domains": ["numeric-runtime", "vector-semantics", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Bounded ordinary atomic/complex classification, eager forcing, attributes, visible owned S3 methods and NextMethod observations do not establish the complete matrix. Mixed-component complex NA provenance, POSIXlt methods, S4 dispatch and full condition-call origins remain incomplete."
+      ]
+    },
+    {
+      "binding": "base::is.nan",
+      "domains": ["numeric-runtime", "vector-semantics", "calls-promises", "object-systems"],
+      "remainingGaps": [
+        "Bounded ordinary atomic/complex classification, eager forcing, attributes, visible owned S3 methods and NextMethod observations do not establish the complete matrix. Mixed-component complex NA provenance, POSIXlt methods, S4 dispatch and full condition-call origins remain incomplete."
+      ]
     }
   ]
 }

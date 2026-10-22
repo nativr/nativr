@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.381.0",
-  "capabilityManifestHash": "ad0efe75f2a0c7a38a2f050e9416408f37c816691e23640b3e7f5b0079b5318e",
+  "semanticProfileVersion": "0.382.0",
+  "capabilityManifestHash": "6fc0780ae5b493f517f9b2138d3774e84187378c6ff257f9f5c129be1bee7632",
   "evidence": {
-    "checkedInConformanceCases": 1396,
-    "liveREligibleCases": 1327,
+    "checkedInConformanceCases": 1405,
+    "liveREligibleCases": 1336,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 310,
-    "recursiveBehaviorallyProvenBindings": 157,
+    "recursiveOracleV2Cases": 320,
+    "recursiveBehaviorallyProvenBindings": 160,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -227,6 +227,40 @@
       },
       { "binding": "base::invisible", "cases": ["recursive-stdout-and-invisible-result"] },
       { "binding": "base::invokeRestart", "cases": ["calling-handlers-and-restarts"] },
+      {
+        "binding": "base::is.finite",
+        "cases": [
+          "numeric-predicates-attributes",
+          "numeric-predicates-complex",
+          "numeric-predicates-dispatch",
+          "numeric-predicates-dispatched-reference-graph",
+          "numeric-predicates-review-dispatch",
+          "numeric-predicates-values"
+        ]
+      },
+      {
+        "binding": "base::is.infinite",
+        "cases": [
+          "numeric-predicates-attributes",
+          "numeric-predicates-complex",
+          "numeric-predicates-dispatch",
+          "numeric-predicates-dispatched-reference-graph",
+          "numeric-predicates-review-dispatch",
+          "numeric-predicates-values"
+        ]
+      },
+      {
+        "binding": "base::is.nan",
+        "cases": [
+          "numeric-predicates-attributes",
+          "numeric-predicates-complex",
+          "numeric-predicates-dispatch",
+          "numeric-predicates-dispatched-reference-graph",
+          "numeric-predicates-nan-independent",
+          "numeric-predicates-review-dispatch",
+          "numeric-predicates-values"
+        ]
+      },
       {
         "binding": "base::is.numeric.Date",
         "cases": ["numeric-predicate-dispatch-and-time-methods"]
@@ -702,22 +736,22 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 814,
-    "gnuRNameOverlaps": 787,
+    "registeredBindings": 816,
+    "gnuRNameOverlaps": 789,
     "referenceCoreCallableNames": 2522
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "3421bc98b50d571481bb4d4638d7414bf886a5f412949c333b3521f7a140f081",
+    "sha256": "eadd662f2435d2e607fd60d2f9e39b4555d85e7cdbbb90a303e6037c09636a5c",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 814,
-    "qualifiedOverlaps": 786,
+    "registeredBindings": 816,
+    "qualifiedOverlaps": 788,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 587,
-    "classificationPendingBindings": 1966,
-    "recursiveLinkedBindings": 157,
+    "classifiedBindings": 590,
+    "classificationPendingBindings": 1963,
+    "recursiveLinkedBindings": 160,
     "bindingsWithDeclaredMatrixEvidence": 6,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,

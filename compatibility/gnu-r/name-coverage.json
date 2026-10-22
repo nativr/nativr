@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 814,
-    "overlappingNames": 787,
-    "missingReferenceNames": 1735,
+    "nativrRegisteredNames": 816,
+    "overlappingNames": 789,
+    "missingReferenceNames": 1733,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.312054
+    "nameCoverage": 0.312847
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 593, "nameCoverage": 0.433797 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 595, "nameCoverage": 0.43526 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -411,7 +411,9 @@
     "is.environment",
     "is.expression",
     "is.factor",
+    "is.finite",
     "is.function",
+    "is.infinite",
     "is.integer",
     "is.language",
     "is.list",
@@ -1760,10 +1762,8 @@
     "is.R",
     "is.element",
     "is.empty.model",
-    "is.finite",
     "is.finite.POSIXlt",
     "is.hashtab",
-    "is.infinite",
     "is.infinite.POSIXlt",
     "is.leaf",
     "is.loaded",

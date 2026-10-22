@@ -9,14 +9,14 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.380, the inventory contains 2,553 bindings: 2,525 reference exports and 28
-registrations absent from that export snapshot. There are 810 registrations and 782 exact qualified
-overlaps. The existing 783 distinct-name overlaps measure a different relationship: registering a
+At profile 0.382, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+registrations absent from that export snapshot. There are 816 registrations and 788 exact qualified
+overlaps. The existing 789 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
 
-All 153 bindings with existing causal links have explicit domain assignments. Reviewed purpose
+All 160 bindings with existing causal links have explicit domain assignments. Reviewed purpose
 assignments add 430 bindings from graphics, graphics devices and object-system methods, bringing the
-classified total to 583. Another 1,970 bindings remain classification-pending. Assignments may span
+classified total to 590. Another 1,963 bindings remain classification-pending. Assignments may span
 domains, so per-domain counts cannot be summed.
 
 Six bindings have 35 reviewed, partial behavioral-dimension declarations. Each declaration

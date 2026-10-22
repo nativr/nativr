@@ -18548,5 +18548,104 @@
     ],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-metadata",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(vapply(list(is.finite,is.infinite,is.nan),typeof,\"\"),rep(\"builtin\",3))&&identical(lapply(list(is.finite,is.infinite,is.nan),function(f)names(formals(args(f)))),rep(list(\"x\"),3))}))",
+    "expected": true,
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-values",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-c(0,-Inf,Inf,NA_real_,NaN);identical(list(is.finite(x),is.infinite(x),is.nan(x)),list(c(TRUE,FALSE,FALSE,FALSE,FALSE),c(FALSE,TRUE,TRUE,FALSE,FALSE),c(FALSE,FALSE,FALSE,FALSE,TRUE)))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({a<-c(0L,1L,NA_integer_);b<-c(FALSE,TRUE,NA);expected<-list(c(TRUE,TRUE,FALSE),rep(FALSE,3),rep(FALSE,3));identical(list(is.finite(a),is.infinite(a),is.nan(a)),expected)&&identical(list(is.finite(b),is.infinite(b),is.nan(b)),expected)})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-c(\"0\",\"Inf\",\"NaN\",NA_character_);identical(list(is.finite(x),is.infinite(x),is.nan(x)),rep(list(rep(FALSE,4)),3))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-as.raw(0:2);identical(list(is.finite(x),is.infinite(x),is.nan(x)),rep(list(rep(FALSE,3)),3))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(list(is.finite(NULL),is.infinite(NULL),is.nan(NULL),is.finite(numeric()),is.infinite(integer()),is.nan(character())),rep(list(logical()),6))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-factor(c(\"a\",NA));identical(list(is.finite(x),is.infinite(x),is.nan(x)),list(c(TRUE,FALSE),c(FALSE,FALSE),c(FALSE,FALSE)))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-structure(c(0,Inf,NA_real_,NaN),class=\"Date\");identical(list(is.finite(x),is.infinite(x),is.nan(x)),list(c(TRUE,FALSE,FALSE,FALSE),c(FALSE,TRUE,FALSE,FALSE),c(FALSE,FALSE,FALSE,TRUE)))})}))",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-complex",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({v<-c(1,Inf,-Inf,NaN);x<-complex(real=rep(v,each=4),imaginary=rep(v,times=4));identical(list(is.finite(x),is.infinite(x),is.nan(x)),list(c(TRUE,rep(FALSE,15)),c(FALSE,TRUE,TRUE,FALSE,rep(TRUE,8),FALSE,TRUE,TRUE,FALSE),c(FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE)))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(list(is.finite(NA_complex_),is.infinite(NA_complex_),is.nan(NA_complex_)),list(FALSE,FALSE,FALSE))}))",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-attributes",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({nm<-c(\"one\",NA,\"\",\"four\");x<-structure(c(1,Inf,NaN,NA_real_),names=nm,note=\"drop\");identical(list(is.finite(x),is.infinite(x),is.nan(x)),list(structure(c(TRUE,FALSE,FALSE,FALSE),names=nm),structure(c(FALSE,TRUE,FALSE,FALSE),names=nm),structure(c(FALSE,FALSE,TRUE,FALSE),names=nm)))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-structure(matrix(c(0,Inf,NA_real_,NaN),2,dimnames=list(c(\"a\",\"b\"),c(\"c\",\"d\"))),names=c(\"one\",NA,\"\",\"four\"),note=\"drop\");expected<-list(dim=c(2L,2L),dimnames=list(c(\"a\",\"b\"),c(\"c\",\"d\")));identical(attributes(is.finite(x)),expected)&&identical(attributes(is.infinite(x)),expected)&&identical(attributes(is.nan(x)),expected)})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-structure(numeric(),names=character(),note=\"drop\");identical(attributes(is.finite(x)),list(names=character()))&&identical(attributes(is.nan(x)),list(names=character()))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({x<-structure(numeric(),dim=c(0L,2L),dimnames=list(NULL,c(\"a\",\"b\")),note=\"drop\");expected<-list(dim=c(0L,2L),dimnames=list(NULL,c(\"a\",\"b\")));identical(attributes(is.finite(x)),expected)&&identical(attributes(is.infinite(x)),expected)&&identical(attributes(is.nan(x)),expected)})}))",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-diagnostics",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(list(1))),\"default method not implemented for type 'list'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(expression(1))),\"default method not implemented for type 'expression'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(pairlist(a=1))),\"default method not implemented for type 'pairlist'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(quote(x))),\"default method not implemented for type 'symbol'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(quote(f(x)))),\"default method not implemented for type 'language'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(function(x)x)),\"default method not implemented for type 'closure'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(new.env())),\"default method not implemented for type 'environment'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(sqrt)),\"default method not implemented for type 'builtin'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(`if`)),\"default method not implemented for type 'special'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(c(err(is.finite(list(1))),err(is.infinite(list(1))),err(is.nan(list(1)))),rep(\"default method not implemented for type 'list'\",3))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite()),\"0 arguments passed to 'is.finite' which requires 1\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(x=)),\"argument 1 is empty\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(other=Inf)),\"supplied argument name 'other' does not match 'x'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.infinite()),\"0 arguments passed to 'is.infinite' which requires 1\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.infinite(x=)),\"argument 1 is empty\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.infinite(other=Inf)),\"supplied argument name 'other' does not match 'x'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.nan()),\"0 arguments passed to 'is.nan' which requires 1\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.nan(x=)),\"argument 1 is empty\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.nan(other=Inf)),\"supplied argument name 'other' does not match 'x'\")}))",
+    "expected": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-forcing",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({events<-character();message<-err(is.finite({events<-c(events,\"x\");1},{events<-c(events,\"extra\");2}));identical(list(events,message),list(c(\"x\",\"extra\"),\"2 arguments passed to 'is.finite' which requires 1\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({events<-character();message<-err(is.infinite({events<-c(events,\"x\");1},{events<-c(events,\"extra\");2}));identical(list(events,message),list(c(\"x\",\"extra\"),\"2 arguments passed to 'is.infinite' which requires 1\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({events<-character();message<-err(is.nan({events<-c(events,\"x\");1},{events<-c(events,\"extra\");2}));identical(list(events,message),list(c(\"x\",\"extra\"),\"2 arguments passed to 'is.nan' which requires 1\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(stop(\"input\"),stop(\"extra\"))),\"input\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(1,)),\"argument 2 is empty\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);identical(err(is.finite(other=1,2)),\"2 arguments passed to 'is.finite' which requires 1\")}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({events<-character();message<-err(is.infinite(other={events<-c(events,\"x\");Inf}));identical(list(events,message),list(\"x\",\"supplied argument name 'other' does not match 'x'\"))})}))",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-dispatch",
+    "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.finite.owned<-function(x)invisible(\"owned\");identical(withVisible(is.finite(structure(Inf,class=\"owned\"))),list(value=\"owned\",visible=TRUE))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.finite.default<-function(x)\"default\";identical(is.finite(structure(Inf,class=\"owned\")),\"default\")&&identical(is.finite(Inf),FALSE)})}),local({seen<-FALSE;is.finite.owned<-function(x){seen<<-TRUE;NextMethod()};result<-is.finite(structure(c(1,Inf,NaN,NA_real_),class=\"owned\"));seen&&identical(result,c(TRUE,FALSE,FALSE,FALSE))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.infinite.owned<-function(x)invisible(\"owned\");identical(withVisible(is.infinite(structure(Inf,class=\"owned\"))),list(value=\"owned\",visible=TRUE))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.infinite.default<-function(x)\"default\";identical(is.infinite(structure(Inf,class=\"owned\")),\"default\")&&identical(is.infinite(Inf),TRUE)})}),local({seen<-FALSE;is.infinite.owned<-function(x){seen<<-TRUE;NextMethod()};result<-is.infinite(structure(c(1,Inf,NaN,NA_real_),class=\"owned\"));seen&&identical(result,c(FALSE,TRUE,FALSE,FALSE))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.nan.owned<-function(x)invisible(\"owned\");identical(withVisible(is.nan(structure(Inf,class=\"owned\"))),list(value=\"owned\",visible=TRUE))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.nan.default<-function(x)\"default\";identical(is.nan(structure(Inf,class=\"owned\")),\"default\")&&identical(is.nan(Inf),FALSE)})}),local({seen<-FALSE;is.nan.owned<-function(x){seen<<-TRUE;NextMethod()};result<-is.nan(structure(c(1,Inf,NaN,NA_real_),class=\"owned\"));seen&&identical(result,c(FALSE,FALSE,TRUE,FALSE))}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.finite.owned<-function(x)42L;identical(is.finite(structure(list(1),class=\"owned\")),42L)})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.finite.owned<-function(x)42L;identical(err(is.finite(other=structure(Inf,class=\"owned\"))),\"supplied argument name 'other' does not match 'x'\")})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({count<-0L;is.nan.owned<-function(x){x;x;count};identical(is.nan({count<-count+1L;structure(NaN,class=\"owned\")}),1L)})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({e<-new.env();is.finite.owned<-function(x)e;identical(is.finite(structure(Inf,class=\"owned\")),e)})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.finite.owned<-function(x)list(substitute(x),match.call(),.Generic,.Method,.Class,.Group);x<-structure(Inf,class=\"owned\");identical(is.finite(x),list(x,quote(is.finite.owned(x=x)),\"is.finite\",\"is.finite.owned\",\"owned\",\"\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=conditionMessage);local({is.finite.owned<-function(x){x<-c(2,Inf);NextMethod()};identical(is.finite(structure(c(1,Inf,NA_real_),class=\"owned\")),c(TRUE,FALSE))})}))",
+    "expected": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-nan-independent",
+    "code": "local({x<-structure(c(NaN,NA_real_,Inf,-Inf,1),names=c(\"nan\",\"na\",\"pos\",\"neg\",\"one\"),note=\"drop\");identical(is.nan(x),c(nan=TRUE,na=FALSE,pos=FALSE,neg=FALSE,one=FALSE))&&identical(is.nan(complex(real=c(NaN,1,NaN,Inf),imaginary=c(1,NaN,NaN,1))),c(TRUE,TRUE,TRUE,FALSE))})",
+    "expected": true,
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "numeric-predicates-review-dispatch",
+    "code": "c(local({events<-character();is.finite.first<-function(x){events<<-c(events,\"first\");NextMethod()};is.finite.second<-function(x){events<<-c(events,\"second\");NextMethod()};y<-is.finite(structure(c(1,Inf,NA_real_),class=c(\"first\",\"second\")));identical(list(events,y),list(c(\"first\",\"second\"),c(TRUE,FALSE,FALSE)))}),local({is.nan.owned<-function(x)identical(x,e);e<-new.env();class(e)<-\"owned\";identical(is.nan(e),TRUE)}),local({is.infinite.owned<-function(x)identical(x,f);f<-function(x)x;attr(f,\"class\")<-\"owned\";identical(is.infinite(f),TRUE)}),local({count<-0L;makeActiveBinding(\"a\",function(value){count<<-count+1L;structure(NaN,class=\"owned\")},environment());is.nan.owned<-function(x){x;x;TRUE};f<-function(...)is.nan(...);y<-f(a);identical(list(y,count),list(TRUE,1L))}),local({is.finite.owned<-function(x)FALSE;y<-is.finite({is.finite.owned<-function(x)TRUE;structure(Inf,class=\"owned\")});identical(y,TRUE)}),local({is.nan.owned<-function(x){x<-list(1);NextMethod()};message<-tryCatch(is.nan(structure(NaN,class=\"owned\")),error=conditionMessage);identical(message,\"default method not implemented for type 'list'\")}),local({is.finite.first<-function(x){x<-c(Inf,1);NextMethod()};is.finite.second<-function(x){stopifnot(identical(x,c(Inf,1)));NextMethod()};identical(is.finite(structure(1,class=c(\"first\",\"second\"))),c(FALSE,TRUE))}),local({old<-options(warnPartialMatchArgs=TRUE);on.exit(options(old));warnings<-character();is.finite.owned<-function(xx)TRUE;y<-withCallingHandlers(is.finite(x=structure(Inf,class=\"owned\")),warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")});identical(list(y,warnings),list(TRUE,\"partial argument match of 'x' to 'xx'\"))}),local({is.finite.owned<-function(x){names(x)<-c(\"changed\",\"other\");attr(x,\"note\")<-\"discard\";NextMethod()};x<-structure(c(1,Inf),class=\"owned\",names=c(\"a\",\"b\"));y<-is.finite(x);identical(y,c(changed=TRUE,other=FALSE))&&identical(names(x),c(\"a\",\"b\"))}),local({x<-structure(c(1,Inf),dim=2L,dimnames=structure(list(c(\"a\",\"b\")),names=\"axis\",note=\"keep\"));a<-attributes(x);identical(attributes(is.finite(x)),a)&&identical(attributes(is.infinite(x)),a)&&identical(attributes(is.nan(x)),a)}))",
+    "expected": [true, true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]

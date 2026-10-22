@@ -38,6 +38,28 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Numeric classification primitives (profile 0.382)
+
+`is.finite`, `is.infinite` and `is.nan` share an eager primitive path with observable `(x)` argument
+metadata. Actual arguments force in source order before arity and exact-name validation; empty
+actuals report their position. Classed inputs support owned S3 methods and default methods, with
+visible results, cached forced arguments, original matched-call expressions, reference identity and
+bounded NextMethod fallback. Plain inputs use the primitive storage classifier.
+
+Real, integer and logical vectors distinguish finite values, infinities, ordinary NaN and typed NA.
+Character and raw inputs return FALSE for each element, and NULL returns logical(0). Ordinary
+complex vectors classify both components; whole NA_complex_ returns FALSE for all three predicates.
+Results retain vector names, including missing-name masks, or dimension/dimname metadata when
+dimensions are present. Classes and unrelated attributes are dropped. Unsupported default storage
+types report native type-specific diagnostics. Owned tests cover resource limits and recovery.
+
+The current complex representation loses the surviving component when only one component is NA.
+Mixed-component NA/Inf/NaN therefore remains incorrect and is retained in the independent
+[gap probes](../conformance/probes/numeric-predicates-gaps.R). POSIXlt predicate methods, S4
+dispatch, full condition-call origins and the complete numeric/vector matrices also remain
+unfinished. The bounded fixtures and recursive controls do not establish complete numeric or package
+compatibility.
+
 ### Difftime units access and replacement (profile 0.381)
 
 `units`, `units<-`, `units.difftime` and `units<-.difftime` are first-class closures with `(x)` /

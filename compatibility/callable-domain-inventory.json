@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.381.0",
+  "semanticProfileVersion": "0.382.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "afb582d317efa7a07f2c91616912eec38a9bbe0ae944b32a10916b043f697c9a",
+    "capabilities": "ad2f76dbe6317c07863d133516e981d902f72fc81e3a75cd09e246840e9d365f",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "6dc2631dc260d908accfb5df7d9b385ed608ec7b874ac1fa58d22a5d01b652c6",
-    "oracleV2": "54ee2165cb8465df4128fdf4d42cb1fd56ae4bdd72afc147687eef032797530d",
+    "foundation": "d0527b1f251c3a66f99017b62dffa697d275bef9c3d790b31b426aa7a5e92254",
+    "oracleV2": "99a790dc73d0dbbc2bd87f0d672a783d61fc0b71d8fa9d77f07628e106324365",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "298afd7b315aaad3bab23cd5f8b90e483dd9c71f045412edb5e961c8a9e5d157"
+    "annotations": "84145c503e13129746990764ac57385c46999fe4d8c6848c7e9522b0a25343b4"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -47,12 +47,12 @@
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 814,
-    "qualifiedOverlaps": 786,
+    "registeredBindings": 816,
+    "qualifiedOverlaps": 788,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 587,
-    "classificationPendingBindings": 1966,
-    "recursiveLinkedBindings": 157,
+    "classifiedBindings": 590,
+    "classificationPendingBindings": 1963,
+    "recursiveLinkedBindings": 160,
     "bindingsWithDeclaredMatrixEvidence": 6,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
@@ -153,42 +153,42 @@
       "label": "Calls and promises",
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
-      "assignedBindings": 128,
-      "recursiveLinkedBindings": 43,
+      "assignedBindings": 131,
+      "recursiveLinkedBindings": 46,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 126,
+          "pendingBindings": 129,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 126,
+          "pendingBindings": 129,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "errors",
-          "pendingBindings": 126,
+          "pendingBindings": 129,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 126,
+          "pendingBindings": 129,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 126,
+          "pendingBindings": 129,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 126,
+          "pendingBindings": 129,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "identity",
-          "pendingBindings": 127,
+          "pendingBindings": 130,
           "partialDeclaredBindings": 1
         }
       ]
@@ -243,42 +243,42 @@
       "label": "Vector semantics",
       "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type.",
       "completion": "incomplete",
-      "assignedBindings": 93,
-      "recursiveLinkedBindings": 57,
+      "assignedBindings": 96,
+      "recursiveLinkedBindings": 60,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 87,
+          "pendingBindings": 90,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 87,
+          "pendingBindings": 90,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "errors",
-          "pendingBindings": 87,
+          "pendingBindings": 90,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 87,
+          "pendingBindings": 90,
           "partialDeclaredBindings": 6
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 89,
+          "pendingBindings": 92,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 88,
+          "pendingBindings": 91,
           "partialDeclaredBindings": 5
         },
         {
           "dimension": "identity",
-          "pendingBindings": 91,
+          "pendingBindings": 94,
           "partialDeclaredBindings": 2
         }
       ]
@@ -333,42 +333,42 @@
       "label": "Object systems",
       "requirement": "Full S3/group generics, S4 classes/generics/method selection/slots, and compatible external object packages.",
       "completion": "incomplete",
-      "assignedBindings": 258,
-      "recursiveLinkedBindings": 46,
+      "assignedBindings": 261,
+      "recursiveLinkedBindings": 49,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 254,
+          "pendingBindings": 257,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 254,
+          "pendingBindings": 257,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "errors",
-          "pendingBindings": 254,
+          "pendingBindings": 257,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 254,
+          "pendingBindings": 257,
           "partialDeclaredBindings": 4
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 256,
+          "pendingBindings": 259,
           "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 255,
+          "pendingBindings": 258,
           "partialDeclaredBindings": 3
         },
         {
           "dimension": "identity",
-          "pendingBindings": 257,
+          "pendingBindings": 260,
           "partialDeclaredBindings": 1
         }
       ]
@@ -423,42 +423,42 @@
       "label": "Numeric runtime",
       "requirement": "Complex arithmetic, special functions, linear algebra, FFT, distributions, optimizers, integration, and deterministic tolerances.",
       "completion": "incomplete",
-      "assignedBindings": 76,
-      "recursiveLinkedBindings": 7,
+      "assignedBindings": 79,
+      "recursiveLinkedBindings": 10,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "errors",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "identity",
-          "pendingBindings": 76,
+          "pendingBindings": 79,
           "partialDeclaredBindings": 0
         }
       ]
@@ -10695,11 +10695,25 @@
         "formals": ["x"],
         "signature": "args"
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "numeric-runtime", "object-systems", "vector-semantics"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "numeric-predicates-attributes",
+        "numeric-predicates-complex",
+        "numeric-predicates-dispatch",
+        "numeric-predicates-dispatched-reference-graph",
+        "numeric-predicates-review-dispatch",
+        "numeric-predicates-values"
+      ],
+      "remainingGaps": [
+        "Bounded ordinary atomic/complex classification, eager forcing, attributes, visible owned S3 methods and NextMethod observations do not establish the complete matrix. Mixed-component complex NA provenance, POSIXlt methods, S4 dispatch and full condition-call origins remain incomplete."
+      ]
     },
     {
       "binding": "base::is.finite.POSIXlt",
@@ -10735,11 +10749,25 @@
         "formals": ["x"],
         "signature": "args"
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["calls-promises", "numeric-runtime", "object-systems", "vector-semantics"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "numeric-predicates-attributes",
+        "numeric-predicates-complex",
+        "numeric-predicates-dispatch",
+        "numeric-predicates-dispatched-reference-graph",
+        "numeric-predicates-review-dispatch",
+        "numeric-predicates-values"
+      ],
+      "remainingGaps": [
+        "Bounded ordinary atomic/complex classification, eager forcing, attributes, visible owned S3 methods and NextMethod observations do not establish the complete matrix. Mixed-component complex NA provenance, POSIXlt methods, S4 dispatch and full condition-call origins remain incomplete."
+      ]
     },
     {
       "binding": "base::is.infinite.POSIXlt",
@@ -10965,9 +10993,22 @@
         "compatibility": "behavioral"
       },
       "classification": {
-        "status": "pending"
+        "status": "assigned",
+        "domains": ["calls-promises", "numeric-runtime", "object-systems", "vector-semantics"]
       },
-      "completion": "incomplete"
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "numeric-predicates-attributes",
+        "numeric-predicates-complex",
+        "numeric-predicates-dispatch",
+        "numeric-predicates-dispatched-reference-graph",
+        "numeric-predicates-nan-independent",
+        "numeric-predicates-review-dispatch",
+        "numeric-predicates-values"
+      ],
+      "remainingGaps": [
+        "Bounded ordinary atomic/complex classification, eager forcing, attributes, visible owned S3 methods and NextMethod observations do not establish the complete matrix. Mixed-component complex NA provenance, POSIXlt methods, S4 dispatch and full condition-call origins remain incomplete."
+      ]
     },
     {
       "binding": "base::is.nan.POSIXlt",

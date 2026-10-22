@@ -1,6 +1,14 @@
 # Performance and bundle discipline
 
-## Current bundle observation (profile 0.381, 2026-10-22)
+## Current bundle observation (profile 0.382, 2026-10-22)
+
+The shared numeric-predicate increment passes the unchanged size limits: client 17.6/150 KiB gzip,
+Worker 486.2/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw.
+Classification reserves result storage and checkpoints each element. Owned tests cover step-limit
+interruption, recursive method limits and session recovery. Browser timings remain at 0.380; this
+size/resource check does not establish a new latency result or change any budget.
+
+## Bundle observation at profile 0.381 (2026-10-22)
 
 The difftime units increment passes the unchanged size limits: client 17.6/150 KiB gzip, Worker
 485.8/512 KiB gzip, parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw. Conversion
