@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.389.0",
+  "semanticProfileVersion": "0.390.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "ebd9d6c6b7423b3c6c1645bc7655fc6ae02056f3e1b119123afca08bcd52a15c",
+    "capabilities": "107552576a82e874951f98135a36fbbbd84cd01ff13c2fa67389c3b2c3715811",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "f79c311190d43de65db23a7f8138e211efc5e36f5a8509a88468f3f890bf9c20",
-    "oracleV2": "06a0af58025ea5f24dbc21190ac158e69cf8802217860ac4f324ceecdbd66b8a",
+    "foundation": "2465653b30f0b99b485c05bff7e135dcc2de471e1ea705861fd5a603ddeab8ab",
+    "oracleV2": "e90f87435a4a23eda75f587fc5971b308a6b025bf73905b157f24509c0a053fe",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "4ba4c09bad0c3f67356a6ec68e32014642680255ef9e1663ec23dee740716645"
+    "annotations": "438d471b2fb392bf2e94535f63807f965a97e88c2e943b7022ef84a56df269b1"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -348,8 +348,8 @@
         },
         {
           "dimension": "errors",
-          "pendingBindings": 415,
-          "partialDeclaredBindings": 10
+          "pendingBindings": 414,
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "attributes",
@@ -3904,6 +3904,9 @@
         "s3-usemethod-nextmethod-class-history",
         "s3-usemethod-public-labels-and-forcing",
         "s3-usemethod-returned-reference-graph",
+        "usemethod-context-active-loop-values",
+        "usemethod-context-forcing-and-cleanup-values",
+        "usemethod-context-inner-generic-and-loop-boundaries",
         "usemethod-control-cleanup-values",
         "usemethod-control-completion-values",
         "usemethod-control-nested-nextmethod-values",
@@ -3978,6 +3981,14 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-context-active-loop-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-context-inner-generic-and-loop-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-control-cleanup-values"
             },
             {
@@ -4003,9 +4014,27 @@
           ],
           "remainingGaps": [
             "A supplied NULL selector and selected zero-actual, literal-missing and forwarded-missing flags are observed without injecting the selector as an argument; omitted-selector, invalid/explicitly missing selector, broader default and diagnostic boundaries remain unfinished.",
-            "Direct cleanup return replacement and caller continuation are observed; loop/evaluation/forced-argument context restrictions and full error origins remain unfinished.",
+            "Direct cleanup return replacement and caller continuation are observed; direct evaluation/forced-argument contexts and full error origins remain unfinished.",
+            "Selected active same-closure loop bodies reject while for-sequence dispatch, completed loops and new inner generic frames remain admitted. Arbitrary context composition, no-closure behavior and complete generic diagnostics remain unfinished.",
             "Selected skipped leading/middle classes, duplicate explicit classes and initial versus reached default metadata are covered; malformed class lists, resource limits and missing/default/selector boundaries remain unfinished.",
             "Selected zero-formal/empty-dots calls, forced or unforced generic defaults, local rebinding and literal-missing actuals retain the original argument list; outside-generic invocation, complete missing/default behavior and full diagnostic origins remain unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-context-active-loop-values"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-context-forcing-and-cleanup-values"
+            }
+          ],
+          "remainingGaps": [
+            "Selected same-closure active-loop calls produce the observed inappropriate-context diagnostic after generic validation and before selector/original forcing. Native messages for arbitrary malformed/missing generic arguments, direct evaluation/forced-argument/no-closure contexts and complete condition attribution remain unfinished."
           ]
         },
         {
@@ -4054,6 +4083,10 @@
             },
             {
               "suite": "oracle-v2",
+              "caseId": "usemethod-context-inner-generic-and-loop-boundaries"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "usemethod-control-completion-values"
             },
             {
@@ -4090,6 +4123,7 @@
             }
           ],
           "remainingGaps": [
+            "A separate generic invoked from selected caller loops retains its own function frame. Direct UseMethod inside evaluation/handler wrappers and complete generic contexts remain unfinished.",
             "Direct owned generic completion and nested/helper return targets are observed; unusual evaluation contexts, complete S3 dispatch and free-variable forwarding remain unfinished.",
             "Selected explicit integer/NULL selectors choose methods while preserving the original actual argument list, named/positional rematching and method defaults; arbitrary selector objects and the complete generic-call matrix remain unfinished.",
             "Selected omitted-selector calls inside owned generics choose NULL when no actual was supplied and name for a literal missing selected actual; existing matched-first-formal and first-supplied fallback behavior remains observed. Arbitrary objects, generic-call contexts and complete S3 dispatch remain unfinished.",
@@ -4103,6 +4137,10 @@
             {
               "suite": "oracle-v2",
               "caseId": "s3-usemethod-public-labels-and-forcing"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "usemethod-context-forcing-and-cleanup-values"
             },
             {
               "suite": "oracle-v2",
@@ -4135,6 +4173,7 @@
           ],
           "remainingGaps": [
             "Direct generic continuation is suppressed and method/generic/caller cleanup order is observed. Unusual evaluation contexts, active-binding behavior and full condition/control interaction remain unfinished.",
+            "Generic-first forcing, selector/original laziness before loop rejection, cleanup and completed expression loops have bounded observations. Complete promise, error-origin and control-flow behavior remains unfinished.",
             "Selected generic-default forcing does not invent a supplied actual; method defaults, local rebinding order and memoized original promises retain their observed behavior. General promise/control-flow behavior, nonlocal return, visibility and full condition attribution remain unfinished.",
             "Selected original-argument forcing, method-default selection and changed-argument continuation are observed; arbitrary promises, dots and forwarded missing arguments remain unfinished.",
             "Selected selector/name/original forcing order, unused original laziness, second-promise reuse, method-default selection and changed-method-argument continuation are observed; arbitrary control flow, visibility, dots reconstruction and missing/default forcing remain unfinished."
@@ -4160,7 +4199,7 @@
       ],
       "remainingGaps": [
         "Closure UseMethod search classes remain distinct from public class()/inherits() labels and internal/group generic policy.",
-        "Direct UseMethod nonlocal completion, method visibility and cleanup have bounded causal evidence. Native context restrictions, direct NextMethod visibility and complete S3 control behavior remain unfinished.",
+        "Direct UseMethod completion and selected same-closure active-loop admission have bounded causal evidence. Forced-argument/evaluation/no-closure contexts, full generic diagnostics, direct NextMethod visibility and complete S3 control behavior remain unfinished.",
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established.",
         "These bounded implicit-chain observations do not establish full S3 compatibility. Explicit dispatch selectors, omitted/forwarded-missing/default corner cases, complete condition origins, S4 and group-generic interactions remain unfinished."
       ]

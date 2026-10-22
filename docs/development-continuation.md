@@ -2056,3 +2056,39 @@ preserving valid inner generic calls, cleanup and original promises. Add bounded
 recursive causal evidence, rerun all semantic gates and affected cached package checks, then commit
 locally. Full compatibility, further datasets, original package testing, OS coverage and release
 gates remain open. No new user input is required for this local increment.
+
+### UseMethod loop-context admission (profile 0.390)
+
+The independently observed 38-case matrix closes sixteen reproduced defects and retains twenty-two
+passing baseline guards. Generic matching/evaluation now precedes the same-closure loop admission
+check; rejected contexts do not force selectors or original dispatch promises or enter methods. For
+sequences, completed loops, helper generics and first-class aliases retain their observations. All
+39 focused tests pass, including cleanup, zero frames and subsequent invisible finite dispatch in
+the same session. Existing step/depth exhaustion tests remain in the direct-completion suite.
+
+Three foundation groups retain all 38 assertions; three exact recursive groups retain 25
+observations with strict causal controls. The new partial errors dimension, following 0.389's
+visibility dimension, gives 109 partial dimensions on nineteen bindings. There remain 169
+causal-linked bindings; no domain or callable is complete. Forced-argument/evaluation contexts,
+malformed generic diagnostics, full condition origins and direct NextMethod visibility remain open.
+
+The canonical check passes 3,144 unit tests with 94 opt-in skips, both typechecks, tooling, serial
+build and fixed bundle caps. Checked-in/live/recursive conformance passes 1,470 / 1,397 / 385, with
+55 NativR-only live skips. Client/Worker gzip sizes are 17.6/491.6 KiB; parser and elementary Wasm
+are 671.9/311.2 KiB raw, all below unchanged limits. The
+[Windows browser checkpoint](../compatibility/platform-evidence/browser-windows-0.390.0.json) passes
+12/12, including same-Worker loop rejection and invisible recovery. Required examples take 11.4 /
+15.7 / 42.0 seconds for Chromium / Firefox / WebKit under the unchanged 120-second budget.
+
+The
+[two-package checkpoint](../compatibility/platform-evidence/offline-packages-windows-0.390.0/index.json)
+rechecks original abind and numDeriv entrypoints against 0.389, preserving all 21 observations and
+stage outcomes with stable inputs. abind retains P7 eligibility; numDeriv retains its test-output
+blocker. This is a regression-pair refresh, not a rerun of the full 24-package corpus, which remains
+recorded at 0.389. Formula, pins and partitions are unchanged. Performance evidence remains at 0.389
+and packed-consumer evidence at 0.388. The separate nativrTest evidence grants no original
+dependency-closure or P6/P7 credit.
+
+Next steps remain independently reproducing the neighboring evaluation/forced-argument dispatch
+contexts, extending the isolated runner's documented parity, and closing the broader semantic and
+platform ledger. Linux, holdout, downloads and remote actions retain their existing boundaries.

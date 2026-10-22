@@ -60332,9 +60332,24 @@ async function builtinUnclass(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 async function builtinUseMethod(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["generic", "object"]);
-  const generic = characterScalar(required(matched, "generic", "UseMethod"), "generic");
-  return invocation.dispatchS3(generic, matched.get("object"));
+  const matched = await matchLazyArguments(invocation, ["generic", "object"]);
+  const genericArgument = matched.get("generic");
+  if (
+    genericArgument === undefined ||
+    (genericArgument.promise.missing && genericArgument.promise.expression === null)
+  ) {
+    throw new REvaluationError("NRE2103", 'argument "generic" is missing, with no default');
+  }
+  const generic = characterScalar(await invocation.force(genericArgument.promise), "generic");
+  // Generic validation precedes admission; a rejected context never forces the selector.
+  invocation.assertUseMethodContext();
+  const objectArgument = matched.get("object");
+  if (objectArgument?.promise.missing && objectArgument.promise.expression === null) {
+    throw new REvaluationError("NRE2103", 'argument "object" is missing, with no default');
+  }
+  const object =
+    objectArgument === undefined ? undefined : await invocation.force(objectArgument.promise);
+  return invocation.dispatchS3(generic, object);
 }
 
 async function builtinNextMethod(invocation: BuiltinInvocation): Promise<RValue> {

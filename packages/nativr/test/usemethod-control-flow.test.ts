@@ -7,7 +7,7 @@ const assets = {
 };
 
 // Independent GNU R 4.6.1 observations of direct UseMethod completion.
-// Loop/evaluation/forced-argument context restrictions and direct NextMethod visibility remain separate.
+// Active loop contexts have a separate suite; evaluation/forced-argument restrictions remain open.
 const cases = [
   [
     "return skips following statements",

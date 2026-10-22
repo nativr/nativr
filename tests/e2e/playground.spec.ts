@@ -104,6 +104,24 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page.getByRole("button", { name: /^Run/u }).click();
   await expect(page.locator("#result")).toHaveText("[true, true]");
   expect(evaluationRequests).toEqual([]);
+  await page.locator("#source").fill(`local({
+    trace <- character()
+    g <- function(x) {
+      on.exit(trace <<- c(trace, "cleanup"))
+      for (i in 1L) UseMethod("g", stop("selector forced"))
+      99L
+    }
+    g.default <- function(x) stop("method entered")
+    problem <- tryCatch(g(stop("original forced")), error=function(e) conditionMessage(e))
+    h <- function(x) UseMethod(object=1L, generic="h")
+    h.integer <- function(x) invisible(7L)
+    c(identical(problem, "'UseMethod' used in an inappropriate fashion"),
+      identical(trace, "cleanup"),
+      identical(withVisible(h(1L)), list(value=7L, visible=FALSE)))
+  })`);
+  await page.getByRole("button", { name: /^Run/u }).click();
+  await expect(page.locator("#result")).toHaveText("[true, true, true]");
+  expect(evaluationRequests).toEqual([]);
   await page
     .locator("#source")
     .fill(

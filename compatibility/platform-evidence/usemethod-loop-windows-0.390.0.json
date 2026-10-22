@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-usemethod-loop-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.390.0",
+  "sourceCommit": "3aa7985b93aceac4f661ba622b3b5c5e6206ba8a",
+  "sourceState": "Uncommitted candidate over sourceCommit; repository-relative source digests identify the recorded state",
+  "platform": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "oracleVersion": "4.6.1",
+    "oracleLocale": "C"
+  },
+  "scope": "Bounded same-closure loop admission and generic-first forcing; Windows advisory evidence, not complete S3 or RFC-0007 Linux validation",
+  "provenance": {
+    "sources": [
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "9f83cff71ea5b45eb40b138e7301c823829da67766e5480536a34fa25f447dab"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "56e0e1c6454496d25448615288ef64189c80991242ff068659eb88bcbe166ec6"
+      },
+      {
+        "path": "packages/runtime/src/values.ts",
+        "sha256": "88d7c5b6795594c322570c4e6141021a0187ce78cc491817a9a9eeef7f827463"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "4daf7d04868b59d97d2066c2ec50ebf613947371364c6d723d0740d8b0d366a3"
+      },
+      {
+        "path": "packages/nativr/test/usemethod-loop-context.test.ts",
+        "sha256": "947b191f3570e8e3daa8faac992ac55c224c73c22f7ec21da48ad56ee8908abe"
+      },
+      {
+        "path": "packages/nativr/test/usemethod-control-flow.test.ts",
+        "sha256": "e723c3ddf41b92fc874fc28a710e9aa997d084803e15b75401ce3f42896f1a57"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "d3d0cd39ac8e54491f8e8e13f892ee53421168bc80e7fbacccadab8d2666e07b"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "2465653b30f0b99b485c05bff7e135dcc2de471e1ea705861fd5a603ddeab8ab"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "e90f87435a4a23eda75f587fc5971b308a6b025bf73905b157f24509c0a053fe"
+      },
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "438d471b2fb392bf2e94535f63807f965a97e88c2e943b7022ef84a56df269b1"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "58e1739b188f1b64ff9edac633479c226dc1c970ce7c5a91a63ae8d1f5044104"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "72f897f94530cf5c0b3f9738677da974b473a22f63e0410e91f61bb46d1d6f06"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "107552576a82e874951f98135a36fbbbd84cd01ff13c2fa67389c3b2c3715811"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "69f7454b622a42c6007117d321478e199f9a0ba4a7c8ffbe7e7cc0bc8fd076a3"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+      }
+    ],
+    "draftDigests": [
+      {
+        "label": "finalized-foundation.json",
+        "sha256": "46933d0f5adb92cbf37d5fc562b5f4424151c999438c663dd11feb46bf1ecedd"
+      },
+      {
+        "label": "finalized-oracle-v2.json",
+        "sha256": "13884a301b88a8942931107b8801d4efb7a994e33d5f38af5e6c0a66d0cd2522"
+      },
+      {
+        "label": "finalized-native-checks.json",
+        "sha256": "de4b078dc94ab29a7624b750c7642d2e293eaed44d14e017506aeed29258898c"
+      },
+      {
+        "label": "finalized-provenance.json",
+        "sha256": "fec3fb26167b575b0572318fa9444b6bb90660dadba30c1bac65beb5a995176b"
+      }
+    ],
+    "nativeValidationSha256": "61cc89c770d769c760eded95c6bf82e8dac144ff8b5062f71b1318fd540191da",
+    "originalFrozenMatrixSha256": "416133c06eadf582a3efa8cc2acd7be57584985573c0c357e142020b79f1e947",
+    "nativeTools": {
+      "bindingHelperSha256": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46",
+      "observerSha256": "591c9e75b85aac4af34a32148543b70f6ee4fddccb92b1889595da0b3ac1e2e6",
+      "adapterSha256": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e"
+    },
+    "draftPromotionExact": true,
+    "whitespaceNormalization": "Only inherited CRLF layout was normalized to LF in grouped foundation and expected-value source; original 38 fixture strings unchanged",
+    "redaction": "Only case identities, counts, status checks, source/report/log digests and repository-relative evidence links; no expressions, implementation bodies, raw output or absolute host paths"
+  },
+  "baseline": {
+    "profile": "0.389.0",
+    "reportSha256": "7c1c17be657289987d5d5a6ff20468702af8ac5f35e3233a783af60e49d4b6af",
+    "snapshotSha256": "832aba451e7d4ea2353200ed893168507e73cebfd7904af9a80c81f8fab6edc3",
+    "stableInputsAndArtifacts": true,
+    "counts": { "total": 38, "pass": 22, "mismatch": 16, "error": 0 },
+    "mismatchedCaseIds": [
+      "body-for-body",
+      "body-while-body",
+      "body-while-condition",
+      "body-repeat-body",
+      "for-alias-body",
+      "while-alias-condition",
+      "repeat-alias-body",
+      "usemethod-alias-loop-body",
+      "nested-loops-reject",
+      "order-loop-ordinary-selector",
+      "order-loop-selector-error",
+      "order-loop-missing-method",
+      "loop-rejects-before-original-promise",
+      "invalid-loop-runs-generic-cleanup",
+      "loop-supplied-selector-named-first",
+      "direct-supplied-selector-named-first"
+    ],
+    "interpretation": "16 reproduced defects and 22 passing guards, not a completion measure"
+  },
+  "independentNative": {
+    "counts": {
+      "assembledGroups": 6,
+      "assembledGroupsPassed": 6,
+      "foundationAssertions": 38,
+      "foundationAssertionsPassed": 38,
+      "recursiveComponentChecks": 25,
+      "recursiveComponentChecksPassed": 25,
+      "nativeStrictCausalControls": 6,
+      "nativeStrictCausalControlsPassed": 6
+    },
+    "cases": [
+      {
+        "id": "usemethod-context-active-loop-rejection",
+        "suite": "foundation",
+        "codeSha256": "c52de2e839848f94e0db2639424a538a1d952ecd1ca92e9a56cf1b359f3493ba",
+        "components": 9,
+        "nativeExpectedGraphSha256": "0789b849d08b32e03fbc26bec97401a50244954744dd063a376886472151cbb7"
+      },
+      {
+        "id": "usemethod-context-forcing-and-cleanup",
+        "suite": "foundation",
+        "codeSha256": "f9035b1de0d62fccd3cfac1bea0192c36fafbdf88210b70fcab761ba2c1c3ee5",
+        "components": 10,
+        "nativeExpectedGraphSha256": "02f0afa675d03b5148f61d8dadb1681336c5f6405a6100245c8fe69b1d3e37d9"
+      },
+      {
+        "id": "usemethod-context-valid-inner-generic",
+        "suite": "foundation",
+        "codeSha256": "e529e2565f7d8646cac13cb24bccf72cfc757004359e2381f6fba3c3baca362b",
+        "components": 19,
+        "nativeExpectedGraphSha256": "a44ebcd09a17eca6b03ecffa24f53ddba3ca2f6cab507c235574733ec4b79ec2"
+      },
+      {
+        "id": "usemethod-context-active-loop-values",
+        "suite": "oracle-v2",
+        "codeSha256": "d9c6879f97e6cb99cfcc761b7176b7c55338b7b32ae8907ab8ca6f1f64ac514c",
+        "components": 7,
+        "nativeExpectedGraphSha256": "d1aedeb6897f3dbc64f17cfcc0282baa23f3656922c40c98b45502c89f6c0265"
+      },
+      {
+        "id": "usemethod-context-forcing-and-cleanup-values",
+        "suite": "oracle-v2",
+        "codeSha256": "6e5afd9fb27deaae0bca5071a854b73a3c78b0a5ddc556b5eed0b4b39f66d8cf",
+        "components": 10,
+        "nativeExpectedGraphSha256": "ab0a985f5d1c2689accfb6502b0f796e2ea8581332e8e3588b3b64ebcd67d6ae"
+      },
+      {
+        "id": "usemethod-context-inner-generic-and-loop-boundaries",
+        "suite": "oracle-v2",
+        "codeSha256": "ccf0425d2d4328b86cf7587d2853c47877d0ab9585f26dba914b51a9ca72f212",
+        "components": 8,
+        "nativeExpectedGraphSha256": "891ac882a04f23ea4b1e27076ec554a159a3a0a79ea072a72317e0089f6e4f1f"
+      }
+    ],
+    "causalControls": [
+      {
+        "id": "usemethod-context-active-loop-values",
+        "binding": "base::UseMethod",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "b90a5d5be149d8b8e441a825004f685763eb5e766c24060e18631ec09063e2e0",
+        "valueObservationSha256": "1fdd8dc8918a6f8c57a7b56ac3b8dba71672e91b2753d5b2ccab9a946449a95c"
+      },
+      {
+        "id": "usemethod-context-forcing-and-cleanup-values",
+        "binding": "base::UseMethod",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "69fed9ffd24a564ca4313dac74811490c65ce819d7a06b970d0ad596ad7e21b1",
+        "valueObservationSha256": "d0d7f5640acfe051eafe7ac1509047bf36ed1318e1fa4f3c7206af0d75381401"
+      },
+      {
+        "id": "usemethod-context-inner-generic-and-loop-boundaries",
+        "binding": "base::UseMethod",
+        "exactErrorMarker": true,
+        "successfulChangedValue": true,
+        "errorObservationSha256": "000b15340306bda4203ec6578bfd0a3103cce2b9a6f695395f0f580ae1cb19b7",
+        "valueObservationSha256": "b1def01d0992b060e739efc042f4442af4bf4a16029abaf69e7bc2b109212d80"
+      }
+    ],
+    "boundary": "Native-side checks only; matching NativR execution is separately established by the recursive gate footer"
+  },
+  "gates": [
+    {
+      "command": "pnpm check",
+      "logSha256": "8ee0cfa789af864edd0d1baca974a84d93d541465f29bbbe9995f34544375a8d",
+      "verification": "exact unit summary plus completed build/manifest/status/browser/bundle pipeline tail",
+      "unitPassed": 3144,
+      "unitSkipped": 94
+    },
+    {
+      "command": "pnpm conformance",
+      "logSha256": "76589a3b30052cf1de2f977394a7061d8023741243f3e2fb7704d11eeb4e85a5",
+      "verification": "exact successful footer and new case pass lines",
+      "passed": 1470
+    },
+    {
+      "command": "pnpm conformance:r",
+      "logSha256": "c7a9b27c389392a8c70fa58f118074bf2c6c951860c4d5d0ca7cf3dad43512ef",
+      "verification": "exact successful footer and new case pass lines",
+      "passed": 1397,
+      "nativrOnlySkipped": 55
+    },
+    {
+      "command": "pnpm conformance:r:v2",
+      "logSha256": "660284a2ee19e86f158b614db1f3bb3f0821f590646c82b8eebda1508237de4f",
+      "verification": "exact successful recursive footer and new case pass lines",
+      "passed": 385,
+      "causallyLinkedBindings": 169
+    }
+  ],
+  "relatedEvidence": {
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.390.0.json",
+      "sha256": "f8e83f04d31c50b37090d336c3025cfc16e0b2d0f64f9b9f1ab01dba13490ada",
+      "passed": 12,
+      "inputsStable": true
+    },
+    "originalPackages": {
+      "path": "compatibility/platform-evidence/offline-packages-windows-0.390.0/index.json",
+      "sha256": "46e9c6d22d5459d1b2f814bcbb50f12c73035b8ab9b953d56d802da23a7734f5",
+      "stableArtifacts": true,
+      "packages": [
+        {
+          "name": "abind",
+          "path": "compatibility/platform-evidence/offline-packages-windows-0.390.0/abind.json",
+          "sha256": "b06511ab8395ced5a51c52246096dfcfd3005a9981104ac8eb4a557fc4bfdae0",
+          "comparedWith": {
+            "path": "compatibility/package-check-evidence/0.389.0/abind.json",
+            "sha256": "8347e3eadb5abe4f1ed505d1199c1969cdd00b8241bf96c0de8b238f095162ce"
+          },
+          "observationsUnchanged": 10,
+          "stagesUnchanged": 15,
+          "comparisonSummary": {
+            "total": 10,
+            "outcomes": { "match": 10 },
+            "repeatability": { "repeatable": 10, "nonrepeatable": 0, "unobserved": 0 }
+          },
+          "localP7Eligible": true,
+          "normativeTierCredit": false
+        },
+        {
+          "name": "numDeriv",
+          "path": "compatibility/platform-evidence/offline-packages-windows-0.390.0/numDeriv.json",
+          "sha256": "3a3194040c5684918f83def35944459ec2b99d2e94e8428884faec0a0692abeb",
+          "comparedWith": {
+            "path": "compatibility/package-check-evidence/0.389.0/numDeriv.json",
+            "sha256": "fbda91c6de87fc031122ddb7d28b4272c382652c60df5135f8503668326f4e93"
+          },
+          "observationsUnchanged": 11,
+          "stagesUnchanged": 15,
+          "comparisonSummary": {
+            "total": 11,
+            "outcomes": { "mismatch": 6, "match": 5 },
+            "repeatability": { "repeatable": 9, "nonrepeatable": 2, "unobserved": 0 }
+          },
+          "localP7Eligible": false,
+          "normativeTierCredit": false
+        }
+      ],
+      "normativeTierCredit": false
+    }
+  },
+  "qualification": {
+    "completeCallable": false,
+    "completeDomain": false,
+    "fullCorpusRefresh": false,
+    "linuxGate": false,
+    "releaseReady": false
+  },
+  "limitations": [
+    "Only two regression packages were rerun; this is not a 24-package refreshed corpus claim",
+    "Direct forced-argument/evaluation/handler/no-closure contexts and complete generic diagnostics remain unfinished",
+    "Log summaries are checked and hashed; this recorder does not rerun gates or infer process exit receipts",
+    "Linux execution, the Formula holdout, publication and remote changes remain separately authorized work"
+  ]
+}

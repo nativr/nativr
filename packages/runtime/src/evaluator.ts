@@ -2990,6 +2990,7 @@ export class Evaluator {
           },
           registerS3Method: async (generic, className, method, environment) =>
             this.#registerS3Method(generic, className, method, environment, context),
+          assertUseMethodContext: () => this.#assertUseMethodContext(),
           dispatchS3: async (generic, object) => this.#dispatchS3(generic, object, context),
           dispatchS3IfPresent: async (
             generic,
@@ -4224,6 +4225,19 @@ export class Evaluator {
       this.#s3RegistrationKey(genericEnvironment, generic, className),
       method,
     );
+  }
+
+  #assertUseMethodContext(): void {
+    const closureFrame = this.#closureCallFrames.at(-1);
+    const controlFrame = this.#controlFrames.at(-1);
+    // A caller's loop cannot reject a newly entered generic; completed loops have been popped.
+    if (
+      closureFrame !== undefined &&
+      controlFrame?.kind === "loop" &&
+      controlFrame.environment === closureFrame.environment
+    ) {
+      throw new REvaluationError("NRE2282", "'UseMethod' used in an inappropriate fashion");
+    }
   }
 
   async #dispatchS3(

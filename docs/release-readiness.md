@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-22 at verified semantic profile **0.389.0**. Canonical counts are generated in
+Last assessed 2026-10-22 at verified semantic profile **0.390.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
 
@@ -11,15 +11,15 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                                                             | Status              |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Production check                   | Profile 0.389: 3,105 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                                    | Passed              |
-| Conformance                        | 1,467 checked-in, 1,394 live GNU R 4.6.1, 382 recursive cases; 169 bindings linked with causal controls                                                                                     | Passed              |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                | Passed              |
-| Browser e2e                        | Profile 0.389 on Windows: 12/12 pass across Chromium, Firefox and WebKit, including the optional owned runner; required examples take 11.7 / 16.0 / 41.5 s under the unchanged 120 s budget | Passed on this host |
-| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                          | Passed              |
-| Fixed bundle limits                | Profile 0.389: client 17.6/150 KiB gzip; Worker 491.4/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                         | Passed              |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                  | Open                |
+| Gate                               | Latest evidence                                                                                                                                                                                                | Status              |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Production check                   | Profile 0.390: 3,144 unit tests pass, 94 opt-in tests skipped; production/test/config types, build and bundle audit pass                                                                                       | Passed              |
+| Conformance                        | 1,470 checked-in, 1,397 live GNU R 4.6.1, 385 recursive cases; 169 bindings linked with causal controls                                                                                                        | Passed              |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                                                                   | Passed              |
+| Browser e2e                        | Profile 0.390 on Windows: 12/12 pass across Chromium, Firefox and WebKit, including loop admission and the optional owned runner; required examples take 11.4 / 15.7 / 42.0 s under the unchanged 120 s budget | Passed on this host |
+| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                                                                             | Passed              |
+| Fixed bundle limits                | Profile 0.390: client 17.6/150 KiB gzip; Worker 491.6/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                                                                            | Passed              |
+| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                                                                     | Open                |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
 broader workload coverage, latency acceptance budgets, the declared OS matrix, CI and release
@@ -29,7 +29,7 @@ packaging remain open. The approved roadmap does not authorize push or publicati
 
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,353 assigned, 1,200 pending; all 823 registered bindings assigned; 108 partial dimensions on nineteen bindings; matrices need closure                                                 | Not met                 |
+| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,353 assigned, 1,200 pending; all 823 registered bindings assigned; 109 partial dimensions on nineteen bindings; matrices need closure                                                 | Not met                 |
 | Callable evidence/exclusions                     | 796/2,522 distinct names overlap; 169 bindings have specific recursive links. Name overlap is inventory, not a completion percentage                                                                                                               | Not met                 |
 | Broad corpus evidence                            | 25 pins: 2 P7, 1 P6, 9 P5, 11 P4, 1 P3 and the unevaluated P0 holdout. Higher-tier blockers are explicit                                                                                                                                           | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
@@ -48,11 +48,11 @@ made GNU R file.access reject readable fixtures. These are harness constraints, 
 deviations.
 
 No Worker/protocol/playground interface changed in stabilization. E2e has now been refreshed at
-profile 0.389 on Windows, including formatting recovery, UTC conversion, S3 class history, selector
-forwarding and direct generic completion with method visibility and ordered cleanup. The earlier
-fixture typing errors are repaired, and `pnpm typecheck:all` checks production sources, tests and
-build configurations without emitting files as part of `pnpm check`. The packed consumer now checks
-its public declarations strictly before its browser build.
+profile 0.390 on Windows, including formatting recovery, UTC conversion, S3 class history, selector
+forwarding, direct completion, loop admission and subsequent invisible recovery with ordered
+cleanup. The earlier fixture typing errors are repaired, and `pnpm typecheck:all` checks production
+sources, tests and build configurations without emitting files as part of `pnpm check`. The packed
+consumer now checks its public declarations strictly before its browser build.
 
 The [0.388 offline pack checkpoint](../compatibility/platform-evidence/pack-windows-0.388.0.json)
 records both tarball digests and the smoke-script inputs. It reused the existing production build
@@ -84,6 +84,28 @@ claim. The recovery expression differs from 0.388, so total recovery timings are
 comparable. These descriptive samples do not establish latency acceptance or a speedup; zero
 measurements reflect clock resolution. Broader OS coverage and required-example profiling remain
 open.
+
+## Bounded loop-context checkpoint (profile 0.390)
+
+The 38 frozen native fixtures reproduce sixteen baseline defects and retain twenty-two guards. The
+runtime now rejects direct same-closure active-loop UseMethod calls after generic evaluation and
+before selector or original-promise forcing. For sequences, completed loops and inner generics
+called from a caller's loop retain their bounded behavior. Cleanup and a same-session invisible
+finite dispatch verify recovery. Broader evaluation/forced-argument contexts remain unfinished.
+
+The [browser checkpoint](../compatibility/platform-evidence/browser-windows-0.390.0.json) passes all
+twelve tests on this Windows host. Three foundation groups and three exact recursive groups extend
+partial UseMethod evidence; its errors dimension brings the total to 109 partial dimensions on
+nineteen bindings. No callable or domain is complete. Performance remains measured at 0.389, and
+packed-consumer evidence at 0.388.
+
+Only the
+[abind/numDeriv pair](../compatibility/platform-evidence/offline-packages-windows-0.390.0/index.json)
+is refreshed at 0.390. All 21 observation inputs, outcomes and repeatability flags, plus their
+fifteen-stage statuses, match 0.389. abind retains ten matches and P7 eligibility; numDeriv retains
+five matches, six mismatches, two nonrepeatable observations and test-output as its first blocker.
+Both are regression partition archives, with unchanged pins. This advisory run adds no normative
+tier credit. The full 24-package checkpoint remains at 0.389; Formula remains untouched.
 
 ## Cached package checkpoint
 

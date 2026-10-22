@@ -38,6 +38,35 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### UseMethod admission in active loops (profile 0.390)
+
+Direct `UseMethod` execution in an active loop belonging to its interpreted closure raises the
+observed inappropriate-context error. This covers `for` bodies, `while` conditions/bodies, `repeat`
+bodies and selected first-class aliases. A `for` sequence is evaluated before its loop begins;
+completed, empty and broken loops leave no active rejection context. A separate generic entered from
+a caller's loop remains valid because it owns a new function frame.
+
+The generic argument is matched, forced and validated before context admission, independently of the
+order of named actuals. Rejected contexts do not force a supplied selector or original dispatch
+promise and do not search for a method. Admitted calls then force their selector and preserve the
+original actuals. A generic expression's own error precedes context rejection; ordinary cleanup
+still executes and frame state is restored. Existing selected-method completion, visibility and
+NextMethod continuation are unchanged. The context check uses only the current control and closure
+frames, with no ancestor scan or input-sized allocation.
+
+Thirty-eight independently observed fixtures cover the loop rule, forcing and preservation controls;
+a NativR-specific same-session guard checks rejection cleanup and subsequent invisible dispatch.
+Three foundation groups preserve all 38 assertions. Three exact recursive groups retain 25 raw
+observations with strict unexpected-error propagation and group-level causal controls.
+While-condition cases remain foundation-only to keep the successful-value controls finite and
+meaningful.
+
+This is a bounded direct-loop rule. Direct forced-argument, eval/evalq/local, handler and no-closure
+contexts, arbitrary generic argument diagnostics, complete condition origins, S4/group interactions,
+free-variable forwarding and direct NextMethod visibility remain unfinished. Calling an ordinary
+generic through a wrapper is a preservation control, not evidence for direct UseMethod inside that
+wrapper. No complete callable or semantic domain is established.
+
 ### Direct UseMethod completion in closures (profile 0.389)
 
 A direct `UseMethod` call completes its active generic closure with the selected method's value and
@@ -56,9 +85,10 @@ public TypeScript API, Worker protocol or new input-sized allocation is introduc
 The focused independent native matrix covers direct completion, visible/invisible results, cleanup,
 helper/nested target identity, laziness and reference preservation. Resource guards and browser
 interruption/recovery are NativR-specific evidence. Unusual evaluation contexts remain unfinished:
-native restrictions within loops, forced arguments, `evalq` and `tryCatch` are recorded separately.
-Direct `NextMethod` visibility forwarding, local free-variable forwarding, top-level dispatch,
-condition origins and full S3/S4/group behavior are not established by this bounded increment.
+direct forced-argument, `evalq` and `tryCatch` restrictions are recorded separately. Selected active
+loop contexts have the bounded evidence above in 0.390. Direct `NextMethod` visibility forwarding,
+local free-variable forwarding, top-level dispatch, condition origins and full S3/S4/group behavior
+are not established by this bounded increment.
 
 ### Omitted UseMethod selectors inside generics (profile 0.388)
 

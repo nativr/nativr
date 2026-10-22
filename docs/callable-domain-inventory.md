@@ -9,7 +9,7 @@ assignments and gaps in
 
 ## Current scope
 
-At profile 0.388, the inventory contains 2,553 bindings: 2,525 reference exports and 28
+At profile 0.390, the inventory contains 2,553 bindings: 2,525 reference exports and 28
 registrations absent from that export snapshot. There are 823 registrations and 795 exact qualified
 overlaps. The existing 796 distinct-name overlaps measure a different relationship: registering a
 name in one namespace does not establish the binding in another namespace.
@@ -20,7 +20,7 @@ previously unclassified owned registrations. The bounded formatC increment adds 
 classified total is 1,353, including all 823 registered bindings. Another 1,200 reference bindings
 remain classification-pending. Assignments may span domains, so per-domain counts cannot be summed.
 
-Nineteen bindings have 107 reviewed, partial behavioral-dimension declarations. Each declaration
+Nineteen bindings have 109 reviewed, partial behavioral-dimension declarations. Each declaration
 references existing executable cases and retains explicit remaining gaps. No domain or callable is
 complete; all undeclared dimensions remain pending. Even a callable with a partial declaration in
 all seven dimensions still has an unfinished matrix.
@@ -105,15 +105,28 @@ This review adds no executable case, causal link, matrix declaration or completi
 
 ## Bounded behavioral review
 
+Profile 0.390 adds partial UseMethod errors evidence for direct same-closure active-loop rejection,
+generic-before-selector forcing and ordinary cleanup. Three foundation groups and three recursive
+groups preserve strict causal controls; while-condition assertions remain foundation-only. This adds
+the 109th partial dimension on the same nineteen bindings. Evaluation/forced-argument admission,
+arbitrary generic diagnostics, complete condition origins and S4 interactions remain unfinished.
+
+Profile 0.389 added partial UseMethod visibility evidence for direct generic completion, selected
+method visibility and cleanup, increasing the total from 107 to 108 partial dimensions. Five
+foundation groups and five recursive groups also extend existing ordinary, boundary, side-effect and
+identity declarations. NextMethod continuation is retained; direct NextMethod visibility and
+complete control-context parity remain open. Neither increment completes a callable or domain.
+
 Omitted-selector evidence adds ten links to five existing UseMethod dimensions. Zero-actual NULL
 selection and literal-missing name selection preserve supplied actuals, method defaults, forcing and
-reference guards. Existing errors/visibility boundaries remain open. Counts stay at 107 partial
-dimensions on nineteen bindings; no full callable or domain completion is inferred.
+reference guards. Existing errors/visibility boundaries remain open. At profile 0.388, counts stayed
+at 107 partial dimensions on nineteen bindings; no full callable or domain completion is inferred.
 
-Explicit-selector forwarding adds seventeen evidence links to nine existing UseMethod/NextMethod
-dimensions, preserving all prior evidence and the total of 107 partial dimensions on nineteen
-bindings. Selected actual values, forcing, call metadata and reference continuation are covered;
-omitted selectors, arbitrary selector objects, visibility and complete S3 behavior remain open.
+Profile 0.387 explicit-selector forwarding adds seventeen evidence links to nine existing
+UseMethod/NextMethod dimensions, preserving all prior evidence and the total of 107 partial
+dimensions on nineteen bindings. Selected actual values, forcing, call metadata and reference
+continuation are covered; omitted selectors, arbitrary selector objects, visibility and complete S3
+behavior remain open.
 
 Five S3 callable matrices add 21 partial dimension links for implicit search chains, class history,
 selected forcing and returned-reference behavior. Four dimensions merge with existing as.POSIXct
