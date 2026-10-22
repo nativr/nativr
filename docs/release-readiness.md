@@ -83,8 +83,20 @@ Interruption rejects with NRL4005 and runtimeReset; fresh recovery verifies stat
 and an invisible finite S3 result. There is no method-entry acknowledgement or cleanup-execution
 claim. The recovery expression differs from 0.388, so total recovery timings are not directly
 comparable. These descriptive samples do not establish latency acceptance or a speedup; zero
-measurements reflect clock resolution. Broader OS coverage and required-example profiling remain
-open.
+measurements reflect clock resolution. Broader OS coverage and agreed latency budgets remain open.
+
+### Required-example profiling at profile 0.392
+
+The
+[diagnostic checkpoint](../compatibility/platform-evidence/required-examples-windows-0.392.0/index.json)
+retains all 670 attributed executions from three isolated WebKit samples and one Chromium/Firefox
+control each. All original assertions, real clicks, viewports and the 120-second limit remain.
+WebKit takes 40.3–41.3 seconds, with median click-call time 209.9–214.3 ms and activation-to-UI time
+10–11 ms. The measurements overlap; the exact actionability/scheduling cause remains unproven. One
+prior uninstrumented baseline takes 44.8 seconds, which is insufficient for a speedup claim.
+Seventy-seven pure tests cover attribution, source-manifest consistency and response classification.
+Successful local Blob responses receive no served-asset credit; unknown HTTP assets still fail. This
+adds diagnostic evidence without changing runtime semantics, bundle caps or release budgets.
 
 ## Bounded generic-name checkpoint (profile 0.392)
 

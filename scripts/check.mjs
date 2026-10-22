@@ -13,6 +13,8 @@ for (const command of [
   ["compatibility:check"],
   ["inventory:test"],
   ["benchmark:browser:test"],
+  ["benchmark:examples:test"],
+  ["benchmark:examples:check"],
   ["conformance:r:v2:test"],
   ["oracle:discovery:test"],
   ["evidence:packages:test"],

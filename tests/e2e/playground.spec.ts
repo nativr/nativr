@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { expect, test } from "@playwright/test";
+import { expect, profiledRun, test } from "./helpers/required-example-profile.js";
 
 test("runs the required Worker examples without evaluation network traffic", async ({ page }) => {
   test.setTimeout(120_000);
@@ -10,11 +10,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.getByText("Runtime ready")).toBeVisible();
 
   await page.locator("#source").fill('Sys.getenv("NATIVR_PLAYGROUND")');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-001");
   await expect(page.locator("#result")).toHaveText('"worker"');
 
   await page.locator("#source").fill("nativrdemo::find_tools(c('nativr-echo', 'missing'))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-002");
   await expect(page.locator("#result")).toHaveText('["nativr://host/bin/nativr-echo", ""]');
 
   const evaluationRequests: string[] = [];
@@ -24,7 +24,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page
     .locator("#source")
     .fill('local({ x <- quote(a); for(i in 1:600) x <- call("f", x); deparse(x) })');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-003");
   await expect(page.locator("#errors")).toContainText("NRL4004");
   expect(evaluationRequests).toEqual([]);
   for (const source of [
@@ -32,11 +32,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
     'nchar(sprintf("%.100000000000000000000000000000f", 0.125))',
   ]) {
     await page.locator("#source").fill(source);
-    await page.getByRole("button", { name: /^Run/u }).click();
+    await profiledRun(page, "required-004");
     await expect(page.locator("#errors")).toContainText("NRL4007");
   }
   await page.locator("#source").fill('sprintf("%.100000000000000000000000000000g", 1.25)');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-005");
   await expect(page.locator("#result")).toHaveText('"1.25"');
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
@@ -49,7 +49,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       identical(is.finite(x), c(TRUE, FALSE, FALSE)),
       as.numeric(as.POSIXct(lt(.125, 1000000L))) == 31554743011200.125)
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-006");
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
   await page.locator("#source").fill(`local({
@@ -60,7 +60,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     c(identical(value$classes, structure("numeric", previous=c("integer", "numeric"))),
       identical(value$storage, "integer"), identical(value$public, "integer"))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-007");
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
   await page.locator("#source").fill(`local({
@@ -73,7 +73,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     c(identical(value$value, "original"), identical(events, 1L),
       identical(value$classes, structure("numeric", previous=c("integer", "numeric"))))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-008");
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
   await page.locator("#source").fill(`local({
@@ -83,7 +83,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     c(identical(g(), list(value=7L, missing=TRUE, classes="NULL")),
       identical(g(x=), list(value=9L, missing=TRUE, classes="name")))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-009");
   await expect(page.locator("#result")).toHaveText("[true, true]");
   expect(evaluationRequests).toEqual([]);
   await page.locator("#source").fill(`local({
@@ -101,7 +101,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     c(identical(value, list(value=7L, visible=FALSE)),
       identical(events, c("method", "generic")))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-010");
   await expect(page.locator("#result")).toHaveText("[true, true]");
   expect(evaluationRequests).toEqual([]);
   await page.locator("#source").fill(`local({
@@ -119,7 +119,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       identical(trace, "cleanup"),
       identical(withVisible(h(1L)), list(value=7L, visible=FALSE)))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-011");
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
 
@@ -165,7 +165,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     identical(trace, c("helper cleanup", "generic cleanup", "helper cleanup")),
     identical(ownDefault(), 7L))
 })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-012");
   await expect(page.locator("#result")).toHaveText("[true, true, true, true]");
   expect(evaluationRequests).toEqual([]);
 
@@ -201,7 +201,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     identical(trace, character())
   c(admission, routing, invalid_first, context_next)
 })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-013");
   await expect(page.locator("#result")).toHaveText("[true, true, true, true]");
   expect(evaluationRequests).toEqual([]);
   await page
@@ -209,7 +209,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "data(iris)\nc(as.character(dim(iris)), class(iris$Species), as.character(iris$Species[c(1, 51, 101)]))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-014");
   await expect(page.locator("#result")).toHaveText(
     '["150", "5", "factor", "setosa", "versicolor", "virginica"]',
   );
@@ -221,12 +221,12 @@ test("runs the required Worker examples without evaluation network traffic", asy
     reflect(reflected) <- 1 + 2
     c(identical(reflected$source, quote(1 + 2)), identical(eval(reflected$call$value), 3), identical(reflected$value, 3))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-015");
   await expect(page.locator("#result")).toHaveText("[true, true, true]");
   expect(evaluationRequests).toEqual([]);
 
   await page.locator("#source").fill("print(1:15, width = 20); invisible(NULL)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-016");
   await expect(page.locator("#result")).toHaveText("null");
   expect(await page.locator("#console-output").textContent()).toBe(
     " [1]  1  2  3  4  5\n [6]  6  7  8  9 10\n[11] 11 12 13 14 15\n",
@@ -234,7 +234,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(evaluationRequests).toEqual([]);
 
   await page.locator("#source").fill("print(function(x) { x <- x + 1; x^2 }); invisible(NULL)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-017");
   await expect(page.locator("#console-output")).toContainText("function (x)");
   expect(await page.locator("#console-output").textContent()).toBe(
     "function (x) \n{\n    x <- x + 1\n    x^2\n}\n",
@@ -244,7 +244,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page
     .locator("#source")
     .fill("print(table(c(FALSE, TRUE, TRUE))); print(table(a = integer())); invisible(NULL)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-018");
   await expect(page.locator("#console-output")).toContainText("< table of extent 0 >");
   expect(await page.locator("#console-output").textContent()).toBe(
     "\nFALSE  TRUE \n    1     2 \n< table of extent 0 >\n",
@@ -260,7 +260,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     options(previous_options)
     c(report, formatted_number, attr(report, "what"))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-019");
   await expect(page.locator("#result")).toHaveText(
     '["Mean scaled difference: scaled:1", "0,333", "scaled"]',
   );
@@ -273,7 +273,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     custom <- structure(list(message = "text"), class = c("fixture", "condition"))
     c(conditionMessage(e), deparse(conditionCall(e)), conditionMessage(custom))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-020");
   await expect(page.locator("#result")).toHaveText('["captured", "origin(1)", "custom:text"]');
   expect(evaluationRequests).toEqual([]);
 
@@ -283,17 +283,17 @@ test("runs the required Worker examples without evaluation network traffic", asy
     c(identical(eval(reflected), x),
       identical(deparse(reflected, width.cutoff = 500), "identity(structure(-1:-6, dim = 3:2))"))
   })`);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-021");
   await expect(page.locator("#result")).toHaveText("[true, true]");
   expect(evaluationRequests).toEqual([]);
 
   await page.getByRole("button", { name: "Scalar arithmetic" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-022");
   await expect(page.locator("#result")).toHaveText("2");
   expect(evaluationRequests).toEqual([]);
 
   await page.getByRole("button", { name: "Vector mean" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-023");
   await expect(page.locator("#result")).toHaveText("3");
 
   await page.locator("#source").fill(`
@@ -307,7 +307,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     active_environment$doubled <- 10L
     c(active_environment$doubled, stored, bindingIsActive("doubled", active_environment))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-024");
   await expect(page.locator("#result")).toHaveText("[10, 5, 1]");
 
   await page
@@ -315,31 +315,31 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       's <- utils::object.size(double(1000))\nc(unclass(s), format(s, units = "auto", standard = "IEC"))',
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-025");
   await expect(page.locator("#result")).toHaveText('["8048", "7.9 KiB"]');
 
   await page.getByRole("button", { name: "Function + closure" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-026");
   await expect(page.locator("#result")).toHaveText("16");
 
   await page.getByRole("button", { name: "Typed native adapter" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-027");
   await expect(page.locator("#result")).toHaveText("10");
 
   await page.getByRole("button", { name: "Pure-R package bundle" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-028");
   await expect(page.locator("#result")).toHaveText("6");
 
   await page.locator("#source").fill('nativrdemo::private_call("hidden_helper", 5)');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-029");
   await expect(page.locator("#result")).toHaveText("105");
 
   await page.locator("#source").fill("nativrdemo::create_file()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-030");
   await expect(page.locator("#result")).toHaveText("[1, 1, 0, 0]");
 
   await page.locator("#source").fill("nativrdemo::plot_series(c(2, 5, 1, 4))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-031");
   await expect(page.locator("#result")).toHaveText("4");
   await expect(page.locator("#graphics-count")).toHaveText("5");
   const timeSeriesPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -362,43 +362,43 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(timeSeriesPixels).toBeGreaterThan(100);
 
   await page.getByRole("button", { name: "Recursive time-series filter" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-032");
   await expect(page.locator("#result")).toHaveText("[1, 2.8, 5.24, 8.192, 11.5536, 15.24288]");
 
   await page.getByRole("button", { name: "Package DESCRIPTION" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-033");
   await expect(page.locator("#result")).toHaveText(
     '["nativrdemo", "0.1.0", "Browser-Native R Demo", "Apache-2.0", "nativrdemo"]',
   );
 
   await page.getByRole("button", { name: "Pure-R package discovery" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-034");
   await expect(page.locator("#result")).toHaveText(
     '["nativrdemo", "DESCRIPTION", "NAMESPACE", "R", "doc", "extdata"]',
   );
 
   await page.getByRole("button", { name: "Pure-R UTF-8 detection" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-035");
   await expect(page.locator("#result")).toHaveText("true");
 
   await page.getByRole("button", { name: "Pure-R shell quoting" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-036");
   await expect(page.locator("#result")).toHaveText(`["'package path'", "'plain'"]`);
 
   await page.getByRole("button", { name: "Pure-R package ZIP member" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-037");
   await expect(page.locator("#result")).toHaveText('["alpha", "beta"]');
   expect(evaluationRequests).toEqual([]);
 
   await page.getByRole("button", { name: "Standard output connection" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-038");
   await expect(page.locator("#result")).toHaveText(
     '["terminal", "connection", "terminal", "TRUE", "FALSE", "TRUE"]',
   );
   await expect(page.locator("#console-output")).toHaveText("package-worker-output");
 
   await page.locator("#source").fill("nativrdemo::signature_names()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-039");
   await expect(page.locator("#result")).toHaveText('"x"');
 
   await page
@@ -409,30 +409,30 @@ test("runs the required Worker examples without evaluation network traffic", asy
     expect(dialog.message()).toBe("Browse[1]> ");
     await dialog.accept("c");
   });
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-040");
   await expect(page.locator("#result")).toHaveText("6");
   await expect(page.locator("#console-output")).toContainText(
     "debugging in: nativrdemo::twice_mean(c(1, 2, 6))",
   );
 
   await page.locator("#source").fill('nativrdemo::dynamic_summary(structure(1:3, class = "demo"))');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-041");
   await expect(page.locator("#result")).toHaveText('"worker-dynamic:6"');
 
   await page.locator("#source").fill("nativrdemo::resource_size()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-042");
   await expect(page.locator("#result")).toHaveText("14");
 
   await page.locator("#source").fill("nativrdemo::event_colours()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-043");
   await expect(page.locator("#result")).toHaveText('["#D33F6A4D", "#E2E2E24D", "#4A6FE34D"]');
 
   await page.locator("#source").fill("nativrdemo::classic_palettes(1)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-044");
   await expect(page.locator("#result")).toHaveText('["#FF0000", "#F2F2F2", "#4C00FF", "#80FFFF"]');
 
   await page.locator("#source").fill("nativrdemo::usage_rectangles()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-045");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const rectanglePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -451,23 +451,23 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(rectanglePixels).toBeGreaterThan(100);
 
   await page.locator("#source").fill("nativrdemo::remove_files()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-046");
   await expect(page.locator("#result")).toHaveText("[true, true, true, true, false, false]");
 
   await page.getByRole("button", { name: "Pure-R package file copy" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-047");
   await expect(page.locator("#result")).toHaveText('["TRUE", "{\\"demo\\":true}", "TRUE"]');
 
   await page.locator("#source").fill("nativrdemo::fixed_text()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-048");
   await expect(page.locator("#result")).toHaveText('["{\\"demo\\":true}\\n", "bookmarked"]');
 
   await page.locator("#source").fill("nativrdemo::custom_axis()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-049");
   await expect(page.locator("#result")).toHaveText("[1, 2, 3]");
 
   await page.locator("#source").fill("nativrdemo::sourced_value()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-050");
   await expect(page.locator("#result")).toHaveText("42");
 
   await page
@@ -475,13 +475,13 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "v <- utils::vignette('browser-runtime', package = 'nativrdemo')\nc(v$Topic, v$Title, v$PDF)",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-051");
   await expect(page.locator("#result")).toHaveText(
     '["browser-runtime", "Running R in a browser Worker", "browser-runtime.html"]',
   );
 
   await page.getByRole("button", { name: "Pure-R package vignette catalog" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-052");
   await expect(page.locator("#browse-count")).toHaveText("1");
   await page.locator("#browse-requests").getByRole("button", { name: "Preview" }).click();
   const vignetteCatalog = page.frameLocator("#browse-requests iframe");
@@ -493,7 +493,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   );
 
   await page.getByRole("button", { name: "Pure-R package help page" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-053");
   await expect(page.locator("#browse-count")).toHaveText("1");
   await page.locator("#browse-requests").getByRole("button", { name: "Preview" }).click();
   const helpPage = page.frameLocator("#browse-requests iframe");
@@ -504,28 +504,28 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page
     .locator("#source")
     .fill("utils::example(twice_mean, package = 'nativrdemo', echo = FALSE)\nexample_value");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-054");
   await expect(page.locator("#result")).toHaveText("6");
 
   await page.getByRole("button", { name: "Explicit host command" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-055");
   await expect(page.locator("#result")).toHaveText('["worker", "bridge"]');
 
   await page.getByRole("button", { name: "Structured system2 command" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-056");
   await expect(page.locator("#result")).toHaveText('["system2-worker", "structured-command"]');
 
   await page.getByRole("button", { name: "Pure-R package spell check" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-057");
   await expect(page.locator("#result")).toHaveText('["compatiblity", "1", "9", "compatibility"]');
 
   await page.getByRole("button", { name: "Pure-R package pipe" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-058");
   await expect(page.locator("#result")).toHaveText('["pipe-worker", "package-pipe"]');
   expect(evaluationRequests).toEqual([]);
 
   await page.getByRole("button", { name: "Pure-R package socket" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-059");
   await expect(page.locator("#result")).toHaveText(
     '["socket-worker", "package-socket", "FALSE", "5"]',
   );
@@ -537,7 +537,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     expect(dialog.message()).toBe("Your name: ");
     await dialog.accept("\t browser user \t");
   });
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-060");
   await expect(page.locator("#result")).toHaveText('"Hello, browser user"');
 
   await page.locator("#source").fill(`
@@ -552,7 +552,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     expect(dialog.message()).toBe("Hit <Return> to see next plot: ");
     await dialog.accept("");
   });
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-061");
   await expect(page.locator("#result")).toHaveText("true");
 
   await page
@@ -560,28 +560,28 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       'c(class(getLoadedDLLs()), length(getLoadedDLLs()), getLoadedDLLs()[["nativr.demo"]]$path)',
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-062");
   await expect(page.locator("#result")).toHaveText(
     '["DLLInfoList", "1", "wasm://playground/nativr-demo.wasm"]',
   );
 
   await page.getByRole("button", { name: "URL connection" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-063");
   await expect(page.locator("#result")).toHaveText('["worker-url", "package-connection"]');
   expect(evaluationRequests).toEqual([]);
 
   await page.getByRole("button", { name: "Pure-R package download" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-064");
   await expect(page.locator("#result")).toHaveText('["0", "worker-url", "package-connection"]');
   expect(evaluationRequests).toEqual([]);
 
   await page.locator("#source").fill("system('blocked', intern = TRUE)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-065");
   await expect(page.locator("#result")).toHaveText("Evaluation failed.");
   await expect(page.locator("#errors")).toContainText("not allow-listed");
 
   await page.locator("#source").fill("Sys.sleep(0.01)\n7");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-066");
   await expect(page.locator("#result")).toHaveText("7");
 
   await page.locator("#source").fill(`
@@ -594,7 +594,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     closed <- close(con)
     c(value, open_state, closed)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-067");
   await expect(page.locator("#result")).toHaveText('["worker", "TRUE", "0"]');
 
   await page.locator("#source").fill(`
@@ -608,7 +608,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     close(input)
     c(magic, lines, unlink(path))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-068");
   await expect(page.locator("#result")).toHaveText('["31", "139", "8", "worker", "gzip", "0"]');
 
   await page.locator("#source").fill(`
@@ -617,7 +617,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     table <- read.csv(path)
     c(names(table), table$label, typeof(table$value), table$value, unlink(path))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-069");
   await expect(page.locator("#result")).toHaveText(
     '["label", "value", "a,b", "c", "integer", "1", NA, "0"]',
   );
@@ -632,13 +632,13 @@ test("runs the required Worker examples without evaluation network traffic", asy
     setwd(old)
     c(value, entries, dir.exists(root), unlink(root, recursive = TRUE))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-070");
   await expect(page.locator("#result")).toHaveText(
     '["worker-relative", "nested", "nested/value.txt", "TRUE", "0"]',
   );
 
   await page.getByRole("button", { name: "Numeric R plot" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-071");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("6");
 
@@ -656,7 +656,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       length(bytes) > 100L
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-072");
   await expect(page.locator("#result")).toHaveText("[137, 80, 78, 71, 13, 10, 26, 10, 64, 48, 1]");
 
   await page.locator("#source").fill(`
@@ -671,37 +671,37 @@ test("runs the required Worker examples without evaluation network traffic", asy
     bytes <- as.integer(readBin(path, "raw", n = 1000000L))
     c(bytes[1:8], length(bytes) > 400L)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-073");
   await expect(page.locator("#result")).toHaveText("[37, 80, 68, 70, 45, 49, 46, 52, 1]");
 
   await page.locator("#source").fill('x <- setNames(seq(10, 20, by = 10), c("a", "b"))\nx[["b"]]');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-074");
   await expect(page.locator("#result")).toHaveText("20");
 
   await page.locator("#source").fill("FALSE && not.bound");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-075");
   await expect(page.locator("#result")).toHaveText("false");
 
   await page
     .locator("#source")
     .fill("total <- 0\nfor (i in 1:4) { if (i == 3) next; total <- total + i }\ntotal");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-076");
   await expect(page.locator("#result")).toHaveText("7");
 
   await page.locator("#source").fill("all.vars(y ~ x + z)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-077");
   await expect(page.locator("#result")).toHaveText('["y", "x", "z"]');
 
   await page.locator("#source").fill("c(1, NA, 3) |> mean(na.rm = TRUE)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-078");
   await expect(page.locator("#result")).toHaveText("2");
 
   await page.locator("#source").fill('class(structure(1:3, class = "score"))');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-079");
   await expect(page.locator("#result")).toHaveText('"score"');
 
   await page.locator("#source").fill("m <- matrix(1:6, nrow = 2)\nm[1, 2] <- 30\nm[1, ]");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-080");
   await expect(page.locator("#result")).toHaveText("[1, 30, 5]");
 
   await page.locator("#source").fill(`
@@ -709,62 +709,62 @@ test("runs the required Worker examples without evaluation network traffic", asy
     describe.score <- function(x) sum(x)
     describe(structure(1:3, class = c("score", "numeric")))
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-081");
   await expect(page.locator("#result")).toHaveText("6");
 
   await page
     .locator("#source")
     .fill('Box <- R6::R6Class("Box", public = list(value = 1))\nBox$new(value = 3)$value');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-082");
   await expect(page.locator("#result")).toHaveText("3");
 
   await page
     .locator("#source")
     .fill("set.seed(2)\nsample(1:3, 4, replace = TRUE, prob = c(0, 0, 1))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-083");
   await expect(page.locator("#result")).toHaveText("[3, 3, 3, 3]");
 
   await page.locator("#source").fill("(1 + 2i) * (3 - 4i)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-084");
   await expect(page.locator("#result")).toHaveText("11+2i");
 
   await page.locator("#source").fill('charToRaw("NativR")');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-085");
   await expect(page.locator("#result")).toHaveText("4e 61 74 69 76 52");
 
   await page.locator("#source").fill('charToRaw("\\101\\xff")');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-086");
   await expect(page.locator("#result")).toHaveText("41 ff");
   await page.locator("#source").fill('escape_probe <- 1L; "\\q"');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-087");
   await expect(page.locator("#errors")).toContainText("NRP1003");
   await page.locator("#source").fill('exists("escape_probe")');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-088");
   await expect(page.locator("#result")).toHaveText("false");
 
   await page.locator("#source").fill('eval(parse(text = c("x <- 6", "x + 1")))');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-089");
   await expect(page.locator("#result")).toHaveText("7");
 
   await page
     .locator("#source")
     .fill("p <- structure(pairlist(1, 2, 3, 4), dim = c(2, 2))\np[[2]] <- 20\np");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-090");
   await expect(page.locator("#result")).toHaveText("[1, 20, 3, 4]");
 
   await page
     .locator("#source")
     .fill("x <- 1\nf <- function(value) { x <<- value; missing(value) }\nf(2)\nx");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-091");
   await expect(page.locator("#result")).toHaveText("2");
 
   await page.getByRole("button", { name: "Print + cat output" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-092");
   await expect(page.locator("#console-output")).toContainText("alpha beta");
   await expect(page.locator("#console-output")).toContainText("mean = 2");
 
   await page.getByRole("button", { name: "Browser HTML request" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-093");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#browse-count")).toHaveText("1");
   await page.locator("#browse-requests").getByRole("button", { name: "Preview" }).click();
@@ -773,18 +773,18 @@ test("runs the required Worker examples without evaluation network traffic", asy
   ).toBeVisible();
 
   await page.locator("#source").fill("browseURL('javascript:document.body.textContent=1')");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-094");
   await expect(page.locator("#browse-requests")).toContainText("Host review required");
   await expect(page.locator("#browse-requests").getByRole("link")).toHaveCount(0);
 
   await page.locator("#source").fill("head(1:10, 3)\nstr(c(alpha = 1, beta = 2))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-095");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#console-output")).toContainText("Named num [1:2] 1 2");
   await expect(page.locator("#console-output")).toContainText('attr(*, "names")');
 
   await page.locator("#source").fill("identical(list(a = 1), list(a = 1))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-096");
   await expect(page.locator("#result")).toHaveText("true");
 
   await page
@@ -792,7 +792,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "fit <- lm(y ~ x, data = data.frame(x = 1:4, y = c(3, 5, 7, 9)))\nround(c(coef(fit), predict(fit, data.frame(x = 5)), IQR(1:4), confint(fit), qt(.975, 10), pt(0, 10), df.residual(fit)), 6)",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-097");
   await expect(page.locator("#result")).toHaveText("[1, 2, 11, 1.5, 1, 2, 1, 2, 2.228139, 0.5, 2]");
 
   await page
@@ -800,7 +800,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "x <- matrix(c(0,0,0,1,1,0,9,9,9,10,10,9), byrow = TRUE, ncol = 2)\nfit <- kmeans(x, matrix(c(0,0,10,10), byrow = TRUE, ncol = 2))\nround(c(fit$cluster, fit$centers, fit$size), 3)",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-098");
   await expect(page.locator("#result")).toHaveText(
     "[1, 1, 1, 2, 2, 2, 0.333, 9.333, 0.333, 9.333, 3, 3]",
   );
@@ -808,7 +808,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page
     .locator("#source")
     .fill("z <- convolve(1:127, rep(1, 127))\nc(length(z), round(z[c(1, 64, 127)], 6))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-099");
   await expect(page.locator("#result")).toHaveText("[127, 8128, 8128, 8128]");
 
   await page
@@ -816,7 +816,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "h <- as.hexmode(c(10L, 255L))\nc(as.character(h), format(h, width = 4, upper.case = TRUE), as.integer(!h), class(h))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-100");
   await expect(page.locator("#result")).toHaveText(
     '["a", "ff", "000A", "00FF", "-11", "-256", "hexmode"]',
   );
@@ -826,13 +826,13 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "e <- new.env(parent = emptyenv(), hash = FALSE)\ne$z <- 3L\ne$.hidden <- 4L\ne$a <- 1L\nc(names(as.list(e)), names(as.list(e, all.names = TRUE, sorted = TRUE)))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-101");
   await expect(page.locator("#result")).toHaveText('["a", "z", ".hidden", "a", "z"]');
 
   await page
     .locator("#source")
     .fill("c(capabilities('cairo'), capabilities('profmem'), length(capabilities()))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-102");
   await expect(page.locator("#result")).toHaveText("[0, 0, 19]");
 
   await page
@@ -840,7 +840,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "square <- matrix(c(1, 2, 3, 5), 2)\nround(c(kappa(square), kappa(square, exact = TRUE), kappa(square, method = 'direct')), 6)",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-103");
   await expect(page.locator("#result")).toHaveText("[47.894737, 38.974342, 56]");
 
   await page
@@ -848,7 +848,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "dd <- data.frame(f1 = gl(4, 6, labels = c('A', 'B', 'C', 'D')), f2 = gl(3, 2, labels = c('a', 'b', 'c')))[-(7:8), ]\ntab <- xtabs(~ f2 + f1, dd)\nc(dim(tab), unclass(tab))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-104");
   await expect(page.locator("#result")).toHaveText("[3, 4, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 2, 2]");
 
   await page
@@ -856,7 +856,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "kinds <- RNGkind()\nset.seed(123, kind = 'Mersenne-Twister')\nc(kinds, round(runif(3), 12))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-105");
   await expect(page.locator("#result")).toHaveText(
     '["Mersenne-Twister", "Inversion", "Rejection", "0.287577520125", "0.788305135444", "0.408976921812"]',
   );
@@ -864,7 +864,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await page
     .locator("#source")
     .fill("set.seed(123)\nc(base::.Machine$integer.max, sample.int(.Machine$integer.max, 1L))");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-106");
   await expect(page.locator("#result")).toHaveText("[2147483647, 1235143119]");
 
   await page
@@ -872,11 +872,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "Sys.setlocale('LC_MONETARY', 'it_IT')\nx <- Sys.localeconv()\nc(Sys.getlocale('LC_MONETARY'), x[['int_curr_symbol']], x[['currency_symbol']], x[['mon_decimal_point']])",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-107");
   await expect(page.locator("#result")).toHaveText('["it_IT", "EUR", "€", ","]');
 
   await page.locator("#source").fill("round(c(tan(pi / 4), tan(pi * (1 / 4 + 1:10))), 12)");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-108");
   await expect(page.locator("#result")).toHaveText("[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]");
 
   await page
@@ -884,7 +884,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "tbl <- tibble(x = 1, x = 2, .name_repair = ~ make.names(., unique = TRUE))\nc(names(tbl), unlist(tbl))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-109");
   await expect(page.locator("#result")).toHaveText('["x", "x.1", "1", "2"]');
 
   await page
@@ -892,7 +892,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "a <- structure(1:5, tsp = c(2000.25, 2001.25, 4), class = 'ts')\nb <- structure(1:5, tsp = c(1.2, 2.8, 2.5))\nc <- structure(1:5, tsp = c(-1.25, -0.25, 4))\nc(start(a), start(b), start(c))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-110");
   await expect(page.locator("#result")).toHaveText("[2000, 2, 1.2, -2, 4]");
 
   await page
@@ -900,7 +900,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "x <- data.frame(a = 1:3)\nrowid <- utils::as.roman(seq_len(nrow(x)))\nc(as.character(rowid), max(nchar(as.character(rowid))))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-111");
   await expect(page.locator("#result")).toHaveText('["I", "II", "III", "3"]');
 
   await page
@@ -908,7 +908,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "x <- as.POSIXlt(as.Date(c('2024-01-05', '2024-02-06')), tz = 'UTC')\nc(x$mday, x$mon, length(x), class(x))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-112");
   await expect(page.locator("#result")).toHaveText(
     '["5", "6", "0", "1", "2", "POSIXlt", "POSIXt"]',
   );
@@ -918,11 +918,11 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       "x <- matrix(1:3, 3, 1, dimnames = list(c('r1', 'r2', 'r3'), 's1'))\ny <- drop(x)\nc(y, names(y), is.null(dim(y)))",
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-113");
   await expect(page.locator("#result")).toHaveText('["1", "2", "3", "r1", "r2", "r3", "TRUE"]');
 
   await page.getByRole("button", { name: "Browser raster graphic" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-114");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const rasterPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -943,7 +943,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       ann = FALSE
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-115");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const imagePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -957,7 +957,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(imagePixels).toEqual([255, 0, 0, 255, 0, 0, 255, 255]);
 
   await page.getByRole("button", { name: "Browser data viewer" }).click();
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-116");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#data-view-count")).toHaveText("1");
   await expect(page.locator("#data-views h3")).toHaveText("Measurements");
@@ -977,7 +977,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       lwd = 4
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-117");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const segmentPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -996,7 +996,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     plot.window(c(0, 4), c(0, 4))
     lines(c(1, 2, 3), c(1, 3, 1), col = "purple", lwd = 4)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-118");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const linePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1022,7 +1022,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       cex = 2
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-119");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const pointPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1059,7 +1059,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       axes = FALSE
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-120");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("4");
   const matplotPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1086,7 +1086,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     plot.window(c(0, 4), c(0, 4))
     text(2, 2, "R", col = "blue", cex = 4, font = 2, srt = -90, xpd = TRUE)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-121");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const textPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1109,7 +1109,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(textPixels).toBeGreaterThan(0);
 
   await page.locator("#source").fill("nativrdemo::annotated_plot('PACKAGE')");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-122");
   await expect(page.locator("#result")).toHaveText('"PACKAGE"');
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const titlePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1132,7 +1132,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(titlePixels).toBeGreaterThan(0);
 
   await page.locator("#source").fill("nativrdemo::reference_lines()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-123");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const referenceLinePixels = await page
@@ -1160,7 +1160,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
 
   await page.getByRole("button", { name: "Pure-R package function curve" }).click();
   await expect(page.locator("#source")).toHaveValue("nativrdemo::plot_curve()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-124");
   await expect(page.locator("#result")).toHaveText("101");
   await expect(page.locator("#graphics-count")).toHaveText("5");
   const curvePixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1179,19 +1179,19 @@ test("runs the required Worker examples without evaluation network traffic", asy
   expect(curvePixels).toBeGreaterThan(0);
 
   await page.locator("#source").fill("nativrdemo::sink_lines()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-125");
   await expect(page.locator("#result")).toHaveText('"package-worker-sink"');
   await expect(page.locator("#console-output")).toHaveText("No textual output.");
 
   await page.locator("#source").fill("nativrdemo::write_sass_variable()");
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-126");
   await expect(page.locator("#result")).toHaveText('"$color: \\"red\\";"');
   await expect(page.locator("#console-output")).toHaveText("No textual output.");
 
   await page
     .locator("#source")
     .fill('nativrdemo::repository_versions("https://packages.nativr.invalid")');
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-127");
   await expect(page.locator("#result")).toHaveText('["alpha", "1.2.3"]');
   await expect(page.locator("#console-output")).toHaveText("No textual output.");
 
@@ -1200,7 +1200,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     plot.window(c(0, 4), c(0, 4))
     polygon(c(1, 3, 3, 1), c(1, 1, 3, 3), col = "orange", border = "blue", lwd = 4)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-128");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const polygonPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1218,7 +1218,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     plot.window(c(0, 1), c(0, 1))
     box(bty = "c", col = "red", lwd = 6)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-129");
   await expect(page.locator("#result")).toHaveText("null");
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const boxPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1240,7 +1240,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       col = c("lightgray", "lightblue")
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-130");
   await expect(page.locator("#result")).toHaveText(
     '[[1, 2, 3, 4, 5, 2, 4, 6, 8, 8], [5, 5], [1.5868050382201329, 4.413194961779867, 3.1736100764402657, 8.826389923559734], 100, 2, ["alpha", "beta"]]',
   );
@@ -1285,7 +1285,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
       border = "black"
     )
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-131");
   await expect(page.locator("#result")).toHaveText("[1.5, 2.5, 4.5, 5.5]");
   const barplotCommandCount = Number(await page.locator("#graphics-count").textContent());
   expect(barplotCommandCount).toBeGreaterThan(2);
@@ -1320,7 +1320,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     ))
     c(names(visible$value), visible$visible)
   `);
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-132");
   await expect(page.locator("#result")).toHaveText('["rect", "text", "FALSE"]');
   await expect(page.locator("#graphics-count")).toHaveText("3");
   const legendPixels = await page.locator("#graphics").evaluate((canvas: HTMLCanvasElement) => {
@@ -1357,7 +1357,7 @@ test("runs the required Worker examples without evaluation network traffic", asy
     .fill(
       'message("worker condition")\nconditionMessage(attr(try(stop("worker boom", call. = FALSE), silent = TRUE), "condition"))',
     );
-  await page.getByRole("button", { name: /^Run/u }).click();
+  await profiledRun(page, "required-133");
   await expect(page.locator("#result")).toHaveText('"worker boom"');
   await expect(page.locator("#console-output")).toContainText("worker condition");
   expect(evaluationRequests).toEqual([]);

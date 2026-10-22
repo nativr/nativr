@@ -1,0 +1,1463 @@
+{
+  "schemaVersion": 1,
+  "reportSha256": "87a9d6e1e6c8ccb394378ee076330ea624a47168cf7cef6f35208357f71042d2",
+  "testDurationMs": 12048,
+  "workers": 1,
+  "retries": 0,
+  "taskOwnedConcurrentConsumers": false,
+  "summary": {
+    "armRpcMs": {
+      "count": 134,
+      "median": 1.0831499999999323,
+      "empiricalP95": 2.5288000000000466,
+      "max": 6.380300000000034
+    },
+    "actionCallMs": {
+      "count": 134,
+      "median": 53.35045000000014,
+      "empiricalP95": 61.04770000000008,
+      "max": 66.25900000000001
+    },
+    "activationToUiCompleteMs": { "count": 134, "median": 3, "empiricalP95": 33, "max": 50 },
+    "displayedEvaluatorElapsedMs": { "count": 129, "median": 2, "empiricalP95": 29, "max": 48 }
+  },
+  "profile": {
+    "schemaVersion": 1,
+    "kind": "nativr-owned-required-example-profile",
+    "ok": true,
+    "semanticProfile": "0.392.0",
+    "sourceSha256": "18f1366e33043ffcbdf6e2a1279b47e7fe74cfd6e4839626d7ec5422d40328a2",
+    "sourceHashPolicy": "lf-normalized-utf8; raw source bytes are separately bound by input snapshots",
+    "browser": "firefox",
+    "browserVersion": "153.0",
+    "viewport": { "width": 1280, "height": 720 },
+    "timeoutMs": 120000,
+    "originalTestPassed": true,
+    "inputsStable": true,
+    "servedAssetsVerified": true,
+    "samples": [
+      {
+        "id": "required-001:1",
+        "generation": 1,
+        "armRpcMs": 6.380300000000034,
+        "actionCallMs": 53.133800000000065,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-002:1",
+        "generation": 2,
+        "armRpcMs": 1.1861999999998716,
+        "actionCallMs": 66.25900000000001,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-003:1",
+        "generation": 3,
+        "armRpcMs": 1.3460999999999785,
+        "actionCallMs": 55.239500000000135,
+        "activationToUiCompleteMs": 45,
+        "displayedEvaluatorElapsedMs": null,
+        "terminal": "error"
+      },
+      {
+        "id": "required-004:1",
+        "generation": 4,
+        "armRpcMs": 1.0289999999999964,
+        "actionCallMs": 43.58240000000001,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": null,
+        "terminal": "error"
+      },
+      {
+        "id": "required-004:2",
+        "generation": 5,
+        "armRpcMs": 1.5126000000000204,
+        "actionCallMs": 55.403999999999996,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": null,
+        "terminal": "error"
+      },
+      {
+        "id": "required-005:1",
+        "generation": 6,
+        "armRpcMs": 1.0108999999999924,
+        "actionCallMs": 58.20769999999993,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-006:1",
+        "generation": 7,
+        "armRpcMs": 0.9376999999999498,
+        "actionCallMs": 56.50279999999998,
+        "activationToUiCompleteMs": 6,
+        "displayedEvaluatorElapsedMs": 6,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-007:1",
+        "generation": 8,
+        "armRpcMs": 1.1289000000001579,
+        "actionCallMs": 47.546299999999974,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-008:1",
+        "generation": 9,
+        "armRpcMs": 2.6521999999999935,
+        "actionCallMs": 50.217099999999846,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-009:1",
+        "generation": 10,
+        "armRpcMs": 0.8842999999997119,
+        "actionCallMs": 58.11439999999993,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-010:1",
+        "generation": 11,
+        "armRpcMs": 1.0203000000001339,
+        "actionCallMs": 56.23579999999993,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-011:1",
+        "generation": 12,
+        "armRpcMs": 0.9708000000000538,
+        "actionCallMs": 57.016599999999926,
+        "activationToUiCompleteMs": 6,
+        "displayedEvaluatorElapsedMs": 4,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-012:1",
+        "generation": 13,
+        "armRpcMs": 1.2161999999998443,
+        "actionCallMs": 50.026800000000094,
+        "activationToUiCompleteMs": 7,
+        "displayedEvaluatorElapsedMs": 4,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-013:1",
+        "generation": 14,
+        "armRpcMs": 1.037199999999757,
+        "actionCallMs": 65.19339999999966,
+        "activationToUiCompleteMs": 11,
+        "displayedEvaluatorElapsedMs": 8,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-014:1",
+        "generation": 15,
+        "armRpcMs": 0.9023000000001957,
+        "actionCallMs": 43.15039999999999,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 4,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-015:1",
+        "generation": 16,
+        "armRpcMs": 0.9096000000004096,
+        "actionCallMs": 57.12030000000004,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-016:1",
+        "generation": 17,
+        "armRpcMs": 1.0958000000000538,
+        "actionCallMs": 58.27410000000009,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-017:1",
+        "generation": 18,
+        "armRpcMs": 0.9209000000000742,
+        "actionCallMs": 57.05969999999979,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-018:1",
+        "generation": 19,
+        "armRpcMs": 0.9819999999999709,
+        "actionCallMs": 56.42729999999983,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-019:1",
+        "generation": 20,
+        "armRpcMs": 0.9774999999999636,
+        "actionCallMs": 57.885099999999966,
+        "activationToUiCompleteMs": 6,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-020:1",
+        "generation": 21,
+        "armRpcMs": 1.6969999999996617,
+        "actionCallMs": 52.58839999999964,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-021:1",
+        "generation": 22,
+        "armRpcMs": 1.0054000000000087,
+        "actionCallMs": 56.7197000000001,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-022:1",
+        "generation": 23,
+        "armRpcMs": 1.1817000000000917,
+        "actionCallMs": 48.189600000000155,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-023:1",
+        "generation": 24,
+        "armRpcMs": 1.4243000000001302,
+        "actionCallMs": 49.95620000000008,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-024:1",
+        "generation": 25,
+        "armRpcMs": 1.1726999999996224,
+        "actionCallMs": 52.11729999999989,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-025:1",
+        "generation": 26,
+        "armRpcMs": 0.8440999999997985,
+        "actionCallMs": 42.378799999999956,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-026:1",
+        "generation": 27,
+        "armRpcMs": 1.157799999999952,
+        "actionCallMs": 48.859300000000076,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-027:1",
+        "generation": 28,
+        "armRpcMs": 1.2307999999998174,
+        "actionCallMs": 48.587200000000394,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-028:1",
+        "generation": 29,
+        "armRpcMs": 1.1316999999999098,
+        "actionCallMs": 49.85050000000001,
+        "activationToUiCompleteMs": 20,
+        "displayedEvaluatorElapsedMs": 17,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-029:1",
+        "generation": 30,
+        "armRpcMs": 1.865099999999984,
+        "actionCallMs": 60.5012999999999,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-030:1",
+        "generation": 31,
+        "armRpcMs": 1.3709999999996398,
+        "actionCallMs": 56.3099000000002,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-031:1",
+        "generation": 32,
+        "armRpcMs": 1.0846000000001368,
+        "actionCallMs": 61.04770000000008,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-032:1",
+        "generation": 33,
+        "armRpcMs": 1.0906999999997424,
+        "actionCallMs": 46.42360000000008,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-033:1",
+        "generation": 34,
+        "armRpcMs": 1.1869999999998981,
+        "actionCallMs": 47.38810000000012,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-034:1",
+        "generation": 35,
+        "armRpcMs": 1.540899999999965,
+        "actionCallMs": 46.428100000000086,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-035:1",
+        "generation": 36,
+        "armRpcMs": 1.30370000000039,
+        "actionCallMs": 50.142000000000735,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-036:1",
+        "generation": 37,
+        "armRpcMs": 1.090400000000045,
+        "actionCallMs": 55.13839999999982,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-037:1",
+        "generation": 38,
+        "armRpcMs": 1.138600000000224,
+        "actionCallMs": 52.14889999999923,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-038:1",
+        "generation": 39,
+        "armRpcMs": 3.4805999999998676,
+        "actionCallMs": 48.32310000000052,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-039:1",
+        "generation": 40,
+        "armRpcMs": 1.4485999999997148,
+        "actionCallMs": 53.96590000000015,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-040:1",
+        "generation": 41,
+        "armRpcMs": 1.0816999999997279,
+        "actionCallMs": 51.892800000000534,
+        "activationToUiCompleteMs": 42,
+        "displayedEvaluatorElapsedMs": 40,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-041:1",
+        "generation": 42,
+        "armRpcMs": 0.8806000000004133,
+        "actionCallMs": 52.99470000000019,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-042:1",
+        "generation": 43,
+        "armRpcMs": 0.8554000000003725,
+        "actionCallMs": 59.68329999999969,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-043:1",
+        "generation": 44,
+        "armRpcMs": 1.2614000000003216,
+        "actionCallMs": 53.79599999999937,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-044:1",
+        "generation": 45,
+        "armRpcMs": 0.8945999999996275,
+        "actionCallMs": 60.79110000000037,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-045:1",
+        "generation": 46,
+        "armRpcMs": 0.8765000000003056,
+        "actionCallMs": 58.482199999999466,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-046:1",
+        "generation": 47,
+        "armRpcMs": 0.9588999999996304,
+        "actionCallMs": 58.042999999999665,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-047:1",
+        "generation": 48,
+        "armRpcMs": 1.0813000000007378,
+        "actionCallMs": 51.6278999999995,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-048:1",
+        "generation": 49,
+        "armRpcMs": 0.8894000000000233,
+        "actionCallMs": 56.54920000000038,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-049:1",
+        "generation": 50,
+        "armRpcMs": 2.4007000000001426,
+        "actionCallMs": 60.31530000000021,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-050:1",
+        "generation": 51,
+        "armRpcMs": 1.4155000000000655,
+        "actionCallMs": 51.73030000000017,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-051:1",
+        "generation": 52,
+        "armRpcMs": 0.9983000000001994,
+        "actionCallMs": 59.67749999999978,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-052:1",
+        "generation": 53,
+        "armRpcMs": 1.439499999999498,
+        "actionCallMs": 49.58209999999963,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-053:1",
+        "generation": 54,
+        "armRpcMs": 1.0146000000004278,
+        "actionCallMs": 50.28400000000056,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-054:1",
+        "generation": 55,
+        "armRpcMs": 0.9320999999999913,
+        "actionCallMs": 49.88500000000022,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-055:1",
+        "generation": 56,
+        "armRpcMs": 1.1782000000002881,
+        "actionCallMs": 45.08350000000064,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-056:1",
+        "generation": 57,
+        "armRpcMs": 1.4281000000000859,
+        "actionCallMs": 44.41120000000046,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-057:1",
+        "generation": 58,
+        "armRpcMs": 1.4699000000000524,
+        "actionCallMs": 46.60519999999997,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-058:1",
+        "generation": 59,
+        "armRpcMs": 1.3721999999997934,
+        "actionCallMs": 46.72789999999986,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-059:1",
+        "generation": 60,
+        "armRpcMs": 1.0574999999998909,
+        "actionCallMs": 50.4324000000006,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-060:1",
+        "generation": 61,
+        "armRpcMs": 1.5083999999997104,
+        "actionCallMs": 47.36279999999988,
+        "activationToUiCompleteMs": 50,
+        "displayedEvaluatorElapsedMs": 48,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-061:1",
+        "generation": 62,
+        "armRpcMs": 0.8117000000002008,
+        "actionCallMs": 48.531599999999344,
+        "activationToUiCompleteMs": 29,
+        "displayedEvaluatorElapsedMs": 27,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-062:1",
+        "generation": 63,
+        "armRpcMs": 2.5288000000000466,
+        "actionCallMs": 60.63540000000012,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-063:1",
+        "generation": 64,
+        "armRpcMs": 1.9598000000005413,
+        "actionCallMs": 47.06890000000021,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-064:1",
+        "generation": 65,
+        "armRpcMs": 1.2143999999998414,
+        "actionCallMs": 50.41479999999956,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-065:1",
+        "generation": 66,
+        "armRpcMs": 0.9291999999995824,
+        "actionCallMs": 57.560199999999895,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": null,
+        "terminal": "error"
+      },
+      {
+        "id": "required-066:1",
+        "generation": 67,
+        "armRpcMs": 0.8490999999994528,
+        "actionCallMs": 57.291299999999865,
+        "activationToUiCompleteMs": 11,
+        "displayedEvaluatorElapsedMs": 10,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-067:1",
+        "generation": 68,
+        "armRpcMs": 0.8976999999995314,
+        "actionCallMs": 53.56710000000021,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-068:1",
+        "generation": 69,
+        "armRpcMs": 1.262800000000425,
+        "actionCallMs": 52.71230000000014,
+        "activationToUiCompleteMs": 7,
+        "displayedEvaluatorElapsedMs": 4,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-069:1",
+        "generation": 70,
+        "armRpcMs": 1.1642000000001644,
+        "actionCallMs": 52.78020000000015,
+        "activationToUiCompleteMs": 6,
+        "displayedEvaluatorElapsedMs": 4,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-070:1",
+        "generation": 71,
+        "armRpcMs": 0.940799999999399,
+        "actionCallMs": 54.77359999999953,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-071:1",
+        "generation": 72,
+        "armRpcMs": 1.8273000000008324,
+        "actionCallMs": 46.449399999999514,
+        "activationToUiCompleteMs": 24,
+        "displayedEvaluatorElapsedMs": 20,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-072:1",
+        "generation": 73,
+        "armRpcMs": 1.2406999999993786,
+        "actionCallMs": 54.92749999999978,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-073:1",
+        "generation": 74,
+        "armRpcMs": 0.9686000000001513,
+        "actionCallMs": 45.76299999999992,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-074:1",
+        "generation": 75,
+        "armRpcMs": 0.863800000000083,
+        "actionCallMs": 60.162899999999354,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-075:1",
+        "generation": 76,
+        "armRpcMs": 1.4113999999999578,
+        "actionCallMs": 57.80019999999968,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-076:1",
+        "generation": 77,
+        "armRpcMs": 2.6414999999997235,
+        "actionCallMs": 55.64350000000013,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-077:1",
+        "generation": 78,
+        "armRpcMs": 1.0622999999995955,
+        "actionCallMs": 52.98869999999988,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-078:1",
+        "generation": 79,
+        "armRpcMs": 0.8676999999997861,
+        "actionCallMs": 57.736299999999574,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-079:1",
+        "generation": 80,
+        "armRpcMs": 1.4988000000012107,
+        "actionCallMs": 48.128600000000006,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-080:1",
+        "generation": 81,
+        "armRpcMs": 2.0350999999991473,
+        "actionCallMs": 59.83250000000044,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-081:1",
+        "generation": 82,
+        "armRpcMs": 0.9068000000006577,
+        "actionCallMs": 58.018599999999424,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-082:1",
+        "generation": 83,
+        "armRpcMs": 1.6270999999997002,
+        "actionCallMs": 54.52729999999974,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-083:1",
+        "generation": 84,
+        "armRpcMs": 1.6938000000009197,
+        "actionCallMs": 46.54739999999947,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-084:1",
+        "generation": 85,
+        "armRpcMs": 0.9592999999986205,
+        "actionCallMs": 60.79979999999887,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-085:1",
+        "generation": 86,
+        "armRpcMs": 0.9184000000004744,
+        "actionCallMs": 50.99669999999969,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-086:1",
+        "generation": 87,
+        "armRpcMs": 1.807200000001103,
+        "actionCallMs": 54.37799999999879,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-087:1",
+        "generation": 88,
+        "armRpcMs": 0.8258999999998196,
+        "actionCallMs": 44.60519999999997,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": null,
+        "terminal": "error"
+      },
+      {
+        "id": "required-088:1",
+        "generation": 89,
+        "armRpcMs": 0.824399999999514,
+        "actionCallMs": 63.88659999999982,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-089:1",
+        "generation": 90,
+        "armRpcMs": 0.9693999999999505,
+        "actionCallMs": 52.27380000000085,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-090:1",
+        "generation": 91,
+        "armRpcMs": 0.8983000000007451,
+        "actionCallMs": 61.38130000000092,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-091:1",
+        "generation": 92,
+        "armRpcMs": 0.9853000000002794,
+        "actionCallMs": 50.7489000000005,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-092:1",
+        "generation": 93,
+        "armRpcMs": 1.1939999999995052,
+        "actionCallMs": 46.14170000000013,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-093:1",
+        "generation": 94,
+        "armRpcMs": 1.068699999999808,
+        "actionCallMs": 50.04809999999998,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-094:1",
+        "generation": 95,
+        "armRpcMs": 0.9248999999999796,
+        "actionCallMs": 52.22359999999935,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-095:1",
+        "generation": 96,
+        "armRpcMs": 0.8918999999987136,
+        "actionCallMs": 57.01590000000033,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-096:1",
+        "generation": 97,
+        "armRpcMs": 0.9158999999999651,
+        "actionCallMs": 51.939399999999296,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-097:1",
+        "generation": 98,
+        "armRpcMs": 2.224400000000969,
+        "actionCallMs": 60.1911999999993,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 4,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-098:1",
+        "generation": 99,
+        "armRpcMs": 1.8726000000006024,
+        "actionCallMs": 56.28279999999904,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-099:1",
+        "generation": 100,
+        "armRpcMs": 2.2620000000006257,
+        "actionCallMs": 54.90279999999984,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-100:1",
+        "generation": 101,
+        "armRpcMs": 1.003500000000713,
+        "actionCallMs": 57.499799999999595,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-101:1",
+        "generation": 102,
+        "armRpcMs": 2.3680999999996857,
+        "actionCallMs": 52.96990000000005,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-102:1",
+        "generation": 103,
+        "armRpcMs": 3.4364000000005035,
+        "actionCallMs": 56.86280000000079,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-103:1",
+        "generation": 104,
+        "armRpcMs": 0.8888000000006286,
+        "actionCallMs": 61.59429999999884,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-104:1",
+        "generation": 105,
+        "armRpcMs": 1.2066999999988184,
+        "actionCallMs": 52.920899999999165,
+        "activationToUiCompleteMs": 5,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-105:1",
+        "generation": 106,
+        "armRpcMs": 0.8951999999990221,
+        "actionCallMs": 56.96090000000004,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-106:1",
+        "generation": 107,
+        "armRpcMs": 0.8950999999997293,
+        "actionCallMs": 59.1854000000003,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-107:1",
+        "generation": 108,
+        "armRpcMs": 1.659300000001167,
+        "actionCallMs": 57.76269999999931,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-108:1",
+        "generation": 109,
+        "armRpcMs": 0.8623999999999796,
+        "actionCallMs": 56.18239999999969,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-109:1",
+        "generation": 110,
+        "armRpcMs": 1.77599999999984,
+        "actionCallMs": 56.39639999999963,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 3,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-110:1",
+        "generation": 111,
+        "armRpcMs": 1.0568999999995867,
+        "actionCallMs": 51.55589999999938,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-111:1",
+        "generation": 112,
+        "armRpcMs": 0.8680000000003929,
+        "actionCallMs": 57.80119999999988,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-112:1",
+        "generation": 113,
+        "armRpcMs": 0.8559999999997672,
+        "actionCallMs": 42.73330000000169,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-113:1",
+        "generation": 114,
+        "armRpcMs": 0.9020999999993364,
+        "actionCallMs": 41.82350000000042,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-114:1",
+        "generation": 115,
+        "armRpcMs": 1.5432999999993626,
+        "actionCallMs": 47.74209999999948,
+        "activationToUiCompleteMs": 26,
+        "displayedEvaluatorElapsedMs": 24,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-115:1",
+        "generation": 116,
+        "armRpcMs": 0.8775000000005093,
+        "actionCallMs": 44.479699999999866,
+        "activationToUiCompleteMs": 26,
+        "displayedEvaluatorElapsedMs": 24,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-116:1",
+        "generation": 117,
+        "armRpcMs": 1.4472999999998137,
+        "actionCallMs": 46.840799999999945,
+        "activationToUiCompleteMs": 3,
+        "displayedEvaluatorElapsedMs": 0,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-117:1",
+        "generation": 118,
+        "armRpcMs": 1.1727999999984604,
+        "actionCallMs": 52.87279999999919,
+        "activationToUiCompleteMs": 33,
+        "displayedEvaluatorElapsedMs": 30,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-118:1",
+        "generation": 119,
+        "armRpcMs": 1.175199999999677,
+        "actionCallMs": 55.54689999999937,
+        "activationToUiCompleteMs": 33,
+        "displayedEvaluatorElapsedMs": 31,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-119:1",
+        "generation": 120,
+        "armRpcMs": 0.8834000000006199,
+        "actionCallMs": 58.19179999999869,
+        "activationToUiCompleteMs": 38,
+        "displayedEvaluatorElapsedMs": 37,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-120:1",
+        "generation": 121,
+        "armRpcMs": 1.5071000000007189,
+        "actionCallMs": 61.44620000000032,
+        "activationToUiCompleteMs": 33,
+        "displayedEvaluatorElapsedMs": 28,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-121:1",
+        "generation": 122,
+        "armRpcMs": 0.8850000000002183,
+        "actionCallMs": 52.019099999999526,
+        "activationToUiCompleteMs": 34,
+        "displayedEvaluatorElapsedMs": 33,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-122:1",
+        "generation": 123,
+        "armRpcMs": 0.9380000000001019,
+        "actionCallMs": 52.634799999999814,
+        "activationToUiCompleteMs": 27,
+        "displayedEvaluatorElapsedMs": 24,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-123:1",
+        "generation": 124,
+        "armRpcMs": 0.8985999999986234,
+        "actionCallMs": 58.65070000000014,
+        "activationToUiCompleteMs": 27,
+        "displayedEvaluatorElapsedMs": 26,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-124:1",
+        "generation": 125,
+        "armRpcMs": 1.1792000000004919,
+        "actionCallMs": 50.18990000000122,
+        "activationToUiCompleteMs": 27,
+        "displayedEvaluatorElapsedMs": 26,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-125:1",
+        "generation": 126,
+        "armRpcMs": 0.9224000000012893,
+        "actionCallMs": 44.05340000000069,
+        "activationToUiCompleteMs": 1,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-126:1",
+        "generation": 127,
+        "armRpcMs": 3.912800000000061,
+        "actionCallMs": 55.18189999999959,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-127:1",
+        "generation": 128,
+        "armRpcMs": 0.9249999999992724,
+        "actionCallMs": 48.3166999999994,
+        "activationToUiCompleteMs": 4,
+        "displayedEvaluatorElapsedMs": 2,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-128:1",
+        "generation": 129,
+        "armRpcMs": 0.9290000000000873,
+        "actionCallMs": 56.71219999999994,
+        "activationToUiCompleteMs": 21,
+        "displayedEvaluatorElapsedMs": 20,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-129:1",
+        "generation": 130,
+        "armRpcMs": 1.0144000000000233,
+        "actionCallMs": 48.6857,
+        "activationToUiCompleteMs": 24,
+        "displayedEvaluatorElapsedMs": 22,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-130:1",
+        "generation": 131,
+        "armRpcMs": 1.2267999999985477,
+        "actionCallMs": 45.549699999999575,
+        "activationToUiCompleteMs": 30,
+        "displayedEvaluatorElapsedMs": 28,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-131:1",
+        "generation": 132,
+        "armRpcMs": 0.9274000000004889,
+        "actionCallMs": 54.518700000000536,
+        "activationToUiCompleteMs": 26,
+        "displayedEvaluatorElapsedMs": 24,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-132:1",
+        "generation": 133,
+        "armRpcMs": 1.160200000000259,
+        "actionCallMs": 58.420899999999165,
+        "activationToUiCompleteMs": 31,
+        "displayedEvaluatorElapsedMs": 29,
+        "terminal": "ready"
+      },
+      {
+        "id": "required-133:1",
+        "generation": 134,
+        "armRpcMs": 0.9070999999985361,
+        "actionCallMs": 56.195099999999,
+        "activationToUiCompleteMs": 2,
+        "displayedEvaluatorElapsedMs": 1,
+        "terminal": "ready"
+      }
+    ],
+    "limitations": [
+      "Instrumented diagnostic; arming adds one browser round trip before each unchanged real click.",
+      "Initial asset response bodies are copied and hashed by the test fixture; this can perturb loading and scheduling and is not a startup benchmark.",
+      "Successful same-origin Blob responses are browser-created content, counted separately without served-asset credit or body verification; their resource type or preview ownership is not inferred. Unknown HTTP assets still invalidate capture.",
+      "Action-call and activation-to-UI-completion durations overlap and are not additive or a wall-time partition.",
+      "UI completion includes selected-example setup, parsing, evaluation, transport and rendering; it is not pure Worker execution time.",
+      "Displayed evaluator time is the existing rounded evaluator-only Date.now measurement; zero can mean below clock resolution.",
+      "Busy and completion timestamps are MutationObserver callback observations, not exact DOM assignment times.",
+      "All original test assertions passed; the timing collector does not inspect source, result text, errors or package output.",
+      "No release threshold, whole-suite causal comparison, corpus credit or normative platform completion is inferred."
+    ],
+    "provenance": {
+      "inputs": [
+        {
+          "path": "apps/playground/dist/assets/elementary.manifest.json",
+          "bytes": 793,
+          "sha256": "a216ca5975235f29e340608a34bc49d771218e36b8312f37e874f7b853829de8"
+        },
+        {
+          "path": "apps/playground/dist/assets/elementary.wasm",
+          "bytes": 318690,
+          "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+        },
+        {
+          "path": "apps/playground/dist/assets/index-DJGiHnlq.js",
+          "bytes": 93629,
+          "sha256": "b526bff11512332806bfc8ab5b9ce31d2ccdfe8a9427fb6751be3c2d393b90ef"
+        },
+        {
+          "path": "apps/playground/dist/assets/index-DJGiHnlq.js.map",
+          "bytes": 226367,
+          "sha256": "522e455d4b1e016ca9c5c449ca93a4f83251d05a2c8ed47d37839e8d00d1dfef"
+        },
+        {
+          "path": "apps/playground/dist/assets/index-DzcMZ8VO.css",
+          "bytes": 6943,
+          "sha256": "5352ef8f3139d5de81c945a8ac80c2d4205c447f918e63b500619fd354cff25b"
+        },
+        {
+          "path": "apps/playground/dist/assets/licenses/core-math.LICENSE",
+          "bytes": 1132,
+          "sha256": "81830875362f4d477637de58eecd6d458db108cc90c40904fca3694807b86de3"
+        },
+        {
+          "path": "apps/playground/dist/assets/licenses/musl.COPYRIGHT",
+          "bytes": 6204,
+          "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+        },
+        {
+          "path": "apps/playground/dist/assets/licenses/tree-sitter-r.LICENSE",
+          "bytes": 1078,
+          "sha256": "de2e49529f03d573bc3fa229dc83acfe22c63a5ad1766b289563edfd45b72dea"
+        },
+        {
+          "path": "apps/playground/dist/assets/licenses/wasi-libc.LICENSE",
+          "bytes": 910,
+          "sha256": "2711a8b5a5cdfef0e639f96c1aca12ae23d7d64a02d0507f1bdf14d2b27bbc3a"
+        },
+        {
+          "path": "apps/playground/dist/assets/licenses/wasi-libc.LICENSE-MIT",
+          "bytes": 1023,
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "path": "apps/playground/dist/assets/licenses/web-tree-sitter.LICENSE",
+          "bytes": 1080,
+          "sha256": "c5cfb43042b6b72045f4ba997834d0a7786d2793d91680868b5815b39f14fc78"
+        },
+        {
+          "path": "apps/playground/dist/assets/manifest.json",
+          "bytes": 464,
+          "sha256": "47dc809275689c1df347a14000500b3c681f5d82514832429f5f34520b932e1f"
+        },
+        {
+          "path": "apps/playground/dist/assets/runtime-host-BOLufsvx-BelXtvmr.js",
+          "bytes": 1679179,
+          "sha256": "7e6ff140052ee87af3250a8546cecf347bc71b80723a6eb43f0d9a47d342f92c"
+        },
+        {
+          "path": "apps/playground/dist/assets/runtime-host-BOLufsvx-BelXtvmr.js.map",
+          "bytes": 3947811,
+          "sha256": "0049ec01277aca011283936d419692d0a592f3452be08781bfdca448c42e1fe2"
+        },
+        {
+          "path": "apps/playground/dist/assets/tree-sitter-r.wasm",
+          "bytes": 487030,
+          "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+        },
+        {
+          "path": "apps/playground/dist/assets/web-tree-sitter.wasm",
+          "bytes": 201037,
+          "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+        },
+        {
+          "path": "apps/playground/dist/assets/worker-entry-B-8uo-G8-AcsC0agu.js",
+          "bytes": 1713733,
+          "sha256": "5b7e9fc3cc3d7c9f396286368243e06e2f6e798d1963f565b5ee40b18a481221"
+        },
+        {
+          "path": "apps/playground/dist/index.html",
+          "bytes": 5630,
+          "sha256": "6e4788ccafce7e88eba2fc79c262a4f120211b1fa3182accb081aa2a88e42af0"
+        },
+        {
+          "path": "apps/playground/index.html",
+          "bytes": 5531,
+          "sha256": "7d2396ee5dcca7daee91fc70ca1ad95fc404b1a3820874da41f6174bd833cc49"
+        },
+        {
+          "path": "apps/playground/src/main.ts",
+          "bytes": 47132,
+          "sha256": "c8e5fc9d1d48dc8c611060ded27f1db6d922d71e1e63c465524c98eaf5f86d19"
+        },
+        {
+          "path": "apps/playground/src/package-example.ts",
+          "bytes": 8960,
+          "sha256": "5dd218776bf0a9be5f24bdb9d3d8ec1a0e912e53f524887a36dad8072df297ca"
+        },
+        {
+          "path": "apps/playground/src/styles.css",
+          "bytes": 8812,
+          "sha256": "82b9567ba56d4cabf838756625c85c37a66913213ecad90fcacca10e7efa8928"
+        },
+        {
+          "path": "apps/playground/src/vite-env.d.ts",
+          "bytes": 38,
+          "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+        },
+        {
+          "path": "apps/playground/vite.config.ts",
+          "bytes": 288,
+          "sha256": "3a422f88fd54c1a041530e6910d3726c211303d54b95895faba03f249cae285a"
+        },
+        {
+          "path": "docs/compatibility-manifest.json",
+          "bytes": 61685,
+          "sha256": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384"
+        },
+        {
+          "path": "playwright.config.ts",
+          "bytes": 1207,
+          "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+        },
+        {
+          "path": "playwright.profile.config.ts",
+          "bytes": 1532,
+          "sha256": "1ad3960005cda13dae648cc4b1a9cade43cfc65243de5ca3449dbab54b7ca62b"
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "bytes": 111370,
+          "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+        },
+        {
+          "path": "scripts/lib/required-example-manifest.mjs",
+          "bytes": 9611,
+          "sha256": "ded9fe4f73d9db780126399f76a56bbc4d01eb3fe753e3cb846c84711217d7e2"
+        },
+        {
+          "path": "scripts/lib/required-example-profile.d.mts",
+          "bytes": 242,
+          "sha256": "04de47d9a442c5d7ef66484451e60e5d4f6bd4d30f4644a13ffd96ff656cde83"
+        },
+        {
+          "path": "scripts/lib/required-example-profile.mjs",
+          "bytes": 7623,
+          "sha256": "2171f3d3b8b786b17d99b8a04635e89381549c88876c72f7607df7d82a0ddaf7"
+        },
+        {
+          "path": "scripts/required-example-manifest.mjs",
+          "bytes": 2266,
+          "sha256": "5831208bf23d71db6c12d4ae62f953be9758ec5de13b36ac115e79f0b0bcb37a"
+        },
+        {
+          "path": "scripts/serve-e2e.mjs",
+          "bytes": 476,
+          "sha256": "e21028adc94a2a8e7423815e426986e9baa9caa47167763b1e846c6c5ab5700a"
+        },
+        {
+          "path": "scripts/test/required-example-manifest.test.mjs",
+          "bytes": 8226,
+          "sha256": "bb031a6f1ecebab20fd9de4b0a8f937ccf6e0880ade8cbd4baa3abb030067744"
+        },
+        {
+          "path": "tests/e2e/helpers/required-example-profile-cases.json",
+          "bytes": 11398,
+          "sha256": "b1da68d1c99a0a05e7fc816f4753eb857833104bc462dfb32914ba5991bb39b0"
+        },
+        {
+          "path": "tests/e2e/helpers/required-example-profile.ts",
+          "bytes": 19891,
+          "sha256": "d246e86c870619da8502675e819b0e8a7d4a84ed6394d05d3cc528a0b87aec25"
+        },
+        {
+          "path": "tests/e2e/playground.spec.ts",
+          "bytes": 59905,
+          "sha256": "18f1366e33043ffcbdf6e2a1279b47e7fe74cfd6e4839626d7ec5422d40328a2"
+        }
+      ],
+      "servedPaths": [
+        "assets/elementary.wasm",
+        "assets/index-DJGiHnlq.js",
+        "assets/index-DzcMZ8VO.css",
+        "assets/tree-sitter-r.wasm",
+        "assets/web-tree-sitter.wasm",
+        "assets/worker-entry-B-8uo-G8-AcsC0agu.js",
+        "index.html"
+      ],
+      "excludedLocalBlobResponses": 0,
+      "profileSource": "Checked-in capability manifest; serial build provenance remains a separate required gate"
+    }
+  },
+  "executionReceipt": {
+    "command": "pnpm benchmark:examples --project=firefox",
+    "exitCode": 0,
+    "logSha256": "fe36f867449a95a3983692ebe1b72763f94045fba2be0a92146169c8c4a26ea0"
+  }
+}

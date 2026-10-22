@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "2f82848c6845a08b7d9a82b6755ff132ce979871",
+  "sourceState": "Uncommitted diagnostic tooling over sourceCommit; runtime artifacts unchanged",
+  "inputs": [
+    {
+      "path": "apps/playground/dist/assets/elementary.manifest.json",
+      "sha256": "a216ca5975235f29e340608a34bc49d771218e36b8312f37e874f7b853829de8"
+    },
+    {
+      "path": "apps/playground/dist/assets/elementary.wasm",
+      "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+    },
+    {
+      "path": "apps/playground/dist/assets/index-DJGiHnlq.js",
+      "sha256": "b526bff11512332806bfc8ab5b9ce31d2ccdfe8a9427fb6751be3c2d393b90ef"
+    },
+    {
+      "path": "apps/playground/dist/assets/index-DJGiHnlq.js.map",
+      "sha256": "522e455d4b1e016ca9c5c449ca93a4f83251d05a2c8ed47d37839e8d00d1dfef"
+    },
+    {
+      "path": "apps/playground/dist/assets/index-DzcMZ8VO.css",
+      "sha256": "5352ef8f3139d5de81c945a8ac80c2d4205c447f918e63b500619fd354cff25b"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/core-math.LICENSE",
+      "sha256": "81830875362f4d477637de58eecd6d458db108cc90c40904fca3694807b86de3"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/musl.COPYRIGHT",
+      "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/tree-sitter-r.LICENSE",
+      "sha256": "de2e49529f03d573bc3fa229dc83acfe22c63a5ad1766b289563edfd45b72dea"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/wasi-libc.LICENSE",
+      "sha256": "2711a8b5a5cdfef0e639f96c1aca12ae23d7d64a02d0507f1bdf14d2b27bbc3a"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/wasi-libc.LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/web-tree-sitter.LICENSE",
+      "sha256": "c5cfb43042b6b72045f4ba997834d0a7786d2793d91680868b5815b39f14fc78"
+    },
+    {
+      "path": "apps/playground/dist/assets/manifest.json",
+      "sha256": "47dc809275689c1df347a14000500b3c681f5d82514832429f5f34520b932e1f"
+    },
+    {
+      "path": "apps/playground/dist/assets/runtime-host-BOLufsvx-BelXtvmr.js",
+      "sha256": "7e6ff140052ee87af3250a8546cecf347bc71b80723a6eb43f0d9a47d342f92c"
+    },
+    {
+      "path": "apps/playground/dist/assets/runtime-host-BOLufsvx-BelXtvmr.js.map",
+      "sha256": "0049ec01277aca011283936d419692d0a592f3452be08781bfdca448c42e1fe2"
+    },
+    {
+      "path": "apps/playground/dist/assets/tree-sitter-r.wasm",
+      "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+    },
+    {
+      "path": "apps/playground/dist/assets/web-tree-sitter.wasm",
+      "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+    },
+    {
+      "path": "apps/playground/dist/assets/worker-entry-B-8uo-G8-AcsC0agu.js",
+      "sha256": "5b7e9fc3cc3d7c9f396286368243e06e2f6e798d1963f565b5ee40b18a481221"
+    },
+    {
+      "path": "apps/playground/dist/index.html",
+      "sha256": "6e4788ccafce7e88eba2fc79c262a4f120211b1fa3182accb081aa2a88e42af0"
+    },
+    {
+      "path": "apps/playground/index.html",
+      "sha256": "7d2396ee5dcca7daee91fc70ca1ad95fc404b1a3820874da41f6174bd833cc49"
+    },
+    {
+      "path": "apps/playground/src/main.ts",
+      "sha256": "c8e5fc9d1d48dc8c611060ded27f1db6d922d71e1e63c465524c98eaf5f86d19"
+    },
+    {
+      "path": "apps/playground/src/package-example.ts",
+      "sha256": "5dd218776bf0a9be5f24bdb9d3d8ec1a0e912e53f524887a36dad8072df297ca"
+    },
+    {
+      "path": "apps/playground/src/styles.css",
+      "sha256": "82b9567ba56d4cabf838756625c85c37a66913213ecad90fcacca10e7efa8928"
+    },
+    {
+      "path": "apps/playground/src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "apps/playground/vite.config.ts",
+      "sha256": "3a422f88fd54c1a041530e6910d3726c211303d54b95895faba03f249cae285a"
+    },
+    {
+      "path": "docs/compatibility-manifest.json",
+      "sha256": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f2dcd48299087e7affe2b7265c15a02bc7dd5a0384b2f3391e5f3f0f12c888e4"
+    },
+    {
+      "path": "packages/base/src/builtins.ts",
+      "sha256": "d618df6c572f6d01525128e5c3498399484d7a9365d9d44884210038e77d722d"
+    },
+    {
+      "path": "packages/nativr/src/capabilities.ts",
+      "sha256": "50788cccddddab9ad4e1a24ebd56ef6d73240bc733f72720d4a5c7e80b04a54d"
+    },
+    {
+      "path": "packages/runtime/src/evaluator.ts",
+      "sha256": "86682981bcad9b8d4218d5581208dacf1f92e8d7946b1cceb28d2a1141fcdb8d"
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+    },
+    {
+      "path": "playwright.profile.config.ts",
+      "sha256": "1ad3960005cda13dae648cc4b1a9cade43cfc65243de5ca3449dbab54b7ca62b"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "sha256": "1482d34c3bedd5b9bf76e8d57e7ae3ec8889e5df40d38f3db09be43445aacc09"
+    },
+    {
+      "path": "scripts/lib/required-example-manifest.mjs",
+      "sha256": "ded9fe4f73d9db780126399f76a56bbc4d01eb3fe753e3cb846c84711217d7e2"
+    },
+    {
+      "path": "scripts/lib/required-example-profile.d.mts",
+      "sha256": "04de47d9a442c5d7ef66484451e60e5d4f6bd4d30f4644a13ffd96ff656cde83"
+    },
+    {
+      "path": "scripts/lib/required-example-profile.mjs",
+      "sha256": "2171f3d3b8b786b17d99b8a04635e89381549c88876c72f7607df7d82a0ddaf7"
+    },
+    {
+      "path": "scripts/required-example-manifest.mjs",
+      "sha256": "5831208bf23d71db6c12d4ae62f953be9758ec5de13b36ac115e79f0b0bcb37a"
+    },
+    {
+      "path": "scripts/serve-e2e.mjs",
+      "sha256": "e21028adc94a2a8e7423815e426986e9baa9caa47167763b1e846c6c5ab5700a"
+    },
+    {
+      "path": "scripts/test/required-example-collector.test.mjs",
+      "sha256": "0e3d8c023642b3a82e8a3838a2902fcee7b7438e88f0c816afd6f30cd83ea681"
+    },
+    {
+      "path": "scripts/test/required-example-manifest.test.mjs",
+      "sha256": "bb031a6f1ecebab20fd9de4b0a8f937ccf6e0880ade8cbd4baa3abb030067744"
+    },
+    {
+      "path": "scripts/test/required-example-profile.test.mjs",
+      "sha256": "b6877acc7adf88c4ea6cbf6ae702feb1b5abf30db55681c26c7f8f6cc92ab7e1"
+    },
+    {
+      "path": "tests/e2e/helpers/required-example-profile-cases.json",
+      "sha256": "b1da68d1c99a0a05e7fc816f4753eb857833104bc462dfb32914ba5991bb39b0"
+    },
+    {
+      "path": "tests/e2e/helpers/required-example-profile.ts",
+      "sha256": "d246e86c870619da8502675e819b0e8a7d4a84ed6394d05d3cc528a0b87aec25"
+    },
+    {
+      "path": "tests/e2e/playground.spec.ts",
+      "sha256": "18f1366e33043ffcbdf6e2a1279b47e7fe74cfd6e4839626d7ec5422d40328a2"
+    }
+  ],
+  "inputsStable": true,
+  "sourceReversalVerified": true,
+  "normalBrowserTests": [
+    {
+      "name": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 367
+    },
+    {
+      "name": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 1296
+    },
+    {
+      "name": "runs the optional owned runner in a Worker with explicit outcomes and recovery",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 700
+    },
+    {
+      "name": "runs the required Worker examples without evaluation network traffic",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 11149
+    },
+    {
+      "name": "surfaces recycling warnings and reset clears assigned state",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 960
+    },
+    {
+      "name": "loads the pinned elementary-function asset once per Worker session",
+      "browser": "chromium",
+      "status": "passed",
+      "durationMs": 331
+    },
+    {
+      "name": "runs the required Worker examples without evaluation network traffic",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 11750
+    },
+    {
+      "name": "surfaces recycling warnings and reset clears assigned state",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 1207
+    },
+    {
+      "name": "loads the pinned elementary-function asset once per Worker session",
+      "browser": "firefox",
+      "status": "passed",
+      "durationMs": 513
+    },
+    {
+      "name": "runs the required Worker examples without evaluation network traffic",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 47227
+    },
+    {
+      "name": "surfaces recycling warnings and reset clears assigned state",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 3210
+    },
+    {
+      "name": "loads the pinned elementary-function asset once per Worker session",
+      "browser": "webkit",
+      "status": "passed",
+      "durationMs": 590
+    }
+  ],
+  "gates": [
+    {
+      "command": "pnpm typecheck:all",
+      "exitCode": 0,
+      "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b"
+    },
+    {
+      "command": "pnpm exec eslint (changed profiling TypeScript and tooling)",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "pnpm benchmark:examples:test",
+      "exitCode": 0,
+      "logSha256": "0dc78114029fdc01d85e13f933dd26d8faab2c37b3a92ff12207e7e5188b0486"
+    },
+    {
+      "command": "pnpm benchmark:examples:check",
+      "exitCode": 0,
+      "logSha256": "68d61a3ef56a5a7effbe8a588d69e58f898e4d4e4e0b9b7dd9814679c5e66ae3"
+    },
+    {
+      "command": "pnpm boundaries",
+      "exitCode": 0,
+      "logSha256": "3999efdf142d09ecbda1d39bd57684b9671f170938b83a9de041d83d3e96addb"
+    },
+    {
+      "command": "pnpm format:check",
+      "exitCode": 0,
+      "logSha256": "3fce5cb567f40c639c766db921960927b2dfb50b3d7517f0bcdbc8d3d9892632"
+    },
+    {
+      "command": "pnpm test:e2e --workers=1 --reporter=list,json (existing serial build)",
+      "exitCode": 0,
+      "logSha256": "8c5fe5c35ef236de5260ccce8937ea936ec2d5268115e1d184988ee115c711c1"
+    },
+    {
+      "command": "pnpm status:check",
+      "exitCode": 0,
+      "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55"
+    },
+    {
+      "command": "pnpm capabilities:check",
+      "exitCode": 0,
+      "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502"
+    }
+  ],
+  "semanticGates": "No runtime/product semantics changed; full semantic gates remain the profile 0.392 checkpoint",
+  "e2eReportSha256": "9b50c05c490debee8d31380b39635c4057db5a47d010a87f89f09d4c4cdaaa51"
+}

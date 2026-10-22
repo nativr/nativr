@@ -1,10 +1,10 @@
 # Performance and bundle discipline
 
-## Current bundle observation (profile 0.389, 2026-10-22)
+## Current bundle observation (profile 0.392, 2026-10-22)
 
-The verified build passes the unchanged caps: client 17.6/150 KiB gzip, Worker 491.4/512 KiB gzip,
-parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw. Current Windows e2e and repeated
-Worker measurements are recorded at profile 0.389; offline packed-consumer evidence remains at
+The verified build passes the unchanged caps: client 17.6/150 KiB gzip, Worker 491.6/512 KiB gzip,
+parser 671.9/1,536 KiB raw and elementary Wasm 311.2/384 KiB raw. Current Windows e2e evidence is at
+profile 0.392; repeated Worker measurements remain at 0.389 and offline packed-consumer evidence at
 0.388. No latency acceptance budget or bundle cap changed; broader OS coverage remains unfinished.
 
 ## Bundle observation at profile 0.382 (2026-10-22)
@@ -23,21 +23,60 @@ uses shared checkpointed arithmetic and allocation accounting; session-limit/rec
 Browser timing measurements below remain at 0.380. No new latency claim or budget change follows
 from this semantic increment.
 
-## Current Windows browser observation (profile 0.389, 2026-10-22)
+## Current Windows browser observation (profile 0.392, 2026-10-22)
 
-All nine maintained e2e tests pass across the cached Chromium, Firefox and WebKit revisions, with
-one test worker and unchanged timeouts/viewports. Required Worker examples take 12.8 / 15.9 / 57
+All twelve maintained e2e tests pass across the cached Chromium, Firefox and WebKit revisions, with
+one test worker and unchanged timeouts/viewports. Required Worker examples take 12.6 / 14.0 / 59.8
 seconds respectively against the existing 120-second budget. The
-[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.389.0.json) binds these
-rounded reporter timings to test/config/runtime hashes and browser revisions.
+[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.392.0.json) binds these
+rounded reporter timings to test/config/runtime hashes and browser revisions. These advisory timings
+were collected alongside other verification gates; they are not isolated performance measurements.
+
+The [required-example profiling guide](required-example-profiling.md) describes opt-in per-Run
+attribution using the original examples, assertions, real clicks and timeout. It separates added
+arming overhead, click-call duration, activation-to-UI completion and the existing displayed
+evaluator time. These overlapping measurements do not form an additive time breakdown.
+
+### Isolated required-example diagnostic (profile 0.392, 2026-10-22)
+
+The
+[required-example checkpoint](../compatibility/platform-evidence/required-examples-windows-0.392.0/index.json)
+contains three serial WebKit samples and one Chromium/Firefox control each. All five retain the same
+134 Run executions, original assertions, real clicks, viewports and 120-second timeout. Source
+reversal to the verified 0.392 commit is exact; served HTTP assets and before/after file digests
+agree. Successful browser-created local Blob responses are separately counted and receive no
+served-asset credit. Three preliminary captures rejected the fixture's incorrect treatment of Blob
+responses as missing build files; their metadata remains recorded without timing-sample credit.
+
+| Observation                          | Chromium | Firefox | WebKit, three samples |
+| ------------------------------------ | -------: | ------: | --------------------: |
+| Whole required-example test, seconds |     11.3 |    12.0 |             40.3–41.3 |
+| Median added arming round trip, ms   |      0.9 |     1.1 |                   1.2 |
+| Median original click call, ms       |     32.9 |    53.4 |           209.9–214.3 |
+| Median activation to terminal UI, ms |       15 |       3 |                 10–11 |
+| Median displayed evaluator time, ms  |        1 |       2 |                     2 |
+
+These are within-run medians across heterogeneous examples, not repeated measurements of one
+workload. The 129 successful evaluations per sample have displayed evaluator times; five expected
+error outcomes have null elapsed values. Timings overlap and cannot be subtracted into a causal
+breakdown. The larger WebKit click-call measurement does not establish which actionability or
+browser scheduling mechanism causes it. No evaluator optimization, layout change, shortcut or
+timeout increase follows from these samples.
+
+One unchanged, uninstrumented WebKit baseline passed in 44.8 seconds before instrumentation.
+Instrumentation adds response-body hashing and an arming round trip, and unrelated host load is
+uncontrolled. The duration difference is not an improvement claim. Task-owned native/runtime
+workloads were idle during these measurements. The opt-in tool has 77 pure attribution/manifest
+tests and preserves the normal test path; repeated Worker-startup/cancellation/workload evidence
+below remains at 0.389. Broader OS coverage and agreed latency budgets remain unfinished.
 
 At profile 0.380, an isolated unchanged WebKit run passed in 42.6 seconds. Historical WebKit traces
 contained substantial element-stability waits. That profile's eight-activation diagnostic records
 approximately 16 ms initial animation frames, stable Run geometry after one scroll, 163.3 ms median
 button-action time and 24.1 ms supported-shortcut action time. These samples do not reproduce the
 prior half-second baseline, and do not establish its cause. The unchanged maintained suite keeps all
-real clicks, examples and assertions. No timeout or layout fix was made; the current larger suite
-still needs focused profiling before attributing its duration to a cause.
+real clicks, examples and assertions. No timeout or layout fix was made. The new diagnostic above
+records the larger suite's click and UI timings; its exact browser scheduling cause remains open.
 
 The diagnostic's single 211.5 ms navigation-to-ready observation is advisory and includes playground
 initialization. It is not a repeated Worker-startup benchmark. The separate repeated measurements

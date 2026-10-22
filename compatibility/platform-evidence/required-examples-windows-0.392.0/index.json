@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-required-example-profile-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.392.0",
+  "sourceCommit": "2f82848c6845a08b7d9a82b6755ff132ce979871",
+  "environment": {
+    "os": "win32",
+    "osRelease": "10.0.26200",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "playwright": "1.62.0"
+  },
+  "scope": "Isolated serial Windows browser diagnostic with task-owned runtime/native consumers idle; unrelated host load uncontrolled",
+  "unchanged": {
+    "runtimeArtifacts": true,
+    "sourceStringsAndAssertions": true,
+    "realRunClicks": true,
+    "timeoutMs": 120000,
+    "retries": 0,
+    "workers": 1
+  },
+  "samplePlan": {
+    "webkit": 3,
+    "chromium": 1,
+    "firefox": 1,
+    "executionsPerSample": 134,
+    "uninstrumentedWebkitBaselines": 1
+  },
+  "references": [
+    {
+      "path": "uninstrumented-baseline.json",
+      "sha256": "61a88c794150f0eea6147b92a79b5c999141228465ba2212bf92bab4c871458e"
+    },
+    {
+      "path": "initial-instrumentation.json",
+      "sha256": "12e920b5b423ef9d9f1e2fb0266baa0b2195bd4db059b28c3732e2cb583a27f0"
+    },
+    {
+      "path": "webkit-1.json",
+      "sha256": "5ade597a77d7140d45607d94748b39fb8d721f4db70778ac7e6d3152dc54d290"
+    },
+    {
+      "path": "webkit-2.json",
+      "sha256": "3dffb3a42c5abe36fcc7e5a62931931aeede79809451d5059a212ca33c718ddd"
+    },
+    {
+      "path": "webkit-3.json",
+      "sha256": "9ba8eec7e10d9941e56d9592d7d002f79519b3b5a4f4feb5149b1b2bc067ab92"
+    },
+    {
+      "path": "chromium-1.json",
+      "sha256": "a33251787b6e1dfaf398b5e2674b2b2cc3a7daeb9870bb2cf100303991bc5292"
+    },
+    {
+      "path": "firefox-1.json",
+      "sha256": "fa5e4a7cfed92fea194d310132ba30a9f6141bb6792fc372f8a6bbc8857a6470"
+    },
+    {
+      "path": "rejected-captures.json",
+      "sha256": "981cc578adfcacd4f20f104476ad55fdba5af2685c0a5f0a8a34fefa52f7494a"
+    },
+    {
+      "path": "verification.json",
+      "sha256": "98a215671eff0748aeba179f85d90adea626632c22fe2b438b9411a4cbeeb604"
+    }
+  ],
+  "summaries": [
+    {
+      "name": "webkit-1",
+      "testDurationMs": 41260,
+      "metrics": {
+        "armRpcMs": {
+          "count": 134,
+          "median": 1.1959000000015294,
+          "empiricalP95": 2.8197000000000116,
+          "max": 5.868500000000495
+        },
+        "actionCallMs": {
+          "count": 134,
+          "median": 209.92244999999912,
+          "empiricalP95": 291.6767,
+          "max": 338.84240000000136
+        },
+        "activationToUiCompleteMs": { "count": 134, "median": 11, "empiricalP95": 30, "max": 75 },
+        "displayedEvaluatorElapsedMs": { "count": 129, "median": 2, "empiricalP95": 14, "max": 54 }
+      }
+    },
+    {
+      "name": "webkit-2",
+      "testDurationMs": 40805,
+      "metrics": {
+        "armRpcMs": {
+          "count": 134,
+          "median": 1.2015999999998712,
+          "empiricalP95": 2.7299000000002707,
+          "max": 3.648699999999735
+        },
+        "actionCallMs": {
+          "count": 134,
+          "median": 214.29630000000043,
+          "empiricalP95": 280.41400000000067,
+          "max": 324.65539999999964
+        },
+        "activationToUiCompleteMs": { "count": 134, "median": 10, "empiricalP95": 27, "max": 87 },
+        "displayedEvaluatorElapsedMs": { "count": 129, "median": 2, "empiricalP95": 13, "max": 50 }
+      }
+    },
+    {
+      "name": "webkit-3",
+      "testDurationMs": 40289,
+      "metrics": {
+        "armRpcMs": {
+          "count": 134,
+          "median": 1.2059500000004846,
+          "empiricalP95": 2.697199999998702,
+          "max": 6.670600000001286
+        },
+        "actionCallMs": {
+          "count": 134,
+          "median": 212.80435000000034,
+          "empiricalP95": 276.178100000001,
+          "max": 339.03930000000037
+        },
+        "activationToUiCompleteMs": { "count": 134, "median": 11, "empiricalP95": 32, "max": 71 },
+        "displayedEvaluatorElapsedMs": { "count": 129, "median": 2, "empiricalP95": 17, "max": 55 }
+      }
+    },
+    {
+      "name": "chromium-1",
+      "testDurationMs": 11300,
+      "metrics": {
+        "armRpcMs": {
+          "count": 134,
+          "median": 0.9002500000005966,
+          "empiricalP95": 2.2620000000006257,
+          "max": 4.7590000000000146
+        },
+        "actionCallMs": {
+          "count": 134,
+          "median": 32.91499999999951,
+          "empiricalP95": 45.094600000000355,
+          "max": 49.612200000000485
+        },
+        "activationToUiCompleteMs": {
+          "count": 134,
+          "median": 15,
+          "empiricalP95": 17.899999976158142,
+          "max": 20.700000047683716
+        },
+        "displayedEvaluatorElapsedMs": { "count": 129, "median": 1, "empiricalP95": 17, "max": 19 }
+      }
+    },
+    {
+      "name": "firefox-1",
+      "testDurationMs": 12048,
+      "metrics": {
+        "armRpcMs": {
+          "count": 134,
+          "median": 1.0831499999999323,
+          "empiricalP95": 2.5288000000000466,
+          "max": 6.380300000000034
+        },
+        "actionCallMs": {
+          "count": 134,
+          "median": 53.35045000000014,
+          "empiricalP95": 61.04770000000008,
+          "max": 66.25900000000001
+        },
+        "activationToUiCompleteMs": { "count": 134, "median": 3, "empiricalP95": 33, "max": 50 },
+        "displayedEvaluatorElapsedMs": { "count": 129, "median": 2, "empiricalP95": 29, "max": 48 }
+      }
+    }
+  ],
+  "limitations": [
+    "Click-call and activation-to-UI measurements overlap; no additive partition or causal subtraction is justified.",
+    "Local blob content is excluded from served HTTP asset verification and receives no artifact credit.",
+    "Instrumentation adds startup hashing and one arming browser round trip per execution.",
+    "Per-sample empirical p95 describes 134 heterogeneous owned executions, not a population latency estimate.",
+    "One control per other browser and one uninstrumented baseline cannot establish a performance improvement or its cause.",
+    "No timeout, release latency budget, runtime semantics, original package tier or normative OS completion changed."
+  ]
+}

@@ -2203,3 +2203,33 @@ The original missing-function leads for difftime units, numeric predicates, `for
 absent. Plotting already recognizes `bty`, so its old corpus lead needs a fresh reproduction. The
 nine P5 packages have blocked or incomplete original test stages, and all thirteen domains remain
 unfinished. Linux, Formula holdout, remote actions and publication retain their existing boundaries.
+
+### Required-example profiling checkpoint (profile 0.392 unchanged)
+
+The opt-in profiler now attributes all 134 executions of the existing required-example test while
+preserving its source strings, assertions, real clicks, viewport and 120-second timeout. Its current
+source manifest is checked during `pnpm check`; regeneration changes metadata only. Seventy-seven
+pure tests, integrated TypeScript, lint, boundaries and formatting pass. The normal browser suite
+also passes 12/12 with profiling disabled. No runtime/product behavior or semantic profile changed.
+
+The [checkpoint](../compatibility/platform-evidence/required-examples-windows-0.392.0/index.json)
+retains three isolated WebKit samples and one Chromium/Firefox control, all with stable inputs and
+verified served HTTP assets. Successful local Blob content is separately counted without artifact
+credit. Three rejected preliminary captures document the fixture's response-classification defect;
+none is counted as a valid timing sample. The complete accepted set contains 670 Run observations.
+
+WebKit takes 40.3–41.3 seconds, with median click-call time 209.9–214.3 ms, activation-to-UI time
+10–11 ms and displayed evaluator time 2 ms. These overlapping measurements do not establish a causal
+time breakdown. One unchanged baseline takes 44.8 seconds; the subsequent normal full-suite WebKit
+example test takes 47.2 seconds. No speedup, layout fix, shortcut or timeout change is claimed.
+Exact browser actionability/scheduling attribution and broader OS/release performance remain open.
+
+The next measurable semantic increment is recursive `unlist` handling of heterogeneous leaves. All
+43 independently authored native assertions pass in GNU R 4.6.1. Stable 0.392 reproduces 32
+mismatches and retains eleven passing controls. The bounded acceptance set has 42 assertions: 31
+defects plus eleven guards. The named-expression row remains an explicitly recorded expression
+representation gap. Candidate implementation, resource tests and four proposed recursive groups are
+prepared; they require source/runtime verification and strict causal validation before promotion.
+Complete the semantic gates, refreshed reports and affected cached-package checks before a local
+semantic commit. The full corpus remains at 0.389, repeated performance at 0.389 and packed-consumer
+evidence at 0.388. All thirteen domains remain incomplete; existing boundaries remain in force.

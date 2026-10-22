@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "scope": "Temporary fixture-development failures; no timing sample credit",
+  "attempts": [
+    {
+      "reportSha256": "c4a0e46666b12853cc1f9388d5bec1037ba892a8ca7cd7bd401a420eb1d8593e",
+      "logSha256": "7275bea4485396d5b46961c616b94175b44ae21ea5b549cb6a1e819687cfc114",
+      "status": "rejected-capture",
+      "exitCode": 1,
+      "originalAssertionsCompleted": true,
+      "durationMs": 40946,
+      "invalid": { "schemaVersion": 1, "ok": false, "code": "PROFILE_INPUTS" }
+    },
+    {
+      "reportSha256": "c780c478fb1551c151d0a6013a0b71503617abce90146e66020d30d3f4c8986f",
+      "logSha256": "21100ddfcad9655c4e472b388c86fd10642ee37c3d7fc7bc333c75de63d3be1c",
+      "status": "rejected-capture",
+      "exitCode": 1,
+      "originalAssertionsCompleted": true,
+      "durationMs": 41168,
+      "invalid": {
+        "schemaVersion": 1,
+        "ok": false,
+        "code": "PROFILE_INPUTS",
+        "diagnostics": {
+          "inputs": {
+            "stable": true,
+            "beforeCount": 37,
+            "afterCount": 37,
+            "beforeSnapshotSha256": "c26697a8d2c68243129707a3e505ef85250d54bae77561ed9b53375af5809c79",
+            "afterSnapshotSha256": "c26697a8d2c68243129707a3e505ef85250d54bae77561ed9b53375af5809c79"
+          },
+          "responses": {
+            "observed": 12,
+            "failed": true,
+            "failures": {
+              "limit": 0,
+              "origin": 0,
+              "unknownAsset": 5,
+              "status": 0,
+              "bodyRead": 0,
+              "bodyMismatch": 0,
+              "unexpected": 0
+            },
+            "verified": { "html": true, "javascript": 2, "wasm": 3 }
+          }
+        }
+      }
+    },
+    {
+      "reportSha256": "3a70ada9e29944e72d6cac0dd080db233de78ae7e7afa869532ed06b7854bbe6",
+      "logSha256": "adaf736624252296ed8530ce290bf952124de372e59f3b272f76483fa16087c7",
+      "status": "rejected-capture",
+      "exitCode": 1,
+      "originalAssertionsCompleted": true,
+      "durationMs": 39984,
+      "invalid": {
+        "schemaVersion": 1,
+        "ok": false,
+        "code": "PROFILE_INPUTS",
+        "diagnostics": {
+          "inputs": {
+            "stable": true,
+            "beforeCount": 37,
+            "afterCount": 37,
+            "beforeSnapshotSha256": "eb3e5f5dfdf6678a9bb7cd6486a481886dad63f317657c764e3cd7cafb3553a2",
+            "afterSnapshotSha256": "eb3e5f5dfdf6678a9bb7cd6486a481886dad63f317657c764e3cd7cafb3553a2"
+          },
+          "responses": {
+            "observed": 12,
+            "failed": true,
+            "failures": {
+              "limit": 0,
+              "origin": 0,
+              "unknownAsset": 2,
+              "status": 0,
+              "bodyRead": 0,
+              "bodyMismatch": 0,
+              "unexpected": 0
+            },
+            "excludedLocalPreviewDocuments": 3,
+            "unknownAssets": [
+              {
+                "scheme": "blob:",
+                "resourceType": "other",
+                "pathnameSha256": "79c181984dc986e6a37e9b806a5f144c7f6d176425bccb1ffc08c9e28fd67aad"
+              },
+              {
+                "scheme": "blob:",
+                "resourceType": "other",
+                "pathnameSha256": "d76a90820c892f206cbaeef40c760bb5cf3131ca8d6dce31a8bdd9eb4cb2c3af"
+              }
+            ],
+            "unknownAssetMetadataTruncated": false,
+            "verified": { "html": true, "javascript": 2, "wasm": 3 }
+          }
+        }
+      }
+    }
+  ]
+}

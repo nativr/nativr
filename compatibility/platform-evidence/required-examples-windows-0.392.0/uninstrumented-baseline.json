@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-required-example-uninstrumented-baseline",
+  "semanticProfile": "0.392.0",
+  "sourceCommit": "2f82848c6845a08b7d9a82b6755ff132ce979871",
+  "inputs": [
+    {
+      "path": "apps/playground/dist/assets/elementary.manifest.json",
+      "sha256": "a216ca5975235f29e340608a34bc49d771218e36b8312f37e874f7b853829de8"
+    },
+    {
+      "path": "apps/playground/dist/assets/elementary.wasm",
+      "sha256": "0467e7c1a694e4b0eb86343457cfe733d9220132385dfe73f7845d1261837a0a"
+    },
+    {
+      "path": "apps/playground/dist/assets/index-DJGiHnlq.js",
+      "sha256": "b526bff11512332806bfc8ab5b9ce31d2ccdfe8a9427fb6751be3c2d393b90ef"
+    },
+    {
+      "path": "apps/playground/dist/assets/index-DJGiHnlq.js.map",
+      "sha256": "522e455d4b1e016ca9c5c449ca93a4f83251d05a2c8ed47d37839e8d00d1dfef"
+    },
+    {
+      "path": "apps/playground/dist/assets/index-DzcMZ8VO.css",
+      "sha256": "5352ef8f3139d5de81c945a8ac80c2d4205c447f918e63b500619fd354cff25b"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/core-math.LICENSE",
+      "sha256": "81830875362f4d477637de58eecd6d458db108cc90c40904fca3694807b86de3"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/musl.COPYRIGHT",
+      "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/tree-sitter-r.LICENSE",
+      "sha256": "de2e49529f03d573bc3fa229dc83acfe22c63a5ad1766b289563edfd45b72dea"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/wasi-libc.LICENSE",
+      "sha256": "2711a8b5a5cdfef0e639f96c1aca12ae23d7d64a02d0507f1bdf14d2b27bbc3a"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/wasi-libc.LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "apps/playground/dist/assets/licenses/web-tree-sitter.LICENSE",
+      "sha256": "c5cfb43042b6b72045f4ba997834d0a7786d2793d91680868b5815b39f14fc78"
+    },
+    {
+      "path": "apps/playground/dist/assets/manifest.json",
+      "sha256": "47dc809275689c1df347a14000500b3c681f5d82514832429f5f34520b932e1f"
+    },
+    {
+      "path": "apps/playground/dist/assets/runtime-host-BOLufsvx-BelXtvmr.js",
+      "sha256": "7e6ff140052ee87af3250a8546cecf347bc71b80723a6eb43f0d9a47d342f92c"
+    },
+    {
+      "path": "apps/playground/dist/assets/runtime-host-BOLufsvx-BelXtvmr.js.map",
+      "sha256": "0049ec01277aca011283936d419692d0a592f3452be08781bfdca448c42e1fe2"
+    },
+    {
+      "path": "apps/playground/dist/assets/tree-sitter-r.wasm",
+      "sha256": "2e6c36ffc40ae819d2d5ac349d150133e0f56b39357c8a9b0188259201c5a219"
+    },
+    {
+      "path": "apps/playground/dist/assets/web-tree-sitter.wasm",
+      "sha256": "715cae35f31b7b03a13592bc5ac9039d5c6d2c2bda9f9e0c2b8abab77b3f64cc"
+    },
+    {
+      "path": "apps/playground/dist/assets/worker-entry-B-8uo-G8-AcsC0agu.js",
+      "sha256": "5b7e9fc3cc3d7c9f396286368243e06e2f6e798d1963f565b5ee40b18a481221"
+    },
+    {
+      "path": "apps/playground/dist/index.html",
+      "sha256": "6e4788ccafce7e88eba2fc79c262a4f120211b1fa3182accb081aa2a88e42af0"
+    },
+    {
+      "path": "apps/playground/index.html",
+      "sha256": "7d2396ee5dcca7daee91fc70ca1ad95fc404b1a3820874da41f6174bd833cc49"
+    },
+    {
+      "path": "apps/playground/src/main.ts",
+      "sha256": "c8e5fc9d1d48dc8c611060ded27f1db6d922d71e1e63c465524c98eaf5f86d19"
+    },
+    {
+      "path": "apps/playground/src/package-example.ts",
+      "sha256": "5dd218776bf0a9be5f24bdb9d3d8ec1a0e912e53f524887a36dad8072df297ca"
+    },
+    {
+      "path": "apps/playground/src/styles.css",
+      "sha256": "82b9567ba56d4cabf838756625c85c37a66913213ecad90fcacca10e7efa8928"
+    },
+    {
+      "path": "apps/playground/src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "apps/playground/vite.config.ts",
+      "sha256": "3a422f88fd54c1a041530e6910d3726c211303d54b95895faba03f249cae285a"
+    },
+    {
+      "path": "docs/compatibility-manifest.json",
+      "sha256": "1430c79130d861db5b1dc0f2b133cd3d99e78c2f81262ff45799a4d2eb6dc384"
+    },
+    {
+      "path": "packages/base/src/builtins.ts",
+      "sha256": "d618df6c572f6d01525128e5c3498399484d7a9365d9d44884210038e77d722d"
+    },
+    {
+      "path": "packages/nativr/src/capabilities.ts",
+      "sha256": "50788cccddddab9ad4e1a24ebd56ef6d73240bc733f72720d4a5c7e80b04a54d"
+    },
+    {
+      "path": "packages/runtime/src/evaluator.ts",
+      "sha256": "86682981bcad9b8d4218d5581208dacf1f92e8d7946b1cceb28d2a1141fcdb8d"
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "99f6d2d34202df59b892bb042e907b7fa95125c37b360b793ec83e6bab26bf67"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "c9bbb625c1cd68e4206bec7b9998277e23f77bc8b0ba62781dd7441ef6498feb"
+    },
+    {
+      "path": "scripts/serve-e2e.mjs",
+      "sha256": "e21028adc94a2a8e7423815e426986e9baa9caa47167763b1e846c6c5ab5700a"
+    },
+    {
+      "path": "tests/e2e/playground.spec.ts",
+      "sha256": "20e2813e78ad62c18735c832716dddd35bc1eb4f930632e28eeb532ea28d0523"
+    }
+  ],
+  "inputsStable": true,
+  "execution": {
+    "workers": 1,
+    "retries": 0,
+    "timeoutMs": 120000,
+    "serverReuse": false,
+    "buildSkipped": true,
+    "concurrentDevelopmentConsumers": false,
+    "tests": [
+      {
+        "name": "runs the required Worker examples without evaluation network traffic",
+        "browser": "webkit",
+        "status": "passed",
+        "durationMs": 44830
+      }
+    ]
+  },
+  "reportSha256": "c20933871767353a1f2c26e9ddb31a68cd4dd399cc69671a6b2433961d2406c0",
+  "logSha256": "90ed61cfd6a9d693b4ea8b4818077333339ba23d6ddb34eb48e37f81f2415585",
+  "limitation": "One whole-test baseline with known task-owned runtime/native workloads idle; unrelated host load is uncontrolled. No per-action timing, pure Worker timing or release-performance claim."
+}
