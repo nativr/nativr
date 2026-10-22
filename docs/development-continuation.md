@@ -1401,7 +1401,7 @@ argument diagnostics, exact condition-call attribution and omitted/dots rewritin
 remain open. General S3 names dispatch, POSIXlt method bindings, time attributes, domain closure,
 browser timing, dataset/testing support and platform validation also remain required work.
 
-### Immediate continuation after profile 0.378
+### Continuation recorded at profile 0.378 (superseded below)
 
 Close general S3 names/names<- dispatch and expose the missing names.POSIXlt/names<-.POSIXlt methods
 using independently authored parity fixtures. Native observations demonstrate caller-local and
@@ -1420,3 +1420,52 @@ callable inventory, independently licensed offline datasets, isolated testing su
 timing and release gates. Linux and Formula still require separate authorization; downloads need
 approval. The full five-criterion target remains unfinished; the next local semantic work needs no
 additional input.
+
+### Profile 0.379 verification (2026-10-22)
+
+names and names<- now use class/default dispatch with source-order forcing, original actual tags,
+visible results and owned substitution/matched-call metadata. names.POSIXlt and names<-.POSIXlt
+expose closure signatures and use shared dollar extraction/replacement, names and length dispatch in
+library scope. Classed atomic inputs can dispatch before default errors. Year length is observed
+before container length; short components expand without truncating longer ones. Library-internal
+names calls dispatch once in their recorded scope, preserving factor/time-list behavior.
+
+Direct and nested dollar-member replacement use shared class/default/NextMethod paths and preserve
+RHS-first evaluation and invisible assignment results. Sixty independently authored native parity
+fixtures and a resource/recovery test pass. Seven foundation/recursive groups include causal
+controls; metadata and diagnostic-only groups receive no causal credit. The evidence validator now
+admits registered replacement-method identifiers, with five owned acceptance/rejection tests and an
+explicit TypeScript declaration. The full check passes 2221 tests with 93 opt-in skips.
+Checked-in/live/recursive conformance passes 1375 / 1306 / 287, with 151 linked bindings. All 26
+checkpoint-integrity tests pass. Bundle budgets pass: client 17.6/150 KiB gzip, Worker 484.4/512 KiB
+gzip, parser 671.9/1,536 KiB raw and elementary 311.2/384 KiB raw. Name overlap is 782/2,522; it is
+not a completion percentage.
+
+The [0.379 checkpoint](../compatibility/package-check-evidence/corpus-0.379.0.json) records all 24
+digest-pinned cached development/regression packages with original entrypoints and applicable native
+repeatability. All 178 script input hashes, execution/comparison outcomes and repeatability flags
+are unchanged from 0.378; package stages and tiers are unchanged. pkgconfig and abind remain P7,
+numDeriv P6, eight packages P5, twelve P4 and BH P3. The untouched Formula holdout remains P0. The
+withr timezone example retains its native repeatability failure and mismatch; unchanged failures
+gain no credit. No substitute testing runner receives P6/P7 credit. Formula and partition
+assignments are unchanged. No public NativR API, Worker protocol, dependency direction or host
+capability changed. E2e, pack smoke and performance measurements were not refreshed for this
+base-runtime increment. No downloads, pushes or publication occurred; no GNU R implementation bodies
+were development inputs.
+
+Native active-binding member replacement performs extra get/set callbacks that remain unmatched.
+Broader nested extraction dispatch, direct first-class dollar-replacement bindings, malformed and
+attributed objects, full condition calls and general NextMethod dots/default behavior remain open.
+Earlier replication/compiler/time-attribute gaps, all thirteen domain matrices, browser timing,
+dataset/testing support and platform gates still require work. This increment closes its recorded
+matrix; it does not establish complete names, member-replacement or POSIXlt compatibility.
+
+### Immediate continuation after profile 0.379
+
+Add the machine-checked callable/domain inventory required by milestone 5, keeping unknown mappings
+and incomplete behavioral dimensions explicit. Link the existing registered-name and recursive
+causal evidence without converting either into complete callable/domain claims. Preserve the native
+active-binding/member-replacement reproduction as an open semantic lead. Resume shared corpus
+blockers and the independently licensed offline datasets/testing runner after the inventory exposes
+coverage and gaps. Linux and Formula still need separate authorization; downloads need approval. The
+full five-criterion target remains unfinished; this next local work needs no additional input.

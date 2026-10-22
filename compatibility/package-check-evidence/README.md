@@ -180,3 +180,14 @@ numDeriv P6, eight packages P5, twelve P4 and BH P3. The untouched Formula holdo
 withr timezone example retains its native repeatability failure and mismatch; unchanged failures
 gain no credit. Formula and partition assignments are unchanged. Reports contain allowlisted
 metadata and digests, with no implementation bodies or raw package transcripts.
+
+## Profile 0.379 checkpoint (2026-10-22)
+
+[corpus-0.379.0.json](corpus-0.379.0.json) binds all 24 cached development/regression reports to
+profile, archive, artifact and summary digests. Original entrypoints and native repeatability were
+used. All 178 script input hashes, execution/comparison outcomes and repeatability flags are
+unchanged from 0.378; package stages and tiers are unchanged. pkgconfig and abind remain P7,
+numDeriv P6, eight packages P5, twelve P4 and BH P3. The untouched Formula holdout remains P0. The
+withr timezone example retains its native repeatability failure and mismatch; unchanged failures
+gain no credit. Formula and partition assignments are unchanged. Reports contain allowlisted
+metadata and digests, with no implementation bodies or raw package transcripts.

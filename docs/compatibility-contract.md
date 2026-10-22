@@ -38,6 +38,37 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Names and member-replacement dispatch (profile 0.379)
+
+names and names<- force primitive actuals in source order before arity checks and class dispatch.
+The getter validates its x tag; the setter uses positional values for its default path while
+retaining original tags for user-method matching. Explicit classes use caller/registered methods,
+later classes and default methods; unclassed inputs bypass dispatch. Results are visible. Owned
+methods retain forced substitution values, matched-call syntax, generic metadata and NextMethod
+continuation through reassigned supplied arguments.
+
+names.POSIXlt and names<-.POSIXlt expose x and x/value closure signatures. They access the named
+year component through the library lookup scope, retain component getter/setter dispatch and
+preserve observed direct-call, NULL, partial-field, environment-identity and diagnostic behavior.
+The setter lengthens short year components without truncating longer ones, updates year names and
+performs the recorded balanced-attribute transition. Container and component identity remain under
+the existing immutable value/environment model. Allocation and recursive dispatch remain bounded.
+
+Direct and nested dollar-member replacement now share class/default dispatch, environment and NULL
+fallbacks, RHS-first evaluation for those member paths and NextMethod fallback. Owned method
+substitution distinguishes the temporary object symbol, character member and original RHS from the
+evaluated value recorded by match.call. Assignment returns its original RHS invisibly.
+
+Sixty independently authored parity fixtures and a resource/recovery test cover this increment.
+Foundation/recursive groups include causal controls for names, its POSIXlt methods and NextMethod;
+metadata and diagnostic-only groups do not claim causal evidence. This does not establish complete
+names, member replacement or POSIXlt compatibility. Native active-binding replacement makes extra
+get/set callbacks that remain unmatched; the owned
+[active-binding probe](../conformance/probes/member-active-binding.R) preserves that reproduction.
+Broader nested extraction dispatch, direct first-class dollar-replacement calls,
+malformed/attributed objects, full condition-call origins and general NextMethod dots/default
+behavior remain unfinished, together with the earlier domain/platform gaps.
+
 ### Replication family controls and interpreted dispatch (profile 0.378)
 
 `rep.int(x, times)` and `rep_len(x, length.out)` expose closure signatures and force x before the

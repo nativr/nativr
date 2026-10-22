@@ -1154,6 +1154,10 @@ export class Evaluator {
             );
             return { value: replacement, visible: false };
           }
+          const earlyReplacement =
+            node.target.operator === "$"
+              ? await this.#evaluateValue(node.value, environment, context)
+              : undefined;
           const name = node.target.target.name;
           const targetEnvironment = this.#assignmentEnvironment(
             environment,
@@ -1169,7 +1173,8 @@ export class Evaluator {
             });
           }
           const target = await this.#force(binding, context);
-          const replacement = await this.#evaluateValue(node.value, environment, context);
+          const replacement =
+            earlyReplacement ?? (await this.#evaluateValue(node.value, environment, context));
           let updated: RValue;
           if (node.target.operator === "@") throw unsupported("slot replacement", node.span);
           if (node.target.operator === "$") {
@@ -1178,18 +1183,14 @@ export class Evaluator {
               throw new REvaluationError("NRE2206", "The $ operator requires a member name.");
             }
             const memberName = staticName(member, "member");
-            if (target.type === "environment") {
-              await this.#assignBinding(target, memberName, replacement, context);
-              return { value: replacement, visible: false };
-            }
-            updated =
-              target.type === "null"
-                ? replacement.type === "null"
-                  ? R_NULL
-                  : replaceListMember(listValue([]), memberName, replacement, context)
-                : target.type === "language"
-                  ? replaceLanguageMember(target, memberName, replacement, context)
-                  : replaceListMember(target, memberName, replacement, context);
+            updated = await this.#replaceMemberValue(
+              target,
+              memberName,
+              replacement,
+              environment,
+              context,
+              node.value,
+            );
           } else {
             if (target.type === "environment") {
               if (node.target.operator !== "[[") {
@@ -1895,6 +1896,10 @@ export class Evaluator {
     nonLocal: boolean,
     span: SourceSpan,
   ): Promise<RValue> {
+    const earlyReplacement =
+      target.operator === "$"
+        ? await this.#evaluateValue(replacementNode, environment, context)
+        : undefined;
     const path: SubsetExpressionNode[] = [];
     let root: AstNode = target;
     while (root.kind === "SubsetExpression") {
@@ -1919,7 +1924,8 @@ export class Evaluator {
     } else {
       current = await this.#evaluateValue(root, environment, context);
     }
-    const replacement = await this.#evaluateValue(replacementNode, environment, context);
+    const replacement =
+      earlyReplacement ?? (await this.#evaluateValue(replacementNode, environment, context));
     const operations: PreparedSubsetOperation[] = [];
     for (let offset = 0; offset < path.length; offset += 1) {
       const operation = await this.#prepareNestedSubsetOperation(
@@ -1944,7 +1950,13 @@ export class Evaluator {
               context,
             )
           : (operations[offset] as PreparedSubsetOperation);
-      updated = await this.#applyPreparedSubsetReplacement(operation, updated, context);
+      updated = await this.#applyPreparedSubsetReplacement(
+        operation,
+        updated,
+        environment,
+        context,
+        offset === operations.length - 1 ? replacementNode : undefined,
+      );
     }
     if (root.kind === "Identifier") {
       await this.#assignBinding(targetEnvironment as REnvironment, root.name, updated, context);
@@ -2043,20 +2055,90 @@ export class Evaluator {
       : extractVectorElement(operation.target, operation.index, context, operation.exact);
   }
 
+  async #replaceMemberValue(
+    target: RValue,
+    member: string,
+    replacement: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+    sourceExpression?: AstNode,
+    dispatch = true,
+  ): Promise<RValue> {
+    context.checkpoint();
+    if (dispatch && objectClasses(target) !== undefined) {
+      const temporary: AstNode = { kind: "Identifier", name: "*tmp*", span: SYNTHETIC_SPAN };
+      const memberExpression: AstNode = { kind: "Identifier", name: member, span: SYNTHETIC_SPAN };
+      const valueExpression = embeddedValueAst(replacement, () => context.checkpoint());
+      const arguments_: BuiltinCallArgument[] = [
+        { promise: { ...createForcedPromise(target, environment), expression: temporary } },
+        {
+          promise: {
+            ...createForcedPromise(characterVector([member]), environment),
+            expression: memberExpression,
+            sourceExpression: { kind: "StringLiteral", value: member, span: SYNTHETIC_SPAN },
+          },
+        },
+        {
+          name: "value",
+          promise: {
+            ...createForcedPromise(replacement, environment),
+            expression: valueExpression,
+            sourceExpression: sourceExpression ?? valueExpression,
+          },
+        },
+      ];
+      const result = await this.#dispatchS3IfPresentResult(
+        "$<-",
+        target,
+        arguments_,
+        context,
+        true,
+        -1,
+        environment,
+        undefined,
+        {
+          kind: "CallExpression",
+          callee: { kind: "Identifier", name: "$<-", span: SYNTHETIC_SPAN },
+          arguments: arguments_.map((argument) => ({
+            ...(argument.name === undefined ? {} : { name: argument.name }),
+            value: argument.promise.expression!,
+            span: SYNTHETIC_SPAN,
+          })),
+          span: SYNTHETIC_SPAN,
+        },
+      );
+      if (result !== undefined) return result.value;
+    }
+    if (target.type === "environment") {
+      await this.#assignBinding(target, member, replacement, context);
+      return target;
+    }
+    if (target.type === "null") {
+      if (replacement.type === "null") return R_NULL;
+      context.allocate(1);
+      return listValue([replacement], [member]);
+    }
+    if (target.type === "language")
+      return replaceLanguageMember(target, member, replacement, context);
+    return replaceListMember(target, member, replacement, context);
+  }
+
   async #applyPreparedSubsetReplacement(
     operation: PreparedSubsetOperation,
     replacement: RValue,
+    environment: REnvironment,
     context: EvaluationContext,
+    sourceExpression?: AstNode,
   ): Promise<RValue> {
     if (operation.operator === "$") {
-      if (operation.target.type === "environment") {
-        await this.#assignBinding(operation.target, operation.member, replacement, context);
-        return operation.target;
-      }
-      if (operation.target.type === "null") {
-        return replacement.type === "null" ? R_NULL : listValue([replacement], [operation.member]);
-      }
-      return replaceListMember(operation.target, operation.member, replacement, context);
+      return this.#replaceMemberValue(
+        operation.target,
+        operation.member,
+        replacement,
+        environment,
+        context,
+        sourceExpression,
+      );
     }
     if (operation.target.type === "environment") {
       if (operation.operator !== "[[") {
@@ -2283,7 +2365,12 @@ export class Evaluator {
         environment,
         context,
       );
-      updated = await this.#applyPreparedSubsetReplacement(operation, updated, context);
+      updated = await this.#applyPreparedSubsetReplacement(
+        operation,
+        updated,
+        environment,
+        context,
+      );
     }
     if (root.kind === "Identifier") {
       await this.#assignBinding(targetEnvironment as REnvironment, root.name, updated, context);
@@ -5298,6 +5385,22 @@ export class Evaluator {
     );
     if (result !== undefined) return result;
     if (allowPrimitiveFallback) {
+      if (generic === "$<-" && arguments_.length === 3) {
+        const target = await this.#force(arguments_[0]!.promise, context);
+        const member = await this.#force(arguments_[1]!.promise, context);
+        const value = await this.#force(arguments_[2]!.promise, context);
+        if (member.type !== "character" || member.length !== 1 || isMissing(member, 0))
+          throw new RTypeMismatchError("NRT3305", "invalid subscript type");
+        return this.#replaceMemberValue(
+          target,
+          member.values[0]!,
+          value,
+          callerEnvironment ?? this.#globalEnvironment,
+          context,
+          undefined,
+          false,
+        );
+      }
       const definition = this.#builtins.find(
         (entry) => entry.package === "base" && entry.name === generic,
       );

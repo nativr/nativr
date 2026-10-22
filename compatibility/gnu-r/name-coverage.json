@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 807,
-    "overlappingNames": 780,
-    "missingReferenceNames": 1742,
+    "nativrRegisteredNames": 809,
+    "overlappingNames": 782,
+    "missingReferenceNames": 1740,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.309278
+    "nameCoverage": 0.310071
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 586, "nameCoverage": 0.428676 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 588, "nameCoverage": 0.430139 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -506,7 +506,9 @@
     "model.matrix",
     "na.omit",
     "names",
+    "names.POSIXlt",
     "names<-",
+    "names<-.POSIXlt",
     "nchar",
     "nclass.FD",
     "nclass.Sturges",
@@ -1949,8 +1951,6 @@
     "na.pass",
     "nameOfClass",
     "nameOfClass.default",
-    "names.POSIXlt",
-    "names<-.POSIXlt",
     "namespaceExport",
     "namespaceImport",
     "namespaceImportClasses",

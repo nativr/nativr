@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.378.0",
-  "capabilityManifestHash": "cdb047b703c18d7c6a35289f6892ae489b14bc5ce886ade58ee13641ad0762f4",
+  "semanticProfileVersion": "0.379.0",
+  "capabilityManifestHash": "1e7e54e5bc4222beb852e8ffc746ddfcb803bc6a249649aa9886df7d03349e6c",
   "evidence": {
-    "checkedInConformanceCases": 1368,
-    "liveREligibleCases": 1299,
+    "checkedInConformanceCases": 1375,
+    "liveREligibleCases": 1306,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 280,
-    "recursiveBehaviorallyProvenBindings": 149,
+    "recursiveOracleV2Cases": 287,
+    "recursiveBehaviorallyProvenBindings": 151,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -309,14 +309,32 @@
           "logical-mode-symbol-mode"
         ]
       },
-      { "binding": "base::names", "cases": ["replication-posixlt-names"] },
-      { "binding": "base::names<-", "cases": ["replication-posixlt-names"] },
+      {
+        "binding": "base::names",
+        "cases": [
+          "names-dispatch-getter",
+          "names-dispatch-next-method",
+          "replication-posixlt-names"
+        ]
+      },
+      { "binding": "base::names.POSIXlt", "cases": ["names-dispatch-posixlt"] },
+      {
+        "binding": "base::names<-",
+        "cases": [
+          "names-dispatch-next-method",
+          "names-dispatch-setter",
+          "replication-posixlt-names"
+        ]
+      },
+      { "binding": "base::names<-.POSIXlt", "cases": ["names-dispatch-posixlt"] },
       { "binding": "base::new.env", "cases": ["shared-environment-identity"] },
       { "binding": "base::next", "cases": ["first-class-loop-transfer"] },
       {
         "binding": "base::NextMethod",
         "cases": [
           "combine-next-method-primitive-fallback",
+          "names-dispatch-member",
+          "names-dispatch-next-method",
           "next-method-default-reentry",
           "replication-family-next-method",
           "replication-family-shared-s3"
@@ -644,8 +662,8 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 807,
-    "gnuRNameOverlaps": 780,
+    "registeredBindings": 809,
+    "gnuRNameOverlaps": 782,
     "referenceCoreCallableNames": 2522
   },
   "packageCorpus": {

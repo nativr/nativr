@@ -3085,8 +3085,33 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
   ),
   defineBuiltin("pairlist", ["..."], "behavioral", builtinPairlist),
   defineBuiltin("as.pairlist", ["x"], "behavioral", builtinAsPairlist),
-  defineBuiltin("names", ["x"], "behavioral", builtinNames),
-  defineBuiltin("names<-", ["x", "value"], "behavioral", builtinNamesReplacement),
+  {
+    ...defineBuiltin("names", ["x"], "behavioral", builtinNames),
+    s3DefaultImplementation: (invocation) => builtinNames(invocation, false),
+  },
+  {
+    ...defineBuiltin("names<-", ["x", "value"], "behavioral", builtinNamesReplacement),
+    s3DefaultImplementation: (invocation) => builtinNamesReplacement(invocation, false),
+  },
+  {
+    ...withBuiltinFormals(
+      defineBuiltin("names.POSIXlt", ["x"], "behavioral", builtinNamesPosixLt),
+      [{ name: "x" }],
+    ),
+    reflectiveFrame: true,
+  },
+  {
+    ...withBuiltinFormals(
+      defineBuiltin(
+        "names<-.POSIXlt",
+        ["x", "value"],
+        "behavioral",
+        builtinNamesPosixLtReplacement,
+      ),
+      [{ name: "x" }, { name: "value" }],
+    ),
+    reflectiveFrame: true,
+  },
   defineBuiltin("make.names", ["names", "unique", "allow_"], "behavioral", builtinMakeNames),
   withBuiltinFormals(
     defineBuiltin("make.unique", ["names", "sep"], "behavioral", builtinMakeUnique),
@@ -25455,20 +25480,7 @@ async function builtinAsListTime(
   let metadata: RValue | undefined;
   let names: RValue | undefined;
   if (className === "POSIXct") {
-    const environment = invocation.globalEnvironment();
-    const arguments_ = [{ promise: createForcedPromise(input, environment) }];
-    names =
-      (objectClasses(input) === undefined
-        ? undefined
-        : await invocation.dispatchS3IfPresent(
-            "names",
-            input,
-            arguments_,
-            false,
-            0,
-            undefined,
-            environment,
-          )) ?? (await builtinNames({ ...invocation, arguments: arguments_ }));
+    names = await builtinNames(simplifyGlobalInvocation(invocation, [input]));
   }
   if (input.type === "environment" && classes.type !== "null") {
     throw new RTypeMismatchError("NRT3150", "cannot unclass an environment");
@@ -25527,6 +25539,7 @@ async function asListFactor(value: RValue, invocation: BuiltinInvocation): Promi
   const environment = invocation.globalEnvironment();
   const arguments_ = [{ promise: createForcedPromise(value, environment) }];
   const observe = async (generic: "length" | "names"): Promise<RValue> => {
+    if (generic === "names") return builtinNames(simplifyGlobalInvocation(invocation, [value]));
     const dispatched =
       objectClasses(value) === undefined
         ? undefined
@@ -25540,11 +25553,9 @@ async function asListFactor(value: RValue, invocation: BuiltinInvocation): Promi
             environment,
           );
     if (dispatched !== undefined) return dispatched;
-    if (generic === "length")
-      return integerVector([
-        isPosixLt(value) ? posixLtLength(value, invocation) : valueLength(value),
-      ]);
-    return builtinNames({ ...invocation, arguments: arguments_ });
+    return integerVector([
+      isPosixLt(value) ? posixLtLength(value, invocation) : valueLength(value),
+    ]);
   };
   const initialLength = factorListLength(await observe("length"), invocation);
   invocation.context.allocate(initialLength);
@@ -26074,9 +26085,44 @@ async function builtinAsPairlist(
   return pairlistValue(values, names);
 }
 
-async function builtinNames(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x"]);
-  const value = required(matched, "x", "names");
+async function namesPrimitiveValues(
+  invocation: BuiltinInvocation,
+  name: "names" | "names<-",
+): Promise<RValue[]> {
+  const values = await forceCoercionArguments(invocation);
+  const count = name === "names" ? 1 : 2;
+  if (values.length !== count)
+    throw new REvaluationError(
+      "NRE2101",
+      values.length +
+        " argument" +
+        (values.length === 1 ? "" : "s") +
+        " passed to '" +
+        name +
+        "' which requires " +
+        count,
+    );
+  if (name === "names") validateCoercionArgumentName(invocation, 0, "x");
+  return values;
+}
+
+async function builtinNames(invocation: BuiltinInvocation, dispatch = true): Promise<RValue> {
+  const values = await namesPrimitiveValues(invocation, "names");
+  const value = values[0]!;
+  if (dispatch && objectClasses(value) !== undefined) {
+    const result = await invocation.dispatchS3IfPresent(
+      "names",
+      value,
+      namesDispatchArguments(invocation, values),
+      true,
+      -1,
+    );
+    if (result !== undefined) {
+      invocation.setResultVisibility("visible");
+      return result;
+    }
+  }
+  invocation.setResultVisibility("visible");
   if (value.type === "null") return R_NULL;
   if (value.type === "environment") {
     const names = [...value.bindings.keys()];
@@ -26091,10 +26137,7 @@ async function builtinNames(invocation: BuiltinInvocation): Promise<RValue> {
     return characterVector(names);
   }
   if (!isVector(value) && value.type !== "pairlist") return R_NULL;
-  const year = isPosixLt(value) ? value.values[5] : undefined;
-  if (isPosixLt(value) && (year === undefined || !isVector(year))) return R_NULL;
-  const namedValue = year !== undefined && isVector(year) ? year : value;
-  const namesAttribute = sequenceNamesAttribute(namedValue);
+  const namesAttribute = sequenceNamesAttribute(value);
   if (namesAttribute !== undefined) {
     invocation.context.allocate(namesAttribute.length);
     return namesAttribute;
@@ -26320,41 +26363,159 @@ function uniqueNameCandidate(
   }
 }
 
-async function builtinNamesReplacement(invocation: BuiltinInvocation): Promise<RValue> {
-  const matched = await matchExact(invocation, ["x", "value"]);
-  const input = required(matched, "x", "names<-");
-  if (isPosixLt(input)) {
-    const replacement = required(matched, "value", "names<-");
-    const length = posixLtLength(input, invocation);
-    const year = input.values[5];
-    if (year === undefined || year.type === "null") {
-      if (length > 0)
-        throw new RTypeMismatchError("NRT3109", "cannot replicate NULL to a non-zero length");
-      return input;
+async function builtinNamesReplacement(
+  invocation: BuiltinInvocation,
+  dispatch = true,
+): Promise<RValue> {
+  const values = await namesPrimitiveValues(invocation, "names<-");
+  const [input, replacement] = values;
+  if (dispatch && objectClasses(input!) !== undefined) {
+    const result = await invocation.dispatchS3IfPresent(
+      "names<-",
+      input!,
+      namesDispatchArguments(invocation, values),
+      true,
+      -1,
+    );
+    if (result !== undefined) {
+      invocation.setResultVisibility("visible");
+      return result;
     }
-    if (!isVector(year)) throw new RTypeMismatchError("NRT3109", "invalid POSIXlt year component");
-    const recycled =
-      year.length === length
-        ? year
-        : replicationResult(
-            year,
-            length,
-            (index) => (year.length === 0 ? -1 : index % year.length),
-            invocation,
-          );
-    invocation.context.allocate(input.length);
-    const values = [...input.values];
-    values[5] = await replaceNamesAttribute(recycled, replacement, invocation);
-    const output = { ...input, values: Object.freeze(values) };
-    const balanced = input.attributes.get("balanced");
-    return balanced?.type === "logical" &&
-      balanced.length === 1 &&
-      !isMissing(balanced, 0) &&
-      balanced.values[0] === 1
-      ? withAttribute(output, "balanced", logicalVector([false], new Uint8Array([1])))
-      : withoutAttribute(output, "balanced");
   }
-  return replaceNamesAttribute(input, required(matched, "value", "names<-"), invocation);
+  return replaceNamesAttribute(input!, replacement!, invocation);
+}
+
+function namesDispatchArguments(invocation: BuiltinInvocation, values: readonly RValue[]) {
+  return invocation.arguments.map((argument, index) => {
+    invocation.context.checkpoint();
+    const value = values[index]!;
+    const display = embeddedCallArgumentAst(value, () => invocation.context.checkpoint());
+    return {
+      ...argument,
+      promise: {
+        ...createForcedPromise(value, argument.promise.environment),
+        expression: argument.promise.expression ?? display,
+        sourceExpression: display,
+      },
+    };
+  });
+}
+
+async function namesMethodArgument(invocation: BuiltinInvocation, name: string): Promise<RValue> {
+  const argument = invocation.functionArgument(name);
+  if (argument === undefined)
+    throw new REvaluationError("NRE2103", 'argument "' + name + '" is missing, with no default');
+  return invocation.force(argument);
+}
+
+async function namesLibraryCall(
+  invocation: BuiltinInvocation,
+  name: string,
+  values: readonly RValue[],
+  expressions?: readonly AstNode[],
+): Promise<RValue> {
+  const callable = await invocation.namespaceBinding("base", name);
+  if (callable === undefined) throw new Error("Missing base names-method dependency: " + name);
+  const environment = invocation.functionEnvironment() ?? invocation.currentEnvironment();
+  const arguments_ = values.map((value, index) => {
+    const display = embeddedCallArgumentAst(value, () => invocation.context.checkpoint());
+    return {
+      promise: {
+        ...createForcedPromise(value, environment),
+        expression: expressions?.[index] ?? display,
+        sourceExpression: display,
+      },
+    };
+  });
+  return invocation.invokeLazy(
+    callable,
+    arguments_,
+    callAst(
+      name,
+      arguments_.map((argument) => ({ value: argument.promise.expression, span: SYNTHETIC_SPAN })),
+    ),
+  );
+}
+
+async function namesPosixLtYear(input: RValue, invocation: BuiltinInvocation): Promise<RValue> {
+  return namesLibraryCall(invocation, "$", [input, characterVector(["year"])]);
+}
+
+async function builtinNamesPosixLt(invocation: BuiltinInvocation): Promise<RValue> {
+  const input = await namesMethodArgument(invocation, "x");
+  return namesLibraryCall(
+    invocation,
+    "names",
+    [await namesPosixLtYear(input, invocation)],
+    [
+      {
+        kind: "SubsetExpression",
+        operator: "$",
+        target: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN },
+        arguments: [
+          {
+            value: { kind: "Identifier", name: "year", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ],
+        span: SYNTHETIC_SPAN,
+      },
+    ],
+  );
+}
+
+async function builtinNamesPosixLtReplacement(invocation: BuiltinInvocation): Promise<RValue> {
+  const input = await namesMethodArgument(invocation, "x");
+  let year = await namesPosixLtYear(input, invocation);
+  const yearLength = numericScalar(await namesLibraryCall(invocation, "length", [year]), "length");
+  const length = await namesLibraryCall(invocation, "length", [input]);
+  const target = numericScalar(length, "length");
+  if (yearLength < target) year = await namesLibraryCall(invocation, "rep_len", [year, length]);
+  const replacement = await namesMethodArgument(invocation, "value");
+  const named = await namesLibraryCall(
+    invocation,
+    "names<-",
+    [year, replacement],
+    [
+      { kind: "Identifier", name: "*tmp*", span: SYNTHETIC_SPAN },
+      { kind: "Identifier", name: "value", span: SYNTHETIC_SPAN },
+    ],
+  );
+  const environment = invocation.functionEnvironment()!;
+  if (input.type === "null" && named.type === "null") return R_NULL;
+  await invocation.evaluate(
+    {
+      type: "language",
+      expression: {
+        kind: "ReplacementExpression",
+        operator: "<-",
+        target: {
+          kind: "SubsetExpression",
+          operator: "$",
+          target: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN },
+          arguments: [
+            {
+              value: { kind: "StringLiteral", value: "year", span: SYNTHETIC_SPAN },
+              span: SYNTHETIC_SPAN,
+            },
+          ],
+          span: SYNTHETIC_SPAN,
+        },
+        value: embeddedCallArgumentAst(named, () => invocation.context.checkpoint()),
+        span: SYNTHETIC_SPAN,
+      },
+    },
+    environment,
+  );
+  const output = await invocation.force(lookupBinding(environment, "x")!);
+  if (!isAttributedSequence(output)) return output;
+  const balanced = objectAttributes(input)?.get("balanced");
+  return balanced?.type === "logical" &&
+    balanced.length === 1 &&
+    !isMissing(balanced, 0) &&
+    balanced.values[0] === 1
+    ? withAttribute(output, "balanced", logicalVector([false], new Uint8Array([1])))
+    : withoutAttribute(output, "balanced");
 }
 
 function replaceNamesAttribute(
@@ -54495,9 +54656,7 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
     if (useNames === undefined) {
       throw new RTypeMismatchError("NRT3176", "missing value where TRUE/FALSE needed");
     }
-    const names =
-      (await simplifyDispatch("names", first, [first], invocation)) ??
-      (await builtinNames(simplifyGlobalInvocation(invocation, [first])));
+    const names = await builtinNames(simplifyGlobalInvocation(invocation, [first]));
     if (names.type !== "null") {
       try {
         output = (await replaceNamesAttribute(
@@ -55435,13 +55594,10 @@ async function simplifyApplyResult(
   );
   const innerNames =
     commonDimensions === undefined
-      ? ((await simplifyDispatch("names", first, [first], invocation)) ??
-        (await builtinNames(simplifyGlobalInvocation(invocation, [first]))))
+      ? await builtinNames(simplifyGlobalInvocation(invocation, [first]))
       : ((await simplifyDispatch("dimnames", first, [first], invocation)) ??
         (await builtinDimNames(simplifyGlobalInvocation(invocation, [first]))));
-  const outerNames =
-    (await simplifyDispatch("names", input, [input], invocation)) ??
-    (await builtinNames(simplifyGlobalInvocation(invocation, [input])));
+  const outerNames = await builtinNames(simplifyGlobalInvocation(invocation, [input]));
   const dimensionNames = simplifyDimensionNames(
     innerNames,
     outerNames,

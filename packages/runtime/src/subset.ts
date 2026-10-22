@@ -375,7 +375,12 @@ function scalarSubscript(
 /** Resolve `$` extraction with GNU R's default unique partial-name matching. */
 export function extractListMember(target: RValue, name: string, context: OperatorContext): RValue {
   if (target.type !== "list" && target.type !== "pairlist") {
-    throw new RTypeMismatchError("NRT3304", "The $ operator requires a list or pairlist.");
+    throw new RTypeMismatchError(
+      "NRT3304",
+      isAtomic(target)
+        ? "$ operator is invalid for atomic vectors"
+        : "The $ operator requires a list or pairlist.",
+    );
   }
   const names = namesForMatching(target, "NA");
   if (names === undefined || name === "") return R_NULL;
