@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.397.0",
-  "capabilityManifestHash": "176806b339d1dfebb2843bdb289c8efe912bb28dc119e31febc4d01d79828ed3",
+  "semanticProfileVersion": "0.398.0",
+  "capabilityManifestHash": "d44746f0455cdda5a41525cc5046db05ae93528586e7a665c18bb05ba7072eae",
   "evidence": {
-    "checkedInConformanceCases": 1501,
-    "liveREligibleCases": 1428,
+    "checkedInConformanceCases": 1506,
+    "liveREligibleCases": 1433,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 415,
-    "recursiveBehaviorallyProvenBindings": 174,
+    "recursiveOracleV2Cases": 420,
+    "recursiveBehaviorallyProvenBindings": 175,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -83,6 +83,7 @@
           "apply-class-conversion-and-extraction",
           "expression-owned-conversion-unlist-reference-graph",
           "expression-owned-selector-replacement-graph",
+          "function-language-owned-cells-graph",
           "language-owned-conversion-evaluation-graph",
           "language-owned-subset-replacement-graph"
         ]
@@ -152,8 +153,14 @@
         ]
       },
       {
+        "binding": "base::attributes",
+        "cases": ["function-language-owned-metadata-reference-graph"]
+      },
+      {
         "binding": "base::body",
         "cases": [
+          "function-language-owned-metadata-reference-graph",
+          "function-language-owned-reconstruction-replacement-graph",
           "owned-reflection-body-values",
           "owned-reflection-getter-conditions",
           "owned-reflection-named-lookup"
@@ -266,6 +273,7 @@
       {
         "binding": "base::formals",
         "cases": [
+          "function-language-owned-reconstruction-replacement-graph",
           "owned-reflection-constructed-defaults",
           "owned-reflection-getter-conditions",
           "owned-reflection-named-lookup",
@@ -305,7 +313,10 @@
       },
       {
         "binding": "base::identical",
-        "cases": ["language-owned-nested-evaluation-identity-graph"]
+        "cases": [
+          "function-language-owned-plain-shape-graph",
+          "language-owned-nested-evaluation-identity-graph"
+        ]
       },
       {
         "binding": "base::if",
@@ -403,7 +414,11 @@
       },
       {
         "binding": "base::length",
-        "cases": ["length-class-and-default-dispatch", "replication-posixlt-length"]
+        "cases": [
+          "function-language-owned-cells-graph",
+          "length-class-and-default-dispatch",
+          "replication-posixlt-length"
+        ]
       },
       { "binding": "base::lengths", "cases": ["simplification-lengths-and-integer-coercion"] },
       { "binding": "base::list", "cases": ["recursive-scalar-token-boundaries"] },
@@ -937,7 +952,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "15e06e5ad1e4b65276e7b538f15ee4f5559940e322e7c4de2214654c4d6afba2",
+    "sha256": "7cbfcb4fe700e57ebda2131f62e5f9685aade702f9b4886b8b3878e03670b8e3",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -946,8 +961,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 174,
-    "bindingsWithDeclaredMatrixEvidence": 28,
+    "recursiveLinkedBindings": 175,
+    "bindingsWithDeclaredMatrixEvidence": 32,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

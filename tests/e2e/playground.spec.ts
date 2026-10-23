@@ -1526,6 +1526,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native function-language assertion: function-call-roundtrip.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({old<-options(keep.source=FALSE);on.exit(options(old));q<-quote(function(x=1L){x+2L});rebuilt<-as.call(as.list(q));f<-eval(rebuilt);list(identical=identical(q,rebuilt),cells=as.list(rebuilt),formals=formals(f),body=body(f),value=f(),environmentSame=identical(environment(f),environment()))});identical(observed$identical,TRUE)&&length(observed$cells)==4L&&is.null(names(observed$cells))&&identical(observed$cells[[1L]],as.name("function"))&&identical(observed$cells[[2L]],pairlist(x=1L))&&identical(observed$cells[[3L]],quote({x+2L}))&&is.null(observed$cells[[4L]])&&identical(observed$formals,pairlist(x=1L))&&identical(observed$body,quote({x+2L}))&&identical(observed$value,3L)&&identical(observed$environmentSame,TRUE)})',
+    );
+  await profiledRun(page, "required-149");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native function-language assertion: function-default-laziness.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({old<-options(keep.source=FALSE);on.exit(options(old));events<-character();q<-quote(function(x={events<<-c(events,"default");5L})x);cells<-as.list(q);rebuilt<-as.call(cells);f<-eval(rebuilt);before<-events;value<-f();list(before=before,value=value,after=events,formalNames=names(formals(f)))});identical(observed$before,character())&&identical(observed$value,5L)&&identical(observed$after,"default")&&identical(observed$formalNames,"x")})',
+    );
+  await profiledRun(page, "required-150");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native function-language assertion: function-attributed-body-reference.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({old<-options(keep.source=FALSE);on.exit(options(old));owner<-new.env(parent=emptyenv());owner$marker<-11L;b<-quote(x+2L);attr(b,"owner")<-owner;q<-quote(function(x=1L)x);q[[3L]]<-b;rebuilt<-as.call(as.list(q));f<-eval(rebuilt);owner$marker<-13L;list(value=f(),body=body(f),sameInput=identical(attr(q[[3L]],"owner"),owner),sameRoundtrip=identical(attr(rebuilt[[3L]],"owner"),owner),sameClosure=identical(attr(body(f),"owner"),owner),marker=attr(body(f),"owner")$marker)});identical(observed$value,3L)&&identical(typeof(observed$body),"language")&&identical(names(attributes(observed$body)),"owner")&&identical(attr(observed$body,"owner")$marker,13L)&&identical(observed$sameInput,TRUE)&&identical(observed$sameRoundtrip,TRUE)&&identical(observed$sameClosure,TRUE)&&identical(observed$marker,13L)})',
+    );
+  await profiledRun(page, "required-151");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

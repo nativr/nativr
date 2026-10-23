@@ -6,7 +6,14 @@ export {
   partialMatchWarning,
   partialMatchWarningsEnabled,
 } from "./arguments.js";
-export { embeddedValueAst, quoteLanguageNode, replaceLanguageNames } from "./language-subset.js";
+export {
+  embeddedValueAst,
+  quoteLanguageNode,
+  replaceLanguageNames,
+  functionParametersValue,
+  materializeLanguageEntries,
+  languageFromCallEntries,
+} from "./language-subset.js";
 export {
   subsetExpression,
   extractExpressionElement,
@@ -64,6 +71,8 @@ export {
   deparseDiagnosticAst,
   languageAstEntries,
   languageValueEntries,
+  languageValueLength,
+  languageValueNames,
 } from "./language.js";
 export { deparseAstLines, deparseClosureLines } from "./language-deparse.js";
 export type { DeparseLinesOptions } from "./language-deparse.js";

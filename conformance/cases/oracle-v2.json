@@ -3236,5 +3236,87 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "function-language-owned-cells-graph",
+    "policy": "exact",
+    "code": "local({\n   ordinary<-quote(function(x=1L){x+2L})\n   empty<-quote(function()17L)\n   missing<-quote(function(x,...,y=2L)list(missing(x),y,length(list(...))))\n   list(ordinary=ordinary,empty=empty,missing=missing,\n     ordinaryCells=as.list(ordinary),emptyCells=as.list(empty),missingCells=as.list(missing),\n     lengths=c(length(ordinary),length(empty),length(missing)),\n     formalCells=list(ordinary[[2L]],empty[[2L]],missing[[2L]]),\n     bodies=list(ordinary[[3L]],empty[[3L]],missing[[3L]]),\n     emptyValue=eval(empty)(),missingValue=eval(missing)(y=7L))\n })",
+    "bindingEvidence": ["base::as.list", "base::length"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-language-owned-reconstruction-replacement-graph",
+    "policy": "exact",
+    "code": "local({\n   original<-quote(function(x=1L){x+2L})\n   rebuilt<-as.call(as.list(original));roundtrip<-eval(rebuilt)\n   formalChanged<-original;formalChanged[[2L]]<-pairlist(x=3L)\n   bodyChanged<-original;bodyChanged[[3L]]<-quote({x+4L})\n   f<-eval(formalChanged);g<-eval(bodyChanged)\n   list(original=original,rebuilt=rebuilt,formalChanged=formalChanged,bodyChanged=bodyChanged,\n     formalView=formals(f),bodyView=body(g),roundtripFormals=formals(roundtrip),\n     roundtripBody=body(roundtrip),values=c(roundtrip(),f(),g(),eval(original)()),\n     environmentSame=identical(environment(roundtrip),environment()))\n })",
+    "bindingEvidence": ["base::formals", "base::body"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-language-owned-default-laziness-graph",
+    "policy": "exact",
+    "code": "local({\n   events<-character()\n   original<-quote(function(x={events<<-c(events,\"default\");5L})x)\n   cells<-as.list(original);rebuilt<-as.call(cells);f<-eval(rebuilt)\n   before<-events;value<-f();afterFirst<-events;second<-f()\n   list(original=original,cells=cells,rebuilt=rebuilt,before=before,value=value,\n     afterFirst=afterFirst,second=second,afterSecond=events,formalView=formals(f))\n })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-language-owned-metadata-reference-graph",
+    "policy": "exact",
+    "code": "local({\n   owner<-new.env(parent=emptyenv());owner$marker<-11L\n   ownedBody<-quote(x+2L);attr(ownedBody,\"owner\")<-owner\n   original<-quote(function(x=1L)x);original[[3L]]<-ownedBody\n   attr(original,\"note\")<-\"owned\"\n   cells<-as.list(original);rebuilt<-as.call(cells);f<-eval(rebuilt);direct<-eval(original)\n   owner$marker<-13L\n   list(original=original,cells=cells,rebuilt=rebuilt,closureBody=body(f),\n     originalAttributes=attributes(original),listAttributes=attributes(cells),\n     rebuiltAttributes=attributes(rebuilt),closureAttributes=attributes(direct),\n     value=f(),directValue=direct(),inputOwner=attr(original[[3L]],\"owner\"),\n     roundtripOwner=attr(rebuilt[[3L]],\"owner\"),closureOwner=attr(body(f),\"owner\"),reference=owner)\n })",
+    "bindingEvidence": ["base::body", "base::attributes"],
+    "graphAssertions": {
+      "sameNode": [
+        [["inputOwner"], ["reference"]],
+        [["roundtripOwner"], ["reference"]],
+        [["closureOwner"], ["reference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-language-owned-plain-shape-graph",
+    "policy": "exact",
+    "code": "local({\n   original<-quote(function(x=1L)x+2L);attr(original,\"note\")<-\"owned\"\n   deleted<-original;deleted[[4L]]<-NULL;deletedFunction<-eval(deleted)\n   owner<-new.env(parent=emptyenv());owner$marker<-7L\n   ownedBody<-quote(x+2L);attr(ownedBody,\"owner\")<-owner\n   three<-as.call(list(as.name(\"function\"),pairlist(x=1L),ownedBody))\n   four<-as.call(list(as.name(\"function\"),pairlist(x=1L),ownedBody,NULL))\n   f<-eval(three);g<-eval(four);owner$marker<-9L\n   list(original=original,deleted=deleted,three=three,four=four,closureBody=body(f),\n     lengths=c(length(original),length(deleted),length(three),length(four)),\n     values=c(deletedFunction(),f(),g()),\n     equal=identical(three,four),strictEqual=identical(three,four,ignore.srcref=FALSE),\n     deletedClosureAttributes=attributes(deletedFunction),\n     bodyOwner=attr(three[[3L]],\"owner\"),closureOwner=attr(body(f),\"owner\"),reference=owner)\n })",
+    "bindingEvidence": ["base::identical"],
+    "graphAssertions": {
+      "sameNode": [
+        [["bodyOwner"], ["reference"]],
+        [["closureOwner"], ["reference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

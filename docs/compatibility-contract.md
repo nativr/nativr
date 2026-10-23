@@ -38,6 +38,34 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Owned function-language cells (profile 0.398)
+
+The bounded quoted-function representation exposes four cells: the `function` symbol, a formal
+pairlist (NULL for no formals), the body, and a present NULL fourth cell. Missing defaults, explicit
+defaults and the `...` formal remain distinct. Conversion to a list and reconstruction with
+`as.call` preserve the sampled callable behavior without forcing defaults. Evaluation captures the
+current environment through the existing closure path.
+
+The sampled second- and third-cell replacements preserve the original quoted value. Nested body
+attributes retain their environment references through extraction, reconstruction and closure
+creation. Ordinary attributes on the outer call appear on its list conversion, are discarded by
+reconstruction from that list, and do not become closure attributes.
+
+Nine independently authored native assertions define the main boundary. Three separate assertions
+cover deletion of the fourth NULL cell, three-cell construction and the distinction between three
+cells and four cells ending in NULL. Both shapes evaluate through the closure path. Retained
+non-NULL source-reference cells, their propagation to closures, source environments, parse-data
+generation, arbitrary cell tags, broader coercions, `call("function", ...)` and malformed function
+construction remain outside these assertions. Source-only public snapshots remain lossy. This
+increment does not establish complete function-language compatibility or complete any semantic
+domain.
+
+The [verification record](../compatibility/platform-evidence/function-language-windows-0.398.0.json)
+binds the twelve assertions, five recursive graphs, five environment-alias checks and fourteen
+strict controls. Seven composite associations across six bindings do not establish independent
+causality for each output field. Owned guards separately cover allocation preflight, cancellation,
+deep unchanged syntax, retained references and same-session recovery.
+
 ### Language/call attributes (profile 0.397)
 
 The bounded call representation retains ordinary attributes separately from head/argument tags.

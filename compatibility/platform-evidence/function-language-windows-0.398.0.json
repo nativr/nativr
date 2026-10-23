@@ -1,0 +1,1024 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-function-language-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.398.0",
+  "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+  "sourceState": "Verified uncommitted candidate over sourceCommit; exact maintained files are identified by final digests.",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "locale": "C",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Bounded owned function-language cells, formal projection, reconstruction, replacements, lazy defaults and shared body metadata; no complete function or retained-source claim.",
+  "provenance": {
+    "cleanRoom": "Independently authored programs and black-box observations only; no GNU R or foreign package implementation bodies.",
+    "sourceHashes": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "f6f3a243723e1295a9831e3dae9f5d1a2f13ce5e0eee5f7c775402f7d2a502f7"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "7cbfcb4fe700e57ebda2131f62e5f9685aade702f9b4886b8b3878e03670b8e3"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.398.0/abind.json",
+        "sha256": "e988423e563fd94fd0a75dd5779524a5d385fd52ec1a1c2ee52175bac5f72fa1"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.398.0/evaluate.json",
+        "sha256": "bde5822c91064d2d19d72aa167cbd4f631b06f243b83a3ca1e97d494aeb35ae5"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.398.0/numDeriv.json",
+        "sha256": "1f9f63a00c88c722c2e3afcd41fcd777e79d737ecdf3af35c39099187edc7959"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.398.0/withr.json",
+        "sha256": "c51046f406e7ead2f17f4c7b705843c3c37ed333bbdd3830adc2be4a19422769"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.398.0.json",
+        "sha256": "cddc4ff0b40ac472397238f6ba0f106b68285409a3f14c10e6ffa13569cfd4b9"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "95494b70ae48c053f2d20425451d2e98039e66ebe3df21509addec3a3446b44a"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.398.0.json",
+        "sha256": "4ab81e2aafc015b489ef6f54d3d131770435db97f5c78f24eac2d1ad3cf27f75"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.398.0.json",
+        "sha256": "97ef0e5da0a68b3f75ecf73b925a5b2143d309cd391033047ff79ce84dcd8613"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "0e6c420c8de341e75b0c0657b7870f916f58086157a801a652a7ca71ad42ffad"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "25629464607b50e37edb179bbf9a14e223bd8f0f6fe452ebc7d1fd0dc4eff423"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "36c48a01b0ea761d1e96d837b84345689b7c0586a762e7416b1473a2c7166075"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "05dc1b0eedbb541dc398a0150f949045dfd7af2a410a1e699896c110d5959c26"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "662d0e2db6b82d1e03e10237bb147a2ef6924e142e1916a694d7910f29a3408b"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "6dd3697deb6db48c97e3b7f41b09e2b6a7f7ab7c8fed3f30421a4cb30db1d83b"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "4b252fe0138de970b31e8bbb593cb34112ec68ac7f730820b4e4501b3eb5fe23"
+      },
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "7e3e1b70c992d795886c110024dba3575b961c445bee789edb225994240211e6"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "bbe676671f686cccee06b163e29cf34547e8c00a009e52c56bfb245f17226d6d"
+      },
+      {
+        "path": "packages/nativr/test/function-language.test.ts",
+        "sha256": "9e4b6c853ba3682ff3e128e7f9715f1c4425d6c4f682761ad406f93527e18c9d"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "8a60d5f09883c04cb7b2cab2fe4dba0b31fed7a89761902491f015fd5d2e7862"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "ce4be6b37b7e516d227eb618aeb8788840d9d17a61d0a42e0beed2fc68a8a035"
+      },
+      {
+        "path": "packages/package-tools/test/documentation-observer.test.ts",
+        "sha256": "c0117de50dc56ed62e215f7db09bb879b48e07a8965fb96decff20cdc476c010"
+      },
+      {
+        "path": "packages/runtime/src/index.ts",
+        "sha256": "4f75920c4410913ff49cc8328e024a0d501255a58f2cfbf5848915f80fe19e10"
+      },
+      {
+        "path": "packages/runtime/src/language-metadata.ts",
+        "sha256": "86f0f9f665fc36b83a8dc60eb92904d34f3650636eb88f12dde2af11e59e6a67"
+      },
+      {
+        "path": "packages/runtime/src/language-subset.ts",
+        "sha256": "d83d64af3ae05a6c6cc3115eef462ef737f9926f43e4c9c34458226eb8126cdd"
+      },
+      {
+        "path": "packages/runtime/src/language.ts",
+        "sha256": "d8c27040bbea7cdb579403298c41a1622df9ef4d92dcc33eba63c7afbc3f33d0"
+      },
+      {
+        "path": "packages/runtime/src/memory.ts",
+        "sha256": "1c90265d7bc84adb2fdd304255c9b319e1a6ecd3a5e3624549f25b95a4c4ab3b"
+      },
+      {
+        "path": "packages/runtime/src/values.ts",
+        "sha256": "9da2ab989f4912eb1fb4709389c5e603576beaf399bfc761e94d386f6a04054a"
+      },
+      {
+        "path": "packages/runtime/test/function-language.test.ts",
+        "sha256": "be4e9d17e9e5ccc95381e9e8328f3e7de601dca2ce39f7e85f4742fd2aea79ce"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "f394eb576b3e9b273729429c2e5005fc0be69dfceb0d8ebb0e99b9fa68fb5501"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "8833225c973b7f1a5d29a251bb0630ce1798b714f3292e969d97a7441fe91927"
+      }
+    ],
+    "proofFiles": [
+      {
+        "path": ".tmp/retained-source-next/accepted-main.json",
+        "sha256": "82f6858e535f4806d76e008573c26e2dc092ab0263234769bfd17f75057dd552"
+      },
+      {
+        "path": ".tmp/retained-source-next/acceptance-provenance.json",
+        "sha256": "436b0f5db5d62d65de15949bbab4470b92b5b5d58f52ce3c0ca96c5c358d2477"
+      },
+      {
+        "path": ".tmp/retained-source-next/frozen-native-receipt.json",
+        "sha256": "825dbd6b5b3bb5829244498cea201503e71009190b6928789434424b6a17ca9d"
+      },
+      {
+        "path": ".tmp/retained-source-next/assertions-native.json",
+        "sha256": "46b3b236b0390fddfab02555b1e72d0462fae57d5ed79ad584f82e36c0cc3802"
+      },
+      {
+        "path": ".tmp/retained-source-next/runtime-baseline.json",
+        "sha256": "c7289544643ffa25f8facf73916b7c8094a96bb42d663e8e60576d9e8ed3be5f"
+      },
+      {
+        "path": ".tmp/retained-source-next/run-baseline.mjs",
+        "sha256": "a4daac053f2ef5248eb34656dcabf2b6386abb272298adab3b0a72d6851dbb16"
+      },
+      {
+        "path": ".tmp/retained-source-next/plain-shape-accepted.json",
+        "sha256": "ce0074a58f3f732cd0d14557a9d973b81820b73eff6fea968f8868d4833f9ca6"
+      },
+      {
+        "path": ".tmp/retained-source-next/plain-shape-inputs.json",
+        "sha256": "449faa09e0e4dcf32f59f5caa1fe348058ee067c613e999ba1dc171a9f465039"
+      },
+      {
+        "path": ".tmp/retained-source-next/plain-shape-observations-native.json",
+        "sha256": "3f8955bfc32ef8c92d4d875a5fe4039c01d0a59b99ada4e6306a144ae8aa493f"
+      },
+      {
+        "path": ".tmp/retained-source-next/plain-shape-assertions-native.json",
+        "sha256": "184333314dc7914eb024e7ad8d616c322c2427bc619b88e02f6aace71fa5d4b0"
+      },
+      {
+        "path": ".tmp/retained-source-next/verify-source-tests.mjs",
+        "sha256": "e5490dce5ad0f7c58385b297787ca2f886da5bc7f40ab240a64cff3d67f388d5"
+      },
+      {
+        "path": ".tmp/retained-source-next/evidence-0398/native-validation.json",
+        "sha256": "3d8e9796bdf627f395409e4bbe712c7741efc89a94b32f9284f61170a14b8690"
+      },
+      {
+        "path": ".tmp/retained-source-next/evidence-0398/provenance.json",
+        "sha256": "d6533cad84ea4882e81c53c8bf979b20460d0ec1e3f3d5ba9f9fb6766c8850a5"
+      },
+      {
+        "path": ".tmp/retained-source-next/foundation-expected-shape-correction.json",
+        "sha256": "9fde530861dd69745cfd0826678b67f5cd9363b9c89aae8ae727a16cb6c41866"
+      },
+      {
+        "path": ".tmp/correct-function-foundation-shape-0398.mjs",
+        "sha256": "75dabb42bc617ddfecd08270d0bf9d73ba01f31a772054fb9fad4f5954b13324"
+      },
+      {
+        "path": ".tmp/retained-source-next/documentation-repair-verification.json",
+        "sha256": "baaf4fdd789498e51e05963d18a36bc1b12caf028ec3644438364ca07763fdec"
+      }
+    ],
+    "metadataQualification": "Native assembly used recorded 0.397 manifest bytes. These historical identities remain separate from the final 0.398 manifest and gate results.",
+    "capabilities": {
+      "path": "docs/compatibility-manifest.json",
+      "sha256": "662d0e2db6b82d1e03e10237bb147a2ef6924e142e1916a694d7910f29a3408b"
+    },
+    "originalAdapter": {
+      "kind": "owned-oracle-adapter-single-change",
+      "schemaVersion": 1,
+      "basePath": "scripts/r-oracle-v2.R",
+      "baseSha256": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+      "adapterPath": ".tmp/retained-source-next/r-oracle-v2-outer-no-source.R",
+      "adapterSha256": "b8db6b325d3c453c288ba8636a1c6e7706494fc1a0156acac1a87f4fbbd0419f",
+      "change": {
+        "from": "parse(text = Sys.getenv(\"NATIVR_CASE\"))",
+        "to": "parse(text = Sys.getenv(\"NATIVR_CASE\"), keep.source = FALSE)",
+        "occurrences": 1,
+        "purpose": "Prevent outer quoted owned function literals from acquiring source cells before the probe controls execute."
+      },
+      "nativeExecuted": false,
+      "runtimeExecuted": false
+    }
+  },
+  "baseline": {
+    "profile": "0.397.0",
+    "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+    "cleanBefore": true,
+    "cleanAfter": true,
+    "freshSessionPerCase": true,
+    "counts": { "total": 9, "pass": 1, "mismatch": 0, "error": 8 },
+    "stableInputs": true,
+    "inputCount": 2012,
+    "harnessFailures": [],
+    "architectureCasesExecuted": 0,
+    "qualification": "Nine main assertions only. The three plain-shape adjuncts were independently frozen and verified later; they are not added retroactively to this baseline."
+  },
+  "acceptance": {
+    "main": [
+      {
+        "id": "function-call-cells",
+        "sourceSha256": "cfea7190077c832e470a3e633ccaacd9c7971367b4cf750000b2a778746f6fd9"
+      },
+      {
+        "id": "function-empty-formals",
+        "sourceSha256": "5524606d59fbe2e2e6caace2a7f925b8facce97acb86ad4625f594a22b7cea4a"
+      },
+      {
+        "id": "function-missing-and-dots-formals",
+        "sourceSha256": "1af1d6b6b3f2b248efc4245fa216b6e5265afa1f11867513b1941c1c73a13d3e"
+      },
+      {
+        "id": "function-call-roundtrip",
+        "sourceSha256": "2e7c3e96f36adbf91ee0954ae9d1aa45c28565463cfd2fe931c70de67f24eb23"
+      },
+      {
+        "id": "function-formals-replacement",
+        "sourceSha256": "8d9d155acd0cbc5d5acceb839fcd1506a2c6caeb8f3f3153a6ed2467134c9e26"
+      },
+      {
+        "id": "function-body-replacement",
+        "sourceSha256": "8f54e3fe5b917d9727d13213c9fe2e2613c3de3c43fa3506cb3f0d8381252d0b"
+      },
+      {
+        "id": "function-default-laziness",
+        "sourceSha256": "9acee09a9c3deb1ad2cb212af1ee7f851b533c99f0bcebbbf94c2e1267c0e91d"
+      },
+      {
+        "id": "function-attributed-body-reference",
+        "sourceSha256": "04ae315d7cd2d7553a302c162b4661e913ee225fa95c2c56d20dd834bf3a36cd"
+      },
+      {
+        "id": "function-ordinary-attributes",
+        "sourceSha256": "fcb378571be3cabc6e031770dfd5cd054466a0918c1eca1a6fba03658909b4d3"
+      }
+    ],
+    "adjunct": [
+      {
+        "id": "plain-fourth-null-deletion",
+        "sourceSha256": "7eb8cb13f0c9abceaee104400cbc6b989686e78acb43394aa792e7887f179a54"
+      },
+      {
+        "id": "plain-three-cell-construction",
+        "sourceSha256": "165ed2dc063ccdd57f23636bf65ce34f31cfbd019a31021b448c9e1b4a2e7355"
+      },
+      {
+        "id": "plain-three-four-cell-identity",
+        "sourceSha256": "795de653f4165f1a7a29da31c648189c6187468929336529458944bda3c3804a"
+      }
+    ],
+    "excludedArchitectureIds": [
+      "owned-function-source-slot",
+      "owned-function-source-slot-roundtrip",
+      "owned-function-source-slot-removal"
+    ],
+    "architecturalCompatibilityCredit": false,
+    "sourceTest": {
+      "cases": 9,
+      "exactFrozenStrings": true,
+      "strictTrueAndEmptyEffects": true,
+      "caseHashes": [
+        {
+          "id": "function-call-cells",
+          "codeSha256": "cfea7190077c832e470a3e633ccaacd9c7971367b4cf750000b2a778746f6fd9"
+        },
+        {
+          "id": "function-empty-formals",
+          "codeSha256": "5524606d59fbe2e2e6caace2a7f925b8facce97acb86ad4625f594a22b7cea4a"
+        },
+        {
+          "id": "function-missing-and-dots-formals",
+          "codeSha256": "1af1d6b6b3f2b248efc4245fa216b6e5265afa1f11867513b1941c1c73a13d3e"
+        },
+        {
+          "id": "function-call-roundtrip",
+          "codeSha256": "2e7c3e96f36adbf91ee0954ae9d1aa45c28565463cfd2fe931c70de67f24eb23"
+        },
+        {
+          "id": "function-formals-replacement",
+          "codeSha256": "8d9d155acd0cbc5d5acceb839fcd1506a2c6caeb8f3f3153a6ed2467134c9e26"
+        },
+        {
+          "id": "function-body-replacement",
+          "codeSha256": "8f54e3fe5b917d9727d13213c9fe2e2613c3de3c43fa3506cb3f0d8381252d0b"
+        },
+        {
+          "id": "function-default-laziness",
+          "codeSha256": "9acee09a9c3deb1ad2cb212af1ee7f851b533c99f0bcebbbf94c2e1267c0e91d"
+        },
+        {
+          "id": "function-attributed-body-reference",
+          "codeSha256": "04ae315d7cd2d7553a302c162b4661e913ee225fa95c2c56d20dd834bf3a36cd"
+        },
+        {
+          "id": "function-ordinary-attributes",
+          "codeSha256": "fcb378571be3cabc6e031770dfd5cd054466a0918c1eca1a6fba03658909b4d3"
+        }
+      ],
+      "additionalLiteralTests": [
+        "bounds formal materialization and recovers without forcing defaults"
+      ],
+      "additionalNativeCompatibilityCredit": false
+    },
+    "adjunctTest": {
+      "cases": 3,
+      "exactFrozenStrings": true,
+      "strictTrueAndEmptyEffects": true,
+      "caseHashes": [
+        {
+          "id": "plain-fourth-null-deletion",
+          "codeSha256": "7eb8cb13f0c9abceaee104400cbc6b989686e78acb43394aa792e7887f179a54"
+        },
+        {
+          "id": "plain-three-cell-construction",
+          "codeSha256": "165ed2dc063ccdd57f23636bf65ce34f31cfbd019a31021b448c9e1b4a2e7355"
+        },
+        {
+          "id": "plain-three-four-cell-identity",
+          "codeSha256": "795de653f4165f1a7a29da31c648189c6187468929336529458944bda3c3804a"
+        }
+      ],
+      "separatePlainShapeAdjunct": true
+    },
+    "workerTest": [
+      {
+        "id": "function-call-roundtrip",
+        "profileSite": "required-149",
+        "codeSha256": "2e7c3e96f36adbf91ee0954ae9d1aa45c28565463cfd2fe931c70de67f24eb23",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "function-default-laziness",
+        "profileSite": "required-150",
+        "codeSha256": "9acee09a9c3deb1ad2cb212af1ee7f851b533c99f0bcebbbf94c2e1267c0e91d",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "function-attributed-body-reference",
+        "profileSite": "required-151",
+        "codeSha256": "04ae315d7cd2d7553a302c162b4661e913ee225fa95c2c56d20dd834bf3a36cd",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "foundationAndRecursive": [
+      {
+        "suite": "foundation",
+        "id": "function-language-owned-cells",
+        "sourceSha256": "37a7311597a6b95050897b04fb64806c71895cc1751af45c579810012caac5ec"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-language-owned-reconstruction-replacement",
+        "sourceSha256": "1fc95e4454d8301b37176df4ca6efc98586044d092371198cd0d5be04fd76f61"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-language-owned-default-laziness",
+        "sourceSha256": "7a28cb5bd21334d09b158145e3e122234e978fa77e85a0b956ef97c4a19dbf36"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-language-owned-metadata-reference",
+        "sourceSha256": "6d1cfe6fc0e4c3eecbd68dc47c35017f52f865a7058971c51920e335dc9b896c"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-language-owned-plain-shape",
+        "sourceSha256": "896e141b986ea88b1de75805ef119b39a069cd7d8f6f9fa727ab1ca2dbb7c2bd"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-language-owned-cells-graph",
+        "sourceSha256": "f3695dd75b727780eea9a61490f281492fbba2f198964a5a156f5c18b207dd28"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-language-owned-reconstruction-replacement-graph",
+        "sourceSha256": "bd095f3c37c7566b2f056e24b9340c11a7d219d0d036975b57334d3bce02b785"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-language-owned-default-laziness-graph",
+        "sourceSha256": "f1c54784412b451e645dcfd1f49ca3de461e5334b92bfe20074342fd61cf91c0"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-language-owned-metadata-reference-graph",
+        "sourceSha256": "3d2c3720ae8535ec69fa62e354c73dcb023217df657b627523668e86a0d3fb44"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-language-owned-plain-shape-graph",
+        "sourceSha256": "abd54324d5c865c33491c340e1b62bf02c89ffe7924f0a248e956bd11d40955f"
+      }
+    ],
+    "foundationExpectedShapeCorrection": {
+      "correction": {
+        "schemaVersion": 1,
+        "kind": "owned-foundation-public-value-shape-correction",
+        "semanticProfile": "0.398.0",
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "caseId": "function-language-owned-default-laziness",
+        "codeSha256": "7a28cb5bd21334d09b158145e3e122234e978fa77e85a0b956ef97c4a19dbf36",
+        "expectedBefore": [true],
+        "expectedAfter": true,
+        "codeChanged": false,
+        "nativeProof": {
+          "path": ".tmp/retained-source-next/evidence-0398/native-validation.json",
+          "sha256": "3d8e9796bdf627f395409e4bbe712c7741efc89a94b32f9284f61170a14b8690"
+        },
+        "frozenDraft": {
+          "path": ".tmp/retained-source-next/evidence-0398/foundation.json",
+          "sha256": "5fd18e8a7bf53205effe13f2413ebfd67d59908fb3e2fbcd64ee13a085885b04"
+        },
+        "provenance": {
+          "path": ".tmp/retained-source-next/evidence-0398/provenance.json",
+          "sha256": "d6533cad84ea4882e81c53c8bf979b20460d0ec1e3f3d5ba9f9fb6766c8850a5"
+        },
+        "maintained": {
+          "path": "conformance/cases/foundation.json",
+          "beforeSha256": "4524e005c018eaffc582e487c1e20109028ea93b60fd40229e6ef497b22ff253",
+          "afterSha256": "25629464607b50e37edb179bbf9a14e223bd8f0f6fe452ebc7d1fd0dc4eff423"
+        },
+        "nativeObservation": {
+          "assertions": 1,
+          "observationSha256": "64a750691175a6d702ad40fff658f8ac1ce95bf3d4e71a3161bac8bbd1a51843",
+          "exactExpectedGraph": true
+        },
+        "contractInputs": [
+          {
+            "path": "packages/nativr/src/conversion.ts",
+            "sha256": "f92c037b483f14ec43e54d23e4808cc2a260ffc5e7e278955f281d0ef3f79354"
+          },
+          {
+            "path": "scripts/run-conformance.mjs",
+            "sha256": "1840f50d24e4bad26e0c18f336f3a537ca4b303a26116affba721a5d9e1279cc"
+          }
+        ],
+        "preserved": {
+          "allOtherEntries": true,
+          "allOtherCaseFields": true,
+          "originalFrozenDraft": true,
+          "originalNativeReceipt": true,
+          "mainAssertions": 9,
+          "plainShapeAdjunctAssertions": 3,
+          "recursiveGroups": 5,
+          "strictCausalControls": 14
+        },
+        "explanation": "The unchanged R program produces one logical TRUE. The public JS converter unwraps a length-one atomic vector to scalar true, and the foundation runner compares that ergonomic value. Only the foundation expected JSON changes from [true] to true; no runtime behavior, R code, native graph or causal result changes.",
+        "nativeRerun": false,
+        "runtimeExecuted": false,
+        "passingGateClaimed": false,
+        "receiptPath": ".tmp/retained-source-next/foundation-expected-shape-correction.json",
+        "receiptSha256": "9fde530861dd69745cfd0826678b67f5cd9363b9c89aae8ae727a16cb6c41866"
+      },
+      "failedAttempt": {
+        "logSha256": "59e60d65138d109d1eab728391b2abadb005ad4277de306cbd60336d4f9f9dbf",
+        "gate": "foundation",
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "finishedAt": "2026-10-23T01:10:27.1099933Z",
+        "startedAt": "2026-10-23T01:10:23.3305480Z",
+        "schemaVersion": 1,
+        "exitCode": 1,
+        "arguments": ["conformance"],
+        "kind": "owned-local-gate-exit",
+        "executable": "pnpm",
+        "log": ".tmp/profile-0398-foundation.log",
+        "archivedLog": ".tmp/profile-0398-foundation-pre-shape.log",
+        "receiptPath": ".tmp/profile-0398-foundation-pre-shape-exit.json",
+        "receiptSha256": "f41c7cd6f662456733a9eeabf75402528f3b1064e64ea8a0ebc9baa1bb2befcd"
+      }
+    },
+    "nativeCounts": {
+      "foundationGroupsPassed": 5,
+      "foundationAssertionsPassed": 12,
+      "mainAssertionsPassed": 9,
+      "adjunctAssertionsPassed": 3,
+      "recursiveGroupsPassed": 5,
+      "environmentAliasesPassed": 5,
+      "strictControlsPassed": 14
+    },
+    "causal": [
+      {
+        "binding": "base::as.list",
+        "id": "function-language-owned-cells-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "6e1cb54f2a2e81534f0e2fc6d5e5c6065d6efe65a15dc775882ed3820e1ba71a",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "b1b06284049f8b9ec0476991c0b79929eb0dd7587ae376924505bdf942445297",
+          "nodeCount": 76,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::length",
+        "id": "function-language-owned-cells-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "75329744b0453387c2c24d4e8a8c09c80f090cc8d14921dd75d6c0e082cd12aa",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "36085e8ca5e3e6a05fa246d511c9fcc900eef14fcdbfef5a790351eff3798864",
+          "nodeCount": 109,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::formals",
+        "id": "function-language-owned-reconstruction-replacement-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "d24d794efcdb2f4f1caa0eece53566570734b24c38860b174c897b3779a36e4a",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "c7638b6ea6e90866e94ad815d1bbbb831c7cdf52713a561df584e4be63c39f21",
+          "nodeCount": 66,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::body",
+        "id": "function-language-owned-reconstruction-replacement-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "3c962a8ad3c3eb43790ca40479778ca2d47e46e80436ab80b0baffc08fa76c03",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "716e582025831ba26dd6d882d82a3300363ecee2d644c99033b31e74cf9a301c",
+          "nodeCount": 60,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::body",
+        "id": "function-language-owned-metadata-reference-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "474854c8d86c5b8f129ca41946ac62ca8f6f791ec1903948cf8ff948b4b49da7",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "7b273ec576320fdb86389a23671ff2799091ca377247eef6a4acbf758da5c618",
+          "nodeCount": 48,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::attributes",
+        "id": "function-language-owned-metadata-reference-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "ed50cad2d392c65ad03a617e1c7088b33bd54ddc0b65cb312418109749748f3f",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "0e7664a3fcb4b0ca55ba4d4ad6756dd48a9c5d0b82c21aa06f1fb512de9aad28",
+          "nodeCount": 46,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::identical",
+        "id": "function-language-owned-plain-shape-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "616be8299a637b1a36191a07130b1c6df34132697690e257ccf22c8a9d33d877",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "46f0323ec4852a2c09fd38715784cd71f568d9208205981ee436eed102d8b302",
+          "nodeCount": 53,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      }
+    ],
+    "causalQualification": "Fourteen strict controls qualify seven composite associations across six bindings; they do not establish independent causality for every assertion or output field."
+  },
+  "ownedResourceGuards": {
+    "path": "packages/runtime/test/function-language.test.ts",
+    "tests": [
+      "inspects function shape without reading or materializing formals",
+      "projects missing, NULL, dots and reference defaults without evaluating them",
+      "roundtrips executable bodies and default metadata without copying references",
+      "retains explicit fourth-cell absence through metadata changes and nested extraction",
+      "keeps unadmitted function construction ordinary and rejects retained source explicitly",
+      "reserves formal vectors before reading defaults and permits separate exact-cap cells",
+      "checks cancellation and work limits before conversion and supports a later bounded operation",
+      "projects and reconstructs deep unchanged default/body syntax without rendering it"
+    ],
+    "nativeCompatibilityCredit": false,
+    "focused": {
+      "passed": 41,
+      "skipped": 0,
+      "logSha256": "dec320bb6b20a1148f7372c39e895b528e117cf192317d039da2ff9633acb955"
+    },
+    "publicGuardQualification": "The separately listed source-test resource guard verifies formal-vector limits and same-session recovery; it has no GNU R resource-limit parity claim."
+  },
+  "verification": {
+    "gates": [
+      {
+        "kind": "owned-local-gate-exit",
+        "arguments": ["check"],
+        "startedAt": "2026-10-23T01:07:56.5654325Z",
+        "log": ".tmp/profile-0398-check.log",
+        "exitCode": 0,
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "finishedAt": "2026-10-23T01:09:45.1936581Z",
+        "executable": "pnpm",
+        "logSha256": "6132ce48b1528a5ec3e370e829b7c9786a02628a79c5d4a9c73c8b0e918342f0",
+        "schemaVersion": 1,
+        "gate": "check",
+        "receiptSha256": "b672fa2ea6dc47915ac88532e1a012ff2e9650a587288afd304282e5e114ef07"
+      },
+      {
+        "log": ".tmp/profile-0398-foundation.log",
+        "executable": "pnpm",
+        "startedAt": "2026-10-23T01:15:53.0548989Z",
+        "finishedAt": "2026-10-23T01:15:55.7910583Z",
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "kind": "owned-local-gate-exit",
+        "schemaVersion": 1,
+        "exitCode": 0,
+        "logSha256": "c8693dd272dd01b5f2021687f07460960d317ca827846c6dd411a4e54dd46bb8",
+        "gate": "foundation",
+        "arguments": ["conformance"],
+        "receiptSha256": "ae199ebac6faef76a8333d52bc08a4ccc8b0ffebada6f79f9516e58d361d9f59"
+      },
+      {
+        "kind": "owned-local-gate-exit",
+        "gate": "native",
+        "schemaVersion": 1,
+        "exitCode": 0,
+        "startedAt": "2026-10-23T01:10:17.0486991Z",
+        "executable": "pnpm",
+        "log": ".tmp/profile-0398-native.log",
+        "arguments": ["conformance:r"],
+        "finishedAt": "2026-10-23T01:14:34.3046619Z",
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "logSha256": "2298ba646fd3ebd0f95c4fbffbf973c95bd4b90d12b4f62870b3a52ec2963c8c",
+        "receiptSha256": "58516e59c6b17b33556013ab5a0cb5571bb69d17c268d6a0d572a943f9e5c536"
+      },
+      {
+        "logSha256": "c97755196a156c09a0c02a03c8bd7c5c423bd0a1232e29793e51e5c31c647fcb",
+        "executable": "pnpm",
+        "kind": "owned-local-gate-exit",
+        "schemaVersion": 1,
+        "finishedAt": "2026-10-23T01:15:45.3048906Z",
+        "gate": "v2",
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "arguments": ["conformance:r:v2"],
+        "log": ".tmp/profile-0398-v2.log",
+        "startedAt": "2026-10-23T01:10:15.5411832Z",
+        "exitCode": 0,
+        "receiptSha256": "0be361126d6860d2ba1593b2296f55aacb2e5368fb02eb62ffdb6665ee1ff4fd"
+      },
+      {
+        "startedAt": "2026-10-23T01:10:20.0116129Z",
+        "gate": "e2e",
+        "finishedAt": "2026-10-23T01:12:17.9233461Z",
+        "executable": "pnpm",
+        "kind": "owned-local-gate-exit",
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "logSha256": "108c3712a29a523d1c15befe0c57a6c560398c310c3cf90c60c41d06009b7b17",
+        "log": ".tmp/profile-0398-e2e.log",
+        "exitCode": 0,
+        "schemaVersion": 1,
+        "receiptSha256": "a42f6564044d145fc4130f55f4882fcdca25d525908c4a3fd6185877cec8be47"
+      },
+      {
+        "exitCode": 0,
+        "sourceCommit": "1874e4ed39ad45eb0e55aa93354386d72a636b8a",
+        "gate": "corpus",
+        "logSha256": "2d9cf09f6dd42bec7ce71b67e6cd416cad04d4d9ba3ec7c8c10856d3759ed2e3",
+        "schemaVersion": 1,
+        "executable": "node",
+        "startedAt": "2026-10-23T01:10:15.8078412Z",
+        "log": ".tmp/profile-0398-corpus.log",
+        "arguments": [".tmp/run-corpus-0398.mjs", "--run"],
+        "finishedAt": "2026-10-23T01:12:06.9257136Z",
+        "kind": "owned-local-gate-exit",
+        "receiptSha256": "a15e296f5809b83fe8a46de6fd6b7869d57edb2c66e71a9db0951378251d99a7"
+      }
+    ],
+    "unit": { "passed": 3544, "skipped": 96 },
+    "conformance": {
+      "foundation": 1506,
+      "native": 1433,
+      "nativeSkipped": 55,
+      "recursive": 420,
+      "linkedBindings": 175
+    },
+    "bundles": [
+      { "label": "statically loaded public client", "kib": 18.1, "limit": 150, "encoding": "gzip" },
+      { "label": "Worker JavaScript", "kib": 496.2, "limit": 512, "encoding": "gzip" },
+      { "label": "combined parser Wasm", "kib": 671.9, "limit": 1536, "encoding": "raw" },
+      { "label": "elementary-function Wasm", "kib": 311.2, "limit": 384, "encoding": "raw" }
+    ],
+    "earlierProductionAttempt": {
+      "receiptSha256": "a477e7aa33f9f74f561dfe3f3ad87234d09c3249223f4a861ef6ac1ad8fa8aa8",
+      "logSha256": "2f92181620a2eef072897a128a0c27d7516c588c330cadb28fc3790b1038a429",
+      "passed": 3542,
+      "failed": 2,
+      "skipped": 95,
+      "qualification": "Historical failed attempt: stale profile expectations and the previous unknown expectation for nested function defaults. The later complete check admits the final state."
+    },
+    "documentationObserver": {
+      "receiptSha256": "baaf4fdd789498e51e05963d18a36bc1b12caf028ec3644438364ca07763fdec",
+      "nativePassed": 15,
+      "sourcePassed": 12,
+      "sourceSkipped": 3,
+      "expectedStates": ["mismatch", "unknown"],
+      "productionObserverChanged": false,
+      "qualification": "The changed nested function default is now observed as a mismatch; a separate deep-default control retains the observer limit. The restricted native attempt failed setup before any assertion; ordinary Windows permissions passed the owned fixture."
+    },
+    "postCorpus": {
+      "kind": "owned-post-corpus-verification",
+      "schemaVersion": 1,
+      "gates": [
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-checkpoint-tests.log",
+          "command": "pnpm",
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "logSha256": "3100af5d2e84b62c04b12691ad2fceddf99a63b80ffe7ce34a096664bfdb63ba",
+          "finishedAt": "2026-10-23T01:16:11.6164082Z",
+          "startedAt": "2026-10-23T01:16:10.2337412Z",
+          "name": "checkpoint-tests"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-all-types.log",
+          "command": "pnpm",
+          "arguments": ["typecheck:all"],
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b",
+          "finishedAt": "2026-10-23T01:16:17.3434326Z",
+          "startedAt": "2026-10-23T01:16:11.6375601Z",
+          "name": "all-types"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-checkpoint-lint.log",
+          "command": "pnpm",
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "finishedAt": "2026-10-23T01:16:20.6863123Z",
+          "startedAt": "2026-10-23T01:16:17.3475279Z",
+          "name": "checkpoint-lint"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-format.log",
+          "command": "pnpm",
+          "arguments": ["format:check"],
+          "logSha256": "f7b851efc9fddd94506bc9aa93bcd7b0c5af9036906d65fea4ce70e09a9ad370",
+          "finishedAt": "2026-10-23T01:16:33.9896638Z",
+          "startedAt": "2026-10-23T01:16:20.6882321Z",
+          "name": "format"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-capabilities.log",
+          "command": "pnpm",
+          "arguments": ["capabilities:check"],
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502",
+          "finishedAt": "2026-10-23T01:16:34.5871099Z",
+          "startedAt": "2026-10-23T01:16:33.9982173Z",
+          "name": "capabilities"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-coverage.log",
+          "command": "pnpm",
+          "arguments": ["compatibility:check"],
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668",
+          "finishedAt": "2026-10-23T01:16:35.1036427Z",
+          "startedAt": "2026-10-23T01:16:34.5899826Z",
+          "name": "coverage"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-inventory.log",
+          "command": "pnpm",
+          "arguments": ["inventory:check"],
+          "logSha256": "edc6d3013f02728c25748f910f4e12af2b234217bf83963e51f9a291ed96a166",
+          "finishedAt": "2026-10-23T01:16:35.9052024Z",
+          "startedAt": "2026-10-23T01:16:35.1131525Z",
+          "name": "inventory"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-status.log",
+          "command": "pnpm",
+          "arguments": ["status:check"],
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55",
+          "finishedAt": "2026-10-23T01:16:36.7692980Z",
+          "startedAt": "2026-10-23T01:16:35.9121616Z",
+          "name": "status"
+        },
+        {
+          "exitCode": 0,
+          "log": ".tmp/profile-0398-post-corpus.log",
+          "command": "pnpm",
+          "arguments": ["corpus:check"],
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc",
+          "finishedAt": "2026-10-23T01:16:37.2440634Z",
+          "startedAt": "2026-10-23T01:16:36.7720858Z",
+          "name": "corpus"
+        }
+      ],
+      "ok": true
+    },
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.398.0.json",
+      "sha256": "4ab81e2aafc015b489ef6f54d3d131770435db97f5c78f24eac2d1ad3cf27f75"
+    },
+    "corpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.398.0.json",
+      "sha256": "97ef0e5da0a68b3f75ecf73b925a5b2143d309cd391033047ff79ce84dcd8613",
+      "packages": 4,
+      "observations": 49,
+      "changes": [
+        {
+          "package": "withr",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/defer.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 21,
+          "changed": []
+        },
+        {
+          "package": "evaluate",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/evaluate.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 7,
+          "changed": []
+        },
+        {
+          "package": "numDeriv",
+          "tier": "P6",
+          "previousTier": "P6",
+          "firstBlocker": {
+            "tier": "P7",
+            "code": "observation-mismatch",
+            "path": "tests/hessian01.R",
+            "message": "The first package-check blocker is test-output; see the redacted checkpoint for stage outcomes and repeatability."
+          },
+          "observations": 11,
+          "changed": []
+        },
+        {
+          "package": "abind",
+          "tier": "P7",
+          "previousTier": "P7",
+          "firstBlocker": null,
+          "observations": 10,
+          "changed": []
+        }
+      ]
+    },
+    "matrix": { "partialDimensions": 153, "bindings": 32 }
+  },
+  "limitations": [
+    "All thirteen required semantic domains remain unfinished.",
+    "Non-NULL source-reference cells, source environments, parse-data and source-to-closure propagation remain unfinished.",
+    "Arbitrary cell tags, broader function coercions, call(\"function\", ...) and malformed construction/evaluation timing are outside the observed boundary.",
+    "Owned resource guards and source-only snapshot transport are not native compatibility evidence; snapshots remain lossy.",
+    "The four selected cached packages are a bounded refresh; the full 24-package checkpoint remains 0.397. Original dependency closure and assisted-runner results remain separate.",
+    "Windows correctness timings do not establish isolated performance or the complete browser/OS matrix. Linux execution and Formula holdout remain deferred.",
+    "No download, push, publication or remote action is performed by this increment."
+  ]
+}

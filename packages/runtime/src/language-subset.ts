@@ -1,7 +1,8 @@
-import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
+import type { AstNode, CallArgument, FunctionParameter, SourceSpan } from "@nativr/ast";
 
-import { languageValueEntries } from "./language.js";
-import { RResourceLimitError, RTypeMismatchError } from "./errors.js";
+import { languageValueEntries, languageValueLength, languageValueNames } from "./language.js";
+import { withFunctionSourceCellPresence } from "./language-metadata.js";
+import { RResourceLimitError, RTypeMismatchError, RUnsupportedFeatureError } from "./errors.js";
 import {
   extractListMember,
   extractVectorElement,
@@ -24,9 +25,18 @@ import {
   listValue,
   logicalVector,
   missingValue,
+  pairlistValue,
   vectorNames,
 } from "./values.js";
-import type { OperatorContext, RAttributes, RLanguage, RList, RValue } from "./values.js";
+import type {
+  OperatorContext,
+  RAttributes,
+  RLanguage,
+  RList,
+  RNull,
+  RPairlist,
+  RValue,
+} from "./values.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
@@ -36,6 +46,75 @@ const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
 interface LanguageEntries {
   readonly values: RList;
   readonly originalNodes: ReadonlyMap<RValue, AstNode>;
+}
+
+/** Project stored formal defaults without evaluating them or rendering their syntax. */
+export function functionParametersValue(
+  parameters: readonly FunctionParameter[],
+  context: OperatorContext,
+): RPairlist | RNull {
+  context.checkpoint();
+  if (parameters.length === 0) return R_NULL;
+  context.allocate(parameters.length);
+  const values: RValue[] = [];
+  const names: string[] = [];
+  for (const parameter of parameters) {
+    context.checkpoint();
+    values.push(
+      parameter.defaultValue === undefined
+        ? { type: "symbol", name: "" }
+        : parameter.defaultValue.kind === "UnsupportedExpression" &&
+            parameter.defaultValue.feature === "dots"
+          ? { type: "symbol", name: "..." }
+          : quoteLanguageNode(parameter.defaultValue),
+    );
+    names.push(parameter.name);
+  }
+  return pairlistValue(values, names);
+}
+
+/** Materialize function cells only on value-conversion paths with an allocation context. */
+export function materializeLanguageEntries(
+  value: RLanguage,
+  context: OperatorContext,
+): { readonly nodes: readonly AstNode[]; readonly names?: readonly string[] } | undefined {
+  context.checkpoint();
+  const expression = value.expression;
+  if (expression.kind !== "FunctionExpression") return languageValueEntries(value);
+  const length = languageValueLength(value);
+  context.allocate(length);
+  const formals = functionParametersValue(expression.parameters, context);
+  const formalNode: AstNode =
+    formals.type === "null"
+      ? { kind: "NullLiteral", span: SYNTHETIC_SPAN }
+      : {
+          kind: "ConstantExpression",
+          value: formals,
+          // Preserve a shallow display tree without recursively formatting defaults.
+          display: callAst(
+            "pairlist",
+            expression.parameters.map((parameter) => {
+              context.checkpoint();
+              return callArgument(
+                parameter.defaultValue ?? {
+                  kind: "UnsupportedExpression",
+                  feature: "missing argument",
+                  span: parameter.span,
+                },
+                parameter.name,
+              );
+            }),
+          ),
+          span: SYNTHETIC_SPAN,
+        };
+  const nodes: AstNode[] = [
+    { kind: "Identifier", name: "function", span: SYNTHETIC_SPAN },
+    formalNode,
+    expression.body,
+  ];
+  if (length === 4) nodes.push({ kind: "NullLiteral", span: SYNTHETIC_SPAN });
+  const names = languageValueNames(value);
+  return { nodes, ...(names === undefined ? {} : { names }) };
 }
 
 /** Select language-call elements while retaining a call result for `[`. */
@@ -139,12 +218,12 @@ export function replaceLanguageNames(
       `'names' attribute [${names.length}] must be the same length as the vector [${entries.nodes.length}]`,
     );
   context.allocate(entries.nodes.length);
-  return languageFromNodes(entries.nodes, names, context, target.attributes);
+  return languageFromCallEntries(entries.nodes, names, context, target.attributes);
 }
 
 function languageEntries(target: RLanguage, context: OperatorContext): LanguageEntries {
   context.checkpoint();
-  const source = languageValueEntries(target);
+  const source = materializeLanguageEntries(target, context);
   const nodes = source?.nodes ?? [target.expression];
   context.allocate(nodes.length);
   const values = nodes.map((node) => {
@@ -172,17 +251,54 @@ function languageFromValues(
     return originalNodes.get(value) ?? embeddedValueAst(value, () => context.checkpoint());
   });
   const names = vectorNames(values);
-  return languageFromNodes(nodes, names, context, attributes);
+  return languageFromCallEntries(nodes, names, context, attributes);
 }
 
-function languageFromNodes(
+/** Rebuild admitted call cells while preserving executable function syntax and shared bodies. */
+export function languageFromCallEntries(
   nodes: readonly AstNode[],
   names: readonly string[] | undefined,
   context: OperatorContext,
-  attributes: RAttributes,
+  attributes: RAttributes = new Map(),
+  headTag = names?.[0] ?? "",
 ): RLanguage {
   context.checkpoint();
+  if (nodes.length === 0) throw new RTypeMismatchError("NRT3208", "invalid length 0 argument");
+  context.allocate(nodes.length);
   const head = nodes[0] as AstNode;
+  if (
+    head.kind === "Identifier" &&
+    head.name === "function" &&
+    (nodes.length === 3 || nodes.length === 4) &&
+    !names?.slice(1).some((name) => name !== "")
+  ) {
+    const parameters = functionParametersFromNode(nodes[1]!, context);
+    if (parameters !== undefined) {
+      const sourceCell = nodes[3];
+      if (
+        sourceCell !== undefined &&
+        sourceCell.kind !== "NullLiteral" &&
+        !(sourceCell.kind === "ConstantExpression" && (sourceCell.value as RValue).type === "null")
+      )
+        throw new RUnsupportedFeatureError(
+          "NRU6261",
+          "Non-NULL function source cells require retained-source support.",
+        );
+      return languageValue(
+        withFunctionSourceCellPresence(
+          {
+            kind: "FunctionExpression",
+            parameters,
+            body: nodes[2]!,
+            span: SYNTHETIC_SPAN,
+          },
+          nodes.length === 4,
+        ),
+        attributes,
+        headTag,
+      );
+    }
+  }
   if (
     head.kind === "Identifier" &&
     (head.name === "[" || head.name === "[[" || head.name === "$" || head.name === "@") &&
@@ -201,7 +317,7 @@ function languageFromNodes(
         span: SYNTHETIC_SPAN,
       },
       attributes,
-      names?.[0] ?? "",
+      headTag,
     );
   }
   return languageValue(
@@ -215,8 +331,47 @@ function languageFromNodes(
       span: SYNTHETIC_SPAN,
     },
     attributes,
-    names?.[0] ?? "",
+    headTag,
   );
+}
+
+function functionParametersFromNode(
+  node: AstNode,
+  context: OperatorContext,
+): readonly FunctionParameter[] | undefined {
+  const value =
+    node.kind === "NullLiteral"
+      ? R_NULL
+      : node.kind === "ConstantExpression"
+        ? (node.value as RValue)
+        : undefined;
+  if (value?.type === "null") return Object.freeze([]);
+  if (value?.type !== "pairlist") return undefined;
+  const names = value.attributes.get("names");
+  if (
+    names?.type !== "character" ||
+    names.length !== value.length ||
+    [...value.attributes.keys()].some((name) => name !== "names")
+  )
+    return undefined;
+  context.allocate(value.length);
+  const seenNames = new Set<string>();
+  const parameters: FunctionParameter[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    context.checkpoint();
+    const name = names.values[index] ?? "";
+    if (isMissing(names, index) || name === "" || seenNames.has(name)) return undefined;
+    seenNames.add(name);
+    const entry = value.values[index]!;
+    parameters.push({
+      name,
+      ...(entry.type === "symbol" && entry.name === ""
+        ? {}
+        : { defaultValue: embeddedValueAst(entry, () => context.checkpoint()) }),
+      span: SYNTHETIC_SPAN,
+    });
+  }
+  return Object.freeze(parameters);
 }
 
 function preflightLanguageReplacement(

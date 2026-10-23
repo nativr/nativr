@@ -999,6 +999,7 @@ export function languageValue(
     expression: withLanguageSyntaxMetadata(expression, {
       attributes: ordinary,
       ...(tag === undefined ? {} : { headTag: tag }),
+      ...(retained?.functionSourceCellAbsent === true ? { functionSourceCellAbsent: true } : {}),
     }),
     attributes: ordinary,
     ...(tag === undefined ? {} : { headTag: tag }),

@@ -1,6 +1,6 @@
 import type { AstNode, CallArgument, FunctionParameter } from "@nativr/ast";
 import type { RAttributes, RBinding, RCharacterVector, RPromise, RValue } from "./values.js";
-import { languageSyntaxMetadata } from "./language-metadata.js";
+import { functionSourceCellPresent, languageSyntaxMetadata } from "./language-metadata.js";
 import { RResourceLimitError } from "./errors.js";
 
 /** Browser-owned memory represented in GNU R's two reporting cell families. */
@@ -196,7 +196,11 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
       case "CallExpression":
         return languageCallBytes(node.callee, node.arguments);
       case "FunctionExpression":
-        return NODE_BYTES * 3 + NODE_BYTES + parameterBytes(node.parameters) + visitAst(node.body);
+        return (
+          NODE_BYTES * (functionSourceCellPresent(node) ? 4 : 3) +
+          parameterBytes(node.parameters) +
+          visitAst(node.body)
+        );
       case "IfExpression":
         return syntheticCallBytes(
           "if",

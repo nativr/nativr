@@ -47,6 +47,11 @@ import {
   languageAstEntries,
   languageValue,
   languageValueEntries,
+  languageValueLength,
+  languageValueNames,
+  materializeLanguageEntries,
+  functionParametersValue,
+  languageFromCallEntries,
   replaceLanguageNames,
   doubleVector,
   encodeRSerialization,
@@ -17108,11 +17113,49 @@ function identicalLanguage(
   // Call syntax can be deeply nested without invoking functions. Compare its cells iteratively
   // so metadata and opaque references are observed without recursive syntax-stack growth.
   const pending: [RLanguage, RLanguage][] = [[left, right]];
+  const compareCells = (a: AstNode, b: AstNode): boolean => {
+    const aCell = quoteAst(a);
+    const bCell = quoteAst(b);
+    if (aCell.type === "language" && bCell.type === "language") {
+      pending.push([aCell, bCell]);
+      return true;
+    }
+    return identicalValue(aCell, bCell, options, checkpoint);
+  };
   while (pending.length > 0) {
     checkpoint();
     const [a, b] = pending.pop()!;
     if (a === b) continue;
     if (!attributesEqual(a.attributes, b.attributes, options, checkpoint)) return false;
+    if (a.expression.kind === "FunctionExpression" || b.expression.kind === "FunctionExpression") {
+      if (a.expression.kind !== "FunctionExpression" || b.expression.kind !== "FunctionExpression")
+        return false;
+      if (
+        languageValueLength(a) !== languageValueLength(b) ||
+        a.expression.parameters.length !== b.expression.parameters.length
+      )
+        return false;
+      if (!stringArrayEqual(languageValueNames(a) ?? [], languageValueNames(b) ?? [], checkpoint))
+        return false;
+      for (let index = 0; index < a.expression.parameters.length; index += 1) {
+        checkpoint();
+        const aParameter = a.expression.parameters[index]!;
+        const bParameter = b.expression.parameters[index]!;
+        if (
+          aParameter.name !== bParameter.name ||
+          (aParameter.defaultValue === undefined) !== (bParameter.defaultValue === undefined)
+        )
+          return false;
+        if (
+          aParameter.defaultValue !== undefined &&
+          bParameter.defaultValue !== undefined &&
+          !compareCells(aParameter.defaultValue, bParameter.defaultValue)
+        )
+          return false;
+      }
+      if (!compareCells(a.expression.body, b.expression.body)) return false;
+      continue;
+    }
     const aEntries = languageValueEntries(a);
     const bEntries = languageValueEntries(b);
     if (aEntries === undefined || bEntries === undefined) {
@@ -19481,6 +19524,9 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
   const callee = entries[0] ?? nullAst();
   const names =
     input.type === "list" || input.type === "expression" ? vectorNames(input) : undefined;
+  if (callee.kind === "Identifier" && callee.name === "function") {
+    return languageFromCallEntries(entries, names, invocation.context, undefined, "");
+  }
   const arguments_ = entries.slice(1).map((value, index): CallArgument => {
     const name = names?.[index + 1];
     return {
@@ -20284,17 +20330,8 @@ async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {
       : invocation.currentEnvironment();
   const value = await reflectionTarget(supplied, environment, invocation);
   const parameters = await reflectedParameters(value, invocation);
-  if (parameters === undefined || parameters.length === 0) return R_NULL;
-  invocation.context.allocate(parameters.length);
-  return pairlistValue(
-    parameters.map((parameter) => {
-      invocation.context.checkpoint();
-      return parameter.defaultValue === undefined
-        ? { type: "symbol", name: "" }
-        : quoteAst(parameter.defaultValue);
-    }),
-    parameters.map((parameter) => parameter.name),
-  );
+  if (parameters === undefined) return R_NULL;
+  return functionParametersValue(parameters, invocation.context);
 }
 
 function reflectionInternalCall(name: string): RLanguage {
@@ -20526,7 +20563,9 @@ function valueLength(value: RValue): number {
     case "symbol":
       return 1;
     case "language":
-      return languageLength(value.expression);
+      return value.expression.kind === "FunctionExpression"
+        ? languageValueLength(value)
+        : languageLength(value.expression);
     case "expression":
       return value.values.length;
     case "dots":
@@ -23715,7 +23754,7 @@ function asVectorList(input: RValue, invocation: BuiltinInvocation): RList {
     return listValue([input]);
   }
   if (input.type === "language") {
-    const entries = asVectorLanguageEntries(input);
+    const entries = asVectorLanguageEntries(input, invocation.context);
     invocation.context.allocate(entries.values.length);
     return listValue(entries.values, entries.names);
   }
@@ -23799,14 +23838,20 @@ function asVectorPairlist(
   return { ...output, attributes };
 }
 
-function asVectorLanguageEntries(input: RLanguage): {
+function asVectorLanguageEntries(
+  input: RLanguage,
+  context: BuiltinInvocation["context"],
+): {
   readonly values: readonly RValue[];
   readonly names?: readonly string[];
 } {
-  const entries = languageValueEntries(input);
+  const entries = materializeLanguageEntries(input, context);
   if (entries === undefined) return { values: [input] };
   return {
-    values: entries.nodes.map(quoteAst),
+    values: entries.nodes.map((node) => {
+      context.checkpoint();
+      return quoteAst(node);
+    }),
     ...(entries.names === undefined ? {} : { names: entries.names }),
   };
 }
@@ -25928,7 +25973,9 @@ async function asListFactor(value: RValue, invocation: BuiltinInvocation): Promi
   const input: ApplyInput = {
     value,
     length: valueLength(value),
-    ...(value.type === "language" ? { languageEntries: asVectorLanguageEntries(value) } : {}),
+    ...(value.type === "language"
+      ? { languageEntries: asVectorLanguageEntries(value, invocation.context) }
+      : {}),
   };
   for (let index = 0; index < count; index += 1) {
     invocation.context.checkpoint();
@@ -26010,7 +26057,7 @@ async function asListDefault(value: RValue, invocation: BuiltinInvocation): Prom
       : withAttribute(listValue(value.values), "names", names);
   }
   if (value.type === "language") {
-    const entries = asVectorLanguageEntries(value);
+    const entries = asVectorLanguageEntries(value, invocation.context);
     invocation.context.allocate(entries.values.length);
     const output = listValue(entries.values, entries.names);
     return { ...output, attributes: new Map([...output.attributes, ...value.attributes]) };
@@ -26861,7 +26908,7 @@ async function builtinNames(invocation: BuiltinInvocation, dispatch = true): Pro
     return characterVector(names);
   }
   if (value.type === "language") {
-    const names = asVectorLanguageEntries(value).names;
+    const names = languageValueNames(value);
     if (names === undefined) return R_NULL;
     invocation.context.allocate(names.length);
     return characterVector(names);
@@ -27311,7 +27358,7 @@ async function replaceNamesAttribute(
     if (replacement.type === "null")
       return replaceLanguageNames(value, undefined, invocation.context);
     const characters = namesReplacementCharacters(replacement, invocation, true);
-    const length = languageValueEntries(value)?.nodes.length ?? 1;
+    const length = languageValueLength(value);
     if (characters.length > length) {
       throw new RTypeMismatchError(
         "NRT3199",
@@ -27464,7 +27511,7 @@ async function matchedObjectAttribute(
   let attributes = objectAttributes(value);
   if (attributes === undefined) return R_NULL;
   if (value.type === "language" && name === "names") {
-    const names = languageValueEntries(value)?.names;
+    const names = languageValueNames(value);
     if (names === undefined) return R_NULL;
     invocation.context.allocate(names.length);
     return characterVector(names);
@@ -55920,7 +55967,7 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
       value: entry.value,
       length: count,
       ...(entry.value.type === "language"
-        ? { languageEntries: asVectorLanguageEntries(entry.value) }
+        ? { languageEntries: asVectorLanguageEntries(entry.value, invocation.context) }
         : {}),
     };
     inputs.push(entry.name === undefined ? { input } : { name: entry.name, input });
@@ -56621,7 +56668,9 @@ async function prepareApplyInput(
   return {
     value,
     length: valueLength(value),
-    ...(value.type === "language" ? { languageEntries: asVectorLanguageEntries(value) } : {}),
+    ...(value.type === "language"
+      ? { languageEntries: asVectorLanguageEntries(value, invocation.context) }
+      : {}),
   };
 }
 
@@ -56892,7 +56941,9 @@ async function simplifyApplyResult(
     {
       value: input,
       length: valueLength(input),
-      ...(input.type === "language" ? { languageEntries: asVectorLanguageEntries(input) } : {}),
+      ...(input.type === "language"
+        ? { languageEntries: asVectorLanguageEntries(input, invocation.context) }
+        : {}),
     },
     0,
     invocation,

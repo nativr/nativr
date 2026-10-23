@@ -2505,3 +2505,53 @@ extraction discrepancy remains a concrete follow-up. General attributes replacem
 parse-data, broader call equality/printing and all thirteen domain matrices remain unfinished.
 Continue licensed datasets and isolated testing-runner parity. Linux, Formula holdout, downloads and
 remote actions retain their existing authorization boundaries.
+
+### Owned function-language checkpoint (profile 0.398)
+
+Quoted functions now expose their formal pairlist, body and present NULL fourth cell. The sampled
+list/call roundtrip and formal/body replacements preserve executable function syntax and lazy
+defaults. Nested body attributes keep shared environment references; ordinary outer call attributes
+remain separate from closure attributes. Three-cell construction and fourth-cell deletion preserve
+the observed distinction from a four-cell call.
+
+The [verification record](../compatibility/platform-evidence/function-language-windows-0.398.0.json)
+binds nine frozen main assertions to a clean committed 0.397 baseline: one pass and eight runtime
+errors, no mismatches or harness failures, with 2,012 stable input/artifact hashes. Three separately
+frozen plain-shape assertions pass as adjunct evidence; they were not added to that baseline. The
+three retained-source architectural observations remain excluded.
+
+All twelve native-backed source assertions pass. Five foundation groups and five separately authored
+recursive graphs pass, with five environment-alias checks and fourteen strict controls for seven
+composite associations across six bindings. The controls do not prove every output field
+independently. Eight owned runtime guards and one public-session guard cover allocation preflight,
+cancellation, deep unchanged syntax, retained references and recovery; they carry no native
+resource-limit compatibility credit.
+
+- Production check: 3,544 unit tests pass, 96 opt-in tests skipped; types, lint, serial build,
+  browser audit and the fixed bundle caps pass.
+- Conformance: 1,506 checked-in, 1,433 live GNU R and 420 recursive cases pass; 55 NativR-only live
+  exclusions; 175 bindings have causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.398.0.json): 12/12 pass;
+  required examples take 14.879 / 16.664 / 69.912 seconds on Chromium / Firefox / WebKit, with the
+  unchanged 120-second timeout. These correctness-run durations do not establish isolated
+  performance.
+- Bundle sizes: client 18.1/150 KiB gzip; Worker 496.2/512 KiB gzip; parser 671.9/1,536 KiB raw;
+  elementary 311.2/384 KiB raw.
+- Inventory: 153 partial dimensions on 32 bindings. All thirteen domains remain incomplete.
+- Separate post-corpus checkpoint, types, lint, formatting and generated checks pass.
+
+The [selected corpus checkpoint](../compatibility/package-check-evidence/corpus-0.398.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.398.0.json) refresh
+evaluate, withr, abind and numDeriv: four pinned archives, 49 observations, compared with 0.397. No
+selected package tier changed. Qualified distribution remains 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. All
+selected observation, comparison, stage, dependency, documentation and first-blocker metadata match
+the baseline. The other twenty development/regression entries and Formula remain unchanged; the full
+24-package checkpoint remains 0.397. Original dependency closure and assisted-runner outcomes remain
+separate.
+
+Next measurable work: reproduce the remaining parsed-dots extraction discrepancy, then independently
+verify retained-source cell construction and propagation before extending source retention. General
+attributes replacement, broader function coercions, cell tags, malformed construction timing,
+parse-data and complete language equality/printing remain unfinished. Continue the domain matrices,
+licensed datasets and isolated testing-runner parity. Linux, Formula holdout, downloads and remote
+actions retain their existing authorization boundaries.

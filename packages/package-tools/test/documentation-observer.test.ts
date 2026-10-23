@@ -17,6 +17,7 @@ const description =
   "Package: owneddoc\nVersion: 1.0.0\nTitle: Owned Documentation Fixture\nDescription: Independent metadata observations.\nLicense: MIT\nAuthor: Fixture\nMaintainer: Fixture <f@example.invalid>\nImports: stats\n";
 const namespace =
   'exportPattern("^pub")\nexport(zero, numericType, changed, reorder, extra, expr, near, literalNA, fold, missing, lazy, closureDefault)\nimportFrom(stats, na.omit)\n';
+const deepDefaultSyntax = (leaf: string) => `${"(".repeat(36)}${leaf}${")".repeat(36)}`;
 const definitions = [
   "pubComputed <- local({ hidden <- 7; function(x, y=2) x+y+hidden })",
   "pubValue <- 7L",
@@ -32,6 +33,7 @@ const definitions = [
   "missing <- function(x) x",
   'lazy <- function(x=stop("MUST_NOT_FORCE")) x',
   "closureDefault <- function(x=function(y) y) x",
+  `deepDefault <- function(x=${deepDefaultSyntax("1L")}) x`,
   "logicalNA <- function(x=NA) x",
   "nan <- function(x=NaN) x",
   "numericExpr <- function(x=c(a=1)) x",
@@ -221,19 +223,26 @@ it("does not force active bindings and keeps missing/noncallable signatures inco
   expect(result.functions.every(({ status }) => status === "unexecuted")).toBe(true);
 });
 
-it("bounds unsupported recursive syntax without discarding the export observation", async () => {
-  const probe = {
+const recursiveProbes: DocumentationProbe[] = [
+  {
     id: "closure-default-change",
     name: "closureDefault",
     signature: "function(x=function(y)y+1) NULL",
-  };
-  const result = await observePackageDocumentation("owneddoc", [probe], {
+  },
+  {
+    id: "deep-default-change",
+    name: "deepDefault",
+    signature: `function(x=${deepDefaultSyntax("2L")}) NULL`,
+  },
+];
+it("observes function default mismatches while bounding deep syntax without discarding exports", async () => {
+  const result = await observePackageDocumentation("owneddoc", recursiveProbes, {
     actual: capture,
     expected: capture,
   });
   expect(result.exportsStatus, String(captureError)).toBe("passed");
-  expect(result.actual.states).toEqual(["unknown"]);
-  expect(result.functions[0]?.status).toBe("unexecuted");
+  expect(result.actual.states).toEqual(["mismatch", "unknown"]);
+  expect(result.functions.map(({ status }) => status)).toEqual(["failed", "unexecuted"]);
 });
 
 function frame(names: string[], states: string[]) {
@@ -369,6 +378,16 @@ describe.runIf(process.env.NATIVR_PACKAGE_ORACLE_FIXTURE === "1")(
       });
       expect(result.expected.states).toEqual(["unknown", "match"]);
       expect(result.functions.map(({ status }) => status)).toEqual(["unexecuted", "passed"]);
+    });
+    it("agrees on observed function defaults and the recursive syntax observation limit", async () => {
+      const result = await observePackageDocumentation("owneddoc", recursiveProbes, {
+        actual: capture,
+        expected: (source) => oracle.capture({ source }),
+      });
+      expect(result.exportsStatus).toBe("passed");
+      expect(result.actual.states).toEqual(["mismatch", "unknown"]);
+      expect(result.expected.states).toEqual(["mismatch", "unknown"]);
+      expect(result.functions.map(({ status }) => status)).toEqual(["failed", "unexecuted"]);
     });
   },
 );

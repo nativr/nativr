@@ -5,6 +5,8 @@ import type { RAttributes } from "./values.js";
 export interface LanguageSyntaxMetadata {
   readonly attributes: RAttributes;
   readonly headTag?: string;
+  /** Plain parser function syntax has a present NULL fourth cell unless explicitly removed. */
+  readonly functionSourceCellAbsent?: true;
 }
 
 const LANGUAGE_METADATA = Symbol("nativr.languageMetadata");
@@ -23,13 +25,36 @@ export function withLanguageSyntaxMetadata(
   metadata: LanguageSyntaxMetadata,
 ): AstNode {
   const current = languageSyntaxMetadata(node);
-  if (current?.attributes === metadata.attributes && current.headTag === metadata.headTag)
+  if (
+    current?.attributes === metadata.attributes &&
+    current.headTag === metadata.headTag &&
+    current.functionSourceCellAbsent === metadata.functionSourceCellAbsent
+  )
     return node;
-  if (metadata.attributes.size === 0 && metadata.headTag === undefined) {
+  if (
+    metadata.attributes.size === 0 &&
+    metadata.headTag === undefined &&
+    metadata.functionSourceCellAbsent === undefined
+  ) {
     if (current === undefined) return node;
     const copy = { ...node } as LanguageSyntax;
     delete (copy as { [LANGUAGE_METADATA]?: LanguageSyntaxMetadata })[LANGUAGE_METADATA];
     return copy;
   }
   return { ...node, [LANGUAGE_METADATA]: Object.freeze(metadata) } as LanguageSyntax;
+}
+
+/** The plain function's NULL source cell is structural, not a source-retention claim. */
+export function functionSourceCellPresent(node: AstNode): boolean {
+  return languageSyntaxMetadata(node)?.functionSourceCellAbsent !== true;
+}
+
+/** Record an explicit three-cell function without changing its executable node kind. */
+export function withFunctionSourceCellPresence(node: AstNode, present: boolean): AstNode {
+  const current = languageSyntaxMetadata(node);
+  return withLanguageSyntaxMetadata(node, {
+    attributes: current?.attributes ?? new Map(),
+    ...(current?.headTag === undefined ? {} : { headTag: current.headTag }),
+    ...(present ? {} : { functionSourceCellAbsent: true }),
+  });
 }

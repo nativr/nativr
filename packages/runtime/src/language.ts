@@ -2,12 +2,27 @@ import { assertNever } from "@nativr/ast";
 import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
 
 import { RResourceLimitError } from "./errors.js";
+import { functionSourceCellPresent } from "./language-metadata.js";
 import type { RLanguage, RValue } from "./values.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
   end: Object.freeze({ offset: 0, line: 1, column: 1 }),
 });
+
+/** Inspect call shape without projecting a function's formal pairlist. */
+export function languageValueLength(value: RLanguage): number {
+  if (value.expression.kind === "FunctionExpression")
+    return functionSourceCellPresent(value.expression) ? 4 : 3;
+  return languageAstEntries(value.expression)?.nodes.length ?? 1;
+}
+
+/** Inspect structural tags without quoting defaults or allocating their pairlist. */
+export function languageValueNames(value: RLanguage): readonly string[] | undefined {
+  if (value.expression.kind !== "FunctionExpression") return languageValueEntries(value)?.names;
+  if (value.headTag === undefined) return undefined;
+  return [value.headTag, ...Array<string>(languageValueLength(value) - 1).fill("")];
+}
 
 /** Expose call cells and structural tags without mixing tags into ordinary attributes. */
 export function languageValueEntries(

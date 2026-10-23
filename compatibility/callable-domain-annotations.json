@@ -548,29 +548,40 @@
           "dimension": "ordinary",
           "evidence": [
             { "suite": "oracle-v2", "caseId": "language-owned-copy-reference-graph" },
-            { "suite": "oracle-v2", "caseId": "language-owned-conversion-evaluation-graph" }
+            { "suite": "oracle-v2", "caseId": "language-owned-conversion-evaluation-graph" },
+            {
+              "suite": "foundation",
+              "caseId": "function-language-owned-reconstruction-replacement"
+            }
           ],
           "remainingGaps": [
             "Converting an existing owned call retains ordinary attribute order and an environment-valued owner reference. Other inputs, malformed calls, dispatch and arbitrary graph shapes remain unaudited; ordinary call-object identity is not asserted. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
-            "Owned list/expression inputs preserve argument tags while dropping container note/class metadata and the head name. Other coercions, invalid heads, class/method combinations, cyclic graphs and metadata constraints remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "Owned list/expression inputs preserve argument tags while dropping container note/class metadata and the head name. Other coercions, invalid heads, class/method combinations, cyclic graphs and metadata constraints remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "Frozen owned assertions reconstruct executable function syntax from a call/list roundtrip, preserve named defaults and lexical environment, and evaluate original versus replaced formal/body cells to the expected values. These composite assertions do not isolate every intermediate operation. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::as.call. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         },
         {
           "dimension": "attributes",
           "evidence": [
             { "suite": "oracle-v2", "caseId": "language-owned-copy-reference-graph" },
-            { "suite": "oracle-v2", "caseId": "language-owned-conversion-evaluation-graph" }
+            { "suite": "oracle-v2", "caseId": "language-owned-conversion-evaluation-graph" },
+            { "suite": "foundation", "caseId": "function-language-owned-metadata-reference" }
           ],
           "remainingGaps": [
             "Converting an existing owned call retains ordinary attribute order and an environment-valued owner reference. Other inputs, malformed calls, dispatch and arbitrary graph shapes remain unaudited; ordinary call-object identity is not asserted. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
-            "Owned list/expression inputs preserve argument tags while dropping container note/class metadata and the head name. Other coercions, invalid heads, class/method combinations, cyclic graphs and metadata constraints remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "Owned list/expression inputs preserve argument tags while dropping container note/class metadata and the head name. Other coercions, invalid heads, class/method combinations, cyclic graphs and metadata constraints remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "Frozen owned assertions preserve nested function-body metadata through reconstruction/evaluation and distinguish outer call/list notes from the unannotated reconstructed call or closure. Arbitrary attribute orders, methods and storage combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::as.call. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         },
         {
           "dimension": "identity",
-          "evidence": [{ "suite": "oracle-v2", "caseId": "language-owned-copy-reference-graph" }],
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "language-owned-copy-reference-graph" },
+            { "suite": "foundation", "caseId": "function-language-owned-metadata-reference" }
+          ],
           "remainingGaps": [
-            "Converting an existing owned call retains ordinary attribute order and an environment-valued owner reference. Other inputs, malformed calls, dispatch and arbitrary graph shapes remain unaudited; ordinary call-object identity is not asserted. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "Converting an existing owned call retains ordinary attribute order and an environment-valued owner reference. Other inputs, malformed calls, dispatch and arbitrary graph shapes remain unaudited; ordinary call-object identity is not asserted. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "The frozen owned body-reference assertion retains the same environment owner through call/list reconstruction and subsequent closure body access. This is environment alias evidence, not ordinary syntax-node or whole-function identity; arbitrary cyclic graphs remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::as.call. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         }
       ]
@@ -625,12 +636,14 @@
               "caseId": "expression-owned-conversion-unlist-reference-graph"
             },
             { "suite": "oracle-v2", "caseId": "language-owned-conversion-evaluation-graph" },
-            { "suite": "oracle-v2", "caseId": "language-owned-subset-replacement-graph" }
+            { "suite": "oracle-v2", "caseId": "language-owned-subset-replacement-graph" },
+            { "suite": "oracle-v2", "caseId": "function-language-owned-cells-graph" }
           ],
           "remainingGaps": [
             "Owned expression conversion retains names, attributes and opaque environment aliases without evaluation. All storage classes, methods, malformed objects and arbitrary graph shapes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
             "An owned tagged call becomes a list with names followed by note/class metadata while retaining quoted cells. Other language/container forms, methods, malformed objects and arbitrary attribute combinations remain unaudited. No new language-reference identity claim follows from this group. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
-            "A list view of one owned replaced call retains the sampled argument tags and note/class attributes. The surrounding selector/replacement results are composite observations without direct operator causal credit; broader selector, dispatch, identity and metadata behavior remains unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "A list view of one owned replaced call retains the sampled argument tags and note/class attributes. The surrounding selector/replacement results are composite observations without direct operator causal credit; broader selector, dispatch, identity and metadata behavior remains unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "Owned plain function syntax exposes four cells including a NULL fourth cell, with empty or nonempty formal lists and missing/dots defaults. This samples ordinary and empty-formal boundaries; wider syntax, storage, dispatch and metadata combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         },
         {
@@ -656,6 +669,13 @@
           ],
           "remainingGaps": [
             "Owned expression conversion retains names, attributes and opaque environment aliases without evaluation. All storage classes, methods, malformed objects and arbitrary graph shapes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "function-language-owned-cells-graph" }],
+          "remainingGaps": [
+            "Owned plain function syntax exposes four cells including a NULL fourth cell, with empty or nonempty formal lists and missing/dots defaults. This samples ordinary and empty-formal boundaries; wider syntax, storage, dispatch and metadata combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         }
       ]
@@ -742,6 +762,40 @@
       "domains": ["calls-promises", "value-types"],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "function-language-owned-reconstruction-replacement-graph"
+            },
+            { "suite": "oracle-v2", "caseId": "function-language-owned-metadata-reference-graph" }
+          ],
+          "remainingGaps": [
+            "Owned function reconstruction and body replacement expose the expected quoted brace body while the original call remains structurally unchanged. Other body kinds, malformed syntax, reflective methods and source metadata remain unfinished. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "An owned closure body retains ordinary nested owner metadata and the same environment-valued reference through function-call/list reconstruction. The graph proves environment aliasing, not whole-function or ordinary syntax-node identity. Arbitrary metadata graphs and all reflective routes remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "function-language-owned-metadata-reference-graph" }
+          ],
+          "remainingGaps": [
+            "An owned closure body retains ordinary nested owner metadata and the same environment-valued reference through function-call/list reconstruction. The graph proves environment aliasing, not whole-function or ordinary syntax-node identity. Arbitrary metadata graphs and all reflective routes remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "function-language-owned-metadata-reference-graph" }
+          ],
+          "remainingGaps": [
+            "An owned closure body retains ordinary nested owner metadata and the same environment-valued reference through function-call/list reconstruction. The graph proves environment aliasing, not whole-function or ordinary syntax-node identity. Arbitrary metadata graphs and all reflective routes remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        }
       ]
     },
     {
@@ -833,12 +887,17 @@
           "evidence": [
             { "suite": "oracle-v2", "caseId": "expression-owned-construction-evaluation-graph" },
             { "suite": "oracle-v2", "caseId": "language-owned-conversion-evaluation-graph" },
-            { "suite": "oracle-v2", "caseId": "language-owned-nested-evaluation-identity-graph" }
+            { "suite": "oracle-v2", "caseId": "language-owned-nested-evaluation-identity-graph" },
+            {
+              "suite": "foundation",
+              "caseId": "function-language-owned-reconstruction-replacement"
+            }
           ],
           "remainingGaps": [
             "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
             "One owned classed/noted call evaluates its syntax to the observed integer result. General evaluation contexts, forcing, source metadata, visibility and side-effect ordering remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
-            "Owned attributed children evaluate through direct calls, nested calls and expression containers while retaining their stored metadata. Wider syntax, promises, source metadata, visibility and side-effect ordering remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "Owned attributed children evaluate through direct calls, nested calls and expression containers while retaining their stored metadata. Wider syntax, promises, source metadata, visibility and side-effect ordering remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "Frozen owned assertions reconstruct executable function syntax from a call/list roundtrip, preserve named defaults and lexical environment, and evaluate original versus replaced formal/body cells to the expected values. These composite assertions do not isolate every intermediate operation. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::eval. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         },
         {
@@ -857,6 +916,15 @@
           ],
           "remainingGaps": [
             "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            { "suite": "foundation", "caseId": "function-language-owned-metadata-reference" }
+          ],
+          "remainingGaps": [
+            "Frozen owned assertions preserve nested function-body metadata through reconstruction/evaluation and distinguish outer call/list notes from the unannotated reconstructed call or closure. Arbitrary attribute orders, methods and storage combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::eval. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         }
       ]
@@ -901,6 +969,20 @@
       "domains": ["calls-promises", "value-types"],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "function-language-owned-reconstruction-replacement-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Owned closures constructed from original, roundtripped and replaced function syntax expose sampled named integer defaults. Full missing/dots/default structures, method behavior, malformed syntax and source-aware formals remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        }
       ]
     },
     {
@@ -992,6 +1074,22 @@
       "domains": ["object-systems", "vector-semantics"],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "function-language-owned-cells-graph" }],
+          "remainingGaps": [
+            "Owned plain function syntax exposes four cells including a NULL fourth cell, with empty or nonempty formal lists and missing/dots defaults. This samples ordinary and empty-formal boundaries; wider syntax, storage, dispatch and metadata combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "function-language-owned-cells-graph" }],
+          "remainingGaps": [
+            "Owned plain function syntax exposes four cells including a NULL fourth cell, with empty or nonempty formal lists and missing/dots defaults. This samples ordinary and empty-formal boundaries; wider syntax, storage, dispatch and metadata combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        }
       ]
     },
     {
@@ -6851,6 +6949,26 @@
       "remainingGaps": [
         "Index/replacement/coercion, structural attributes, empty and malformed objects, dispatch and identity behavior remain incompletely evidenced.",
         "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "function-language-owned-metadata-reference-graph" }
+          ],
+          "remainingGaps": [
+            "Owned function language and its list view retain a note; call reconstruction and closure creation drop their outer container note while nested body metadata remains observable. General setters, structural attributes, malformed objects, dispatch and ordering combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "function-language-owned-metadata-reference-graph" }
+          ],
+          "remainingGaps": [
+            "Owned function language and its list view retain a note; call reconstruction and closure creation drop their outer container note while nested body metadata remains observable. General setters, structural attributes, malformed objects, dispatch and ordering combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        }
       ]
     },
     {
@@ -7757,10 +7875,12 @@
         {
           "dimension": "ordinary",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "language-owned-nested-evaluation-identity-graph" }
+            { "suite": "oracle-v2", "caseId": "language-owned-nested-evaluation-identity-graph" },
+            { "suite": "oracle-v2", "caseId": "function-language-owned-plain-shape-graph" }
           ],
           "remainingGaps": [
-            "Owned calls compare unequal when ordinary child attributes or environment-valued attributes differ, and equal for the sampled copy with a shared owner. Environment reference identity is distinguished from structural call equality; cycles, arbitrary graph kinds, comparison options and complete identity semantics remain unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "Owned calls compare unequal when ordinary child attributes or environment-valued attributes differ, and equal for the sampled copy with a shared owner. Environment reference identity is distinguished from structural call equality; cycles, arbitrary graph kinds, comparison options and complete identity semantics remain unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "Owned plain three-cell and four-cell function calls compare unequal both by default and with ignore.srcref=FALSE, despite equal evaluated results. This distinguishes absent versus present NULL source-cell structure only; closure identity, non-NULL source data, all comparison options and general graph equality remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         },
         {
@@ -7779,6 +7899,15 @@
           ],
           "remainingGaps": [
             "Owned calls compare unequal when ordinary child attributes or environment-valued attributes differ, and equal for the sampled copy with a shared owner. Environment reference identity is distinguished from structural call equality; cycles, arbitrary graph kinds, comparison options and complete identity semantics remain unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "function-language-owned-plain-shape-graph" }
+          ],
+          "remainingGaps": [
+            "Owned plain three-cell and four-cell function calls compare unequal both by default and with ignore.srcref=FALSE, despite equal evaluated results. This distinguishes absent versus present NULL source-cell structure only; closure identity, non-NULL source data, all comparison options and general graph equality remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
           ]
         }
       ]
