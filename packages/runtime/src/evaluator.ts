@@ -5823,6 +5823,12 @@ export class Evaluator {
       return result;
     }
     if (value.type === "symbol") {
+      if (value.name === "") {
+        throw new REvaluationError("NRE2006", "argument is missing, with no default");
+      }
+      if (value.name === "...") {
+        throw new REvaluationError("NRE2011", "'...' used in an incorrect context");
+      }
       const binding = lookupBinding(environment, value.name);
       if (binding === undefined) {
         throw new REvaluationError("NRE2001", `Object '${value.name}' not found.`, {

@@ -2555,3 +2555,45 @@ attributes replacement, broader function coercions, cell tags, malformed constru
 parse-data and complete language equality/printing remain unfinished. Continue the domain matrices,
 licensed datasets and isolated testing-runner parity. Linux, Formula holdout, downloads and remote
 actions retain their existing authorization boundaries.
+
+### Quoted-dots and missing-cell checkpoint (profile 0.399)
+
+Parsed dots now project as the symbol ... through shared call/expression extraction. Call
+reconstruction, expression identity and the sampled replacements preserve that value without forcing
+dots. The empty-name missing symbol stays distinct; explicit missing quotation and sampled
+missing-cell evaluation follow the independently observed behavior and messages.
+
+The [verification record](../compatibility/platform-evidence/quoted-dots-windows-0.399.0.json) binds
+twenty frozen assertions to clean committed 0.398: eight pass, ten mismatch and two runtime errors,
+with 2,024 stable input/artifact hashes and no harness failure. The original twenty were retained
+unchanged. Additional missing-cell and quote-diagnostic fixtures are separate adjuncts, not
+retroactive additions to that baseline. Native condition classes and call origins are not claimed.
+Composite recursive controls do not prove every output independently.
+
+- Production check: 3,581 unit tests pass, 96 opt-in tests skipped; types, lint, serial build,
+  browser audit and fixed bundle caps pass.
+- Conformance: 1,513 checked-in, 1,440 live GNU R and 426 recursive cases pass; 55 NativR-only live
+  exclusions; 175 bindings have causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.399.0.json): 12/12 pass;
+  required examples take 14.429 / 16.486 / 60.966 seconds on Chromium / Firefox / WebKit under the
+  unchanged 120-second timeout. Durations are advisory correctness-run observations.
+- Bundle sizes: client 18.1/150 KiB gzip; Worker 496.3/512 KiB gzip; parser 671.9/1,536 KiB raw;
+  elementary 311.2/384 KiB raw.
+- Inventory: 154 partial dimensions on 33 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus checkpoint, types, lint, formatting and generated checks pass.
+
+The [selected corpus checkpoint](../compatibility/package-check-evidence/corpus-0.399.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.399.0.json) refresh
+evaluate, withr, abind and numDeriv: four pinned archives and 49 observations, compared with 0.398.
+No selected package tier changed. Qualified distribution: 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. Metadata
+differences are recorded explicitly; they do not alone establish a causal runtime improvement. The
+other twenty development/regression entries and Formula remain unchanged; the full 24-package
+checkpoint remains 0.397. Original dependency closure and assisted-runner outcomes remain separate.
+
+Next measurable work: baseline independently verified expression-container missing-cell and
+empty-expression visibility cases against clean committed 0.399, then fix confirmed failures.
+Retained-source cell construction and propagation still need independent verification. General
+attributes replacement, broader function coercions, cell tags, malformed construction timing,
+parse-data and complete language equality/printing remain unfinished. Continue domain matrices,
+independently licensed datasets and isolated runner parity within the existing Linux, holdout,
+download and remote-action boundaries.

@@ -1,0 +1,1385 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-quoted-dots-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.399.0",
+  "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+  "sourceState": "Verified uncommitted candidate over sourceCommit; exact maintained files are identified by final digests.",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "locale": "C",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Bounded quoted dots projection, missing-cell quotation/evaluation and observed quote diagnostics. No complete dots, substitution or condition-metadata claim.",
+  "provenance": {
+    "cleanRoom": "Independently authored programs and black-box observations only; no GNU R or foreign package implementation bodies.",
+    "sourceHashes": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "f4fbe1cd6a49667f72c302ff3d4c78f742240060b22127f3a94e3796e7c324a9"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "902c463c6ab45ac8d73f33f0eaae24c7ac74dea39412427cba8af3affbf8aeff"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.399.0/abind.json",
+        "sha256": "1de1ade27636efe016a2bbcd479653b285f3ec9b027991292161fbce18855e24"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.399.0/evaluate.json",
+        "sha256": "3e1b93c7b3216f4b9745373f7dc09f3914491ad5c0a606a4443fbd18b59c8837"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.399.0/numDeriv.json",
+        "sha256": "7e3b4af5d93e042b20a25af807160a802b47b7175307dff0f70cfe147446f95e"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.399.0/withr.json",
+        "sha256": "14a1df47972ac83b90a29e565f21012cfababe4b6c8c930b5cf6380a9e192cc8"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.399.0.json",
+        "sha256": "0b655ba419514e5d5d0bfdbf7b844a9b877d338f2c7360b61298ed90c36b558e"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "d8b5352912d040b841280f7e11808fe176bee52483b2b8ce952d08201910bf59"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.399.0.json",
+        "sha256": "ece7ba80340ef7329ae286571be26524a2d6d0f9990ced89d9a1841c81e753c1"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.399.0.json",
+        "sha256": "ff32490dc20e0318bce37c98b0f4761b11d9d073612931ab86f1f1ac58afdc29"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "c72371f0b3e5c60e60ae21d9458c15a0b609ab510e80a2561d0aa3ae8873742f"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "91df8ecb131400509a02325a11acffd62fc01bfe38894ad7d8102b8a3edd1222"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "eb269022ab277b456208d82b3a0561b7c30331b0c8866d45548c2660300abd26"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "25cf3fca0c929f078010422ea62468f6766e797e405d2ec9ddb6e1789f2bfde3"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "3bed071863bf505df4c3457e70f829cdda3880fc8210756d319b81ccf9c47401"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "109f54219f61f76e0b497d0ad7ae1c84b8b4196964d9ca068c07b7e3a21b6a23"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "1929a5ec46c4b03e6c8595f701969bd8127eb92dfc31f26eb88089a07bf0ab69"
+      },
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "994856472cec8c531712eb4cd67edb584d8fdbc97f2a94739efc9390d1708674"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "41169a631a700f5c9d55873c2f22239e904fea4fd1341f47bc5c66655cb97835"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "04f895759b535e5056c7283bfa1669a4c812f69c5d0880688840500c3ca9f782"
+      },
+      {
+        "path": "packages/nativr/test/quoted-dots.test.ts",
+        "sha256": "a79abea00fdba5b6bf311a17dd861c055b91d71e854d1610a4528b957e06363e"
+      },
+      {
+        "path": "packages/nativr/test/quoted-missing.test.ts",
+        "sha256": "ee59d75032966c1ef853a6e8ee07c4315895b0d840991536f95baa3749c62619"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "e335b3fa66537807b541972dac5fcfda4b07d7c374a31a8ca0ef38cad6999014"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "afb65d47176483e5ce546e704c2b6d7e4a76b4daa78d87a5cd947989100befb2"
+      },
+      {
+        "path": "packages/runtime/src/language-subset.ts",
+        "sha256": "e5ad33a27cf9877a298e8063872180e45fca8003be3fbd959da2a0e64a9b97dc"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "5578bd22a7e876f534a3fe81bd7f3235bd7b606ce0b286eea15f9602d9ddac64"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "2b2e670f68e0736f38174388add4d95172f78a5a0f5dcd5face09077999d037d"
+      }
+    ],
+    "proofFiles": [
+      {
+        "path": ".tmp/quoted-dots-next/accepted.json",
+        "sha256": "bd4e1b5bd011db3516e8caa9e5659299a601790ac9aa9d6457f1c3ba83ae3363"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/acceptance-provenance.json",
+        "sha256": "447c75cc419659bcf958b9550c453f3a4750c228d20343661711c28246c0a646"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/native-assertions.json",
+        "sha256": "4469744971dafeb1226824ce4319603a565e9e1ebe893abeca5f0718b33d9509"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/input-provenance.json",
+        "sha256": "036b1ebf6ca76bf42e44fcfe6b053fb0d340acd45ceed1fdf5e38cdefeea563f"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/native-observations.json",
+        "sha256": "5fd88c53c3a34f6be4f7f4b36c6a914947cf6b04976100699494eb6569e71a83"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/runtime-baseline.json",
+        "sha256": "3f9686edca7dd8ade36e3dfa0e850a950284b8046e93c2cd77957962f36ac512"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/run-baseline.mjs",
+        "sha256": "bb6d42d89bbdb52b46d4f414e0bfec6a39917cb806835b39db920017abcca0f8"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/verify-source-tests.mjs",
+        "sha256": "322b4f2b10913d666d22984014c988628c4fb0340d9d105787fed157d3dcb092"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/evidence-next/native-validation.json",
+        "sha256": "b8848a58ecf32a6f50461af093f9b264d43b81119a7040175fa1bfa3f3e797df"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/evidence-next/provenance.json",
+        "sha256": "572b529df612b06061f8dc45470f3b6a63375e8ee4745f6ca47eaba0de5e1db5"
+      },
+      {
+        "path": ".tmp/quoted-dots-next/evidence-next/attempt-1-validation.json",
+        "sha256": "9c52fab27e8f8beb653e31416cb90c4681037d78b609cbeb4ae3fac3c0984b52"
+      }
+    ],
+    "metadataQualification": "Native evidence assembly used recorded 0.398 capability metadata. Historical eligibility inputs are separate from final 0.399 capability and gate evidence.",
+    "capabilities": {
+      "path": "docs/compatibility-manifest.json",
+      "sha256": "3bed071863bf505df4c3457e70f829cdda3880fc8210756d319b81ccf9c47401"
+    }
+  },
+  "baseline": {
+    "profile": "0.398.0",
+    "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+    "cleanBefore": true,
+    "cleanAfter": true,
+    "freshSessionPerCase": true,
+    "counts": { "total": 20, "pass": 8, "mismatch": 10, "error": 2 },
+    "stableInputs": true,
+    "inputCount": 2024,
+    "harnessFailures": [],
+    "qualification": "Twenty original assertions only. Sixteen later missing-cell/quote adjuncts and separate neighboring observations are not retroactive additions to this clean baseline."
+  },
+  "acceptance": {
+    "main": [
+      {
+        "id": "direct-quote",
+        "cohort": "quoted-dots",
+        "sourceSha256": "aec5a844f49e102a6a6f18f3ee58ae911aa9ef43cc822a5123f8a6c383048f0c"
+      },
+      {
+        "id": "call-double-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "b0740edf09cf433b4268ec106d0220435f35133333873fe9d223b682d0bc8ce3"
+      },
+      {
+        "id": "call-list-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "44b4c9784c02b4d591ac20b645da4c48582906ba5a86963ca2da011f602ce8f5"
+      },
+      {
+        "id": "nested-call-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "fccbcdc7ed444b9ccd59880027322d326ea33529fdbd8b639636757f7b862d50"
+      },
+      {
+        "id": "call-single-subset-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "5f6c29e47da56d0e1c8b65aa4b4d2ad9b49d5a15f5d39e38f8048ed2c970a6f7"
+      },
+      {
+        "id": "expression-double-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "f5065eb6532710a1261c753e1ddd723bfb45943d3f94f5fb66349d4ab1c4f062"
+      },
+      {
+        "id": "expression-list-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "f917e8684340e60f7d884fa48422f1707e954d0b1692d5b4c0ca0d1c8d54fe94"
+      },
+      {
+        "id": "expression-single-subset-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "563f7d8431c7f4db60b2b339999a5338972aeacd5b9133ddb61c1b13ca3e5003"
+      },
+      {
+        "id": "call-list-expression-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "31feea187c415c9e346b502d9c935d33f3998d98d955191d9a3480a41c1226cb"
+      },
+      {
+        "id": "symbol-expression-extraction",
+        "cohort": "quoted-dots",
+        "sourceSha256": "55a28fead9a72067a6d04a1437086128a90c91119f965652c943466f2f512ff5"
+      },
+      {
+        "id": "call-roundtrip",
+        "cohort": "quoted-dots",
+        "sourceSha256": "2cfa255e338a6ee33112b20c2ff45675af06e7c7dc6bd1dc3e6197a7ecd94f27"
+      },
+      {
+        "id": "replacement-evaluation",
+        "cohort": "quoted-dots",
+        "sourceSha256": "8fb22aa8fecf917ec745d6387cd52420ba43ad93504ec1d71e3c0835d22466a4"
+      },
+      {
+        "id": "substitute-empty-list",
+        "cohort": "quoted-dots",
+        "sourceSha256": "bddb33b7a4c13c6ace998aeb7ddac041f3cee49b9318cc06d891ed96c806ec63"
+      },
+      {
+        "id": "substitute-direct",
+        "cohort": "quoted-dots",
+        "sourceSha256": "bc9be849c3d3f61d5b07c139b1a9de4b4f2a50f30d6dbe8445b0cc2b4dc81825"
+      },
+      {
+        "id": "missing-versus-dots",
+        "cohort": "quoted-dots",
+        "sourceSha256": "bc71d239fc7fac87eac9c339a9de4d91b7f479f14a097f5725b95a639797c721"
+      },
+      {
+        "id": "dots-versus-dotdot-one",
+        "cohort": "quoted-dots",
+        "sourceSha256": "5b4fa19e539f76ca92c4a0aaf2772967e0a0c5b335c91f26078c3869df40c94e"
+      },
+      {
+        "id": "missing-evaluation-diagnostic",
+        "cohort": "diagnostic",
+        "sourceSha256": "8119cad1acaa32bc88e9bea3417212d60fbcc43c6f9cd6caa1a5f4529c01bc03"
+      },
+      {
+        "id": "dots-evaluation-diagnostic",
+        "cohort": "diagnostic",
+        "sourceSha256": "2d59975a62b74e4387dcb2b5844bec8c1549e49418cac58bedb7243f3d2b0cb9"
+      },
+      {
+        "id": "quoted-dots-leaves-actual-lazy",
+        "cohort": "quoted-dots",
+        "sourceSha256": "389c64a3ed381205a4bb29086c3ac7d28c796e1e8c4da6781c005e472386cd5f"
+      },
+      {
+        "id": "expression-identity-roundtrip",
+        "cohort": "quoted-dots",
+        "sourceSha256": "fe2b2b043c3f9123ded19590c58760c42371afa7b7ee34ce8992f3d7aef062c4"
+      }
+    ],
+    "sourceTest": {
+      "cases": 20,
+      "cohorts": { "quotedValue": 18, "diagnosticMessage": 2 },
+      "exactFrozenStrings": true,
+      "strictTrueAndEmptyEffects": true,
+      "caseHashes": [
+        {
+          "id": "direct-quote",
+          "cohort": "quoted-dots",
+          "codeSha256": "aec5a844f49e102a6a6f18f3ee58ae911aa9ef43cc822a5123f8a6c383048f0c"
+        },
+        {
+          "id": "call-double-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "b0740edf09cf433b4268ec106d0220435f35133333873fe9d223b682d0bc8ce3"
+        },
+        {
+          "id": "call-list-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "44b4c9784c02b4d591ac20b645da4c48582906ba5a86963ca2da011f602ce8f5"
+        },
+        {
+          "id": "nested-call-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "fccbcdc7ed444b9ccd59880027322d326ea33529fdbd8b639636757f7b862d50"
+        },
+        {
+          "id": "call-single-subset-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "5f6c29e47da56d0e1c8b65aa4b4d2ad9b49d5a15f5d39e38f8048ed2c970a6f7"
+        },
+        {
+          "id": "expression-double-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "f5065eb6532710a1261c753e1ddd723bfb45943d3f94f5fb66349d4ab1c4f062"
+        },
+        {
+          "id": "expression-list-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "f917e8684340e60f7d884fa48422f1707e954d0b1692d5b4c0ca0d1c8d54fe94"
+        },
+        {
+          "id": "expression-single-subset-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "563f7d8431c7f4db60b2b339999a5338972aeacd5b9133ddb61c1b13ca3e5003"
+        },
+        {
+          "id": "call-list-expression-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "31feea187c415c9e346b502d9c935d33f3998d98d955191d9a3480a41c1226cb"
+        },
+        {
+          "id": "symbol-expression-extraction",
+          "cohort": "quoted-dots",
+          "codeSha256": "55a28fead9a72067a6d04a1437086128a90c91119f965652c943466f2f512ff5"
+        },
+        {
+          "id": "call-roundtrip",
+          "cohort": "quoted-dots",
+          "codeSha256": "2cfa255e338a6ee33112b20c2ff45675af06e7c7dc6bd1dc3e6197a7ecd94f27"
+        },
+        {
+          "id": "replacement-evaluation",
+          "cohort": "quoted-dots",
+          "codeSha256": "8fb22aa8fecf917ec745d6387cd52420ba43ad93504ec1d71e3c0835d22466a4"
+        },
+        {
+          "id": "substitute-empty-list",
+          "cohort": "quoted-dots",
+          "codeSha256": "bddb33b7a4c13c6ace998aeb7ddac041f3cee49b9318cc06d891ed96c806ec63"
+        },
+        {
+          "id": "substitute-direct",
+          "cohort": "quoted-dots",
+          "codeSha256": "bc9be849c3d3f61d5b07c139b1a9de4b4f2a50f30d6dbe8445b0cc2b4dc81825"
+        },
+        {
+          "id": "missing-versus-dots",
+          "cohort": "quoted-dots",
+          "codeSha256": "bc71d239fc7fac87eac9c339a9de4d91b7f479f14a097f5725b95a639797c721"
+        },
+        {
+          "id": "dots-versus-dotdot-one",
+          "cohort": "quoted-dots",
+          "codeSha256": "5b4fa19e539f76ca92c4a0aaf2772967e0a0c5b335c91f26078c3869df40c94e"
+        },
+        {
+          "id": "missing-evaluation-diagnostic",
+          "cohort": "diagnostic",
+          "codeSha256": "8119cad1acaa32bc88e9bea3417212d60fbcc43c6f9cd6caa1a5f4529c01bc03"
+        },
+        {
+          "id": "dots-evaluation-diagnostic",
+          "cohort": "diagnostic",
+          "codeSha256": "2d59975a62b74e4387dcb2b5844bec8c1549e49418cac58bedb7243f3d2b0cb9"
+        },
+        {
+          "id": "quoted-dots-leaves-actual-lazy",
+          "cohort": "quoted-dots",
+          "codeSha256": "389c64a3ed381205a4bb29086c3ac7d28c796e1e8c4da6781c005e472386cd5f"
+        },
+        {
+          "id": "expression-identity-roundtrip",
+          "cohort": "quoted-dots",
+          "codeSha256": "fe2b2b043c3f9123ded19590c58760c42371afa7b7ee34ce8992f3d7aef062c4"
+        }
+      ],
+      "resourceGuards": [],
+      "conditionClassesCredited": false
+    },
+    "workerTest": [
+      {
+        "id": "expression-identity-roundtrip",
+        "profileSite": "required-152",
+        "codeSha256": "fe2b2b043c3f9123ded19590c58760c42371afa7b7ee34ce8992f3d7aef062c4",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "missing-versus-dots",
+        "profileSite": "required-153",
+        "codeSha256": "bc71d239fc7fac87eac9c339a9de4d91b7f479f14a097f5725b95a639797c721",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "replacement-evaluation",
+        "profileSite": "required-154",
+        "codeSha256": "8fb22aa8fecf917ec745d6387cd52420ba43ad93504ec1d71e3c0835d22466a4",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "foundationAndRecursive": [
+      {
+        "suite": "foundation",
+        "id": "quoted-dots-call-projection",
+        "sourceSha256": "70820cb0c262fdd3b71ea5544d4d6bc082af8a7005efad6395e1b5a09064a773"
+      },
+      {
+        "suite": "foundation",
+        "id": "quoted-dots-expression-projection",
+        "sourceSha256": "0ac15341766b393077af8e6991fb86edbedf36aa5652eaed7004a9d3d4ea10de"
+      },
+      {
+        "suite": "foundation",
+        "id": "quoted-dots-construction-and-laziness",
+        "sourceSha256": "7f6e0757c3043af21c7a857e7ce348982dac65754290fd5c563041776775fb9b"
+      },
+      {
+        "suite": "foundation",
+        "id": "quoted-dots-substitution-and-symbol-distinctions",
+        "sourceSha256": "1765234a5d4744495aa0ab678c38fdb459b2497306cea1c483fb8e266a7f5daa"
+      },
+      {
+        "suite": "foundation",
+        "id": "quoted-dots-evaluation-diagnostics",
+        "sourceSha256": "e4fa7b1d4181a095640dddc25175582b75cee837af3edf5d544a240ead784a08"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "quoted-dots-call-projection-graph",
+        "sourceSha256": "52a769f0708a6f27b594e93f820b9cf9bedb5d55d09ef0bf00003de8476c42ba"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "quoted-dots-expression-projection-graph",
+        "sourceSha256": "7270c78af08772b45c6dd5dcd8129d798af5e352b2c016210d5874161e84bedb"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "quoted-dots-construction-and-laziness-graph",
+        "sourceSha256": "b6ee0df8d9e25907f1b26409e52d989f7368f73924e4b01a61adf695f498b898"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "quoted-dots-substitution-and-symbol-distinctions-graph",
+        "sourceSha256": "4367e48c12666ad5c11929504c721e886ec45fb9254bc25a177228388a1923a7"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "quoted-dots-evaluation-diagnostics-graph",
+        "sourceSha256": "3035c67b0b9a66a1f4305260dd593b3054fc5b5d0ee79135df8d5757512957a6"
+      },
+      {
+        "suite": "foundation",
+        "id": "quote-missing-adjunct-values",
+        "sourceSha256": "4c6adac9669f14247c24c382a205cb7e54dd62d468712600e7d1c32df6c3401f"
+      },
+      {
+        "suite": "foundation",
+        "id": "quote-missing-adjunct-diagnostics",
+        "sourceSha256": "93561eae27f6579c87b9d9fc7509fa76089d806b29b8dcb1c117df5ae06abd14"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "quote-missing-adjunct-graph",
+        "sourceSha256": "f633b2d14cf45ed9e97270990ecc8717daac061dfa95c8f954fffa38c7f9e30d"
+      }
+    ],
+    "nativeCounts": {
+      "foundationGroupsPassed": 5,
+      "foundationAssertionsPassed": 20,
+      "valueAssertionsPassed": 18,
+      "diagnosticAssertionsPassed": 2,
+      "recursiveGroupsPassed": 5,
+      "strictControlsPassed": 14
+    },
+    "causal": [
+      {
+        "binding": "base::as.list",
+        "id": "quoted-dots-call-projection-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "ae2433cde48a1178525bf856bc98be39fc8c3909da50248006c0d74baf131ceb",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "77690492cd6d37296b63c38c03f0dcbfdfcc1cd4feb57ada718b19718f05b04b",
+          "nodeCount": 17,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::as.list",
+        "id": "quoted-dots-expression-projection-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "07fbf7a2c3bc9d9965558a8c83199b6a8d1621f2f81bf42ec6ccd7cda7392057",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "506f38d721c60b87a545749335d074f26060a9497a8b407d58713daaf0db0232",
+          "nodeCount": 14,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::as.expression",
+        "id": "quoted-dots-expression-projection-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "6f3848fa809bbde097a0e6edd0fb5f5fef44e321f5bb131f0759a82620ca01ae",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "39562f6140f0c748ef4693570771aa452cc63b0d2686dcaec97b5142a2323d33",
+          "nodeCount": 12,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::identical",
+        "id": "quoted-dots-expression-projection-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "95e0c2ea7cab3991b3380d022ab9cc981812c80a05a8e96e7777e0614997add5",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "4eee5a6ee231cc3ca265074c04a6a7a5d695912fa2099997ab353644e581c810",
+          "nodeCount": 15,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::as.call",
+        "id": "quoted-dots-construction-and-laziness-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "a09b088af2c4605c0fcda4b12b3b85d63fded443afb2810877a1e0a68e9fc593",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "f375a58edd89e8a070c90e56b7c75946e488bd903dabfbb0b081d90d0b587345",
+          "nodeCount": 17,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::eval",
+        "id": "quoted-dots-construction-and-laziness-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "28750e7f2f29c94749625c4c885638f819fca0ba8547a9c3e966a7fea7c81d65",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "b80c4666e78177e48f00eabaef7807155eb7731696111bae2293e594a82e1814",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "binding": "base::substitute",
+        "id": "quoted-dots-substitution-and-symbol-distinctions-graph",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "76631add874637e3c9e4f4e4f2af568c1632950dc8a2f03b6b778a30407c6c75",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "6d140e673642128612da5a560b6f20f07eeafd441db27e7272ec2f5e0da5192d",
+          "nodeCount": 21,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      }
+    ],
+    "causalQualification": "Main evidence has seven composite associations across six bindings and fourteen strict controls; these do not establish independent causality for every assertion or output field.",
+    "adjunct": {
+      "counts": { "assertions": 16, "valueAssertions": 7, "diagnosticAssertions": 9 },
+      "accepted": [
+        {
+          "id": "explicit-missing",
+          "cohort": "value",
+          "sourceSha256": "ebf1e610b90803915b43a6fba725624e5096bc7e2ab506649c0df2fbbe67ddd9"
+        },
+        {
+          "id": "absent-argument",
+          "cohort": "diagnostic",
+          "sourceSha256": "f4d422a6f7d795a2f821665bb007ee4db0607f164d5a97fe8581cf7c4963cfa2"
+        },
+        {
+          "id": "two-missing-arguments",
+          "cohort": "diagnostic",
+          "sourceSha256": "02820a1a5c3f816fb7c3859e3f4f0afb62c2b9842a8d987cb35b390e6524fec9"
+        },
+        {
+          "id": "extra-named-argument",
+          "cohort": "diagnostic",
+          "sourceSha256": "ff651610d762e341d6ebe032a9a93e903f0210b3705aace70f5dbb6377bfecd7"
+        },
+        {
+          "id": "named-present",
+          "cohort": "value",
+          "sourceSha256": "ebc613bed4777895b110e8b2c9cac51b7e284113bb19e32c299e6de458cefbfc"
+        },
+        {
+          "id": "partial-named-present",
+          "cohort": "value",
+          "sourceSha256": "7a772ca0a4555125aa4ab7b707acba6b6c8af70f3206899c3651e4b235303968"
+        },
+        {
+          "id": "other-named-present",
+          "cohort": "diagnostic",
+          "sourceSha256": "26ca3c5c2119bd83ef2e25e4c9dbcae191f96e1d25936a0d10ada5b4fab2ff6a"
+        },
+        {
+          "id": "named-lazy-expression",
+          "cohort": "value",
+          "sourceSha256": "a36020f47c60e711a860847d173771d96e44e64d7c27b073b65ea13b821b4ab1"
+        },
+        {
+          "id": "positional-lazy-expression",
+          "cohort": "value",
+          "sourceSha256": "d8a09f60c990f9399c5e74903b8a81da5184cc23d17fe8cb7be9e3444bf07266"
+        },
+        {
+          "id": "explicit-null",
+          "cohort": "value",
+          "sourceSha256": "5f7af046501fd2e07e020b519f004ad1fc7f52ccd8d62356d70c4c755c4329e4"
+        },
+        {
+          "id": "forwarded-missing-syntax",
+          "cohort": "value",
+          "sourceSha256": "9edab7641509ada5ae35254cf9cc671fb8f0fd2702828ed06cace20e0c10001c"
+        },
+        {
+          "id": "other-named-missing",
+          "cohort": "diagnostic",
+          "sourceSha256": "5b52d89e68d76d1944286c926ad61008b3d6690d085c74afd6ca85c494beab9e"
+        },
+        {
+          "id": "eval-explicit-missing",
+          "cohort": "diagnostic",
+          "sourceSha256": "d20f74e350ccd6dd503db924a6c0e82b66b36b3960f9f14ec1a34e23dfdb1576"
+        },
+        {
+          "id": "eval-list-missing",
+          "cohort": "diagnostic",
+          "sourceSha256": "e6585531952955aaf0713b9a4829999add0e566aafd02668435f4d8b8671b137"
+        },
+        {
+          "id": "force-named-missing",
+          "cohort": "diagnostic",
+          "sourceSha256": "218783628e97b4d9f3eeecd27e789c61c2f6c82a6923a076a8deda76c77cdf4f"
+        },
+        {
+          "id": "eval-direct-dots",
+          "cohort": "diagnostic",
+          "sourceSha256": "2fd20b576bea3cac224c42e7223aef72c8ee7bbf7e8a80bb3e100b511d1e0767"
+        }
+      ],
+      "sourceTest": {
+        "cases": 16,
+        "cohorts": { "value": 7, "diagnosticMessage": 9 },
+        "exactFrozenStrings": true,
+        "strictTrueAndEmptyEffects": true,
+        "caseHashes": [
+          {
+            "id": "explicit-missing",
+            "cohort": "value",
+            "codeSha256": "ebf1e610b90803915b43a6fba725624e5096bc7e2ab506649c0df2fbbe67ddd9"
+          },
+          {
+            "id": "absent-argument",
+            "cohort": "diagnostic",
+            "codeSha256": "f4d422a6f7d795a2f821665bb007ee4db0607f164d5a97fe8581cf7c4963cfa2"
+          },
+          {
+            "id": "two-missing-arguments",
+            "cohort": "diagnostic",
+            "codeSha256": "02820a1a5c3f816fb7c3859e3f4f0afb62c2b9842a8d987cb35b390e6524fec9"
+          },
+          {
+            "id": "extra-named-argument",
+            "cohort": "diagnostic",
+            "codeSha256": "ff651610d762e341d6ebe032a9a93e903f0210b3705aace70f5dbb6377bfecd7"
+          },
+          {
+            "id": "named-present",
+            "cohort": "value",
+            "codeSha256": "ebc613bed4777895b110e8b2c9cac51b7e284113bb19e32c299e6de458cefbfc"
+          },
+          {
+            "id": "partial-named-present",
+            "cohort": "value",
+            "codeSha256": "7a772ca0a4555125aa4ab7b707acba6b6c8af70f3206899c3651e4b235303968"
+          },
+          {
+            "id": "other-named-present",
+            "cohort": "diagnostic",
+            "codeSha256": "26ca3c5c2119bd83ef2e25e4c9dbcae191f96e1d25936a0d10ada5b4fab2ff6a"
+          },
+          {
+            "id": "named-lazy-expression",
+            "cohort": "value",
+            "codeSha256": "a36020f47c60e711a860847d173771d96e44e64d7c27b073b65ea13b821b4ab1"
+          },
+          {
+            "id": "positional-lazy-expression",
+            "cohort": "value",
+            "codeSha256": "d8a09f60c990f9399c5e74903b8a81da5184cc23d17fe8cb7be9e3444bf07266"
+          },
+          {
+            "id": "explicit-null",
+            "cohort": "value",
+            "codeSha256": "5f7af046501fd2e07e020b519f004ad1fc7f52ccd8d62356d70c4c755c4329e4"
+          },
+          {
+            "id": "forwarded-missing-syntax",
+            "cohort": "value",
+            "codeSha256": "9edab7641509ada5ae35254cf9cc671fb8f0fd2702828ed06cace20e0c10001c"
+          },
+          {
+            "id": "other-named-missing",
+            "cohort": "diagnostic",
+            "codeSha256": "5b52d89e68d76d1944286c926ad61008b3d6690d085c74afd6ca85c494beab9e"
+          },
+          {
+            "id": "eval-explicit-missing",
+            "cohort": "diagnostic",
+            "codeSha256": "d20f74e350ccd6dd503db924a6c0e82b66b36b3960f9f14ec1a34e23dfdb1576"
+          },
+          {
+            "id": "eval-list-missing",
+            "cohort": "diagnostic",
+            "codeSha256": "e6585531952955aaf0713b9a4829999add0e566aafd02668435f4d8b8671b137"
+          },
+          {
+            "id": "force-named-missing",
+            "cohort": "diagnostic",
+            "codeSha256": "218783628e97b4d9f3eeecd27e789c61c2f6c82a6923a076a8deda76c77cdf4f"
+          },
+          {
+            "id": "eval-direct-dots",
+            "cohort": "diagnostic",
+            "codeSha256": "2fd20b576bea3cac224c42e7223aef72c8ee7bbf7e8a80bb3e100b511d1e0767"
+          }
+        ],
+        "resourceGuards": [],
+        "conditionClassesCredited": false
+      },
+      "cases": [
+        {
+          "suite": "foundation",
+          "id": "quote-missing-adjunct-values",
+          "sourceSha256": "4c6adac9669f14247c24c382a205cb7e54dd62d468712600e7d1c32df6c3401f"
+        },
+        {
+          "suite": "foundation",
+          "id": "quote-missing-adjunct-diagnostics",
+          "sourceSha256": "93561eae27f6579c87b9d9fc7509fa76089d806b29b8dcb1c117df5ae06abd14"
+        },
+        {
+          "suite": "oracle-v2",
+          "id": "quote-missing-adjunct-graph",
+          "sourceSha256": "f633b2d14cf45ed9e97270990ecc8717daac061dfa95c8f954fffa38c7f9e30d"
+        }
+      ],
+      "proofFiles": [
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/foundation.json",
+          "sha256": "1ce733b4ac89b925862c9f39bc3d808d747c4117a174237332c98d1a479e3ee8"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/oracle-v2.json",
+          "sha256": "3fc1940186e1633922894fc49e6e7f80ae362201028456b701a4705627837f25"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/native-checks.json",
+          "sha256": "4bc6dd0d00ca0333e1930bf14798a9e468fa084e6000e82267d5a777d26668b3"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/evidence-provenance.json",
+          "sha256": "b384f6e54512c36896069a9b4f2555a3e577a67359f7b73a52b893f7a2e00851"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/prepare-evidence.mjs",
+          "sha256": "d5586d81870dabb943263d1baf188c07a296916a22bf5485c56f08875be617bc"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/validate-evidence.mjs",
+          "sha256": "10948c23ccae8b0274a5985d3b9be06e8d8c6cc1e16d2b8aad968f2817761448"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/inputs.json",
+          "sha256": "cd1beeb20ebfb079d3bea842b4e429dc5235a9a5611d4304649803d5533a8004"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/native-observations.json",
+          "sha256": "9ebfef640f826f5a68ca95a1a355466e2eec37e34f8b87d45dd03e816d0635b6"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/accepted.json",
+          "sha256": "ca5ea5660a9292293c07cfde36610e724a475b99976f5324029842d18e526a2e"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/native-assertions.json",
+          "sha256": "03fc4d89b5b841930136620fe9c2d89c3d85fc7447bb89857539b0f123d8f9a8"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/acceptance-provenance.json",
+          "sha256": "4a8b25a8f3cc7bfcbba8f066569577d2afbf6d46d0c1dc95986b71373ca11186"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/native-evidence-validation.json",
+          "sha256": "4408bac6999de5b7b8534d549499b0285122333f8f5d536441bcccd730e5ea42"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/input-provenance.json",
+          "sha256": "5cea40392e523007353d6d1e18513d0a486aa28d4a93b47e3ff320e38c26f5e3"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/run-native.mjs",
+          "sha256": "f1804ff8850a3973a8b764d1f1455ceebd255065024359882a0a8acf1c926c87"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/r-oracle-v2-outer-no-source.R",
+          "sha256": "b8db6b325d3c453c288ba8636a1c6e7706494fc1a0156acac1a87f4fbbd0419f"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/missing-quote-adjunct/prepare-assertions.mjs",
+          "sha256": "bfe880511b0828a0769041efea8dc6252908e12648f64fa348224b6530ffb07e"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/verify-missing-source-tests.mjs",
+          "sha256": "e34c46d5fe26fd4ff2e5344ae136192334d70b127ec9f4222d7ecb415b44c934"
+        },
+        {
+          "path": ".tmp/quoted-dots-next/audit-missing-evidence.mjs",
+          "sha256": "90fa481641021e571a15d64161ab9ac5abeae23c3ad246f2e8ce372dbf03b60e"
+        }
+      ],
+      "nativeCounts": {
+        "foundationGroupsPassed": 2,
+        "foundationAssertionsPassed": 16,
+        "recursiveGroupsPassed": 1,
+        "strictControlsPassed": 2
+      },
+      "causal": [
+        {
+          "id": "quote-missing-adjunct-graph",
+          "binding": "base::quote",
+          "error": {
+            "passed": true,
+            "outcome": "error",
+            "visible": false,
+            "nodeCount": 0,
+            "conditions": 1,
+            "observationSha256": "334e44c7df4b21f3c17caaaa3f975cc873d256599f2418004ce18d03b2f76c81",
+            "streamsEmpty": true
+          },
+          "value": {
+            "passed": true,
+            "outcome": "value",
+            "visible": true,
+            "nodeCount": 1,
+            "conditions": 0,
+            "observationSha256": "454771e6bb8d860731abf173cca03be1a1d88b8e8228eb2752d48f6bc88cfc19",
+            "streamsEmpty": true
+          }
+        }
+      ],
+      "qualification": "Separate native-verified quote/missing cohort; not added to the original twenty-case baseline. One composite quote association and two strict controls do not prove each field independently. Exact diagnostic messages only; no condition class/call/origin or complete dots claim. Historical capability hashes remain distinct from final profile gates."
+    },
+    "preservedInitialNativeAttempt": {
+      "path": ".tmp/quoted-dots-next/evidence-next/attempt-1-validation.json",
+      "sha256": "9c52fab27e8f8beb653e31416cb90c4681037d78b609cbeb4ae3fac3c0984b52",
+      "qualification": "The initial independently authored expected missing-cell constructor expanded dots and failed in GNU R. Its successful actual program and all twenty frozen assertions were unchanged; a corrected explicit expected constructor was independently verified before promotion."
+    }
+  },
+  "verification": {
+    "focused": {
+      "passed": 57,
+      "skipped": 0,
+      "logSha256": "9448b3644696e5a3eed94398098ad46e5b476b99b96623cf7b622a2061186ece"
+    },
+    "gates": [
+      {
+        "logSha256": "41732722a9184b8c38cdac57e5be61641367d730b1872f7bd878c812d2c170f5",
+        "gate": "check",
+        "exitCode": 0,
+        "schemaVersion": 1,
+        "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+        "arguments": ["check"],
+        "kind": "owned-local-gate-exit",
+        "log": ".tmp/profile-0399-check.log",
+        "executable": "pnpm",
+        "startedAt": "2026-10-23T01:25:39.6095617Z",
+        "finishedAt": "2026-10-23T01:27:48.3081205Z",
+        "receiptSha256": "194efd801645359d74c0819f5e9b650d399c2574c57ebb52d9deb6db78371cb5"
+      },
+      {
+        "finishedAt": "2026-10-23T01:28:01.3773594Z",
+        "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+        "logSha256": "12e23646eed8d298470a4eaa2e7a061e1ce9474c82fb4081e6a0208c7d9529dc",
+        "startedAt": "2026-10-23T01:27:57.4324079Z",
+        "exitCode": 0,
+        "gate": "foundation",
+        "arguments": ["conformance"],
+        "executable": "pnpm",
+        "schemaVersion": 1,
+        "kind": "owned-local-gate-exit",
+        "log": ".tmp/profile-0399-foundation.log",
+        "receiptSha256": "8638035ff128fcd62ccf99dfc43eb781ed23954435eaba43288875ac696d0cb9"
+      },
+      {
+        "kind": "owned-local-gate-exit",
+        "gate": "native",
+        "schemaVersion": 1,
+        "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+        "logSha256": "abc10a626bf3392ef5ee800b8ad85405a6705b0ab7cd4172fc20b5e8d67db321",
+        "exitCode": 0,
+        "finishedAt": "2026-10-23T01:38:06.0992352Z",
+        "executable": "pnpm",
+        "log": ".tmp/profile-0399-native.log",
+        "startedAt": "2026-10-23T01:34:15.0427980Z",
+        "arguments": ["conformance:r"],
+        "receiptSha256": "8a4a0449300a9e0effe8c6c43804c3e6b04f1bd0f51574d1f1a2b6eaf7b0957d"
+      },
+      {
+        "finishedAt": "2026-10-23T01:34:37.5482007Z",
+        "gate": "v2",
+        "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+        "exitCode": 0,
+        "log": ".tmp/profile-0399-v2.log",
+        "executable": "pnpm",
+        "schemaVersion": 1,
+        "startedAt": "2026-10-23T01:27:57.4297688Z",
+        "logSha256": "03bebb2dc1bf4098f78085e136eb86c5083a6d31575a40ccfb06b49d83b9b125",
+        "arguments": ["conformance:r:v2"],
+        "kind": "owned-local-gate-exit",
+        "receiptSha256": "53cd4179409100490e791b5871bddb5bf609eb62808e8d9baccd4a300bddfc05"
+      },
+      {
+        "startedAt": "2026-10-23T01:32:47.9203897Z",
+        "gate": "e2e",
+        "finishedAt": "2026-10-23T01:34:36.2238806Z",
+        "logSha256": "eb187279599c02d6208a491d0112cfae24288a6ea3e3cc01f31d12e373d20290",
+        "exitCode": 0,
+        "executable": "pnpm",
+        "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+        "kind": "owned-local-gate-exit",
+        "schemaVersion": 1,
+        "log": ".tmp/profile-0399-e2e.log",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "receiptSha256": "e562f89bea2b7213efd9a0fd558ffc31362c7c669d442d95d2917429d49add38"
+      },
+      {
+        "arguments": [".tmp/run-corpus-0399.mjs", "--run"],
+        "log": ".tmp/profile-0399-corpus.log",
+        "sourceCommit": "203fbd0a61a8018abafe1c619faf6992375070bc",
+        "schemaVersion": 1,
+        "finishedAt": "2026-10-23T01:31:01.5561087Z",
+        "gate": "corpus",
+        "exitCode": 0,
+        "logSha256": "9e97c4b9619667cf6c58b4cf4385f65498000e1f7d1e1686d2a17f5b3386c921",
+        "kind": "owned-local-gate-exit",
+        "startedAt": "2026-10-23T01:29:25.9413118Z",
+        "executable": "node",
+        "receiptSha256": "a70479ae3a2cea7272ecc7cb5c921b63f8f7dd6ecaeb2eb9844d13f173265e95"
+      }
+    ],
+    "unit": { "passed": 3581, "skipped": 96 },
+    "conformance": {
+      "foundation": 1513,
+      "native": 1440,
+      "nativeSkipped": 55,
+      "recursive": 426,
+      "linkedBindings": 175
+    },
+    "bundles": [
+      { "label": "statically loaded public client", "kib": 18.1, "limit": 150, "encoding": "gzip" },
+      { "label": "Worker JavaScript", "kib": 496.3, "limit": 512, "encoding": "gzip" },
+      { "label": "combined parser Wasm", "kib": 671.9, "limit": 1536, "encoding": "raw" },
+      { "label": "elementary-function Wasm", "kib": 311.2, "limit": 384, "encoding": "raw" }
+    ],
+    "postCorpus": {
+      "schemaVersion": 1,
+      "ok": true,
+      "kind": "owned-post-corpus-verification",
+      "gates": [
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:15.9267622Z",
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "log": ".tmp/profile-0399-post-checkpoint-tests.log",
+          "name": "checkpoint-tests",
+          "logSha256": "c2b71e30373a59d5f37a46682cf2009c7c63e897d8312b139372d46500614a53",
+          "finishedAt": "2026-10-23T01:38:17.1455502Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:17.1623357Z",
+          "arguments": ["typecheck:all"],
+          "log": ".tmp/profile-0399-post-all-types.log",
+          "name": "all-types",
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b",
+          "finishedAt": "2026-10-23T01:38:21.9906435Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:21.9933978Z",
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "log": ".tmp/profile-0399-post-checkpoint-lint.log",
+          "name": "checkpoint-lint",
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "finishedAt": "2026-10-23T01:38:26.1343251Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:26.1362628Z",
+          "arguments": ["format:check"],
+          "log": ".tmp/profile-0399-post-format.log",
+          "name": "format",
+          "logSha256": "ab6d33ccb2b34eb2a605d458a4848aa0cc261eb6de28314eb32711535ccfd980",
+          "finishedAt": "2026-10-23T01:38:36.9319317Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:36.9390567Z",
+          "arguments": ["capabilities:check"],
+          "log": ".tmp/profile-0399-post-capabilities.log",
+          "name": "capabilities",
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502",
+          "finishedAt": "2026-10-23T01:38:37.5178010Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:37.5260080Z",
+          "arguments": ["compatibility:check"],
+          "log": ".tmp/profile-0399-post-coverage.log",
+          "name": "coverage",
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668",
+          "finishedAt": "2026-10-23T01:38:38.0973761Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:38.1128198Z",
+          "arguments": ["inventory:check"],
+          "log": ".tmp/profile-0399-post-inventory.log",
+          "name": "inventory",
+          "logSha256": "fd17ac19b38b6e4eb283cc08be1e14099e6b49feaee3f71a8f52bfaaad295aaf",
+          "finishedAt": "2026-10-23T01:38:38.9119105Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:38.9208368Z",
+          "arguments": ["status:check"],
+          "log": ".tmp/profile-0399-post-status.log",
+          "name": "status",
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55",
+          "finishedAt": "2026-10-23T01:38:39.8165898Z",
+          "exitCode": 0
+        },
+        {
+          "command": "pnpm",
+          "startedAt": "2026-10-23T01:38:39.8243596Z",
+          "arguments": ["corpus:check"],
+          "log": ".tmp/profile-0399-post-corpus.log",
+          "name": "corpus",
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc",
+          "finishedAt": "2026-10-23T01:38:40.4120892Z",
+          "exitCode": 0
+        }
+      ]
+    },
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.399.0.json",
+      "sha256": "ece7ba80340ef7329ae286571be26524a2d6d0f9990ced89d9a1841c81e753c1"
+    },
+    "corpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.399.0.json",
+      "sha256": "ff32490dc20e0318bce37c98b0f4761b11d9d073612931ab86f1f1ac58afdc29",
+      "packages": 4,
+      "observations": 49,
+      "changes": [
+        {
+          "package": "withr",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/defer.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 21,
+          "changed": ["observations", "comparisons"]
+        },
+        {
+          "package": "evaluate",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/evaluate.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 7,
+          "changed": []
+        },
+        {
+          "package": "numDeriv",
+          "tier": "P6",
+          "previousTier": "P6",
+          "firstBlocker": {
+            "tier": "P7",
+            "code": "observation-mismatch",
+            "path": "tests/hessian01.R",
+            "message": "The first package-check blocker is test-output; see the redacted checkpoint for stage outcomes and repeatability."
+          },
+          "observations": 11,
+          "changed": []
+        },
+        {
+          "package": "abind",
+          "tier": "P7",
+          "previousTier": "P7",
+          "firstBlocker": null,
+          "observations": 10,
+          "changed": []
+        }
+      ]
+    },
+    "earlierCorpusAttempt": {
+      "receiptPath": ".tmp/profile-0399-corpus-attempt-1-exit.json",
+      "receiptSha256": "7cc91c79c928731abd81f6a6e621b10d1697a288d40716e628e78ba7f1a858e0",
+      "logPath": ".tmp/profile-0399-corpus-attempt-1.log",
+      "logSha256": "99f3c0932ec52987f5dfaac161ed0926d3d5396cfad7a8533673229251c1c8f0",
+      "indexPath": ".tmp/profile-0399-packages-attempt-1/index.json",
+      "indexSha256": "bd618338f2061e8afc15354471e5a0dc4e7838f0cbae1fb225e23ed5210e4baf",
+      "counts": {
+        "expectedPackages": 4,
+        "validatedPackages": 0,
+        "expectedObservations": 49,
+        "observations": 0,
+        "p7Eligible": 0
+      },
+      "processes": [
+        {
+          "package": "abind",
+          "path": ".tmp/profile-0399-packages-attempt-1/process/abind.json",
+          "sha256": "4d080fee3b299b2bac6d29fedee1b51bd423fc11221250a20827c23787213cc5",
+          "exitCode": 1,
+          "signal": null,
+          "output": {
+            "stdout": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stderr": {
+              "bytes": 615,
+              "sha256": "2967626a66e846f293d62f4579592368cce5710187de48ab152e8a1d3deb78d3"
+            }
+          }
+        },
+        {
+          "package": "evaluate",
+          "path": ".tmp/profile-0399-packages-attempt-1/process/evaluate.json",
+          "sha256": "d2ef53e9378f1027b9557f23c90887d6cd9aa35affffafde875a258882c06bc8",
+          "exitCode": 1,
+          "signal": null,
+          "output": {
+            "stdout": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stderr": {
+              "bytes": 618,
+              "sha256": "a7e107c4821296ac71a8ef07d9be54aaca2f36e570a017776bb4362b17f2d696"
+            }
+          }
+        },
+        {
+          "package": "numDeriv",
+          "path": ".tmp/profile-0399-packages-attempt-1/process/numDeriv.json",
+          "sha256": "175849ccaab16ba4fb262a1f4c5c2dc0a26defd120ef9d24aeed444881bfe6c7",
+          "exitCode": 1,
+          "signal": null,
+          "output": {
+            "stdout": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stderr": {
+              "bytes": 618,
+              "sha256": "d28d57dfbfeaba5e3444c43a4d8f6e2d29803524b7f756f2641775ba91df71f2"
+            }
+          }
+        },
+        {
+          "package": "withr",
+          "path": ".tmp/profile-0399-packages-attempt-1/process/withr.json",
+          "sha256": "b2889508d1329d35f4492476ada8a4bc9caa562b12e3605584eb0e966b83a043",
+          "exitCode": 1,
+          "signal": null,
+          "output": {
+            "stdout": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "stderr": {
+              "bytes": 615,
+              "sha256": "97e74e7d7522a851efb20df4661a30c9daad14db0a1f25a246ff9f2baf26f888"
+            }
+          }
+        }
+      ],
+      "qualification": "The initial restricted host attempt produced no package reports or admitted observations. It is retained separately from the unchanged runner repeated with ordinary Windows permissions; the underlying process failure was not diagnosed."
+    },
+    "earlierBrowserAttempt": {
+      "receiptPath": ".tmp/profile-0399-e2e-attempt-1-exit.json",
+      "receiptSha256": "908177ddf3d3d84bbc1231c2d1bf4ef07babaa3e446cbc44d4ff42cd548b4fa5",
+      "logPath": ".tmp/profile-0399-e2e-attempt-1.log",
+      "logSha256": "818bbd3115fdd83b010b074f50ee845612120f5d3f636d8f328f003c394fd52a",
+      "reportPath": ".tmp/profile-0399-e2e-attempt-1.json",
+      "reportSha256": "8d7b711579b3a8a481a8460262a4de9f1e2b051e9779b1562e54046f1f1de52d",
+      "inputsPath": ".tmp/profile-0399-browser-attempt-1-inputs.json",
+      "inputsSha256": "21d904127196064b0c113174d90525502f3d0dcc56ad74d12c809619ac88993d",
+      "inputsUnchanged": true,
+      "testsExecuted": 0,
+      "webServerTimeoutMs": 180000,
+      "stats": {
+        "startTime": "2026-10-23T01:27:58.547Z",
+        "duration": 263633.01300000004,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "serverStoppedByAgent": {
+        "reported": true,
+        "evidence": "trusted operator observation",
+        "independentlyVerifiedByArchivedReport": false
+      },
+      "qualification": "The restricted host run stalled before any tests. The identified test server was stopped after its local readiness request failed; Playwright reported the unchanged 180-second webServer timeout. The same browser inputs were repeated with ordinary Windows permissions. This attempt supplies no browser test pass or performance credit."
+    },
+    "earlierNativeAttempt": {
+      "receiptPath": ".tmp/profile-0399-native-attempt-1-exit.json",
+      "receiptSha256": "fa623768717f01badf8d7855cbca4e8b98b7eb1e4945e46e120b24417212c905",
+      "logPath": ".tmp/profile-0399-native-attempt-1.log",
+      "logSha256": "98999e2a053c98211dff583115dcd6ab7fe3c809b59872b743c834406ceeea42",
+      "passed": 1439,
+      "failed": 1,
+      "skipped": 55,
+      "failedCase": "file-access-virtual-file-directory-modes-and-vector-shape",
+      "qualification": "The initial restricted Windows run differed on the native file-permission fixture. The complete unchanged suite was repeated with ordinary Windows permissions; the later successful gate admits this host checkpoint without changing semantic expectations."
+    },
+    "matrix": { "partialDimensions": 154, "bindings": 33 }
+  },
+  "limitations": [
+    "All thirteen required semantic domains remain unfinished.",
+    "General dots forwarding, substitution, dispatch, symbol attributes, source retention and parse-data remain unfinished.",
+    "Diagnostic assertions establish sampled messages; condition classes, call origins and general error precedence are not established.",
+    "No new allocation traversal or resource limit is introduced. Existing resource/cancellation guards remain separate from native compatibility evidence.",
+    "Four selected cached packages are a bounded refresh; the full 24-package checkpoint remains 0.397. Original dependency closure and assisted-runner results remain separate.",
+    "Windows correctness timings do not establish isolated performance or the complete browser/OS matrix. Linux execution and Formula holdout remain deferred.",
+    "No download, push, publication or remote action is performed by this increment."
+  ]
+}

@@ -3318,5 +3318,88 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "quoted-dots-call-projection-graph",
+    "policy": "exact",
+    "code": "local({\n   q<-quote(owned(...));nested<-quote(outer(inner(...)))\n   list(direct=quote(...),call=q,cell=q[[2L]],cells=as.list(q),\n     nested=nested,nestedCell=nested[[2L]][[2L]],selected=q[2L],selectedCell=q[2L][[1L]])\n })",
+    "bindingEvidence": ["base::as.list"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "quoted-dots-expression-projection-graph",
+    "policy": "exact",
+    "code": "local({\n   parsed<-expression(...);constructed<-as.expression(list(as.name(\"...\")))\n   list(parsed=parsed,cell=parsed[[1L]],cells=as.list(parsed),selected=parsed[1L],\n     constructed=constructed,fromCall=as.expression(list(as.name(\"owned\"),as.name(\"...\"))),\n     same=identical(parsed,constructed))\n })",
+    "bindingEvidence": ["base::as.list", "base::as.expression", "base::identical"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "quoted-dots-construction-and-laziness-graph",
+    "policy": "exact",
+    "code": "local({\n   original<-quote(owned(...));rebuilt<-as.call(as.list(original))\n   replaced<-original;replaced[[2L]]<-replaced[[2L]]\n   owned<-function(...)list(...);run<-function(...)eval(replaced)\n   events<-character()\n   inspect<-function(...)list(cell=quote(owned(...))[[2L]],same=identical(quote(...),as.name(\"...\")))\n   lazy<-inspect({events<<-c(events,\"forced\");stop(\"owned actual forced\")})\n   list(original=original,rebuilt=rebuilt,replaced=replaced,value=run(11L,22L),\n     lazy=lazy,events=events)\n })",
+    "bindingEvidence": ["base::as.call", "base::eval"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "quoted-dots-substitution-and-symbol-distinctions-graph",
+    "policy": "exact",
+    "code": "local({\n   q<-quote(owned(,...,..1))\n   list(call=q,cells=as.list(q),literal=substitute(owned(...),list()),direct=substitute(owned(...)),\n     dots=quote(...),dotdot=quote(..1),missingName=as.character(q[[2L]]),\n     dotsName=as.character(q[[3L]]),dotdotName=as.character(q[[4L]]),\n     missingDifferent=identical(q[[2L]],q[[3L]]),dotdotDifferent=identical(q[[3L]],q[[4L]]))\n })",
+    "bindingEvidence": ["base::substitute"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "quoted-dots-evaluation-diagnostics-graph",
+    "policy": "exact",
+    "code": "local({\n   messageOf<-function(expr,expected)tryCatch({force(expr);stop(\"owned expected error absent\")},\n     error=function(e){message<-conditionMessage(e);if(!identical(message,expected))stop(e);message})\n   list(missing=messageOf(eval(quote(owned(,...))[[2L]]),\"argument is missing, with no default\"),\n     dots=messageOf(eval(quote(owned(...))[[2L]]),\"'...' used in an incorrect context\"))\n })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "quote-missing-adjunct-graph",
+    "policy": "exact",
+    "code": "local({\n  inspect<-function(expr,expected)tryCatch(list(status=\"value\",value=force(expr)),\n    error=function(e){message<-conditionMessage(e);if(!identical(message,expected))stop(e);list(status=\"error\",message=message)})\n  list(missing=list(quote(expr=)),value=quote(17L),call=quote(owned(x=1L)),\n    zero=inspect(quote(),\"0 arguments passed to 'quote' which requires 1\"),\n    two=inspect(quote(1L,2L),\"2 arguments passed to 'quote' which requires 1\"),\n    wrongName=inspect(quote(owned=17L),\"supplied argument name 'owned' does not match 'expr'\"))\n})",
+    "bindingEvidence": ["base::quote"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

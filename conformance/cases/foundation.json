@@ -19689,5 +19689,54 @@
     "expected": [true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quoted-dots-call-projection",
+    "code": "c(\nlocal({observed<-local({x<-quote(...);list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-quote(owned(...))[[2L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-as.list(quote(owned(...)))[[2L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-quote(outer(inner(...)))[[2L]][[2L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-quote(owned(...))[2L][[1L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))})\n)",
+    "expected": [true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quoted-dots-expression-projection",
+    "code": "c(\nlocal({observed<-local({x<-expression(...)[[1L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-as.list(expression(...))[[1L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-expression(...)[1L][[1L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-as.expression(as.list(quote(owned(...))))[[2L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-as.expression(list(as.name(\"...\")))[[1L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({a<-expression(...);b<-as.expression(list(as.name(\"...\")));list(same=identical(a,b),cellSame=identical(a[[1L]],b[[1L]]),leftType=typeof(a[[1L]]),rightType=typeof(b[[1L]]))});identical(observed,list(same=TRUE,cellSame=TRUE,leftType=\"symbol\",rightType=\"symbol\"))})\n)",
+    "expected": [true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quoted-dots-construction-and-laziness",
+    "code": "c(\nlocal({observed<-local({q<-quote(owned(...));rebuilt<-as.call(as.list(q));list(same=identical(q,rebuilt),type=typeof(rebuilt[[2L]]),symbol=identical(rebuilt[[2L]],as.name(\"...\")),names=names(rebuilt),length=length(rebuilt))});identical(observed,list(same=TRUE,type=\"symbol\",symbol=TRUE,names=NULL,length=2L))}),\nlocal({observed<-local({q<-quote(owned(...));q[[2L]]<-q[[2L]];owned<-function(...)list(...);f<-function(...)eval(q);list(type=typeof(q[[2L]]),symbol=identical(q[[2L]],as.name(\"...\")),value=f(11L,22L))});identical(observed,list(type=\"symbol\",symbol=TRUE,value=list(11L,22L)))}),\nlocal({observed<-local({f<-function(...)list(type=typeof(quote(owned(...))[[2L]]),same=identical(quote(owned(...))[[2L]],as.name(\"...\")));f(stop(\"owned actual forced\"))});identical(observed,list(type=\"symbol\",same=TRUE))})\n)",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quoted-dots-substitution-and-symbol-distinctions",
+    "code": "c(\nlocal({observed<-local({x<-substitute(owned(...),list())[[2L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({x<-substitute(owned(...))[[2L]];list(type=typeof(x),name=as.character(x),same=identical(x,as.name(\"...\")),attributes=attributes(x))});identical(observed,list(type=\"symbol\",name=\"...\",same=TRUE,attributes=NULL))}),\nlocal({observed<-local({q<-quote(owned(,...));list(types=c(typeof(q[[2L]]),typeof(q[[3L]])),missingName=as.character(q[[2L]]),dotsName=as.character(q[[3L]]),different=identical(q[[2L]],q[[3L]]),missingSame=identical(q[[2L]],quote(expr=)),dotsSame=identical(q[[3L]],quote(...)),tags=names(q))});identical(observed,list(types=c(\"symbol\",\"symbol\"),missingName=\"\",dotsName=\"...\",different=FALSE,missingSame=TRUE,dotsSame=TRUE,tags=NULL))}),\nlocal({observed<-local({q<-quote(owned(...,..1));list(types=c(typeof(q[[2L]]),typeof(q[[3L]])),names=c(as.character(q[[2L]]),as.character(q[[3L]])),different=identical(q[[2L]],q[[3L]]))});identical(observed,list(types=c(\"symbol\",\"symbol\"),names=c(\"...\",\"..1\"),different=FALSE))})\n)",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quoted-dots-evaluation-diagnostics",
+    "code": "c(\ntryCatch({eval(quote(owned(,...))[[2L]]);FALSE},error=function(e){if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);TRUE}),\ntryCatch({eval(quote(owned(...))[[2L]]);FALSE},error=function(e){if(!identical(conditionMessage(e),\"'...' used in an incorrect context\"))stop(e);TRUE})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quote-missing-adjunct-values",
+    "code": "c(\nlocal({observed<-list(type=typeof(quote(expr=)),name=as.character(quote(expr=)),same=identical(quote(expr=),formals(function(x)NULL)[[1L]]));identical(observed,list(type=\"symbol\",name=\"\",same=TRUE))}),\nlocal({observed<-list(type=typeof(quote(expr=17L)),value=quote(expr=17L));identical(observed,list(type=\"integer\",value=17L))}),\nlocal({observed<-list(type=typeof(quote(e=17L)),value=quote(e=17L));identical(observed,list(type=\"integer\",value=17L))}),\nlocal({observed<-list(type=typeof(quote(expr=stop(\"owned forced\"))),same=identical(quote(expr=stop(\"owned forced\")),quote(stop(\"owned forced\"))));identical(observed,list(type=\"language\",same=TRUE))}),\nlocal({observed<-list(type=typeof(quote(stop(\"owned forced\"))),same=identical(quote(stop(\"owned forced\")),as.call(list(as.name(\"stop\"),\"owned forced\"))));identical(observed,list(type=\"language\",same=TRUE))}),\nlocal({observed<-list(type=typeof(quote(expr=NULL)),value=quote(expr=NULL));identical(observed,list(type=\"NULL\",value=NULL))}),\nlocal({observed<-local({f<-function(x)quote(expr=x);list(type=typeof(f()),same=identical(f(),as.name(\"x\")))});identical(observed,list(type=\"symbol\",same=TRUE))})\n)",
+    "expected": [true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "quote-missing-adjunct-diagnostics",
+    "code": "c(\ntryCatch({quote();FALSE},error=function(e){if(!identical(conditionMessage(e),\"0 arguments passed to 'quote' which requires 1\"))stop(e);TRUE}),\ntryCatch({quote(,);FALSE},error=function(e){if(!identical(conditionMessage(e),\"2 arguments passed to 'quote' which requires 1\"))stop(e);TRUE}),\ntryCatch({quote(expr=,other=1L);FALSE},error=function(e){if(!identical(conditionMessage(e),\"2 arguments passed to 'quote' which requires 1\"))stop(e);TRUE}),\ntryCatch({list(type=typeof(quote(owned=17L)),value=quote(owned=17L));FALSE},error=function(e){if(!identical(conditionMessage(e),\"supplied argument name 'owned' does not match 'expr'\"))stop(e);TRUE}),\ntryCatch({list(type=typeof(quote(owned=)),name=as.character(quote(owned=)));FALSE},error=function(e){if(!identical(conditionMessage(e),\"supplied argument name 'owned' does not match 'expr'\"))stop(e);TRUE}),\ntryCatch({eval(quote(expr=));FALSE},error=function(e){if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);TRUE}),\ntryCatch({eval(as.list(quote(owned(,)))[[2L]]);FALSE},error=function(e){if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);TRUE}),\ntryCatch({local({f<-function(x)x;f()});FALSE},error=function(e){if(!identical(conditionMessage(e),\"argument \\\"x\\\" is missing, with no default\"))stop(e);TRUE}),\ntryCatch({eval(quote(...));FALSE},error=function(e){if(!identical(conditionMessage(e),\"'...' used in an incorrect context\"))stop(e);TRUE})\n)",
+    "expected": [true, true, true, true, true, true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]

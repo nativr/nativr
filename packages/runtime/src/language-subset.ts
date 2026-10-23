@@ -436,7 +436,9 @@ export function quoteLanguageNode(node: AstNode): RValue {
     case "UnsupportedExpression":
       return node.feature === "missing argument"
         ? { type: "symbol", name: "" }
-        : languageValue(node);
+        : node.feature === "dots"
+          ? { type: "symbol", name: "..." }
+          : languageValue(node);
     default:
       return languageValue(node);
   }

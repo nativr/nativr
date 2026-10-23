@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.398.0",
-  "capabilityManifestHash": "d44746f0455cdda5a41525cc5046db05ae93528586e7a665c18bb05ba7072eae",
+  "semanticProfileVersion": "0.399.0",
+  "capabilityManifestHash": "e517dcb9f34929a95fdbf9ab83bddb20f0a04d7aa6a314e1f51895c592a5066a",
   "evidence": {
-    "checkedInConformanceCases": 1506,
-    "liveREligibleCases": 1433,
+    "checkedInConformanceCases": 1513,
+    "liveREligibleCases": 1440,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 420,
+    "recursiveOracleV2Cases": 426,
     "recursiveBehaviorallyProvenBindings": 175,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -56,7 +56,8 @@
           "embedded-call-reference-identity",
           "language-owned-conversion-evaluation-graph",
           "language-owned-copy-reference-graph",
-          "logical-mode-call"
+          "logical-mode-call",
+          "quoted-dots-construction-and-laziness-graph"
         ]
       },
       {
@@ -65,7 +66,10 @@
       },
       {
         "binding": "base::as.expression",
-        "cases": ["expression-owned-conversion-unlist-reference-graph"]
+        "cases": [
+          "expression-owned-conversion-unlist-reference-graph",
+          "quoted-dots-expression-projection-graph"
+        ]
       },
       { "binding": "base::as.factor", "cases": ["factor-coercion-nondispatch-and-signatures"] },
       {
@@ -85,7 +89,9 @@
           "expression-owned-selector-replacement-graph",
           "function-language-owned-cells-graph",
           "language-owned-conversion-evaluation-graph",
-          "language-owned-subset-replacement-graph"
+          "language-owned-subset-replacement-graph",
+          "quoted-dots-call-projection-graph",
+          "quoted-dots-expression-projection-graph"
         ]
       },
       { "binding": "base::as.list.Date", "cases": ["time-class-list-conversion"] },
@@ -230,7 +236,8 @@
           "evaluation-origin-environments",
           "expression-owned-construction-evaluation-graph",
           "language-owned-conversion-evaluation-graph",
-          "language-owned-nested-evaluation-identity-graph"
+          "language-owned-nested-evaluation-identity-graph",
+          "quoted-dots-construction-and-laziness-graph"
         ]
       },
       { "binding": "base::eval.parent", "cases": ["evaluation-call-frame-local-chain"] },
@@ -315,7 +322,8 @@
         "binding": "base::identical",
         "cases": [
           "function-language-owned-plain-shape-graph",
-          "language-owned-nested-evaluation-identity-graph"
+          "language-owned-nested-evaluation-identity-graph",
+          "quoted-dots-expression-projection-graph"
         ]
       },
       {
@@ -580,7 +588,10 @@
         "cases": ["factor-method-printing-retains-values-and-attributes"]
       },
       { "binding": "base::print.proc_time", "cases": ["process-time-method-graphs"] },
-      { "binding": "base::quote", "cases": ["pairlist-tags-language-and-missingness"] },
+      {
+        "binding": "base::quote",
+        "cases": ["pairlist-tags-language-and-missingness", "quote-missing-adjunct-graph"]
+      },
       {
         "binding": "base::rep",
         "cases": [
@@ -745,6 +756,7 @@
           "embedded-attributed-call-values",
           "escaped-replacement-frame-source-and-value",
           "nested-replacement-original-and-reconstructed-rhs",
+          "quoted-dots-substitution-and-symbol-distinctions-graph",
           "replacement-rhs-source-and-stored-call-values",
           "s3-replacement-rhs-source-and-stored-call-values"
         ]
@@ -952,7 +964,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "7cbfcb4fe700e57ebda2131f62e5f9685aade702f9b4886b8b3878e03670b8e3",
+    "sha256": "902c463c6ab45ac8d73f33f0eaae24c7ac74dea39412427cba8af3affbf8aeff",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -962,7 +974,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 175,
-    "bindingsWithDeclaredMatrixEvidence": 32,
+    "bindingsWithDeclaredMatrixEvidence": 33,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

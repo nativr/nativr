@@ -1559,6 +1559,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native quoted-dots assertion: expression-identity-roundtrip.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({a<-expression(...);b<-as.expression(list(as.name("...")));list(same=identical(a,b),cellSame=identical(a[[1L]],b[[1L]]),leftType=typeof(a[[1L]]),rightType=typeof(b[[1L]]))});identical(observed,list(same=TRUE,cellSame=TRUE,leftType="symbol",rightType="symbol"))})',
+    );
+  await profiledRun(page, "required-152");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native quoted-dots assertion: missing-versus-dots.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({q<-quote(owned(,...));list(types=c(typeof(q[[2L]]),typeof(q[[3L]])),missingName=as.character(q[[2L]]),dotsName=as.character(q[[3L]]),different=identical(q[[2L]],q[[3L]]),missingSame=identical(q[[2L]],quote(expr=)),dotsSame=identical(q[[3L]],quote(...)),tags=names(q))});identical(observed,list(types=c("symbol","symbol"),missingName="",dotsName="...",different=FALSE,missingSame=TRUE,dotsSame=TRUE,tags=NULL))})',
+    );
+  await profiledRun(page, "required-153");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native quoted-dots assertion: replacement-evaluation.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({q<-quote(owned(...));q[[2L]]<-q[[2L]];owned<-function(...)list(...);f<-function(...)eval(q);list(type=typeof(q[[2L]]),symbol=identical(q[[2L]],as.name("...")),value=f(11L,22L))});identical(observed,list(type="symbol",symbol=TRUE,value=list(11L,22L)))})',
+    );
+  await profiledRun(page, "required-154");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

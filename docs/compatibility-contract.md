@@ -38,6 +38,28 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Quoted dots projection (profile 0.399)
+
+The shared syntax-to-value projection represents a parsed `...` cell as the symbol `...`. Bounded
+call/expression extraction and conversion, expression identity, and call reconstruction preserve
+that name without forcing dots. The empty-name missing-argument symbol and `..1` remain distinct.
+Replacing an argument with the quoted dots symbol retains ordinary argument expansion when the
+reconstructed call is evaluated inside an owned dots-bearing function.
+
+Independent fixtures cover eighteen value assertions and two diagnostic-message controls. The latter
+distinguish direct evaluation of a missing cell from `...` outside a valid dots context. Explicit
+missing quotation returns the empty-name symbol; evaluating that symbol reports the observed
+missing-argument message. Separate adjuncts cover quote arity, argument-name diagnostics and lazy
+present expressions. These observations establish neither condition classes nor general
+condition-call attribution. The parser, promise representation and public protocol are unchanged.
+General dots forwarding, substitution, dispatch, symbol attributes and source retention remain
+unfinished.
+
+The [verification record](../compatibility/platform-evidence/quoted-dots-windows-0.399.0.json) binds
+the frozen baseline, exact source/Worker assertions, separately identified missing-cell adjuncts and
+composite recursive controls. Group-level causal associations do not establish independent causality
+for every output field.
+
 ### Owned function-language cells (profile 0.398)
 
 The bounded quoted-function representation exposes four cells: the `function` symbol, a formal

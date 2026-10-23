@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-cached-corpus-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.399.0",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "selected-development-and-regression",
+  "runner": "original-package-entrypoints",
+  "summarizerPolicy": "allowlisted-metadata-sha256-v2",
+  "packages": [
+    {
+      "package": "withr",
+      "version": "3.0.3",
+      "partition": "regression",
+      "sourceSha256": "d86c6454164fc85678bfc85e2a6cce42f7461d45fa9a87de71f376e7956c991e",
+      "artifactSha256": "a51a19247a01ad7d3f712b2029914f2c52f6c713846d0a63ada5a989ab4187f9",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/defer.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.399.0/withr.json",
+      "summarySha256": "14a1df47972ac83b90a29e565f21012cfababe4b6c8c930b5cf6380a9e192cc8",
+      "rawReportSha256": "79082615699ad86ba37e5b4fb608f7a0d6d821dc5d3076505df9c6a3ccd13d9f",
+      "checkerP7Eligible": false,
+      "nestedTestsUnverified": true,
+      "examplesEvidence": "incomplete",
+      "checkerNestedTestClosureDefect": false,
+      "nestedTestFiles": 25,
+      "nestedTestCoverage": "not-recorded",
+      "testthatDependency": {
+        "name": "testthat",
+        "actualVersion": null,
+        "oracleVersion": null,
+        "actualObserved": true,
+        "oracleObserved": true
+      }
+    },
+    {
+      "package": "evaluate",
+      "version": "1.0.5",
+      "partition": "regression",
+      "sourceSha256": "47aac79f889a828a5f8b4756cb972d7c2966bb984cbae17a4bd2389a73270794",
+      "artifactSha256": "4c69fe41198004538efce999d5be1b34cd9ec3641d476e09cb9ec350f02ef041",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/evaluate.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.399.0/evaluate.json",
+      "summarySha256": "3e1b93c7b3216f4b9745373f7dc09f3914491ad5c0a606a4443fbd18b59c8837",
+      "rawReportSha256": "33940b2d30a8d0356164ec555e6798d4565a96bebb5b8179d20ecaa484105b21",
+      "checkerP7Eligible": false,
+      "nestedTestsUnverified": true,
+      "examplesEvidence": "incomplete",
+      "checkerNestedTestClosureDefect": false,
+      "nestedTestFiles": 18,
+      "nestedTestCoverage": "not-recorded",
+      "testthatDependency": {
+        "name": "testthat",
+        "actualVersion": null,
+        "oracleVersion": null,
+        "actualObserved": true,
+        "oracleObserved": true
+      }
+    },
+    {
+      "package": "numDeriv",
+      "version": "2016.8-1.1",
+      "partition": "regression",
+      "sourceSha256": "d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345",
+      "artifactSha256": "0a5bac977e0b258bc22dedf41adc2c48a0eaa8e197f48dfefede7ad0f3981e45",
+      "previousTier": "P6",
+      "tier": "P6",
+      "firstBlocker": {
+        "tier": "P7",
+        "code": "observation-mismatch",
+        "path": "tests/hessian01.R",
+        "message": "The first package-check blocker is test-output; see the redacted checkpoint for stage outcomes and repeatability."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.399.0/numDeriv.json",
+      "summarySha256": "7e3b4af5d93e042b20a25af807160a802b47b7175307dff0f70cfe147446f95e",
+      "rawReportSha256": "eef73ebef509012d783d194dfc29f594f3aca8675245926ba20ee7a82055a90f",
+      "checkerP7Eligible": false,
+      "nestedTestsUnverified": false,
+      "examplesEvidence": "completed-applicable-observations",
+      "checkerNestedTestClosureDefect": false,
+      "nestedTestFiles": 0,
+      "nestedTestCoverage": "inapplicable",
+      "testthatDependency": null
+    },
+    {
+      "package": "abind",
+      "version": "1.4-8",
+      "partition": "regression",
+      "sourceSha256": "264a051b523ceae1795a0879e7768949ea55c586ac8db0adf1f5ebeddd2623e1",
+      "artifactSha256": "e9862a710e03ef978409dbd3c4138dd4cdf96b0584c6f228ffe2b42d1e0e9dee",
+      "previousTier": "P7",
+      "tier": "P7",
+      "firstBlocker": null,
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.399.0/abind.json",
+      "summarySha256": "1de1ade27636efe016a2bbcd479653b285f3ec9b027991292161fbce18855e24",
+      "rawReportSha256": "142491a78ab26ec329c2a9498c26bd75641be4a572282e16d6f0664b48625b25",
+      "checkerP7Eligible": true,
+      "nestedTestsUnverified": false,
+      "examplesEvidence": "completed-applicable-observations",
+      "checkerNestedTestClosureDefect": false,
+      "nestedTestFiles": 0,
+      "nestedTestCoverage": "inapplicable",
+      "testthatDependency": null
+    }
+  ],
+  "tierPolicyCorrections": []
+}

@@ -6640,17 +6640,24 @@ async function builtinIf(invocation: BuiltinInvocation): Promise<RValue> {
 
 function builtinQuote(invocation: BuiltinInvocation): RValue {
   if (invocation.arguments.length !== 1) {
-    throw new REvaluationError("NRE2103", "quote() requires exactly one argument.");
+    throw new REvaluationError(
+      "NRE2103",
+      `${invocation.arguments.length} arguments passed to 'quote' which requires 1`,
+    );
   }
   const argument = invocation.arguments[0];
   if (
     argument === undefined ||
     (argument.name !== undefined && argument.name !== "expr" && !"expr".startsWith(argument.name))
   ) {
-    throw new REvaluationError("NRE2101", "Unused argument in quote().");
+    throw new REvaluationError(
+      "NRE2101",
+      `supplied argument name '${argument?.name ?? ""}' does not match 'expr'`,
+    );
   }
   const expression = argument.promise.expression;
-  if (expression === null || argument.promise.missing) {
+  if (argument.promise.missing) return { type: "symbol", name: "" };
+  if (expression === null) {
     throw new REvaluationError("NRE2103", "Argument 'expr' is missing in quote().");
   }
   return quoteAst(expression);
