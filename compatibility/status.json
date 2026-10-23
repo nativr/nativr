@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.395.0",
-  "capabilityManifestHash": "fe55036e824c8c7534022d64e8f612163a72bb43c09085a7afdb50b9bc7f9347",
+  "semanticProfileVersion": "0.396.0",
+  "capabilityManifestHash": "1665c4d7a67b693aeadf3ed73eebd8c9a2c2b20058cbacd33cc73456d641c4ca",
   "evidence": {
-    "checkedInConformanceCases": 1491,
-    "liveREligibleCases": 1418,
+    "checkedInConformanceCases": 1496,
+    "liveREligibleCases": 1423,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 406,
+    "recursiveOracleV2Cases": 410,
     "recursiveBehaviorallyProvenBindings": 173,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -516,6 +516,10 @@
       {
         "binding": "base::parse",
         "cases": [
+          "parse-expression-limits-atomic-and-prefix-graph",
+          "parse-expression-limits-first-cell-and-boundaries-graph",
+          "parse-expression-limits-nonatomic-unlimited-graph",
+          "parse-expression-limits-warning-and-error-order-graph",
           "parse-text-controls-default-missingness-graph",
           "parse-text-controls-empty-default-encoding-adjunct-graph",
           "parse-text-controls-error-order-graph",
@@ -911,7 +915,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "d73ed9cbe822070b1871a334677aa13c9ec070472dacd2987776254c41a1d9f1",
+    "sha256": "e77144f708255dd6bbbda783a2c5ddf9abcf763df6dcb1de9376ddbcbf79b4da",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,

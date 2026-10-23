@@ -38,6 +38,35 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Parse expression limits (profile 0.396)
+
+The bounded text route of `parse` uses only the first atomic cell of `n`. Sampled logical, raw,
+numeric, complex and character controls select the observed finite prefix after conversion and
+truncation. Missing, empty, negative and observed non-atomic controls select an unlimited result;
+list, pairlist, expression and callable contents are not recursively coerced. Sampled attributes and
+`as.integer` methods do not change this conversion or appear on the result.
+
+The observed invalid-character, imaginary-part and integer-range warnings use the condition
+machinery after all control promises have been forced and before encoding validation or warnings.
+Unselected later atomic cells produce no conversion warnings. The implementation does not allocate
+by a large requested limit; parsing and evaluation retain their existing resource budgets.
+
+Fifty-two frozen native assertions cover the selected limits, first-cell behavior, conversion
+warnings and error/forcing order. One separately verified assertion checks the integer-range warning
+and unlimited result for the double value -2147483648. They preserve the prior lazy-default and
+source-retention boundaries. Broader numeric-string grammar, mixed-component complex missingness,
+S4/custom controls, complete condition classes/call origins and exact parser-error formatting remain
+unfinished. Non-atomic empty text is a separate observed gap. These cases do not establish full
+source metadata, transcoding or complete `parse` compatibility.
+
+The
+[verification record](../compatibility/platform-evidence/parse-expression-limits-windows-0.396.0.json)
+records the completed production, foundation/live/recursive, browser and affected-package gates.
+Four composite parse groups have eight strict causal controls; the separate minimum assertion adds
+no recursive credit. All thirteen domains remain incomplete. The selected evaluate/withr tiers are
+evaluate P4 and withr P4; original dependency-closure evidence remains separate from assisted-runner
+outcomes.
+
 ### Text-parse control evaluation (profile 0.395)
 
 The bounded text route of `parse` binds defaults lazily and evaluates its controls in the observed

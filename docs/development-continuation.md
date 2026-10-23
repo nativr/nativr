@@ -2403,3 +2403,54 @@ independent reproductions before any package-unblocking claim. Full source refer
 language attributes and parse-data generation remain unfinished. Continue licensed datasets and
 isolated testing-runner parity, preserving all existing Linux, holdout, download and remote-action
 boundaries.
+
+### Parse expression-limit checkpoint (profile 0.396)
+
+The text route now converts only the first atomic cell of n, accepts observed non-atomic controls as
+unlimited, and preserves native truncation/range and warning order. Conversion warnings pass through
+the condition machinery after control forcing and before encoding validation. The change is local to
+parse expression limits; the 0.395 controls and source() behavior remain unchanged.
+
+The
+[verification record](../compatibility/platform-evidence/parse-expression-limits-windows-0.396.0.json)
+binds 52 frozen assertions to independent GNU R 4.6.1 observations. The earlier 0.395 baseline
+passed 23, differed on 14 and raised 15 evaluation errors, with all 369 source/build/tool hashes
+stable. A separate reserved-minimum assertion adds one foundation case and no recursive or causal
+credit. Four raw groups contain 52 components and pass eight strict controls for composite
+base::parse associations; individual-component causality is not claimed. One selected-string
+work-limit/recovery guard is NativR-only. The focused run passes 115 tests: 52 main, one minimum
+adjunct, one resource guard and 61 retained controls.
+
+- Production check: 3,469 tests pass, with 95 opt-in skips; types, lint, build and the browser audit
+  pass.
+- Conformance: 1,496 checked-in, 1,423 live GNU R and 410 recursive cases pass; 55 NativR-only live
+  exclusions remain. There are 173 bindings with causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.396.0.json): 12/12 pass.
+  Required examples take 13.895 / 15.154 / 68.931 seconds on Chromium / Firefox / WebKit under the
+  unchanged 120-second timeout. These correctness-run durations are not isolated performance
+  evidence.
+- Bundles: Worker 494.4/512 KiB gzip; all four fixed caps pass.
+- Inventory: 136 partial dimensions on 26 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus verification: 40 checkpoint tests, all-source/test/config types, checkpoint
+  lint, formatting and generated/corpus checks pass. These are supplemental to the complete
+  3,469-test production run.
+
+The [selected corpus checkpoint](../compatibility/package-check-evidence/corpus-0.396.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.396.0.json) cover
+evaluate and withr only, against 0.395. Execution outcomes and stage metadata are unchanged.
+evaluate is unchanged. Only withr man/with_timezone.Rd changes from nonrepeatable to repeatable:
+withr now records 16 repeatable and five nonrepeatable observations, retaining 18 mismatches and
+three matches. This repeatability observation establishes neither a tier promotion nor a causal
+semantic improvement. Current tiers are evaluate P4 and withr P4. Their qualified tiers are
+unchanged, with no promotions. The other 22 development/regression entries and Formula are
+unchanged. The latest full 24-package checkpoint remains 0.393; abind and numDeriv retain their
+selected 0.394 evidence. Original dependency-closure evidence stays separate from assisted-runner
+outcomes.
+
+Next measurable work: independently reproduce language/call attribute storage, extraction,
+replacement and reference identity needed for retained-source support. Freeze owned native
+assertions and reproduce the smallest coherent boundary before implementation. Full source
+references and parse-data generation remain unfinished; a metadata carrier alone cannot establish
+them. Broader numeric-string grammar, mixed complex missingness, encoding conversion, condition
+classes/call origins and non-atomic text remain explicit gaps. Continue licensed datasets and
+isolated runner parity within the existing Linux, holdout, download and remote-action boundaries.

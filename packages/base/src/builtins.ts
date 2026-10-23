@@ -17317,6 +17317,7 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
   const missingSource = isMissingArgumentBinding(srcfilePromise, new Set());
   const source = missingSource ? R_NULL : await bound.force("srcfile");
   const encoding = await bound.force("encoding");
+  const maxExpressions = await parseExpressionLimit(n, invocation);
   if (encoding.type !== "character" || encoding.length !== 1) {
     throw new RTypeMismatchError("NRT3214", "invalid 'encoding' value");
   }
@@ -17329,7 +17330,6 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
       { code: "NRW1020", message },
     );
   }
-  const maxExpressions = parseExpressionLimit(n);
   if (maxExpressions === 0) return expressionValue([]);
 
   const retainSource =
@@ -61983,15 +61983,40 @@ function parseTextSource(value: RValue): string {
   }).join("\n");
 }
 
-function parseExpressionLimit(value: RValue | undefined): number | undefined {
-  if (value === undefined || value.type === "null") return undefined;
-  if (!isAtomic(value)) {
-    throw new RTypeMismatchError("NRT3214", "'n' must be coercible to one integer.");
-  }
+async function parseExpressionLimit(
+  value: RValue | undefined,
+  invocation: BuiltinInvocation,
+): Promise<number | undefined> {
+  // Non-atomic limits select the whole input without coercing or traversing their contents.
+  if (value === undefined || !isAtomic(value)) return undefined;
   if (value.length === 0 || isMissing(value, 0)) return undefined;
-  const numeric = Number(stringAt(value, 0));
-  if (!Number.isFinite(numeric)) return undefined;
-  const integer = Math.trunc(numeric);
+  // Only the selected cell contributes conversion work or warnings. Reserve character work
+  // before the pure converter trims or scans it; unselected cells are not visited.
+  invocation.context.checkpoint(
+    value.type === "character" ? Math.max(1, Math.ceil((value.values[0]?.length ?? 0) / 256)) : 1,
+  );
+  const converted = replicationAtomicNumber(value, 0);
+  if (converted.warning !== undefined) {
+    await signalWarning(
+      invocation,
+      simpleConditionValue(converted.warning, "warning", invocation.currentCall()),
+      {
+        code: converted.warning === "imaginary parts discarded in coercion" ? "NRW1005" : "NRW1006",
+        message: converted.warning,
+      },
+    );
+  }
+  if (Number.isNaN(converted.value)) return undefined;
+  const integer = Math.trunc(converted.value);
+  if (!Number.isFinite(integer) || integer < -2_147_483_647 || integer > 2_147_483_647) {
+    const message = "NAs introduced by coercion to integer range";
+    await signalWarning(
+      invocation,
+      simpleConditionValue(message, "warning", invocation.currentCall()),
+      { code: "NRW1007", message },
+    );
+    return undefined;
+  }
   return integer < 0 ? undefined : integer;
 }
 

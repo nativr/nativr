@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.395.0",
+  "semanticProfileVersion": "0.396.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "d904eb3e080d4d332c4f1120eeb8dc01c6ed2fccd8507b6ef0b98546d244b22a",
+    "capabilities": "d8c03128ea62449ca86b69e99b4d80ce44484047f3d5b9ea35f4cbe71932bc37",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "0457504207e2fa8c1de00b14bedf067c95bf85143d1e03c4184d66a60a5742cb",
-    "oracleV2": "d705ba44ba0895e6246c5105f3e06d89dffd1484d97ca516c5f0ab9f8168a6d3",
+    "foundation": "50a87deef508037e580598a97bf6f448e2f452fc2754d718cb9557379e15d826",
+    "oracleV2": "2e435511c42461d68e5b117b63f72b84fbc4c73d1701f44bb2c7b4e5f8980a53",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "9f593f5885df9dc84b431b0a3ff8361c9375deff8dadb3e67e84a6ec1dca863e"
+    "annotations": "5f0d4ffcc666d43c3997f548a343ebbf9a022988c5e767dfae6312cee8fde624"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -17860,6 +17860,10 @@
       },
       "completion": "incomplete",
       "recursiveCaseIds": [
+        "parse-expression-limits-atomic-and-prefix-graph",
+        "parse-expression-limits-first-cell-and-boundaries-graph",
+        "parse-expression-limits-nonatomic-unlimited-graph",
+        "parse-expression-limits-warning-and-error-order-graph",
         "parse-text-controls-default-missingness-graph",
         "parse-text-controls-empty-default-encoding-adjunct-graph",
         "parse-text-controls-error-order-graph",
@@ -17873,6 +17877,18 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-atomic-and-prefix-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-first-cell-and-boundaries-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-nonatomic-unlimited-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "parse-text-controls-default-missingness-graph"
             },
             {
@@ -17885,7 +17901,7 @@
             }
           ],
           "remainingGaps": [
-            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+            "Only the owned text-input controls, sampled defaults/missingness, expression limits, forcing traces and selected messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
           ]
         },
         {
@@ -17894,6 +17910,10 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-warning-and-error-order-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "parse-text-controls-default-missingness-graph"
             },
             {
@@ -17902,7 +17922,7 @@
             }
           ],
           "remainingGaps": [
-            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+            "Only the owned text-input controls, sampled defaults/missingness, expression limits, forcing traces and selected messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
           ]
         },
         {
@@ -17911,6 +17931,18 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-atomic-and-prefix-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-first-cell-and-boundaries-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-nonatomic-unlimited-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "parse-text-controls-default-missingness-graph"
             },
             {
@@ -17923,13 +17955,17 @@
             }
           ],
           "remainingGaps": [
-            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+            "Only the owned text-input controls, sampled defaults/missingness, expression limits, forcing traces and selected messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
           ]
         },
         {
           "dimension": "side-effects",
           "status": "partial-declared",
           "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-expression-limits-warning-and-error-order-graph"
+            },
             {
               "suite": "oracle-v2",
               "caseId": "parse-text-controls-default-missingness-graph"
@@ -17948,12 +17984,12 @@
             }
           ],
           "remainingGaps": [
-            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+            "Only the owned text-input controls, sampled defaults/missingness, expression limits, forcing traces and selected messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
           ]
         }
       ],
       "remainingGaps": [
-        "Bounded text controls now have causal evidence. Full AST/source metadata, argument matching, coercions, quoted/evaluated forms, condition origins and visibility remain unfinished.",
+        "Bounded text controls and expression limits have causal evidence. Full AST/source metadata, argument matching, broader coercions, quoted/evaluated forms, condition origins and visibility remain unfinished.",
         "File/connection input and retained source-reference/parse-data routes remain explicit boundaries; no complete semantic domain or callable is claimed."
       ]
     },

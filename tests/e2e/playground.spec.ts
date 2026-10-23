@@ -1460,6 +1460,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native parse expression-limit assertion: logical-true.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed <- local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));events<-character();warnings<-character();messages<-character();\nobserved<-tryCatch(withCallingHandlers({value<-parse(file={stop("owned file forced")},n={events<-c(events,"n");TRUE},text={events<-c(events,"text");"11L;22L;33L"},prompt={events<-c(events,"prompt");""},keep.source={events<-c(events,"keep");FALSE},srcfile={events<-c(events,"srcfile");NULL},encoding={events<-c(events,"encoding");"unknown"});list(status="value",type=typeof(value),length=length(value),names=names(value),attributes=names(attributes(value)),values=as.list(value))},warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)stop(e));list(events=events,warnings=warnings,messages=messages,observed=observed)});identical(observed$events,c("keep","text","n","prompt","srcfile","encoding")) && identical(observed$warnings,character()) && identical(observed$messages,character()) && identical(observed$observed$status,"value") && identical(observed$observed$type,"expression") && identical(observed$observed$length,1L) && is.null(observed$observed$names) && is.null(observed$observed$attributes) && identical(observed$observed$values,list(11L)) })',
+    );
+  await profiledRun(page, "required-143");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native parse expression-limit assertion: list-scalar.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed <- local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));events<-character();warnings<-character();messages<-character();\nobserved<-tryCatch(withCallingHandlers({value<-parse(file={stop("owned file forced")},n={events<-c(events,"n");list(1L)},text={events<-c(events,"text");"11L;22L;33L"},prompt={events<-c(events,"prompt");""},keep.source={events<-c(events,"keep");FALSE},srcfile={events<-c(events,"srcfile");NULL},encoding={events<-c(events,"encoding");"unknown"});list(status="value",type=typeof(value),length=length(value),names=names(value),attributes=names(attributes(value)),values=as.list(value))},warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)stop(e));list(events=events,warnings=warnings,messages=messages,observed=observed)});identical(observed$events,c("keep","text","n","prompt","srcfile","encoding")) && identical(observed$warnings,character()) && identical(observed$messages,character()) && identical(observed$observed$status,"value") && identical(observed$observed$type,"expression") && identical(observed$observed$length,3L) && is.null(observed$observed$names) && is.null(observed$observed$attributes) && identical(observed$observed$values,list(11L,22L,33L)) })',
+    );
+  await profiledRun(page, "required-144");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native parse expression-limit assertion: coercion-warning-order.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed <- local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));events<-character();warnings<-character();messages<-character();\nobserved<-tryCatch(withCallingHandlers({value<-parse(file={stop("owned file forced")},n={events<-c(events,"n");Inf},text={events<-c(events,"text");"11L;22L;33L"},prompt={events<-c(events,"prompt");""},keep.source={events<-c(events,"keep");FALSE},srcfile={events<-c(events,"srcfile");NULL},encoding={events<-c(events,"encoding");"owned-encoding"});list(status="value",type=typeof(value),length=length(value),names=names(value),attributes=names(attributes(value)),values=as.list(value))},warning=function(w){events<<-c(events,paste0("warning:",conditionMessage(w)));warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)stop(e));list(events=events,warnings=warnings,messages=messages,observed=observed)});identical(observed$events,c("keep","text","n","prompt","srcfile","encoding","warning:NAs introduced by coercion to integer range","warning:argument \'encoding = \\"owned-encoding\\"\' will be ignored")) && identical(observed$warnings,c("NAs introduced by coercion to integer range","argument \'encoding = \\"owned-encoding\\"\' will be ignored")) && identical(observed$messages,character()) && identical(observed$observed$status,"value") && identical(observed$observed$type,"expression") && identical(observed$observed$length,3L) && is.null(observed$observed$names) && is.null(observed$observed$attributes) && identical(observed$observed$values,list(11L,22L,33L)) })',
+    );
+  await profiledRun(page, "required-145");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 
