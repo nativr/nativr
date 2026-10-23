@@ -2454,3 +2454,54 @@ references and parse-data generation remain unfinished; a metadata carrier alone
 them. Broader numeric-string grammar, mixed complex missingness, encoding conversion, condition
 classes/call origins and non-atomic text remain explicit gaps. Continue licensed datasets and
 isolated runner parity within the existing Linux, holdout, download and remote-action boundaries.
+
+### Language/call attribute checkpoint (profile 0.397)
+
+Calls now retain ordinary attributes separately from head/argument tags. Sampled conversions,
+extraction and replacement preserve the observed metadata and environment aliases; attributed nested
+calls still execute their original syntax. Equality observes ordinary and nested attributes and
+environment references. The public source-only snapshot remains intentionally lossy.
+
+The
+[verification record](../compatibility/platform-evidence/language-attributes-windows-0.397.0.json)
+binds thirty frozen main assertions and six separate evaluation/identity assertions to independent
+GNU R 4.6.1 observations. Before implementation the 0.396 baseline passed none: four mismatches and
+32 runtime evaluation errors, with 381 stable source/build/tool hashes. The two general
+attributes-replacement assertions remain deferred. Five foundation groups and five separately
+authored recursive graphs pass, including seven environment-alias checks and 22 strict controls for
+eleven composite associations across eight bindings. These controls do not prove each of the 36
+source assertions independently.
+
+Owned guards cover immutable metadata, bounded replacement, cancellation and memory accounting,
+including references retained only by closure bodies/defaults and promise syntax. The previously
+unsupported attributed mode-to-call conversion remains explicit. No native parity is claimed for
+these resource/boundary guards or the lossy public conversion.
+
+- Production check: 3,522 tests pass, 95 opt-in skips; types, lint, build, browser audit and all
+  four fixed bundle caps pass. Worker: 495.3/512 KiB gzip.
+- Conformance: 1,501 checked-in, 1,428 live GNU R and 415 recursive cases pass, with 55 NativR-only
+  live exclusions. 174 bindings have causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.397.0.json): 12/12 pass;
+  required examples take 14.265 / 16.932 / 75.388 seconds on Chromium / Firefox / WebKit under the
+  unchanged 120-second timeout. These are correctness-run timings, not isolated performance
+  evidence.
+- Inventory: 142 partial dimensions on 28 bindings; all thirteen domains remain incomplete.
+- Post-corpus checks: 41 checkpoint tests, all-source types, lint, formatting and generated/corpus
+  checks pass separately from the complete production run.
+
+The [full cached corpus checkpoint](../compatibility/package-check-evidence/corpus-0.397.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.397.0.json) cover all 24
+development/regression packages and 178 observations against the full 0.393 baseline. Qualified
+distribution: 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. No package tier changed. All 178 observations and
+their comparison metadata match the full 0.393 baseline. Stage changes are confined to package-tests
+and reflect the current nested-test coverage policy; first-blocker changes remain recorded
+separately. No runtime improvement is inferred from this metadata refresh. Formula remains
+unchanged; original dependency closure and assisted-runner evidence stay separate.
+
+Next measurable work: reproduce owned function-call cells, formal pairlists, body replacement and
+reconstruction before admitting retained-source metadata. Keep any fourth source-reference cell
+separate from ordinary attributes and verify closure propagation independently. The parsed-dots
+extraction discrepancy remains a concrete follow-up. General attributes replacement, full
+parse-data, broader call equality/printing and all thirteen domain matrices remain unfinished.
+Continue licensed datasets and isolated testing-runner parity. Linux, Formula holdout, downloads and
+remote actions retain their existing authorization boundaries.

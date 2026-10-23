@@ -7,6 +7,7 @@ import type {
 } from "@nativr/ast";
 
 import { RTypeMismatchError } from "./errors.js";
+import { languageSyntaxMetadata, withLanguageSyntaxMetadata } from "./language-metadata.js";
 
 /** Browser-owned library containing source-only package bundles supplied by the host. */
 export const NATIVR_PACKAGE_LIBRARY_PATH = "nativr://package";
@@ -155,6 +156,9 @@ export interface RSymbol {
 export interface RLanguage {
   readonly type: "language";
   readonly expression: AstNode;
+  readonly attributes: RAttributes;
+  /** A call-head tag is structural naming metadata, not an ordinary attribute. */
+  readonly headTag?: string;
 }
 
 /** An R expression vector containing unevaluated normalized syntax. */
@@ -980,6 +984,27 @@ export const R_NULL: RNull = Object.freeze({ type: "null" });
 
 const EMPTY_ATTRIBUTES: RAttributes = new Map();
 
+/** Preserve call metadata without turning executable nested syntax into a constant value. */
+export function languageValue(
+  expression: AstNode,
+  attributes?: RAttributes,
+  headTag?: string,
+): RLanguage {
+  const retained = languageSyntaxMetadata(expression);
+  const ordinary =
+    attributes === undefined ? (retained?.attributes ?? EMPTY_ATTRIBUTES) : new Map(attributes);
+  const tag = headTag === undefined ? retained?.headTag : headTag === "" ? undefined : headTag;
+  return {
+    type: "language",
+    expression: withLanguageSyntaxMetadata(expression, {
+      attributes: ordinary,
+      ...(tag === undefined ? {} : { headTag: tag }),
+    }),
+    attributes: ordinary,
+    ...(tag === undefined ? {} : { headTag: tag }),
+  };
+}
+
 /** Construct expression storage without evaluating or copying its embedded values. */
 export function expressionValue(
   values: readonly AstNode[],
@@ -1000,6 +1025,7 @@ export function objectAttributes(value: RValue): RAttributes | undefined {
     isVector(value) ||
     value.type === "pairlist" ||
     value.type === "expression" ||
+    value.type === "language" ||
     value.type === "environment" ||
     value.type === "closure"
   ) {

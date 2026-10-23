@@ -1,5 +1,7 @@
 import type { AstNode, CallArgument, FunctionParameter } from "@nativr/ast";
 import type { RAttributes, RBinding, RCharacterVector, RPromise, RValue } from "./values.js";
+import { languageSyntaxMetadata } from "./language-metadata.js";
+import { RResourceLimitError } from "./errors.js";
 
 /** Browser-owned memory represented in GNU R's two reporting cell families. */
 export interface RuntimeMemoryCensus {
@@ -18,6 +20,8 @@ const NODE_BYTES = 56;
  */
 export function estimateRObjectSize(value: RValue, checkpoint: () => void): number {
   const active = new WeakSet<object>();
+  const activeSyntax = new WeakSet<object>();
+  let syntaxDepth = 0;
   let visits = 0;
 
   const accountVisit = (): void => {
@@ -128,6 +132,26 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
 
   const visitAst = (node: AstNode): number => {
     accountVisit();
+    if (activeSyntax.has(node)) return 0;
+    if (syntaxDepth >= 512)
+      throw new RResourceLimitError("NRL4004", "Maximum object-size syntax depth exceeded.");
+    activeSyntax.add(node);
+    syntaxDepth += 1;
+    try {
+      const metadata = languageSyntaxMetadata(node);
+      return (
+        visitAstStorage(node) +
+        (metadata === undefined
+          ? 0
+          : attributeBytes(metadata.attributes) + (metadata.headTag === undefined ? 0 : NODE_BYTES))
+      );
+    } finally {
+      activeSyntax.delete(node);
+      syntaxDepth -= 1;
+    }
+  };
+
+  const visitAstStorage = (node: AstNode): number => {
     switch (node.kind) {
       case "Program":
         return (
@@ -374,6 +398,9 @@ export function censusRuntimeMemory(
     nodeCells += 1;
     visitValue(promise.environment);
     if (promise.value !== undefined) visitValue(promise.value);
+    if (promise.expression !== null) pendingSyntax.push([promise.expression].values());
+    if (promise.sourceExpression !== undefined)
+      pendingSyntax.push([promise.sourceExpression].values());
   };
 
   const visitBinding = (binding: RBinding): void => {
@@ -391,7 +418,11 @@ export function censusRuntimeMemory(
     switch (value.type) {
       case "null":
       case "builtin":
+        return;
       case "language":
+        // The private syntax payload owns these same attributes. Visit it once when the
+        // iterative syntax walk reaches the root, including roots nested in another call.
+        pendingSyntax.push([value.expression].values());
         return;
       case "logical":
       case "integer":
@@ -433,6 +464,7 @@ export function censusRuntimeMemory(
       case "closure":
         visitAttributes(value.attributes);
         visitValue(value.environment);
+        pendingSyntax.push([value.body].values(), value.parameters.values());
         return;
       case "formula":
         vectorBytes +=
@@ -478,7 +510,9 @@ export function censusRuntimeMemory(
   };
 
   for (const root of roots) visitUnknown(root);
-  // Expression cells may retain runtime objects inside ConstantExpression nodes. Walk owned
+  // Expression/language cells, closure syntax and promises may retain runtime objects inside
+  // ConstantExpression nodes, including substitution syntax retained after a promise is forced.
+  // Private language metadata is deliberately outside the public AST field model. Walk owned
   // syntax iteratively, ignoring spans and diagnostic display trees. Queue newly found
   // expressions instead of recursing through chains of embedded expression values.
   while (pendingSyntax.length > 0) {
@@ -491,6 +525,13 @@ export function censusRuntimeMemory(
     const value = entry.value;
     if (typeof value !== "object" || value === null || seenSyntax.has(value)) continue;
     seenSyntax.add(value);
+    if ("kind" in value && typeof value.kind === "string") {
+      const metadata = languageSyntaxMetadata(value as AstNode);
+      if (metadata !== undefined) {
+        visitAttributes(metadata.attributes);
+        if (metadata.headTag !== undefined) vectorBytes += textBytes(metadata.headTag);
+      }
+    }
     if (Array.isArray(value)) {
       pendingSyntax.push(value.values());
     } else if ("kind" in value && value.kind === "ConstantExpression" && "value" in value) {

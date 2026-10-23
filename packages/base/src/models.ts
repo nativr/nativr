@@ -18,6 +18,7 @@ import {
   isFactor,
   isMissing,
   listValue,
+  languageValue,
   logicalVector,
   lookupBinding,
   setBinding,
@@ -628,10 +629,7 @@ async function evaluateModelArgument(
   environment: REnvironment,
 ): Promise<RValue> {
   if (argument.promise.expression === null) return invocation.force(argument.promise);
-  return invocation.evaluate(
-    { type: "language", expression: argument.promise.expression },
-    environment,
-  );
+  return invocation.evaluate(languageValue(argument.promise.expression), environment);
 }
 
 function modelDataEnvironment(
@@ -1926,7 +1924,7 @@ async function evaluateModelExpression(
   if (expression === undefined) {
     throw new RTypeMismatchError("NRT3265", `Model term '${label}' is empty.`);
   }
-  return invocation.evaluate({ type: "language", expression }, environment);
+  return invocation.evaluate(languageValue(expression), environment);
 }
 
 function validateModelAuxiliaryLength(

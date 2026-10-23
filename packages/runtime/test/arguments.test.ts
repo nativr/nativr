@@ -5,6 +5,7 @@ import {
   EvaluationContext,
   DEFAULT_RUNTIME_LIMITS,
   matchArguments,
+  languageValue,
   matchArgumentsWithWarnings,
   partialMatchWarning,
   RResourceLimitError,
@@ -64,18 +65,15 @@ it("bounds partial warning call traversal", () => {
   expect(() =>
     partialMatchWarning(
       { actual: "al", formal: "alpha" },
-      {
-        type: "language",
-        expression: {
-          kind: "CallExpression",
-          callee: { kind: "Identifier", name: "f", span },
+      languageValue({
+        kind: "CallExpression",
+        callee: { kind: "Identifier", name: "f", span },
+        span,
+        arguments: Array.from({ length: 100 }, () => ({
+          value: { kind: "Identifier", name: "owned", span },
           span,
-          arguments: Array.from({ length: 100 }, () => ({
-            value: { kind: "Identifier", name: "owned", span },
-            span,
-          })),
-        },
-      },
+        })),
+      }),
       () => context.checkpoint(),
     ),
   ).toThrow(RResourceLimitError);

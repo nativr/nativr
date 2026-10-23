@@ -69,6 +69,7 @@ import {
   doubleVector,
   functionDebugRegistry,
   integerVector,
+  languageValue,
   isFactor,
   factorLevelVector,
   isAtomic,
@@ -2175,7 +2176,7 @@ export class Evaluator {
         listValue(
           [
             characterVector([warning.message]),
-            warningCall === undefined ? R_NULL : { type: "language", expression: warningCall },
+            warningCall === undefined ? R_NULL : languageValue(warningCall),
           ],
           ["message", "call"],
         ),
@@ -2907,7 +2908,7 @@ export class Evaluator {
             return R_NULL;
           },
           parentFrame: (offset) => this.#parentEnvironment(offset, callerEnvironment, context),
-          currentCall: () => (call === undefined ? R_NULL : { type: "language", expression: call }),
+          currentCall: () => (call === undefined ? R_NULL : languageValue(call)),
           systemCall: (which) => this.#systemCall(which, callerEnvironment, context),
           systemFunction: (which) => this.#systemFunction(which, callerEnvironment, context),
           systemFrameCount: () => this.#systemFrameCount(callerEnvironment, context),
@@ -3277,10 +3278,7 @@ export class Evaluator {
       context.markWarningSignalled(warning);
       const condition = withClasses(
         listValue(
-          [
-            characterVector([warning.message]),
-            node === undefined ? R_NULL : { type: "language", expression: node },
-          ],
+          [characterVector([warning.message]), node === undefined ? R_NULL : languageValue(node)],
           ["message", "call"],
         ),
         [...SIMPLE_WARNING_CLASSES],
@@ -3606,7 +3604,7 @@ export class Evaluator {
           listValue(
             [
               characterVector([error.message]),
-              call === undefined || call === null ? R_NULL : { type: "language", expression: call },
+              call === undefined || call === null ? R_NULL : languageValue(call),
             ],
             ["message", "call"],
           ),
@@ -3668,7 +3666,7 @@ export class Evaluator {
             (match) =>
               this.#warnPartialArgument(
                 match,
-                call === undefined ? R_NULL : { type: "language", expression: call },
+                call === undefined ? R_NULL : languageValue(call),
                 context,
               ),
             options,
@@ -3902,18 +3900,15 @@ export class Evaluator {
               span: argument.span,
             }));
       // This call is observable warning metadata, independently probed through conditionCall().
-      const warningCall: RLanguage = {
-        type: "language",
-        expression: {
-          kind: "CallExpression",
-          callee: { kind: "Identifier", name: "match.call", span: sourceCall.span },
-          arguments: ["definition", "call", "expand.dots", "envir"].map((name) => ({
-            value: { kind: "Identifier", name, span: sourceCall.span },
-            span: sourceCall.span,
-          })),
+      const warningCall: RLanguage = languageValue({
+        kind: "CallExpression",
+        callee: { kind: "Identifier", name: "match.call", span: sourceCall.span },
+        arguments: ["definition", "call", "expand.dots", "envir"].map((name) => ({
+          value: { kind: "Identifier", name, span: sourceCall.span },
           span: sourceCall.span,
-        },
-      };
+        })),
+        span: sourceCall.span,
+      });
       const rematched = await matchCallDefinitionArguments(
         parameters,
         callArguments,
@@ -3991,13 +3986,10 @@ export class Evaluator {
         });
       }
     }
-    return {
-      type: "language",
-      expression: {
-        ...sourceCall,
-        arguments: Object.freeze(arguments_),
-      },
-    };
+    return languageValue({
+      ...sourceCall,
+      arguments: Object.freeze(arguments_),
+    });
   }
 
   async #callerFormalDefault(
@@ -4035,7 +4027,7 @@ export class Evaluator {
           (match) =>
             this.#warnPartialArgument(
               match,
-              call === undefined ? R_NULL : { type: "language", expression: call },
+              call === undefined ? R_NULL : languageValue(call),
               context,
             ),
           options,
@@ -4163,7 +4155,7 @@ export class Evaluator {
   ): RLanguage | typeof R_NULL {
     const position = this.#systemFramePosition(which, environment, context);
     const call = this.#callFrames[position - 1]?.call;
-    return call === undefined ? R_NULL : { type: "language", expression: call };
+    return call === undefined ? R_NULL : languageValue(call);
   }
 
   #systemFunction(
@@ -6425,7 +6417,7 @@ function s3MethodClassValue(frame: S3DispatchFrame, context: EvaluationContext):
 function runtimeClassNames(value: RValue): readonly string[] {
   if (value.type === "formula") return ["formula"];
   if (value.type === "symbol") return ["name"];
-  if (value.type === "language") return ["call"];
+  if (value.type === "language") return objectClasses(value) ?? ["call"];
   if (value.type === "expression") return objectClasses(value) ?? ["expression"];
   if (value.type === "null") return ["NULL"];
   const explicit = objectClasses(value);

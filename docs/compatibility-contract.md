@@ -38,6 +38,43 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Language/call attributes (profile 0.397)
+
+The bounded call representation retains ordinary attributes separately from head/argument tags.
+Sampled note, class, comment and environment-valued attributes survive the observed conversions and
+replacements. Attribute-container changes leave the original call unchanged while shared environment
+values keep their identity. The sampled explicit class is observable without changing call
+execution.
+
+Call names expose structural tags through `names` and `attr(..., "names")`; they do not appear in
+`attributes(call)`. The observed short and missing names become empty tags. Removing names preserves
+ordinary attributes. A head tag changes the names result without changing the printed callee.
+
+`as.call` preserves an existing call, while the sampled list/expression routes discard container
+attributes and the container head name. They retain embedded call metadata. `as.list(call)` stores
+names first and then ordinary attributes. Selection with `[` drops parent attributes; the observed
+`[<-`, `[[<-` and `$<-` routes preserve them. Extracted child calls keep their own attributes.
+
+Thirty main native assertions cover this boundary. Six separate assertions check nested evaluation,
+call/list/expression extraction, shared environment attributes and equality that distinguishes
+ordinary attributes, distinct environments and nested attributed children. These are sampled
+structural and reference behaviors; they do not establish complete language equality or all option,
+dispatch, storage and cyclic-graph combinations. Exact overlong-name conditions and classed-list
+deparse text are checked only for the selected inputs.
+
+The public language snapshot remains source-only and cannot round-trip attributes, head tags or
+reference identity. The general `attributes<-` setter, retained-source references, source
+environments, parse-data generation and broader printing/encoding remain unfinished. The two
+deferred native setter observations are not counted as passing compatibility evidence.
+
+The
+[verification record](../compatibility/platform-evidence/language-attributes-windows-0.397.0.json)
+records production, foundation/live/recursive, browser and full cached-corpus verification. The five
+raw graphs have 22 strict controls for eleven composite associations; they do not establish
+independent causality for every source assertion. All thirteen domains remain incomplete. Resource
+census follows retained closure/default and promise syntax; general attributes replacement and
+attributed mode-to-call conversion remain unsupported.
+
 ### Parse expression limits (profile 0.396)
 
 The bounded text route of `parse` uses only the first atomic cell of `n`. Sampled logical, raw,

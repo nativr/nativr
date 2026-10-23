@@ -8,6 +8,7 @@ import {
   doubleVector,
   expressionValue,
   integerVector,
+  languageValue,
   listValue,
   logicalVector,
   pairlistValue,
@@ -295,6 +296,29 @@ describe("public value conversion boundary", () => {
     expect(restored.length).toBe(1);
     expect(restored.attributes.size).toBe(0);
     expect(source.attributes.size).toBe(2);
+  });
+
+  it("keeps language attributes and head tags outside the source-only snapshot contract", () => {
+    const span = {
+      start: { offset: 0, line: 1, column: 1 },
+      end: { offset: 1, line: 1, column: 2 },
+    };
+    const node = {
+      kind: "CallExpression" as const,
+      callee: { kind: "Identifier" as const, name: "owned", span },
+      arguments: [{ value: { kind: "IntegerLiteral" as const, value: 1, span }, span }],
+      span,
+    };
+    const owner = createEnvironment(null);
+    const source = languageValue(node, new Map([["owner", owner]]), "head");
+    const snapshot = valueToSnapshot(source);
+    expect(snapshot).toEqual({ version: 1, type: "language", source: "owned(1L)" });
+    const restored = snapshotToValue(snapshot, () => ({ kind: "Program", body: [node], span }));
+    if (restored.type !== "language") throw new Error("Expected language storage.");
+    expect(restored.attributes.size).toBe(0);
+    expect(restored.headTag).toBeUndefined();
+    expect(source.attributes.get("owner")).toBe(owner);
+    expect(source.headTag).toBe("head");
   });
 
   it("decodes friendly scalar, vector, list, logical, and missing values", () => {

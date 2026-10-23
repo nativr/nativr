@@ -2,12 +2,27 @@ import { assertNever } from "@nativr/ast";
 import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
 
 import { RResourceLimitError } from "./errors.js";
-import type { RValue } from "./values.js";
+import type { RLanguage, RValue } from "./values.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
   end: Object.freeze({ offset: 0, line: 1, column: 1 }),
 });
+
+/** Expose call cells and structural tags without mixing tags into ordinary attributes. */
+export function languageValueEntries(
+  value: RLanguage,
+): { readonly nodes: readonly AstNode[]; readonly names?: readonly string[] } | undefined {
+  const entries = languageAstEntries(value.expression);
+  if (entries === undefined || value.headTag === undefined) return entries;
+  return {
+    nodes: entries.nodes,
+    names: [
+      value.headTag,
+      ...entries.nodes.slice(1).map((_, index) => entries.names?.[index + 1] ?? ""),
+    ],
+  };
+}
 
 /** Expose the ordered head and arguments of any normalized call-shaped value. */
 export function languageAstEntries(

@@ -8,6 +8,7 @@ import {
   doubleVector,
   expressionValue,
   integerVector,
+  languageValue,
   listValue,
   logicalVector,
   pairlistValue,
@@ -375,10 +376,7 @@ export function snapshotToValue(
     case "symbol":
       return { type: "symbol", name: snapshot.name };
     case "language":
-      return {
-        type: "language",
-        expression: parseSnapshotExpression(snapshot.source, parseSource),
-      };
+      return languageValue(parseSnapshotExpression(snapshot.source, parseSource));
     case "expression":
       return expressionValue(
         snapshot.sources.map((source) => parseSnapshotExpression(source, parseSource)),

@@ -1,0 +1,385 @@
+{
+  "schemaVersion": 2,
+  "kind": "nativr-package-check-summary",
+  "rawReportSha256": "787f8bd6c404f1a80602b98d844e201e8c641268c978d3982ad4cc3358c18364",
+  "redaction": {
+    "policy": "allowlisted-metadata-sha256-v2",
+    "rawOutputIncluded": false,
+    "rawConditionsIncluded": false,
+    "sourceIncluded": false
+  },
+  "package": { "name": "cpp11", "version": "0.5.5" },
+  "provenance": {
+    "sourceSha256": "72486beb0605c1229bf3d422cd536224af8dc09bd389a3116f62f4c7705c62f4",
+    "artifactSha256": "779706e05b9b47e2a408a92092cd58a5dca86c1ed9668860722dee255fa65be9",
+    "capabilitySha256": "176806b339d1dfebb2843bdb289c8efe912bb28dc119e31febc4d01d79828ed3",
+    "semanticProfile": "0.397.0",
+    "oracle": { "implementation": "GNU R", "version": "4.6.1" },
+    "runtimeLimits": {
+      "maxSteps": 300000000,
+      "maxCallDepth": 200,
+      "maxVectorLength": 50000000,
+      "maxOutputBytes": 32000000,
+      "maxPackageResourceBytes": 268435456
+    }
+  },
+  "executionProfile": {
+    "rng": {
+      "policy": "explicit-seed-v1",
+      "seed": 20261016,
+      "kinds": ["Mersenne-Twister", "Inversion", "Rejection"]
+    },
+    "oracleRepeat": true,
+    "runtimeProfile": "package-test",
+    "capture": "native-rscript-top-level-v1"
+  },
+  "p7Eligible": false,
+  "inventory": { "nestedTestFiles": 6 },
+  "documentationMetadata": {
+    "policy": "loaded-documentation-signatures-v2",
+    "sourceSha256": "7a46a3183388f0d684f54f05396bf0877d288cbdedae0f4f6b7401731cb1c5ee",
+    "exportsStatus": "passed",
+    "actual": {
+      "status": "completed",
+      "exportCount": 5,
+      "signatures": {
+        "match": 5,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "expected": {
+      "status": "completed",
+      "exportCount": 5,
+      "signatures": {
+        "match": 5,
+        "mismatch": 0,
+        "unknown": 0,
+        "active": 0,
+        "missing": 0,
+        "noncallable": 0
+      }
+    },
+    "functions": { "passed": 5, "failed": 0, "unexecuted": 0 },
+    "usageOutcomes": { "OK": 3, "NOTE": 0, "WARNING": 0, "ERROR": 0 }
+  },
+  "dependencies": [
+    {
+      "name": "R",
+      "actualVersion": "4.6.1",
+      "oracleVersion": "4.6.1",
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "bench",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "brio",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "callr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "cli",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "covr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "decor",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "desc",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "ggplot2",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "glue",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "knitr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "lobstr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "mockery",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "progress",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "rmarkdown",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "scales",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "Rcpp",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "testthat",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "tibble",
+      "actualVersion": "4.6.1",
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "utils",
+      "actualVersion": "4.6.1",
+      "oracleVersion": "4.6.1",
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "vctrs",
+      "actualVersion": "4.6.1",
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    },
+    {
+      "name": "withr",
+      "actualVersion": null,
+      "oracleVersion": null,
+      "actualObserved": true,
+      "oracleObserved": true
+    }
+  ],
+  "firstBlocker": {
+    "stage": "metadata-dependencies",
+    "code": "stage-unexecuted",
+    "path": null,
+    "messageSha256": "21d6d9cce7b83d344360a56b5daad5da889b77745a833cc94601afc403a92fa0"
+  },
+  "runnerDispatch": {
+    "examples": { "outcome": "completed", "firstBlocker": null },
+    "tests": { "outcome": "completed", "firstBlocker": null }
+  },
+  "observations": [
+    {
+      "kind": "test",
+      "path": "tests/testthat.R",
+      "inputSha256": "9a98f8e98bb42f02edf1009bea27cea3f62138840c1a9008c8386984e4a8dda5",
+      "actual": "failed",
+      "expected": "failed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/cpp_register.Rd",
+      "inputSha256": "73ee5682d522ec3237b522733e4d459b52224fb7695543751690e8cc1af44d6e",
+      "actual": "failed",
+      "expected": "failed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/cpp_source.Rd",
+      "inputSha256": "6f2be2009d230c9d5ae1def0f5b041861926356a63230237110d90a04518155f",
+      "actual": "failed",
+      "expected": "failed",
+      "comparison": "mismatch",
+      "repeatable": true
+    },
+    {
+      "kind": "example",
+      "path": "man/cpp_vendor.Rd",
+      "inputSha256": "0bf6d82ab30085aa3d47d0f4549433eef8301ac773d7983a7d3e29402577cfe3",
+      "actual": "completed",
+      "expected": "completed",
+      "comparison": "match",
+      "repeatable": true
+    }
+  ],
+  "stages": [
+    {
+      "id": "archive-artifact",
+      "status": "passed",
+      "reasonSha256": "0312af7e14cc867a5c890b89532a0417aa767469482454231b79f3843169dee0",
+      "discovered": 2,
+      "executed": 2
+    },
+    {
+      "id": "metadata-dependencies",
+      "status": "unexecuted",
+      "reasonSha256": "21d6d9cce7b83d344360a56b5daad5da889b77745a833cc94601afc403a92fa0",
+      "discovered": 193,
+      "executed": 191
+    },
+    {
+      "id": "installation-loading",
+      "status": "passed",
+      "reasonSha256": "f80927740b578c5f30e38355d2e77275e3062838aaa0a6764e3e2747317ed69b",
+      "discovered": 9,
+      "executed": 9
+    },
+    {
+      "id": "namespace-source",
+      "status": "passed",
+      "reasonSha256": "ef36b9180ecc40b3f0344487ecaa6e735807b4e2014f23509c5fcfab26e31cbb",
+      "discovered": 21,
+      "executed": 21
+    },
+    {
+      "id": "documentation",
+      "status": "passed",
+      "reasonSha256": "57b09490f1c6debb46aac797ebbc7bdc5f9aecef043b7c666aa64a6d524329d0",
+      "discovered": 20,
+      "executed": 20
+    },
+    {
+      "id": "installed-documentation",
+      "status": "passed",
+      "reasonSha256": "b9e3ba4775d9196f36ec9eae1a4ea22e87ed4bbe37190071a1cb930a020144e1",
+      "discovered": 10,
+      "executed": 10
+    },
+    {
+      "id": "native-build-portability",
+      "status": "inapplicable",
+      "reasonSha256": "faa48c0fe336e4da224a483f2f2ea0b9b275608edcd9758ece9022acf3e808c3",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "data",
+      "status": "inapplicable",
+      "reasonSha256": "e57542648bf3f7c5c3a126240ed0af656faf096afb83caeb1c93da1034f1f8d5",
+      "discovered": 0,
+      "executed": 0
+    },
+    {
+      "id": "examples",
+      "status": "failed",
+      "reasonSha256": "4434de7ecb2ff89e4f6f7354f7c20b6ceae1f9c83bf61dac68dbc8003c3bc690",
+      "discovered": 3,
+      "executed": 3
+    },
+    {
+      "id": "package-tests",
+      "status": "failed",
+      "reasonSha256": "6bd09fae780a7b1dea6d0f2da3fc3ae7bf3458cd7d4e1c8482f6e000d2c728fd",
+      "discovered": 7,
+      "executed": 1
+    },
+    {
+      "id": "test-output",
+      "status": "failed",
+      "reasonSha256": "dad6f2476489cc22612ba5821a6e5b9ac1bddac0575b7b8032baa5528e0fbe21",
+      "discovered": 4,
+      "executed": 4
+    },
+    {
+      "id": "output-order",
+      "status": "unexecuted",
+      "reasonSha256": "a9bbea23bae512e89d777813cffff0cab9a76d6c4f4b68743d15e71785cef94f",
+      "discovered": 4,
+      "executed": 1
+    },
+    {
+      "id": "conditions",
+      "status": "unexecuted",
+      "reasonSha256": "f4e9e9534aa28827a8b111dee537e081c9143d15bcdd91fe67953b0493e27467",
+      "discovered": 4,
+      "executed": 4
+    },
+    {
+      "id": "vignettes",
+      "status": "failed",
+      "reasonSha256": "6807a8634ec24820dba6d789aff0e1002b5d0ddfcbe4c87699df6d974a55c694",
+      "discovered": 15,
+      "executed": 9
+    },
+    {
+      "id": "manual",
+      "status": "passed",
+      "reasonSha256": "2f0257c2bfff6f5cbf56a7ca5bed2d962fcca9da96711692ddea6cef736190e4",
+      "discovered": 4,
+      "executed": 4
+    }
+  ],
+  "comparisons": {
+    "total": 4,
+    "outcomes": { "mismatch": 3, "match": 1 },
+    "repeatability": { "repeatable": 4, "nonrepeatable": 0, "unobserved": 0 }
+  }
+}

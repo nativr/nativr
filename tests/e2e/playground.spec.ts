@@ -1493,6 +1493,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native call-attribute assertion: ordinary-note.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({warnings<-character();messages<-character();observed<-tryCatch(withCallingHandlers({value<-local({observe<-function(x)list(type=typeof(x),length=length(x),names=names(x),attributeNames=names(attributes(x)),note=attr(x,"note",exact=TRUE),classAttribute=attr(x,"class",exact=TRUE),namesAttribute=attr(x,"names",exact=TRUE),comment=comment(x),implicitClass=class(x),display=deparse(x));x<-quote(owned(left=1L,right=2L));attr(x,"note")<-"owned-note";observe(x)});list(status="value",value=value)},warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)stop(e));list(warnings=warnings,messages=messages,observed=observed)});identical(observed,structure(list(character(),character(),structure(list(c("value"),structure(list(c("language"),c(3L),c("","left","right"),c("note"),c("owned-note"),NULL,c("","left","right"),NULL,c("call"),c("owned(left = 1L, right = 2L)")),names=c("type","length","names","attributeNames","note","classAttribute","namesAttribute","comment","implicitClass","display"))),names=c("status","value"))),names=c("warnings","messages","observed")))})',
+    );
+  await profiledRun(page, "required-146");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native call-attribute assertion: nested-call-evaluation-transparent.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({warnings<-character();messages<-character();observed<-tryCatch(withCallingHandlers({value<-local({observe<-function(x)list(type=typeof(x),length=length(x),names=names(x),attributeNames=names(attributes(x)),note=attr(x,"note",exact=TRUE),classAttribute=attr(x,"class",exact=TRUE),namesAttribute=attr(x,"names",exact=TRUE),comment=comment(x),implicitClass=class(x),display=deparse(x));owner<-new.env(parent=emptyenv());owner$token<-17L;inner<-quote(1L+2L);attr(inner,"owner")<-owner;attr(inner,"note")<-"child";outer<-as.call(list(quote(identity),inner));result<-eval(outer);owner$token<-23L;list(value=result,type=typeof(result),sameOwner=identical(attr(outer[[2L]],"owner"),owner),token=attr(outer[[2L]],"owner")$token,child=observe(outer[[2L]]))});list(status="value",value=value)},warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)stop(e));list(warnings=warnings,messages=messages,observed=observed)});identical(observed,structure(list(character(),character(),structure(list(c("value"),structure(list(c(3L),c("integer"),c(TRUE),c(23L),structure(list(c("language"),c(3L),NULL,c("owner","note"),c("child"),NULL,NULL,NULL,c("call"),c("1L + 2L")),names=c("type","length","names","attributeNames","note","classAttribute","namesAttribute","comment","implicitClass","display"))),names=c("value","type","sameOwner","token","child"))),names=c("status","value"))),names=c("warnings","messages","observed")))})',
+    );
+  await profiledRun(page, "required-147");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native call-attribute assertion: identical-recursive-attributed-children.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({warnings<-character();messages<-character();observed<-tryCatch(withCallingHandlers({value<-local({observe<-function(x)list(type=typeof(x),length=length(x),names=names(x),attributeNames=names(attributes(x)),note=attr(x,"note",exact=TRUE),classAttribute=attr(x,"class",exact=TRUE),namesAttribute=attr(x,"names",exact=TRUE),comment=comment(x),implicitClass=class(x),display=deparse(x));left<-quote(1L+2L);right<-left;attr(left,"note")<-"left";attr(right,"note")<-"right";x<-as.call(list(quote(identity),left));y<-as.call(list(quote(identity),right));list(sameDisplay=identical(deparse(x),deparse(y)),sameCall=identical(x,y),sameEvaluation=identical(eval(x),eval(y)),left=observe(x[[2L]]),right=observe(y[[2L]]))});list(status="value",value=value)},warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)stop(e));list(warnings=warnings,messages=messages,observed=observed)});identical(observed,structure(list(character(),character(),structure(list(c("value"),structure(list(c(TRUE),c(FALSE),c(TRUE),structure(list(c("language"),c(3L),NULL,c("note"),c("left"),NULL,NULL,NULL,c("call"),c("1L + 2L")),names=c("type","length","names","attributeNames","note","classAttribute","namesAttribute","comment","implicitClass","display")),structure(list(c("language"),c(3L),NULL,c("note"),c("right"),NULL,NULL,NULL,c("call"),c("1L + 2L")),names=c("type","length","names","attributeNames","note","classAttribute","namesAttribute","comment","implicitClass","display"))),names=c("sameDisplay","sameCall","sameEvaluation","left","right"))),names=c("status","value"))),names=c("warnings","messages","observed")))})',
+    );
+  await profiledRun(page, "required-148");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

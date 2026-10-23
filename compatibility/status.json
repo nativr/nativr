@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.396.0",
-  "capabilityManifestHash": "1665c4d7a67b693aeadf3ed73eebd8c9a2c2b20058cbacd33cc73456d641c4ca",
+  "semanticProfileVersion": "0.397.0",
+  "capabilityManifestHash": "176806b339d1dfebb2843bdb289c8efe912bb28dc119e31febc4d01d79828ed3",
   "evidence": {
-    "checkedInConformanceCases": 1496,
-    "liveREligibleCases": 1423,
+    "checkedInConformanceCases": 1501,
+    "liveREligibleCases": 1428,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 410,
-    "recursiveBehaviorallyProvenBindings": 173,
+    "recursiveOracleV2Cases": 415,
+    "recursiveBehaviorallyProvenBindings": 174,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -54,6 +54,8 @@
           "call-head-constant-storage",
           "embedded-attributed-call-values",
           "embedded-call-reference-identity",
+          "language-owned-conversion-evaluation-graph",
+          "language-owned-copy-reference-graph",
           "logical-mode-call"
         ]
       },
@@ -80,7 +82,9 @@
         "cases": [
           "apply-class-conversion-and-extraction",
           "expression-owned-conversion-unlist-reference-graph",
-          "expression-owned-selector-replacement-graph"
+          "expression-owned-selector-replacement-graph",
+          "language-owned-conversion-evaluation-graph",
+          "language-owned-subset-replacement-graph"
         ]
       },
       { "binding": "base::as.list.Date", "cases": ["time-class-list-conversion"] },
@@ -140,7 +144,13 @@
       { "binding": "base::as.single.default", "cases": ["logical-mode-single"] },
       { "binding": "base::as.symbol", "cases": ["logical-mode-symbol"] },
       { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
-      { "binding": "base::attr<-", "cases": ["expression-owned-metadata-reference-graph"] },
+      {
+        "binding": "base::attr<-",
+        "cases": [
+          "expression-owned-metadata-reference-graph",
+          "language-owned-copy-reference-graph"
+        ]
+      },
       {
         "binding": "base::body",
         "cases": [
@@ -156,7 +166,11 @@
       },
       {
         "binding": "base::call",
-        "cases": ["embedded-attributed-call-values", "embedded-call-reference-identity"]
+        "cases": [
+          "embedded-attributed-call-values",
+          "embedded-call-reference-identity",
+          "language-owned-conversion-evaluation-graph"
+        ]
       },
       { "binding": "base::cat", "cases": ["cat-numeric-stream-file-and-visibility"] },
       { "binding": "base::computeRestarts", "cases": ["calling-handlers-and-restarts"] },
@@ -207,7 +221,9 @@
           "evaluation-call-frame-missing-expressions",
           "evaluation-control-return-boundaries",
           "evaluation-origin-environments",
-          "expression-owned-construction-evaluation-graph"
+          "expression-owned-construction-evaluation-graph",
+          "language-owned-conversion-evaluation-graph",
+          "language-owned-nested-evaluation-identity-graph"
         ]
       },
       { "binding": "base::eval.parent", "cases": ["evaluation-call-frame-local-chain"] },
@@ -286,6 +302,10 @@
       {
         "binding": "base::getOption",
         "cases": ["partial-argument-warning-handler-controls-and-muffling"]
+      },
+      {
+        "binding": "base::identical",
+        "cases": ["language-owned-nested-evaluation-identity-graph"]
       },
       {
         "binding": "base::if",
@@ -454,6 +474,7 @@
       {
         "binding": "base::names",
         "cases": [
+          "language-owned-metadata-tags-graph",
           "names-dispatch-getter",
           "names-dispatch-next-method",
           "replication-posixlt-names"
@@ -464,6 +485,7 @@
         "binding": "base::names<-",
         "cases": [
           "expression-owned-metadata-reference-graph",
+          "language-owned-metadata-tags-graph",
           "names-dispatch-next-method",
           "names-dispatch-setter",
           "replication-posixlt-names"
@@ -915,7 +937,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "e77144f708255dd6bbbda783a2c5ddf9abcf763df6dcb1de9376ddbcbf79b4da",
+    "sha256": "15e06e5ad1e4b65276e7b538f15ee4f5559940e322e7c4de2214654c4d6afba2",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -924,8 +946,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 173,
-    "bindingsWithDeclaredMatrixEvidence": 26,
+    "recursiveLinkedBindings": 174,
+    "bindingsWithDeclaredMatrixEvidence": 28,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

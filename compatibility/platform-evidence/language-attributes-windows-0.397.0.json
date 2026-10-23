@@ -1,0 +1,875 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-language-attributes-verification",
+  "date": "2026-10-23",
+  "semanticProfile": "0.397.0",
+  "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+  "sourceState": "Verified uncommitted candidate over sourceCommit; final source digests identify the recorded state",
+  "platform": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "oracleVersion": "4.6.1",
+    "oracleLocale": "C",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Bounded owned call attributes and tags, immutable replacement, nested syntax evaluation, structural equality and environment-valued metadata references",
+  "provenance": {
+    "sources": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "fffc1ea9632e66940bd54525ce86e5431228b360486970bdad3cc133a220ecdb"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "15e06e5ad1e4b65276e7b538f15ee4f5559940e322e7c4de2214654c4d6afba2"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "9375207e291587c51e87b9db7cdd31c91560ec89514cba7e454ec0eeae96b2e6"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "44bb391c2d4169ccfce5524fe6a8337b38a1843e4b8632133ed01e581f6ff8a0"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "3c33ca14574915db93f93f70a813b2ae502f5bc22d4b0e42e637888ae6f1ae75"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "daddbf49e9ddbb5d29e05974bb65b8fed6ed97e19e96beec99d6359ed41c1374"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "c02fc6d7187266029ee5e6d9f4942ae93a8507015831c20dabd2fe62584e0549"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "288cad6ebf5f4fa4bd2a92e186a73ab81b683a8c76bdee801cd4aff68c07dada"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "2f1bc39b903760f31bf431f03ad3e196cf5d2b139d31b6d84267d1d3a99b9fdf"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "025e769cd0fac69f9b0f5bd1db316769c147ac28bf2b62f2091bbb650dcd40f9"
+      },
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "f53a3d63c0a6da3740eea6d6c310d10efd4f496c87d620e57e96d078bd7d71a0"
+      },
+      {
+        "path": "packages/base/src/models.ts",
+        "sha256": "c0975c4dad05b9acb50a3db9f4be7e7e272775ad47b9aee419bdffac6f2e2488"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "b5b702b5faea65292a5043214a71aa7f087ecff02497950193e7838cff19b001"
+      },
+      {
+        "path": "packages/nativr/src/conversion.ts",
+        "sha256": "f92c037b483f14ec43e54d23e4808cc2a260ffc5e7e278955f281d0ef3f79354"
+      },
+      {
+        "path": "packages/nativr/test/conversion.test.ts",
+        "sha256": "d14a07d1ad1b1e8b826fe628f4c2bab235be63ee601e6b8a0e40ae3e452c3532"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "288761cbcae1f9fa701c373a2534d927e0477ed83cde623c32420e88e8fafe29"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "c901de0cae0c9a71eefdc1c8486f9b6867ef89ee1fb4e5e6f8a602577d6a079a"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "cf877c787c849ed1d16b9b22433a88285595cb93b26059f188f4a8f07ab18cd7"
+      },
+      {
+        "path": "packages/runtime/src/index.ts",
+        "sha256": "da3a7794db93b077207cbe5ac07aa75bdcfee6a3d080a2acf0313cc6e0476ba6"
+      },
+      {
+        "path": "packages/runtime/src/language-subset.ts",
+        "sha256": "44d4f46c2ed2e2839c23ce0ab173ef2e20d5888cc3f461fcd3f27a61b689d566"
+      },
+      {
+        "path": "packages/runtime/src/language.ts",
+        "sha256": "13b9f0286111d7eed118b519ebbfc4466fa7946435703c1b32d052df84f5ff7a"
+      },
+      {
+        "path": "packages/runtime/src/memory.ts",
+        "sha256": "aabcbcbae1428d5a90f9d486da2c2f3c8a6de69c4296cd6245c66588a8cebffe"
+      },
+      {
+        "path": "packages/runtime/src/values.ts",
+        "sha256": "7d688a0e4785fdf6880ad2d054741da8a5a1fdb7364e23d8278520db90a56eba"
+      },
+      {
+        "path": "packages/runtime/test/arguments.test.ts",
+        "sha256": "19ac84eaf8e00478b8ef39c29f65aa74727e26809a3199f543a7ce9d9d1fc254"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "6ed08517a0731f5224df191ff62b9f54f6fe27d71105acdff2d62aa36b64d371"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "716717ca6896bd2022633f4a2853feaa331280d02a9b5aae76ab7ba5a9a08a25"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/BH.json",
+        "sha256": "4a1dc89e897097d68d55dbe0246c4b13a0358f1c98095cd1a351d9120fe53757"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/R6.json",
+        "sha256": "6e5a8c073035c6a39dc9875f28bd28f8b79840416c3c63e4e8d40bc787e2c6a8"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/RColorBrewer.json",
+        "sha256": "387b2970cb8a0786d9c20a80f549222ad720a17a9b082d1f74cb646defb370df"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/abind.json",
+        "sha256": "53a539fb9c9ae4be4afa5190e4afaab9abc380be9a9b988ed5c6a70e9a6e196a"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/assertthat.json",
+        "sha256": "888291a6a94c45c5b63a2324b6bf64bca1961e627b7dda593748b7f971a53b40"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/cpp11.json",
+        "sha256": "40c0c2b9d52212400e4dfb3ce5c01779f7726a40a4f99c64cc63990b7ee7e80a"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/crayon.json",
+        "sha256": "15697e3c8e8a822659f986b6883bbc85b6104d1a71c0875c719cf402d75e4b99"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/evaluate.json",
+        "sha256": "4091280458332b980f098ab1c000f3800ad42a58a493b3deeb8bb72176a0da94"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/generics.json",
+        "sha256": "9768b6fc9269c10ac20cdeac92f395e6ad615a151c1a7af26b3caa12a02f058c"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/ini.json",
+        "sha256": "9729ee4b88e137140ccd3fe607be32ba690baa3185980d82c7d07f8364b1142e"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/inline.json",
+        "sha256": "07e56725349f42a65d76c219bfd2ad046c53d6aedcc978f5bb6a47ef1cd5225d"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/labeling.json",
+        "sha256": "1996c1419911a324740375c37e0778e6b464a8674ebdfcccd89988f1e0c33777"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/numDeriv.json",
+        "sha256": "f13155ffe7f43923dc3bb7ffefb133f16d0093b3dfad1b717bd889613aed99a3"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/otel.json",
+        "sha256": "aa84aa05d891be88f4a45f66205fb81ac6be45fb4a0bf70523c2bd52e0cfb43a"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/pkgconfig.json",
+        "sha256": "48179b58460be9913669a2bcbb8867fffdb59a42c0d858deb845e7d50a449ec6"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/praise.json",
+        "sha256": "32e4328212e6db91267383112e79a5d9b4ebef19493f4f178e4275352bd57b97"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/prettyunits.json",
+        "sha256": "088a4cfb2dea5c55bdb018d3afff933ceaf07750cd80f9d19911511dc83ade14"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/rematch.json",
+        "sha256": "e956d27ce804309031a594f7918b1ea40e64c31c399e767c102234471029a3f0"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/rprojroot.json",
+        "sha256": "1770f208c6aae784038ce8afcfafc70a80c4be8c11b72c123c8c84ebb6c7e597"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/rstudioapi.json",
+        "sha256": "82443d69ab0363854bfe6ff86079d53f0e1fed57b0bf8f26c4fd49f2b1991874"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/viridisLite.json",
+        "sha256": "0d96d4310f900926bc8be20c1ab11557249280e6ce757cc8d84e4a213ca3e343"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/whisker.json",
+        "sha256": "f2991767ebe6ba6fd3d9aa294326ab5d6c4dede7cdea0895fce7b4a141b24df4"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/withr.json",
+        "sha256": "61cdb86f91bfbace7fb8fb76e831a7414be2aa9fdfdda12cc30f1c239fc4d006"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.397.0/zeallot.json",
+        "sha256": "b44ea8e6ac35d0045d3d3d52f804f6f2bd9cb2dc5fa97cc27af857d3184a6134"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.397.0.json",
+        "sha256": "6dfd8e47863142596fdf84f2fc2598d41be48d177502e76f643aa94db9ac7bab"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.397.0.json",
+        "sha256": "9babb1f20690e2c412891c91c17bcf135f5cde65b90c4bcfb4ab9d52cfec30ca"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.397.0.json",
+        "sha256": "179e5aa83f7eda950fa72a877339a2c8254319b25ea25fafc2b22b1fa949a9f6"
+      },
+      {
+        "path": "packages/nativr/test/language-attributes.test.ts",
+        "sha256": "ceb4a3d506e4000dcab02c142f29ebe8ac07d88d52961db30274b740a040741f"
+      },
+      {
+        "path": "packages/runtime/src/language-metadata.ts",
+        "sha256": "2327e70a89acda66d9e599c59b96224cd41e452f6dd2a32cab3a570b3862e22d"
+      },
+      {
+        "path": "packages/runtime/test/language-attributes.test.ts",
+        "sha256": "804a6106b7e587d572bcee78cec7845a8960a80ee4ad84d621a1179db2882dfb"
+      }
+    ],
+    "recorderSha256": "501f866711c4f49c3e59066f6b781b8a5a28ed61b9e13887fb2bededff8c1c44",
+    "sourceVerifierSha256": "ac7a7127fcb6b906a4cc1d821edc6b6cc41ec6921a9a6d80407f320154e85e91",
+    "originalNative": {
+      "verification": {
+        "path": ".tmp/language-attributes-next/native-verification.json",
+        "sha256": "ca323b202a64a37bf5677dcb502424c0a9928934cc7b36002da71dd07e58aa6e"
+      },
+      "assertions": {
+        "path": ".tmp/language-attributes-next/assertion-native.json",
+        "sha256": "4ed3da6e923557e4d1f3046aa6ddca0814d5578595626e66c37f422365925ca0"
+      },
+      "nativePassed": 32
+    },
+    "adjunctNative": {
+      "verification": {
+        "path": ".tmp/language-attributes-next/adjunct-native-verification.json",
+        "sha256": "6d0d1bec4b07729fcfeadce8b34073885a8ce62d8f04acf725926ff944f3a651"
+      },
+      "assertions": {
+        "path": ".tmp/language-attributes-next/adjunct-assertion-native.json",
+        "sha256": "5704ede2a18721abd4d550732cfa6cf1a5dfc17f7dff3895294d147a481082a8"
+      },
+      "nativePassed": 6
+    },
+    "selection": {
+      "path": ".tmp/language-attributes-next/acceptance-provenance.json",
+      "sha256": "5492c58be2c2d5a5933bbc31bd0fbbf204d2049ac0cf06d69c2e1eae2813138c",
+      "excludedIds": ["attributes-replacement", "attributes-null"]
+    },
+    "baseline": {
+      "path": ".tmp/language-attributes-next/runtime-baseline.json",
+      "sha256": "88998e5956c959cce2080dd1d35d5f30d105b095b664d72f29e58c41f27a2312"
+    },
+    "groupedNative": {
+      "path": ".tmp/language-attributes-next/evidence-0397/native-validation.json",
+      "sha256": "56948e9704d34dba80a5c1dd2bb60e8ce254397bfaee851ccbfe06636b58a72e",
+      "inputHashes": {
+        "foundation.json": "deb3a48705208bad037e14e3b18425a86ca7884c9cb418892ba801534bbc4216",
+        "oracle-v2.json": "c7a344978df7f6c841b3f7bbe542225f6416843959005813272532dcaca4d98e",
+        "native-checks.json": "45ae86dd88345d2a1020571eb8f37335413826b7b77ec4bdd603961a673268df",
+        "provenance.json": "a7bad3bfdccfa1ca9ed71723ead0ab6f893c89c79810fee1da6d63e92cbd2c4f",
+        "prepare.mjs": "7a13b9f86922b0d2e56fb6cb5d785d3c7222c11aac98cc53863fb8f298372e4d",
+        "validate-native.mjs": "6b310b3cb1c3c07e7c6ac8596cc9b3c2be528d5800c11615dccd12a680aed64a",
+        "../accepted-main.json": "d55d591eb523f5ab8574293fb1eef034364f4b3909952866f40bd4240d0fe1ce",
+        "../accepted-adjunct.json": "021629590f4560367df9718ff2d8c5e44767ba7b6e679a93434ecfaf64e5e37a",
+        "../acceptance-provenance.json": "5492c58be2c2d5a5933bbc31bd0fbbf204d2049ac0cf06d69c2e1eae2813138c",
+        "../native-assertions.json": "555f2662b638d1233e3632df33009dd16e5847237cfd09fb3fdf010187e94017",
+        "../adjunct-native-assertions.json": "021629590f4560367df9718ff2d8c5e44767ba7b6e679a93434ecfaf64e5e37a",
+        "../native-verification.json": "ca323b202a64a37bf5677dcb502424c0a9928934cc7b36002da71dd07e58aa6e",
+        "../adjunct-native-verification.json": "6d0d1bec4b07729fcfeadce8b34073885a8ce62d8f04acf725926ff944f3a651",
+        "production/observer": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306",
+        "production/adapter": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+        "production/binding-helper": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46",
+        "metadata/capabilities": "d8c03128ea62449ca86b69e99b4d80ce44484047f3d5b9ea35f4cbe71932bc37",
+        "metadata/surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
+        "oracle/executable": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+      }
+    },
+    "metadataQualification": "Native assembly and the runtime baseline used the recorded stable 0.396 metadata. Their historical hashes are not the final built 0.397 identity; final gates and source hashes bind the candidate separately."
+  },
+  "acceptance": {
+    "originalMainNativeAssertions": 32,
+    "selectedMainNativeAssertions": 30,
+    "deferredMainNativeAssertions": 2,
+    "separateAdjunctNativeAssertions": 6,
+    "source": {
+      "cases": 30,
+      "exactFrozenStrings": true,
+      "caseHashes": [
+        {
+          "id": "quoted-argument-tags",
+          "codeSha256": "97f8e53ed45dc3bfa7dfeead6895964a695bcf81d306dfbb8c78b893c1e57a56"
+        },
+        {
+          "id": "ordinary-note",
+          "codeSha256": "9aa2c681c7f6cfd1258dd505aa4787e9412b19ed87b48b1233d3522664c8e94e"
+        },
+        {
+          "id": "class-and-note",
+          "codeSha256": "19f28d372d4a28276c0993f3a917994fb70a05ac65d7b39761c9bf4826f4fc6e"
+        },
+        {
+          "id": "structure-call",
+          "codeSha256": "508103accda71d367eb4a0fcbc80f39d04ba02f003772576663130f32c97a344"
+        },
+        {
+          "id": "names-head-and-arguments",
+          "codeSha256": "15ed3765a74af518b6caa202ce47e40918408574cf7a6d12716e87adff4ec6d8"
+        },
+        {
+          "id": "attr-names-head-and-arguments",
+          "codeSha256": "74903365daae10e35e3c11a194c10d4e16cf59801e70a2ca470e2e3cd91f72e8"
+        },
+        {
+          "id": "remove-names-keeps-ordinary",
+          "codeSha256": "ed9531c12ee82130c659235fdb0ac0dd153beec3262403273946642161e09d87"
+        },
+        {
+          "id": "short-names",
+          "codeSha256": "b8e5342f60a06e9f30cb705c7fd79bd9b527e8861025761532466ef470f2489e"
+        },
+        {
+          "id": "missing-and-empty-names",
+          "codeSha256": "38ca1c08aef032c592d9e7b4bded7f0ee9cc29f4694fdbed65ae7eea6c323cca"
+        },
+        {
+          "id": "too-many-names",
+          "codeSha256": "0d1fa37010eaff0331549ace4f28b43cef6ea173f0b8b1f10312ad98d22dcaad"
+        },
+        {
+          "id": "remove-class",
+          "codeSha256": "6fddc442c274e31345f163d405d578c723ceaea40bbe13cd0ae29642ca5efae9"
+        },
+        {
+          "id": "ordinary-attribute-copy",
+          "codeSha256": "84b1dafe85a653f0c614f6441896d8487d77241c3ba42db6204bfbc745403a85"
+        },
+        {
+          "id": "environment-attribute-alias",
+          "codeSha256": "59fcf0a3ae9173c5e42f8b049a03e12920b8dc0013d9589ed9b6d3c8f61bee87"
+        },
+        {
+          "id": "as-call-language-keeps-attributes",
+          "codeSha256": "fc55e3623744076b9d1cc470665412206ea441613dce96a62c61313f9d99ae80"
+        },
+        {
+          "id": "as-list-call-attributes",
+          "codeSha256": "e71155f761b8bd3447ee689b3b910dd0716a71d9c5c528453ce6283e54992373"
+        },
+        {
+          "id": "as-call-list-attributes",
+          "codeSha256": "d2f717e2ae5522aa2fae35650cc2c3bd21ff50d03d361449508a21ef9fd8ec01"
+        },
+        {
+          "id": "as-call-expression-attributes",
+          "codeSha256": "0158bfcd12e0981734c5f75b914c0f41cf7036d4e9ef2392389406e587921ddc"
+        },
+        {
+          "id": "call-constructor-tags",
+          "codeSha256": "f3425883ec05d5837e261712dc0fc4703355757730e5bc862b4b5d11bafb4fc8"
+        },
+        {
+          "id": "whole-subset",
+          "codeSha256": "8707ea10b9e9c47ff9556cc33a0ecce54aba713e578f8303ce4a01504cb381b1"
+        },
+        {
+          "id": "reordered-subset",
+          "codeSha256": "3ed712d0f2b04adf617f7b821925757c48c22adf432eb0177035bb467dcceb00"
+        },
+        {
+          "id": "element-extraction",
+          "codeSha256": "6c4314757273c1e7d2f5fd2b4a20bd2a1d0e12954a16a12b8dfbdde5025e5d19"
+        },
+        {
+          "id": "nested-attributed-call-extraction",
+          "codeSha256": "6a303e0dd130c8cc0bc3971d4e77289ce65ebccd69b7f3d712169390ce7ebda8"
+        },
+        {
+          "id": "element-replacement",
+          "codeSha256": "cef0a68a8c7385f23e04779a61974065d6bedbef9b26d8c69f4ac1bd60455e68"
+        },
+        {
+          "id": "subset-replacement",
+          "codeSha256": "4c00067806d255e1624435567f968990d4120ba85a334f1a0950d07828411438"
+        },
+        {
+          "id": "element-deletion",
+          "codeSha256": "30bc417e06e4d4ac748d90c71cc0bc350a4dfef48df262f2d507952b57652689"
+        },
+        {
+          "id": "member-replacement",
+          "codeSha256": "61c9aa217ff6d96793fe0b5ab9d447bf3f63c65434ec16170623b746e695de46"
+        },
+        {
+          "id": "member-append",
+          "codeSha256": "333cc7f07d2959e140f48189a9d1f67cc60fe6ef8b3f5d4934c45abb3a08304c"
+        },
+        {
+          "id": "eval-ignores-ordinary-attributes",
+          "codeSha256": "6ad985a64f21033be6e4c459a722fdf4167e40fb3badee479d62ef69b1db6097"
+        },
+        {
+          "id": "nested-call-replacement-keeps-child",
+          "codeSha256": "9188e005462841aa3425e213f17400c93065b9aa6b4f66bae9294ae43996da40"
+        },
+        {
+          "id": "comment-call",
+          "codeSha256": "bcd9a34743e0122032b12b61003fa848e7a0e78d460bf8599f09f7070ecaeca4"
+        }
+      ],
+      "boundaryGuards": [
+        "retains the attributed call mode boundary without desynchronizing syntax metadata"
+      ],
+      "boundaryNativeCompatibilityCredit": false
+    },
+    "adjunctSource": {
+      "cases": 6,
+      "exactFrozenStrings": true,
+      "caseHashes": [
+        {
+          "id": "nested-call-evaluation-transparent",
+          "codeSha256": "87e30fabe4f393fd21a4918777ad903993660ea42f524fc68cfe938993e4ef57"
+        },
+        {
+          "id": "identical-ordinary-call-attributes",
+          "codeSha256": "08bacb6658545a2dfd59a3889ada0ec9d26b5954e53ed1e277508c977f1791f8"
+        },
+        {
+          "id": "identical-environment-call-attributes",
+          "codeSha256": "4b8c7a5df5bcdcd8da3d29e5e043f4249a89cab6f8e56aa6ad40f3c114012d12"
+        },
+        {
+          "id": "identical-recursive-attributed-children",
+          "codeSha256": "62429765a34ba4a51ccff466d4b72a2565a95fb717cf7e0398b1858c2fed3483"
+        },
+        {
+          "id": "nested-call-list-expression-extraction-alias",
+          "codeSha256": "42548422e9269b2ec1e511187c01135fbab0c13f521461e5d5224f8a60dec779"
+        },
+        {
+          "id": "attributed-call-expression-evaluation",
+          "codeSha256": "d9a20dfa69ffb021f98397bf780c024c611c01a68547b49d478abc1869647aff"
+        }
+      ]
+    },
+    "worker": [
+      {
+        "id": "ordinary-note",
+        "profileSite": "required-146",
+        "codeSha256": "9aa2c681c7f6cfd1258dd505aa4787e9412b19ed87b48b1233d3522664c8e94e",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "nested-call-evaluation-transparent",
+        "profileSite": "required-147",
+        "codeSha256": "87e30fabe4f393fd21a4918777ad903993660ea42f524fc68cfe938993e4ef57",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "identical-recursive-attributed-children",
+        "profileSite": "required-148",
+        "codeSha256": "62429765a34ba4a51ccff466d4b72a2565a95fb717cf7e0398b1858c2fed3483",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "cases": [
+      {
+        "suite": "foundation",
+        "id": "language-owned-metadata-tags",
+        "codeSha256": "d0c996d80daf706c8b5a1b7ff501c7a6e049ed04ac557b42fee87d376934fcff",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "language-owned-copy-reference",
+        "codeSha256": "9d219b8c416621d1c2f6acd3af3475bb914da45e2465e4dc3382664cc704aceb",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "language-owned-conversion-evaluation",
+        "codeSha256": "1ab6c5d114268f10c265f6f6788d4347e540b9354cb8f03ed455174f86ad4ae2",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "language-owned-subset-replacement",
+        "codeSha256": "404a44b7c75a69b9a675d70bbe2cd5139ccdf889532738ac3a27051909c97511",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "language-owned-nested-evaluation-identity",
+        "codeSha256": "2336c0bcf2e8330a4fae36a038ebfa40eaa9a98890802b84c1c34aeabe8cc548",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "recursive",
+        "id": "language-owned-metadata-tags-graph",
+        "codeSha256": "389af2f9e9a1a2eec3b70517635d069c0b81c1d633958d9a02fd59229cc8e433",
+        "bindingEvidence": ["base::names", "base::names<-"]
+      },
+      {
+        "suite": "recursive",
+        "id": "language-owned-copy-reference-graph",
+        "codeSha256": "c252115a09ef54386cb5b69def03a802eb837d12ad5f071d5dbaf9206d51ee7e",
+        "bindingEvidence": ["base::attr<-", "base::as.call"]
+      },
+      {
+        "suite": "recursive",
+        "id": "language-owned-conversion-evaluation-graph",
+        "codeSha256": "fbc6470faa9088a3b8a520cc566dcc3f46dc58559a05e565eee4fae6ede8996a",
+        "bindingEvidence": ["base::as.call", "base::as.list", "base::call", "base::eval"]
+      },
+      {
+        "suite": "recursive",
+        "id": "language-owned-subset-replacement-graph",
+        "codeSha256": "1bf4ac5cf9d99ce159f563dcf02759194398d2578d4ca49917a3d9e2cf6e230e",
+        "bindingEvidence": ["base::as.list"]
+      },
+      {
+        "suite": "recursive",
+        "id": "language-owned-nested-evaluation-identity-graph",
+        "codeSha256": "c01553815ecb53fc106e7dadafa9c71f0fa8c25cb577a5a6969a164c7c36f0be",
+        "bindingEvidence": ["base::eval", "base::identical"]
+      }
+    ],
+    "guards": {
+      "boundary": [
+        "retains the attributed call mode boundary without desynchronizing syntax metadata"
+      ],
+      "ownedStructuralGuards": {
+        "runtime": {
+          "path": "packages/runtime/test/language-attributes.test.ts",
+          "sha256": "804a6106b7e587d572bcee78cec7845a8960a80ee4ad84d621a1179db2882dfb",
+          "literalTests": [
+            "keeps bare syntax fast and copies attributed roots without mutating aliases",
+            "keeps head tags out of ordinary attributes and changes only structural names",
+            "retains child attributes on executable nodes through extraction and replacement",
+            "preserves ordinary metadata and tags during deletion and named append",
+            "bounds extensions before shared replacement allocation and permits exact-cap updates",
+            "checks cancellation before quoting cells or rebuilding tags",
+            "does not reserve growth for absent element deletion at the exact vector cap",
+            "counts ordinary root and nested attributes once in the object-size estimate",
+            "retains attribute-only and constant-cell environments without duplicate graph traversal",
+            "walks long attributed language chains iteratively and bounds recursive size estimates"
+          ],
+          "parameterizedTest": "retains syntax-only references through %s without evaluating them",
+          "retentionRoutes": ["body", "default", "promise", "substitution"],
+          "tests": 14
+        },
+        "conversion": {
+          "path": "packages/nativr/test/conversion.test.ts",
+          "sha256": "d14a07d1ad1b1e8b826fe628f4c2bab235be63ee601e6b8a0e40ae3e452c3532",
+          "test": "keeps language attributes and head tags outside the source-only snapshot contract",
+          "tests": 1
+        },
+        "nativeParityClaimed": false
+      },
+      "nativeParityClaimed": false
+    },
+    "sourceTestCases": 37,
+    "baseline0396": {
+      "counts": { "total": 36, "pass": 0, "mismatch": 4, "error": 32 },
+      "mainCounts": { "total": 30, "pass": 0, "mismatch": 4, "error": 26 },
+      "adjunctCounts": { "total": 6, "pass": 0, "mismatch": 0, "error": 6 },
+      "stableSourceAndArtifactFiles": 381,
+      "errorScope": "Thirty-two evaluated assertions raised runtime errors; four returned false. These are separate outcomes, not harness failures."
+    },
+    "nativeGroups": {
+      "foundationGroupsPassed": 5,
+      "foundationAssertionsPassed": 36,
+      "mainAssertionsPassed": 30,
+      "adjunctAssertionsPassed": 6,
+      "recursiveGroupsPassed": 5,
+      "environmentAliasesPassed": 7,
+      "strictControlsPassed": 22
+    },
+    "causalScope": "Twenty-two strict controls qualify eleven composite associations across eight bindings. Five raw programs are independently authored; they do not provide per-output or per-assertion causal proof. The seven reference checks concern environments, not ordinary call-node identity.",
+    "conditionScope": "Only the sampled overlong names message and class chain are established. General condition origins, dispatch and display equivalence remain unfinished."
+  },
+  "verification": {
+    "unitPassed": 3522,
+    "unitSkipped": 95,
+    "foundationPassed": 1501,
+    "livePassed": 1428,
+    "liveSkipped": 55,
+    "recursivePassed": 415,
+    "causalLinkedBindings": 174,
+    "partialMatrixDimensions": 142,
+    "partialMatrixBindings": 28,
+    "bundleGate": [
+      "PASS statically loaded public client: 17.9 KiB / 150.0 KiB gzip",
+      "PASS Worker JavaScript: 495.3 KiB / 512.0 KiB gzip",
+      "PASS combined parser Wasm: 671.9 KiB / 1536.0 KiB raw",
+      "PASS elementary-function Wasm: 311.2 KiB / 384.0 KiB raw"
+    ],
+    "gates": [
+      {
+        "finishedAt": "2026-10-23T00:42:14.6450490Z",
+        "exitCode": 0,
+        "arguments": ["check"],
+        "gate": "check",
+        "kind": "owned-local-gate-exit",
+        "executable": "pnpm",
+        "logSha256": "75a2630dbf7d4b55a79c373da076fa55437e185e8a97685eb65bda6f73eb12e0",
+        "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+        "log": ".tmp/profile-0397-check.log",
+        "schemaVersion": 1,
+        "startedAt": "2026-10-23T00:40:26.7257407Z",
+        "receiptSha256": "8c8477884b4528a3fbc6daf257201695628e9c3f6a2dceca2af7a5c1292d8b88"
+      },
+      {
+        "exitCode": 0,
+        "finishedAt": "2026-10-23T00:42:24.3367811Z",
+        "arguments": ["conformance"],
+        "startedAt": "2026-10-23T00:42:20.9464244Z",
+        "gate": "foundation",
+        "log": ".tmp/profile-0397-foundation.log",
+        "schemaVersion": 1,
+        "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+        "kind": "owned-local-gate-exit",
+        "logSha256": "54d16a79ac6f3e2d6af29b9b8bfdf0cd2b45a49a67ad56a75118b3e2655f6693",
+        "executable": "pnpm",
+        "receiptSha256": "df753dd8b42ae7509072bd6438ee713a0cd2735ffd020e8c82954b643de52588"
+      },
+      {
+        "schemaVersion": 1,
+        "gate": "native",
+        "log": ".tmp/profile-0397-native.log",
+        "startedAt": "2026-10-23T00:42:21.6626462Z",
+        "exitCode": 0,
+        "executable": "pnpm",
+        "kind": "owned-local-gate-exit",
+        "logSha256": "5e01107eaf3a5bc3b49b1d8bbf9b0a96fa310d7cc868ccf0974c2da6a0f1cbcc",
+        "arguments": ["conformance:r"],
+        "finishedAt": "2026-10-23T00:47:19.1845496Z",
+        "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+        "receiptSha256": "8f21ca4daa6d6230a735b2666dd1c7bd597ed1a82608243eef56fdf29f9d376b"
+      },
+      {
+        "arguments": ["conformance:r:v2"],
+        "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+        "startedAt": "2026-10-23T00:42:21.2892960Z",
+        "gate": "v2",
+        "logSha256": "190dff3bcab2f45711844279d0d0f70ab3b5153a98a1cf2b99c3595dcfd01e8c",
+        "log": ".tmp/profile-0397-v2.log",
+        "finishedAt": "2026-10-23T00:48:34.2532325Z",
+        "executable": "pnpm",
+        "schemaVersion": 1,
+        "exitCode": 0,
+        "kind": "owned-local-gate-exit",
+        "receiptSha256": "84dcd35cb997feb49bea8117209811fba82774d6816dfb117a15145b7e2033ad"
+      },
+      {
+        "executable": "pnpm",
+        "gate": "e2e",
+        "startedAt": "2026-10-23T00:42:21.6472393Z",
+        "log": ".tmp/profile-0397-e2e.log",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "schemaVersion": 1,
+        "finishedAt": "2026-10-23T00:44:26.7696830Z",
+        "logSha256": "b49ac1ae59bc3342fb58473e90fcd4e7a420cb42df306d749a49f50c80ef8448",
+        "kind": "owned-local-gate-exit",
+        "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+        "exitCode": 0,
+        "receiptSha256": "3b1955bb59d1f27001eedcf27eeadb6ecaac2402b8c4a97425070c83775ab4c9"
+      },
+      {
+        "sourceCommit": "fd2112f9914d9da8e02057cf4ab4ed03f4f18700",
+        "arguments": [".tmp/run-corpus-0397.mjs", "--run"],
+        "gate": "corpus",
+        "schemaVersion": 1,
+        "kind": "owned-local-gate-exit",
+        "finishedAt": "2026-10-23T00:48:16.7040991Z",
+        "executable": "node",
+        "exitCode": 0,
+        "log": ".tmp/profile-0397-corpus.log",
+        "startedAt": "2026-10-23T00:42:21.2341901Z",
+        "logSha256": "93211732453be7633955afb5a1f554565807be9ed05777c920895f841007c99a",
+        "receiptSha256": "d5a9ae9a1c40fbeccd3e2d0338c9f2144662da4a8191b233eed3bf2a34aa4f2f"
+      }
+    ],
+    "earlierAttempts": [
+      {
+        "gate": "check",
+        "stage": "format",
+        "exitCode": 1,
+        "receipt": {
+          "path": ".tmp/profile-0397-check-first-format-exit.json",
+          "sha256": "4b713e5fb5bc81e3310d32ea00e8f753b770f75bb610aeac9d422a5be0bb6d61"
+        },
+        "archivedLog": {
+          "path": ".tmp/profile-0397-check-first-format.log",
+          "sha256": "7c9c3762269ba3b859744d17caeb6053bb8a4b7b68f5627c80c7b194b02435aa"
+        },
+        "qualification": "The first check stopped on annotation JSON formatting before semantic tests. The final passing check is recorded separately; no native assertion was changed for this repair."
+      },
+      {
+        "gate": "check",
+        "stage": "unit-tests",
+        "exitCode": 1,
+        "receipt": {
+          "path": ".tmp/profile-0397-check-pre-repair-exit.json",
+          "sha256": "23a1fbd8d6487183c9bc821fcace9060184f931c51e87ec8c83612ffb2e7ee03"
+        },
+        "archivedLog": {
+          "path": ".tmp/profile-0397-check-pre-repair.log",
+          "sha256": "9a1db5724cf6d0da456a09ddb4db395fa3a2e175e8b281902e496cffacb1ff8a"
+        },
+        "unitPassed": 3519,
+        "unitFailed": 2,
+        "unitSkipped": 95,
+        "qualification": "Two existing condition-call equality assertions failed before comparison normalized parsed and synthetic dots consistently. The original assertions were retained; only the later complete passing check qualifies the final source state. The separate NULL-deletion resource repair also precedes that final gate."
+      }
+    ],
+    "postCorpus": {
+      "schemaVersion": 1,
+      "ok": true,
+      "gates": [
+        {
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "log": ".tmp/profile-0397-post-checkpoint-tests.log",
+          "logSha256": "26cdf136f4f61cccad6c9b1e51ef3ced1057c1326b342d74c5f591f5b79333b4",
+          "name": "checkpoint-tests",
+          "finishedAt": "2026-10-23T00:48:52.3640811Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:48:51.3942844Z"
+        },
+        {
+          "arguments": ["typecheck:all"],
+          "log": ".tmp/profile-0397-post-all-types.log",
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b",
+          "name": "all-types",
+          "finishedAt": "2026-10-23T00:48:56.8924082Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:48:52.3800481Z"
+        },
+        {
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "log": ".tmp/profile-0397-post-checkpoint-lint.log",
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "checkpoint-lint",
+          "finishedAt": "2026-10-23T00:48:59.4504351Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:48:56.8937653Z"
+        },
+        {
+          "arguments": ["format:check"],
+          "log": ".tmp/profile-0397-post-format.log",
+          "logSha256": "755f922394a43f274ebc1c7617babaa53eba7c1f2c5da8ccac5797c53fdc483f",
+          "name": "format",
+          "finishedAt": "2026-10-23T00:49:10.3075246Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:48:59.4512121Z"
+        },
+        {
+          "arguments": ["capabilities:check"],
+          "log": ".tmp/profile-0397-post-capabilities.log",
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502",
+          "name": "capabilities",
+          "finishedAt": "2026-10-23T00:49:10.8668665Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:49:10.3134535Z"
+        },
+        {
+          "arguments": ["compatibility:check"],
+          "log": ".tmp/profile-0397-post-coverage.log",
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668",
+          "name": "coverage",
+          "finishedAt": "2026-10-23T00:49:11.3458453Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:49:10.8688938Z"
+        },
+        {
+          "arguments": ["inventory:check"],
+          "log": ".tmp/profile-0397-post-inventory.log",
+          "logSha256": "a8720d28f5aa1ea8773ea22b4221e9a30227bcf10f10ece98242ea3ee257fa80",
+          "name": "inventory",
+          "finishedAt": "2026-10-23T00:49:12.0814353Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:49:11.3518877Z"
+        },
+        {
+          "arguments": ["status:check"],
+          "log": ".tmp/profile-0397-post-status.log",
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55",
+          "name": "status",
+          "finishedAt": "2026-10-23T00:49:12.8334589Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:49:12.0868574Z"
+        },
+        {
+          "arguments": ["corpus:check"],
+          "log": ".tmp/profile-0397-post-corpus.log",
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc",
+          "name": "corpus",
+          "finishedAt": "2026-10-23T00:49:13.2562754Z",
+          "command": "pnpm",
+          "exitCode": 0,
+          "startedAt": "2026-10-23T00:49:12.8387248Z"
+        }
+      ],
+      "kind": "owned-post-corpus-verification"
+    },
+    "supplementalCheckpointTests": 41,
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.397.0.json",
+      "sha256": "9babb1f20690e2c412891c91c17bcf135f5cde65b90c4bcfb4ab9d52cfec30ca",
+      "passed": 12,
+      "timingScope": "Correctness observations, not an isolated performance comparison"
+    },
+    "fullCorpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.397.0.json",
+      "sha256": "179e5aa83f7eda950fa72a877339a2c8254319b25ea25fafc2b22b1fa949a9f6",
+      "packages": 24,
+      "observations": 178,
+      "baselineProfile": "0.393.0",
+      "holdoutUnchanged": true,
+      "changeScope": "The separate corpus record qualifies observed changes and checker/tier policy; this semantic checkpoint attributes no package improvement causally."
+    }
+  },
+  "remaining": [
+    "All 13 semantic domains remain incomplete; callable links and partial matrix dimensions are not a completion percentage.",
+    "General attributes<- remains unsupported; both original native setter observations are retained without passing runtime credit.",
+    "Retained-source references, srcfile/source environments and complete parse-data meaning remain explicitly unfinished.",
+    "Source-only public language/expression snapshots do not gain full metadata transport from these internal value changes.",
+    "Complete object/dispatch/coercion/condition/display/identity matrices and arbitrary nested or cyclic graph behavior remain unfinished.",
+    "Original dependency closure, nested-test coverage and assisted testing-runner evidence remain separate; no substitute-runner P6/P7 credit.",
+    "Windows evidence remains advisory; the Linux normative gate and Formula holdout are deferred.",
+    "No downloads, pushes, publication or remote changes are authorized by this record."
+  ]
+}

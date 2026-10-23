@@ -3151,5 +3151,90 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "language-owned-metadata-tags-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::names", "base::names<-"],
+    "code": "local({\n      bare<-quote(owned(left=1L,right=2L))\n      noted<-bare;attr(noted,\"note\")<-\"owned-note\"\n      classed<-noted;class(classed)<-\"owned_call\"\n      built<-structure(quote(owned(1L,2L)),note=\"owned-note\",class=\"owned_call\")\n      named<-bare;names(named)<-c(\"owned_head\",\"a\",\"b\")\n      attrNamed<-bare;attr(attrNamed,\"names\")<-c(\"owned_head\",\"a\",\"b\")\n      removed<-classed;names(removed)<-NULL\n      short<-bare;names(short)<-c(\"owned_head\",\"a\")\n      missing<-bare;names(missing)<-c(NA_character_,\"\",\"b\")\n      unclassed<-classed;class(unclassed)<-NULL\n      commented<-bare;comment(commented)<-c(\"owned-first\",\"owned-second\")\n      overlong<-tryCatch({x<-bare;names(x)<-c(\"h\",\"a\",\"b\",\"c\");list(status=\"value\",value=x)},\n        error=function(e){if(!identical(conditionMessage(e),\"'names' attribute [4] must be the same length as the vector [3]\"))stop(e);\n          list(status=\"error\",message=conditionMessage(e),classes=class(e))})\n      list(bare=bare,noted=noted,classed=classed,built=built,named=named,attrNamed=attrNamed,\n        removed=removed,short=short,missing=missing,unclassed=unclassed,commented=commented,\n        overlong=overlong,names=list(bare=names(bare),named=names(named),short=names(short),missing=names(missing)),\n        ordinaryAttributes=attributes(bare),nameAttribute=attr(bare,\"names\",exact=TRUE))\n    })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "language-owned-copy-reference-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::attr<-", "base::as.call"],
+    "code": "local({\n      owner<-new.env(parent=emptyenv());owner$token<-17L\n      original<-structure(quote(owned(left=1L,right=2L)),note=\"owned-note\",class=\"owned_call\",owner=owner)\n      changed<-original;attr(changed,\"note\")<-\"copy\"\n      owner$token<-23L\n      list(original=original,changed=changed,converted=as.call(original),\n        originalOwner=attr(original,\"owner\"),changedOwner=attr(changed,\"owner\"),reference=owner)\n    })",
+    "graphAssertions": {
+      "sameNode": [
+        [["originalOwner"], ["reference"]],
+        [["changedOwner"], ["reference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "language-owned-conversion-evaluation-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.call", "base::as.list", "base::call", "base::eval"],
+    "code": "local({\n      x<-structure(quote(owned(left=1L,right=2L)),note=\"owned-note\",class=\"owned_call\")\n      source<-structure(list(quote(owned),1L,2L),names=c(\"head\",\"left\",\"right\"),note=\"list-note\",class=\"owned_list\")\n      expressions<-structure(expression(owned,1L,2L),names=c(\"head\",\"left\",\"right\"),note=\"expression-note\")\n      owned<-function(left,right)left+right\n      list(source=x,listView=as.list(x),listSource=source,fromList=as.call(source),expressionSource=expressions,\n        fromExpression=as.call(expressions),constructed=call(\"owned\",left=1L,right=2L),evaluated=eval(x))\n    })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "language-owned-subset-replacement-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::as.list"],
+    "code": "local({\n      original<-structure(quote(owned(left=1L,right=2L)),note=\"owned-note\",class=\"owned_call\")\n      inner<-structure(quote(1L+2L),note=\"child\")\n      outer<-as.call(list(quote(identity),inner));attr(outer,\"note\")<-\"parent\"\n      replaced<-original;replaced[[2L]]<-9L\n      bracket<-original;bracket[2L]<-list(9L)\n      deleted<-original;deleted[[2L]]<-NULL\n      member<-original;member$left<-9L\n      appended<-original;appended$last<-9L\n      nested<-original;nested[[2L]]<-inner\n      list(original=original,whole=original[],reordered=original[c(1L,3L,2L)],element=original[[2L]],\n        outer=outer,child=outer[[2L]],replaced=replaced,bracket=bracket,deleted=deleted,\n        member=member,appended=appended,nested=nested,nestedChild=nested[[2L]],listView=as.list(replaced))\n    })",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "language-owned-nested-evaluation-identity-graph",
+    "policy": "exact",
+    "bindingEvidence": ["base::eval", "base::identical"],
+    "code": "local({\n      owner<-new.env(parent=emptyenv());owner$token<-17L\n      other<-new.env(parent=emptyenv())\n      inner<-quote(1L+2L);attr(inner,\"owner\")<-owner;attr(inner,\"note\")<-\"child\"\n      outer<-as.call(list(quote(identity),inner));items<-as.list(outer)\n      expressions<-as.expression(items);extracted<-expressions[[2L]]\n      differentNote<-inner;attr(differentNote,\"note\")<-\"different\"\n      differentOwner<-inner;attr(differentOwner,\"owner\")<-other\n      differentOuter<-as.call(list(quote(identity),differentNote))\n      owner$token<-29L\n      list(inner=inner,outer=outer,items=items,expressions=expressions,extracted=extracted,\n        differentNote=differentNote,differentOwner=differentOwner,differentOuter=differentOuter,\n        values=list(inner=eval(inner),outer=eval(outer),expression=eval(as.expression(list(inner)))),\n        equality=list(sameCopy=identical(inner,inner),differentNote=identical(inner,differentNote),\n          differentOwner=identical(inner,differentOwner),differentOuter=identical(outer,differentOuter)),\n        innerOwner=attr(inner,\"owner\"),childOwner=attr(outer[[2L]],\"owner\"),\n        listOwner=attr(items[[2L]],\"owner\"),expressionOwner=attr(extracted,\"owner\"),\n        otherOwner=attr(differentOwner,\"owner\"),reference=owner,otherReference=other)\n    })",
+    "graphAssertions": {
+      "sameNode": [
+        [["innerOwner"], ["reference"]],
+        [["childOwner"], ["reference"]],
+        [["listOwner"], ["reference"]],
+        [["expressionOwner"], ["reference"]],
+        [["otherOwner"], ["otherReference"]]
+      ]
+    },
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

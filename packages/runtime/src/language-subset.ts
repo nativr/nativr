@@ -1,7 +1,7 @@
 import type { AstNode, CallArgument, SourceSpan } from "@nativr/ast";
 
-import { languageAstEntries } from "./language.js";
-import { RResourceLimitError } from "./errors.js";
+import { languageValueEntries } from "./language.js";
+import { RResourceLimitError, RTypeMismatchError } from "./errors.js";
 import {
   extractListMember,
   extractVectorElement,
@@ -20,12 +20,13 @@ import {
   integerVector,
   isAtomic,
   isMissing,
+  languageValue,
   listValue,
   logicalVector,
   missingValue,
   vectorNames,
 } from "./values.js";
-import type { OperatorContext, RLanguage, RList, RValue } from "./values.js";
+import type { OperatorContext, RAttributes, RLanguage, RList, RValue } from "./values.js";
 
 const SYNTHETIC_SPAN: SourceSpan = Object.freeze({
   start: Object.freeze({ offset: 0, line: 1, column: 1 }),
@@ -76,9 +77,10 @@ export function replaceLanguageSubset(
   context: OperatorContext,
 ): RValue {
   const entries = languageEntries(target, context);
+  preflightLanguageReplacement(entries.values, index, context);
   const updated = replaceVectorSubset(entries.values, index, replacement, context);
   if (updated.type !== "list") throw new Error("Language replacement must remain list shaped.");
-  return languageFromValues(updated, entries.originalNodes, context);
+  return languageFromValues(updated, entries.originalNodes, context, target.attributes);
 }
 
 /** Replace or remove one call element. */
@@ -89,9 +91,21 @@ export function replaceLanguageElement(
   context: OperatorContext,
 ): RValue {
   const entries = languageEntries(target, context);
+  if (replacement.type === "null") {
+    // Element deletion cannot grow the result. Avoid a huge temporary names extension for
+    // a valid out-of-range numeric no-op; all other indices keep the shared diagnostics.
+    if (
+      (index.type === "integer" || index.type === "double") &&
+      index.length === 1 &&
+      !isMissing(index, 0) &&
+      Number.isFinite(index.values[0]) &&
+      Math.trunc(index.values[0]!) > entries.values.length
+    )
+      return target;
+  } else preflightLanguageReplacement(entries.values, index, context);
   const updated = replaceVectorElement(entries.values, index, replacement, context);
   if (updated.type !== "list") throw new Error("Language replacement must remain list shaped.");
-  return languageFromValues(updated, entries.originalNodes, context);
+  return languageFromValues(updated, entries.originalNodes, context, target.attributes);
 }
 
 /** Replace or append one named call argument. */
@@ -102,13 +116,35 @@ export function replaceLanguageMember(
   context: OperatorContext,
 ): RValue {
   const entries = languageEntries(target, context);
+  const existing = name !== undefined && name !== "" && vectorNames(entries.values)?.includes(name);
+  context.allocate(entries.values.length + (existing || replacement.type === "null" ? 0 : 1));
   const updated = replaceListMember(entries.values, name, replacement, context);
   if (updated.type !== "list") throw new Error("Language replacement must remain list shaped.");
-  return languageFromValues(updated, entries.originalNodes, context);
+  return languageFromValues(updated, entries.originalNodes, context, target.attributes);
+}
+
+/** Set structural call tags while leaving ordinary attributes and child values intact. */
+export function replaceLanguageNames(
+  target: RLanguage,
+  names: readonly string[] | undefined,
+  context: OperatorContext,
+): RLanguage {
+  context.checkpoint();
+  const entries = languageValueEntries(target);
+  if (entries === undefined)
+    throw new RTypeMismatchError("NRT3198", "names() applied to unsupported language syntax");
+  if (names !== undefined && names.length > entries.nodes.length)
+    throw new RTypeMismatchError(
+      "NRT3199",
+      `'names' attribute [${names.length}] must be the same length as the vector [${entries.nodes.length}]`,
+    );
+  context.allocate(entries.nodes.length);
+  return languageFromNodes(entries.nodes, names, context, target.attributes);
 }
 
 function languageEntries(target: RLanguage, context: OperatorContext): LanguageEntries {
-  const source = languageAstEntries(target.expression);
+  context.checkpoint();
+  const source = languageValueEntries(target);
   const nodes = source?.nodes ?? [target.expression];
   context.allocate(nodes.length);
   const values = nodes.map((node) => {
@@ -127,6 +163,7 @@ function languageFromValues(
   values: RList,
   originalNodes: ReadonlyMap<RValue, AstNode>,
   context: OperatorContext,
+  attributes: RAttributes = new Map(),
 ): RValue {
   if (values.length === 0) return R_NULL;
   context.allocate(values.length);
@@ -135,35 +172,81 @@ function languageFromValues(
     return originalNodes.get(value) ?? embeddedValueAst(value, () => context.checkpoint());
   });
   const names = vectorNames(values);
+  return languageFromNodes(nodes, names, context, attributes);
+}
+
+function languageFromNodes(
+  nodes: readonly AstNode[],
+  names: readonly string[] | undefined,
+  context: OperatorContext,
+  attributes: RAttributes,
+): RLanguage {
+  context.checkpoint();
   const head = nodes[0] as AstNode;
   if (
     head.kind === "Identifier" &&
     (head.name === "[" || head.name === "[[" || head.name === "$" || head.name === "@") &&
     nodes.length >= 2
   ) {
-    const arguments_ = nodes
-      .slice(2)
-      .map((value, index) => callArgument(value, names?.[index + 2]));
-    return {
-      type: "language",
-      expression: {
+    const arguments_ = nodes.slice(2).map((value, index) => {
+      context.checkpoint();
+      return callArgument(value, names?.[index + 2]);
+    });
+    return languageValue(
+      {
         kind: "SubsetExpression",
         operator: head.name,
         target: nodes[1] as AstNode,
         arguments: arguments_,
         span: SYNTHETIC_SPAN,
       },
-    };
+      attributes,
+      names?.[0] ?? "",
+    );
   }
-  return {
-    type: "language",
-    expression: {
+  return languageValue(
+    {
       kind: "CallExpression",
       callee: head,
-      arguments: nodes.slice(1).map((value, index) => callArgument(value, names?.[index + 1])),
+      arguments: nodes.slice(1).map((value, index) => {
+        context.checkpoint();
+        return callArgument(value, names?.[index + 1]);
+      }),
       span: SYNTHETIC_SPAN,
     },
-  };
+    attributes,
+    names?.[0] ?? "",
+  );
+}
+
+function preflightLanguageReplacement(
+  target: RList,
+  index: RValue | undefined,
+  context: OperatorContext,
+): void {
+  // Shared list replacement allocates after constructing its result. Bound extensions first.
+  let length = target.length;
+  if (index?.type === "integer" || index?.type === "double") {
+    for (let offset = 0; offset < index.length; offset += 1) {
+      context.checkpoint();
+      const position = index.values[offset] ?? 0;
+      if (!isMissing(index, offset) && Number.isFinite(position) && position > length)
+        length = Math.trunc(position);
+    }
+  } else if (index?.type === "logical") {
+    length = Math.max(length, index.length);
+  } else if (index?.type === "character") {
+    const available = new Set(vectorNames(target)?.filter((name) => name !== "") ?? []);
+    for (let offset = 0; offset < index.length; offset += 1) {
+      context.checkpoint();
+      const name = isMissing(index, offset) ? "" : (index.values[offset] ?? "");
+      if (name === "" || !available.has(name)) {
+        length += 1;
+        if (name !== "") available.add(name);
+      }
+    }
+  }
+  context.allocate(length);
 }
 
 function callArgument(value: AstNode, name: string | undefined): CallArgument {
@@ -198,9 +281,9 @@ export function quoteLanguageNode(node: AstNode): RValue {
     case "UnsupportedExpression":
       return node.feature === "missing argument"
         ? { type: "symbol", name: "" }
-        : { type: "language", expression: node };
+        : languageValue(node);
     default:
-      return { type: "language", expression: node };
+      return languageValue(node);
   }
 }
 

@@ -45,6 +45,9 @@ import {
   deparseAstLines,
   deparseClosureLines,
   languageAstEntries,
+  languageValue,
+  languageValueEntries,
+  replaceLanguageNames,
   doubleVector,
   encodeRSerialization,
   encodeRSerializationFile,
@@ -478,7 +481,7 @@ const R_BASE_PRIMITIVE_NAMES = new Set([
 type NumericVector = RLogicalVector | RIntegerVector | RDoubleVector | RComplexVector;
 type AttributedSequence = RVector | RPairlist;
 type MetadataSequence = AttributedSequence | RExpression;
-type AttributedRuntimeObject = MetadataSequence | REnvironment | RClosure;
+type AttributedRuntimeObject = MetadataSequence | REnvironment | RClosure | RLanguage;
 const SHELL_QUOTE_TYPES = ["sh", "csh", "cmd", "cmd2"] as const;
 type ShellQuoteType = (typeof SHELL_QUOTE_TYPES)[number];
 
@@ -491,7 +494,12 @@ function isMetadataSequence(value: RValue): value is MetadataSequence {
 }
 
 function isAttributedRuntimeObject(value: RValue): value is AttributedRuntimeObject {
-  return isMetadataSequence(value) || value.type === "environment" || value.type === "closure";
+  return (
+    isMetadataSequence(value) ||
+    value.type === "environment" ||
+    value.type === "closure" ||
+    value.type === "language"
+  );
 }
 
 function replaceRuntimeAttribute(
@@ -515,7 +523,9 @@ function replaceRuntimeAttribute(
   const attributes = new Map(value.attributes);
   if (replacement.type === "null") attributes.delete(name);
   else attributes.set(name, replacement);
-  return { ...value, attributes };
+  return value.type === "language"
+    ? languageValue(value.expression, attributes, value.headTag ?? "")
+    : { ...value, attributes };
 }
 
 const FIRST_CLASS_OPERATOR_BUILTINS: readonly BuiltinDefinition[] = [
@@ -6739,10 +6749,7 @@ async function bquoteAst(
     if (argument === undefined || node.arguments.length !== 1 || argument.name !== undefined) {
       throw new REvaluationError("NRE2103", ".() inside bquote() requires one argument.");
     }
-    const value = await invocation.evaluate(
-      { type: "language", expression: argument.value },
-      environment,
-    );
+    const value = await invocation.evaluate(languageValue(argument.value), environment);
     return embeddedCallArgumentAst(value, () => invocation.context.checkpoint());
   }
   switch (node.kind) {
@@ -7212,7 +7219,7 @@ async function builtinDoCall(invocation: BuiltinInvocation): Promise<RValue> {
       };
     }),
   };
-  const result = await invocation.evaluateDetailed({ type: "language", expression }, environment);
+  const result = await invocation.evaluateDetailed(languageValue(expression), environment);
   invocation.setResultVisibility(result.visible ? "visible" : "invisible");
   return result.value;
 }
@@ -16431,8 +16438,7 @@ function validateConditionDomain(value: RValue | undefined): void {
 function conditionValue(error: NativRError): RList {
   if (error instanceof RSignalledConditionError) return error.condition;
   const origin = errorConditionCall(error);
-  const call: RValue =
-    origin === undefined || origin === null ? R_NULL : { type: "language", expression: origin };
+  const call: RValue = origin === undefined || origin === null ? R_NULL : languageValue(origin);
   return withClasses(
     listValue([characterVector([error.message]), call], ["message", "call"]),
     errorConditionClasses(error),
@@ -17028,7 +17034,7 @@ function identicalValue(
     case "symbol":
       return left.name === (right as RSymbol).name;
     case "language":
-      return deparseAst(left.expression) === deparseAst((right as RLanguage).expression);
+      return identicalLanguage(left, right as RLanguage, options, checkpoint);
     case "expression": {
       const other = right as RExpression;
       return (
@@ -17091,6 +17097,46 @@ function identicalValue(
     case "dots":
       return false;
   }
+}
+
+function identicalLanguage(
+  left: RLanguage,
+  right: RLanguage,
+  options: IdenticalOptions,
+  checkpoint: () => void,
+): boolean {
+  // Call syntax can be deeply nested without invoking functions. Compare its cells iteratively
+  // so metadata and opaque references are observed without recursive syntax-stack growth.
+  const pending: [RLanguage, RLanguage][] = [[left, right]];
+  while (pending.length > 0) {
+    checkpoint();
+    const [a, b] = pending.pop()!;
+    if (a === b) continue;
+    if (!attributesEqual(a.attributes, b.attributes, options, checkpoint)) return false;
+    const aEntries = languageValueEntries(a);
+    const bEntries = languageValueEntries(b);
+    if (aEntries === undefined || bEntries === undefined) {
+      // Function/body and unsupported syntax reflection retain their existing display comparison.
+      if (
+        aEntries !== bEntries ||
+        deparseAst(a.expression, checkpoint) !== deparseAst(b.expression, checkpoint)
+      )
+        return false;
+      continue;
+    }
+    if (aEntries.nodes.length !== bEntries.nodes.length) return false;
+    for (let index = 0; index < aEntries.nodes.length; index += 1) {
+      checkpoint();
+      if ((aEntries.names?.[index] ?? "") !== (bEntries.names?.[index] ?? "")) return false;
+      // Parsed dots use a normalized syntax marker; synthetic diagnostic calls use an identifier.
+      // Both represent the same quoted symbol, as in the ordinary base call-to-list conversion.
+      const aCell = quoteAst(aEntries.nodes[index]!);
+      const bCell = quoteAst(bEntries.nodes[index]!);
+      if (aCell.type === "language" && bCell.type === "language") pending.push([aCell, bCell]);
+      else if (!identicalValue(aCell, bCell, options, checkpoint)) return false;
+    }
+  }
+  return true;
 }
 
 function atomicStorageEqual(
@@ -17487,11 +17533,9 @@ async function builtinSource(invocation: BuiltinInvocation): Promise<RList> {
             : `${deparsed.slice(0, maxDeparseLength)} .... [TRUNCATED] `;
         invocation.context.writeOutput({ stream: "stdout", text: `\n${prompt}${displayed}\n` });
       }
-      const result = await invocation.evaluateDetailed(
-        { type: "language", expression: node },
-        environment,
-        { controlScope: "evaluation" },
-      );
+      const result = await invocation.evaluateDetailed(languageValue(node), environment, {
+        controlScope: "evaluation",
+      });
       lastValue = result.value;
       lastVisible = result.visible;
       if (printEvaluation && result.visible) {
@@ -18381,7 +18425,7 @@ async function builtinEvalq(invocation: BuiltinInvocation): Promise<RValue> {
   const value =
     expression.expression === null
       ? await invocation.force(expression)
-      : { type: "language" as const, expression: expression.expression };
+      : languageValue(expression.expression);
   return evaluateInEvalFrame(invocation, value, environment);
 }
 
@@ -18400,7 +18444,7 @@ async function evaluateLibraryBody(
   const environment = invocation.functionEnvironment();
   if (environment === undefined)
     throw new REvaluationError("NRE2140", "Library evaluation requires an active function frame.");
-  const result = await invocation.evaluateDetailed({ type: "language", expression }, environment, {
+  const result = await invocation.evaluateDetailed(languageValue(expression), environment, {
     functionBody: true,
   });
   invocation.setResultVisibility(result.visible ? "visible" : "invisible");
@@ -18460,9 +18504,8 @@ async function builtinTransform(invocation: BuiltinInvocation): Promise<RValue> 
   const source = transformSource(input, invocation);
   const environment = withEnvironment(input, dataArgument.promise.environment);
   const additions = await invocation.evaluateDetailed(
-    {
-      type: "language",
-      expression: callAst(
+    languageValue(
+      callAst(
         "list",
         dots.map((argument) => ({
           ...(argument.name === undefined ? {} : { name: argument.name }),
@@ -18470,7 +18513,7 @@ async function builtinTransform(invocation: BuiltinInvocation): Promise<RValue> 
           span: SYNTHETIC_SPAN,
         })),
       ),
-    },
+    ),
     environment,
     { controlScope: "evaluation" },
   );
@@ -18820,26 +18863,23 @@ async function builtinDollar(invocation: BuiltinInvocation): Promise<RValue> {
   } else throw new RTypeMismatchError("NRT3305", "invalid subscript type");
   const target = await invocation.force(targetArgument.promise);
   return invocation.evaluate(
-    {
-      type: "language",
-      expression: {
-        kind: "SubsetExpression",
-        operator: "$",
+    languageValue({
+      kind: "SubsetExpression",
+      operator: "$",
+      span: SYNTHETIC_SPAN,
+      target: {
+        kind: "ConstantExpression",
+        value: target,
+        display: embeddedValueAst(target),
         span: SYNTHETIC_SPAN,
-        target: {
-          kind: "ConstantExpression",
-          value: target,
-          display: embeddedValueAst(target),
+      },
+      arguments: [
+        {
+          value: { kind: "StringLiteral", value: name, span: SYNTHETIC_SPAN },
           span: SYNTHETIC_SPAN,
         },
-        arguments: [
-          {
-            value: { kind: "StringLiteral", value: name, span: SYNTHETIC_SPAN },
-            span: SYNTHETIC_SPAN,
-          },
-        ],
-      },
-    },
+      ],
+    }),
     invocation.currentEnvironment(),
   );
 }
@@ -19224,10 +19264,7 @@ async function evaluateSubsetArgument(
   environment: REnvironment,
 ): Promise<RValue> {
   if (argument.promise.expression === null) return invocation.force(argument.promise);
-  const language = {
-    type: "language",
-    expression: argument.promise.expression,
-  } satisfies RLanguage;
+  const language = languageValue(argument.promise.expression) satisfies RLanguage;
   return (await invocation.evaluateDetailed(language, environment, { controlScope: "evaluation" }))
     .value;
 }
@@ -19271,7 +19308,7 @@ async function evaluateArgument(
   const value =
     argument.promise.expression === null
       ? await invocation.force(argument.promise)
-      : ({ type: "language", expression: argument.promise.expression } satisfies RLanguage);
+      : (languageValue(argument.promise.expression) satisfies RLanguage);
   const result = await invocation.evaluateDetailed(value, environment, {
     controlScope: "evaluation",
   });
@@ -19415,15 +19452,12 @@ async function builtinCall(invocation: BuiltinInvocation): Promise<RLanguage> {
     });
   }
   invocation.context.allocate(arguments_.length + 1);
-  return {
-    type: "language",
-    expression: {
-      kind: "CallExpression",
-      callee,
-      arguments: Object.freeze(arguments_),
-      span: SYNTHETIC_SPAN,
-    },
-  };
+  return languageValue({
+    kind: "CallExpression",
+    callee,
+    arguments: Object.freeze(arguments_),
+    span: SYNTHETIC_SPAN,
+  });
 }
 
 async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> {
@@ -19445,7 +19479,8 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
   // Construction preserves the head object, including non-callable character vectors. Only
   // evaluation decides whether it is callable; call() separately requires a function name.
   const callee = entries[0] ?? nullAst();
-  const names = input.type === "list" ? vectorNames(input) : undefined;
+  const names =
+    input.type === "list" || input.type === "expression" ? vectorNames(input) : undefined;
   const arguments_ = entries.slice(1).map((value, index): CallArgument => {
     const name = names?.[index + 1];
     return {
@@ -19455,15 +19490,12 @@ async function builtinAsCall(invocation: BuiltinInvocation): Promise<RLanguage> 
     };
   });
   invocation.context.allocate(entries.length);
-  return {
-    type: "language",
-    expression: {
-      kind: "CallExpression",
-      callee,
-      arguments: Object.freeze(arguments_),
-      span: SYNTHETIC_SPAN,
-    },
-  };
+  return languageValue({
+    kind: "CallExpression",
+    callee,
+    arguments: Object.freeze(arguments_),
+    span: SYNTHETIC_SPAN,
+  });
 }
 
 async function builtinDeparse(invocation: BuiltinInvocation): Promise<RValue> {
@@ -19532,6 +19564,11 @@ function builtinDeparseLines(
       checkWork,
       isPrimitive: (name) => R_BASE_PRIMITIVE_NAMES.has(name),
     });
+  } else if (
+    input.type === "list" &&
+    [...input.attributes.keys()].some((name) => name !== "names")
+  ) {
+    source = deparseAst(embeddedValueAst(input, checkWork), checkWork);
   } else if (input.type === "symbol") {
     source = input.name;
   } else if (input.type === "complex" && input.length === 1) {
@@ -19607,9 +19644,9 @@ function quoteAst(node: AstNode): RValue {
         ? ({ type: "symbol", name: "..." } satisfies RSymbol)
         : node.feature === "missing argument"
           ? ({ type: "symbol", name: "" } satisfies RSymbol)
-          : ({ type: "language", expression: node } satisfies RLanguage);
+          : (languageValue(node) satisfies RLanguage);
     default:
-      return { type: "language", expression: node } satisfies RLanguage;
+      return languageValue(node) satisfies RLanguage;
   }
 }
 
@@ -20261,12 +20298,11 @@ async function builtinFormals(invocation: BuiltinInvocation): Promise<RValue> {
 }
 
 function reflectionInternalCall(name: string): RLanguage {
-  return {
-    type: "language",
-    expression: callAst(name, [
+  return languageValue(
+    callAst(name, [
       { value: { kind: "Identifier", name: "fun", span: SYNTHETIC_SPAN }, span: SYNTHETIC_SPAN },
     ]),
-  };
+  );
 }
 
 function replacementParameters(
@@ -20679,6 +20715,15 @@ async function retainModeAttributes(
   invocation: BuiltinInvocation,
 ): Promise<RValue> {
   const attributes = new Map(objectAttributes(source));
+  // Mode conversion has not admitted ordinary call attributes yet. Keep that existing boundary
+  // instead of creating a wrapper whose metadata differs from its executable syntax payload.
+  if (value.type === "language") {
+    if (attributes.size === 0) return value;
+    throw new RUnsupportedFeatureError(
+      "NRU6250",
+      "Attributed 'language' mode results require the general object-attribute model.",
+    );
+  }
   if (!primitive && value.type !== "symbol" && isAttributedRuntimeObject(value)) {
     let target = { ...value, attributes: new Map<string, RValue>() } as AttributedRuntimeObject;
     const dimensions = attributes.get("dim");
@@ -23758,7 +23803,7 @@ function asVectorLanguageEntries(input: RLanguage): {
   readonly values: readonly RValue[];
   readonly names?: readonly string[];
 } {
-  const entries = languageAstEntries(input.expression);
+  const entries = languageValueEntries(input);
   if (entries === undefined) return { values: [input] };
   return {
     values: entries.nodes.map(quoteAst),
@@ -25967,7 +26012,8 @@ async function asListDefault(value: RValue, invocation: BuiltinInvocation): Prom
   if (value.type === "language") {
     const entries = asVectorLanguageEntries(value);
     invocation.context.allocate(entries.values.length);
-    return listValue(entries.values, entries.names);
+    const output = listValue(entries.values, entries.names);
+    return { ...output, attributes: new Map([...output.attributes, ...value.attributes]) };
   }
   if (value.type === "expression") {
     invocation.context.allocate(value.values.length);
@@ -27168,27 +27214,24 @@ async function builtinNamesPosixLtReplacement(invocation: BuiltinInvocation): Pr
   const environment = invocation.functionEnvironment()!;
   if (input.type === "null" && named.type === "null") return R_NULL;
   await invocation.evaluate(
-    {
-      type: "language",
-      expression: {
-        kind: "ReplacementExpression",
-        operator: "<-",
-        target: {
-          kind: "SubsetExpression",
-          operator: "$",
-          target: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN },
-          arguments: [
-            {
-              value: { kind: "StringLiteral", value: "year", span: SYNTHETIC_SPAN },
-              span: SYNTHETIC_SPAN,
-            },
-          ],
-          span: SYNTHETIC_SPAN,
-        },
-        value: embeddedCallArgumentAst(named, () => invocation.context.checkpoint()),
+    languageValue({
+      kind: "ReplacementExpression",
+      operator: "<-",
+      target: {
+        kind: "SubsetExpression",
+        operator: "$",
+        target: { kind: "Identifier", name: "x", span: SYNTHETIC_SPAN },
+        arguments: [
+          {
+            value: { kind: "StringLiteral", value: "year", span: SYNTHETIC_SPAN },
+            span: SYNTHETIC_SPAN,
+          },
+        ],
         span: SYNTHETIC_SPAN,
       },
-    },
+      value: embeddedCallArgumentAst(named, () => invocation.context.checkpoint()),
+      span: SYNTHETIC_SPAN,
+    }),
     environment,
   );
   const output = await invocation.force(lookupBinding(environment, "x")!);
@@ -27263,6 +27306,24 @@ async function replaceNamesAttribute(
   if (value.type === "null") {
     if (replacement.type === "null") return R_NULL;
     throw new RTypeMismatchError("NRT3198", "attempt to set an attribute on NULL");
+  }
+  if (value.type === "language") {
+    if (replacement.type === "null")
+      return replaceLanguageNames(value, undefined, invocation.context);
+    const characters = namesReplacementCharacters(replacement, invocation, true);
+    const length = languageValueEntries(value)?.nodes.length ?? 1;
+    if (characters.length > length) {
+      throw new RTypeMismatchError(
+        "NRT3199",
+        `'names' attribute [${characters.length}] must be the same length as the vector [${length}]`,
+      );
+    }
+    invocation.context.allocate(length);
+    const names = Array.from({ length }, (_, index) => {
+      invocation.context.checkpoint();
+      return isMissing(characters, index) ? "" : (characters.values[index] ?? "");
+    });
+    return replaceLanguageNames(value, names, invocation.context);
   }
   if (!isMetadataSequence(value))
     throw new RTypeMismatchError("NRT3198", "names() applied to a non-vector");
@@ -27402,6 +27463,12 @@ async function matchedObjectAttribute(
   if (value.type === "formula" && name === "class") return characterVector(["formula"]);
   let attributes = objectAttributes(value);
   if (attributes === undefined) return R_NULL;
+  if (value.type === "language" && name === "names") {
+    const names = languageValueEntries(value)?.names;
+    if (names === undefined) return R_NULL;
+    invocation.context.allocate(names.length);
+    return characterVector(names);
+  }
   if (isAttributedSequence(value) && !attributes.has("names")) {
     const names = sequenceNamesAttribute(value);
     if (names !== undefined) attributes = new Map([...attributes, ["names", names]]);
@@ -27442,7 +27509,7 @@ async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RV
   if (!isAttributedRuntimeObject(value)) {
     throw new RTypeMismatchError(
       "NRT3200",
-      "attr<- currently requires a vector, list, pairlist, environment, or closure value.",
+      "attr<- currently requires a vector, list, pairlist, call, environment, or closure value.",
     );
   }
   invocation.context.allocate(1);
@@ -31561,10 +31628,7 @@ async function formatZeroReplacements(
       "'zero.print' is truncated to fit into formatted zeros; consider 'replace=TRUE'";
     await invocation.signalWarning(
       withClasses(
-        listValue(
-          [characterVector([message]), { type: "language", expression: call }],
-          ["message", "call"],
-        ),
+        listValue([characterVector([message]), languageValue(call)], ["message", "call"]),
         ["simpleWarning", "warning", "condition"],
       ),
       { code: "NRW1202", message, call: deparseDiagnosticAst(call) },
@@ -39672,7 +39736,7 @@ async function builtinCurve(invocation: BuiltinInvocation): Promise<RValue> {
   } else {
     const environment = createEnvironment(expressionArgument.promise.environment);
     setBinding(environment, xname, x);
-    y = await invocation.evaluate({ type: "language", expression }, environment);
+    y = await invocation.evaluate(languageValue(expression), environment);
     label = deparseAst(expression);
   }
   if (valueLength(y) !== count) {
@@ -53951,7 +54015,7 @@ async function evaluateTibbleNameRepairFormula(
   }
   const environment = createEnvironment(formula.environment ?? invocation.currentEnvironment());
   setBinding(environment, ".", names);
-  return invocation.evaluate({ type: "language", expression }, environment);
+  return invocation.evaluate(languageValue(expression), environment);
 }
 
 async function builtinTribble(invocation: BuiltinInvocation): Promise<RValue> {
@@ -55780,9 +55844,8 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
     return builtinMapply(
       {
         ...invocation,
-        currentCall: () => ({
-          type: "language",
-          expression: {
+        currentCall: () =>
+          languageValue({
             kind: "CallExpression",
             callee: { kind: "Identifier", name: "mapply", span: SYNTHETIC_SPAN },
             arguments: [
@@ -55802,8 +55865,7 @@ async function builtinMapply(invocation: BuiltinInvocation, simplify: boolean): 
               },
             ],
             span: SYNTHETIC_SPAN,
-          },
-        }),
+          }),
         arguments: [
           { name: "FUN", promise: createForcedPromise(callable, environment) },
           ...dots,
@@ -60655,7 +60717,7 @@ async function builtinAsFormula(invocation: BuiltinInvocation): Promise<RValue> 
 
   const evaluationEnvironment = requestedEnvironment ?? objectArgument.promise.environment;
   const value = await invocation.evaluate(
-    { type: "language", expression } satisfies RLanguage,
+    languageValue(expression) satisfies RLanguage,
     evaluationEnvironment,
   );
   if (value.type !== "formula") {
@@ -61524,6 +61586,20 @@ async function builtinStructure(invocation: BuiltinInvocation): Promise<RValue> 
   if (data === undefined) {
     throw new REvaluationError("NRE2100", "Missing required argument '.Data' in structure().");
   }
+  if (data.type === "language") {
+    let output: RValue = data;
+    for (const [name, attribute] of matched) {
+      invocation.context.checkpoint();
+      if (name === "names")
+        output = await replaceNamesAttribute(output, attribute, invocation, false);
+      else if (name === "class") output = replaceClassAttribute(output, attribute, invocation);
+      else {
+        invocation.context.allocate(1);
+        output = replaceRuntimeAttribute(output as RLanguage, name, attribute);
+      }
+    }
+    return output;
+  }
   if (!isMetadataSequence(data)) {
     throw new RTypeMismatchError(
       "NRT3137",
@@ -61809,10 +61885,10 @@ function namedListEntries(
 function implicitClasses(value: RValue): readonly string[] {
   if (value.type === "formula") return ["formula"];
   if (value.type === "symbol") return ["name"];
-  if (value.type === "language") return ["call"];
   if (value.type === "null") return ["NULL"];
   const explicit = objectClasses(value);
   if (explicit !== undefined) return explicit;
+  if (value.type === "language") return ["call"];
   if (!isMetadataSequence(value)) {
     return [value.type === "closure" || value.type === "builtin" ? "function" : value.type];
   }

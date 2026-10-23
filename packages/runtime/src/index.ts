@@ -6,7 +6,7 @@ export {
   partialMatchWarning,
   partialMatchWarningsEnabled,
 } from "./arguments.js";
-export { embeddedValueAst, quoteLanguageNode } from "./language-subset.js";
+export { embeddedValueAst, quoteLanguageNode, replaceLanguageNames } from "./language-subset.js";
 export {
   subsetExpression,
   extractExpressionElement,
@@ -59,7 +59,12 @@ export type {
   RuntimeSystemPackageTextResource,
   RuntimeS3Method,
 } from "./evaluator.js";
-export { deparseAst, deparseDiagnosticAst, languageAstEntries } from "./language.js";
+export {
+  deparseAst,
+  deparseDiagnosticAst,
+  languageAstEntries,
+  languageValueEntries,
+} from "./language.js";
 export { deparseAstLines, deparseClosureLines } from "./language-deparse.js";
 export type { DeparseLinesOptions } from "./language-deparse.js";
 export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";
@@ -94,6 +99,7 @@ export {
   dataFrameValue,
   doubleVector,
   expressionValue,
+  languageValue,
   factorLevels,
   factorLevelVector,
   factorLabelAt,
