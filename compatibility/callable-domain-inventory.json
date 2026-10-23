@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.394.0",
+  "semanticProfileVersion": "0.395.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "0a69098d19d293d5ce770e056c63bb264c36bae31e9a5dd12c69577705d79cea",
+    "capabilities": "d904eb3e080d4d332c4f1120eeb8dc01c6ed2fccd8507b6ef0b98546d244b22a",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "31087fcef49160718107d6ed4511176f88fb87c7aa5b4a629c4a7374ddd27bcf",
-    "oracleV2": "64e784c9d234830377a08585cd2276fbf88050b6a45a08ffb36c9ee944b62b0b",
+    "foundation": "0457504207e2fa8c1de00b14bedf067c95bf85143d1e03c4184d66a60a5742cb",
+    "oracleV2": "d705ba44ba0895e6246c5105f3e06d89dffd1484d97ca516c5f0ab9f8168a6d3",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "a230c1d53654aa130a890d9a15a6174b6fb8b389fb3f53278ca9a766d73aa1b5"
+    "annotations": "9f593f5885df9dc84b431b0a3ff8361c9375deff8dadb3e67e84a6ec1dca863e"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -52,8 +52,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 172,
-    "bindingsWithDeclaredMatrixEvidence": 25,
+    "recursiveLinkedBindings": 173,
+    "bindingsWithDeclaredMatrixEvidence": 26,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -64,22 +64,22 @@
       "requirement": "Every GNU R expression and assignment form normalizes without losing semantics.",
       "completion": "incomplete",
       "assignedBindings": 30,
-      "recursiveLinkedBindings": 9,
+      "recursiveLinkedBindings": 10,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 29,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 28,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 29,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 28,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "errors",
-          "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "attributes",
@@ -93,8 +93,8 @@
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 29,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 28,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "identity",
@@ -154,22 +154,22 @@
       "requirement": "Exact/partial/positional matching, missing arguments, dots, defaults, lazy forcing, quote/eval, substitute/match.call, and visibility.",
       "completion": "incomplete",
       "assignedBindings": 164,
-      "recursiveLinkedBindings": 56,
+      "recursiveLinkedBindings": 57,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 149,
-          "partialDeclaredBindings": 15
+          "pendingBindings": 148,
+          "partialDeclaredBindings": 16
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 151,
-          "partialDeclaredBindings": 13
+          "pendingBindings": 150,
+          "partialDeclaredBindings": 14
         },
         {
           "dimension": "errors",
-          "pendingBindings": 154,
-          "partialDeclaredBindings": 10
+          "pendingBindings": 153,
+          "partialDeclaredBindings": 11
         },
         {
           "dimension": "attributes",
@@ -183,8 +183,8 @@
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 150,
-          "partialDeclaredBindings": 14
+          "pendingBindings": 149,
+          "partialDeclaredBindings": 15
         },
         {
           "dimension": "identity",
@@ -17859,9 +17859,102 @@
         "domains": ["calls-promises", "language-syntax"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": [
+        "parse-text-controls-default-missingness-graph",
+        "parse-text-controls-empty-default-encoding-adjunct-graph",
+        "parse-text-controls-error-order-graph",
+        "parse-text-controls-path-forcing-graph",
+        "parse-text-controls-source-selection-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-path-forcing-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-source-selection-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-error-order-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-path-forcing-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-source-selection-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-error-order-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-path-forcing-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-source-selection-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
-        "AST/source metadata, argument matching and forcing, quoted/evaluated forms and error/visibility behavior remain incompletely evidenced.",
-        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+        "Bounded text controls now have causal evidence. Full AST/source metadata, argument matching, coercions, quoted/evaluated forms, condition origins and visibility remain unfinished.",
+        "File/connection input and retained source-reference/parse-data routes remain explicit boundaries; no complete semantic domain or callable is claimed."
       ]
     },
     {

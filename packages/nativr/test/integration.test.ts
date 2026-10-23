@@ -13895,13 +13895,14 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.394.0",
-      languageSubsetVersion: "0.394.0",
+      semanticProfileVersion: "0.395.0",
+      languageSubsetVersion: "0.395.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
       recursiveUnlistHeterogeneousLeaves: "supported",
       expressionNamesAndAttributes: "supported",
+      parseTextLazyControls: "supported",
       formula: "supported",
       pipe: "supported",
       namespaceExportPattern: "supported",

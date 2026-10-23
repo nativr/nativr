@@ -17285,32 +17285,65 @@ async function delayedAssignmentEnvironment(
 }
 
 async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression> {
-  const matched = await matchExact(invocation, [
-    "file",
-    "n",
-    "text",
-    "prompt",
-    "keep.source",
-    "srcfile",
-    "encoding",
+  const bound = await matchBuiltinDefaults(invocation, [
+    { name: "file", defaultValue: { kind: "StringLiteral", value: "", span: SYNTHETIC_SPAN } },
+    { name: "n", defaultValue: nullAst() },
+    { name: "text", defaultValue: nullAst() },
+    { name: "prompt", defaultValue: { kind: "StringLiteral", value: "?", span: SYNTHETIC_SPAN } },
+    { name: "keep.source", defaultValue: getOptionDefaultAst("keep.source") },
+    { name: "srcfile", defaultValue: nullAst() },
+    {
+      name: "encoding",
+      defaultValue: { kind: "StringLiteral", value: "unknown", span: SYNTHETIC_SPAN },
+    },
   ]);
-  const text = matched.get("text");
-  if (text === undefined) {
+  // Text parsing has its own force order, independent of actual argument order. In particular,
+  // file remains lazy, but prompt is forced even though this route does not display it.
+  const keep = await bound.force("keep.source");
+  const text = await bound.force("text");
+  if (text.type === "null") {
     throw new RUnsupportedFeatureError(
       "NRU6133",
       "parse() requires text= in the browser runtime; file and connection input are unavailable.",
     );
   }
-  if (parseKeepSource(matched.get("keep.source"))) {
-    throw new RUnsupportedFeatureError(
-      "NRU6134",
-      "parse(keep.source = TRUE) source-reference attributes are not implemented.",
+  if (isAtomic(text) && text.length === 0) return expressionValue([]);
+
+  const n = await bound.force("n");
+  await bound.force("prompt");
+  // Unlike the other controls, a forwarded missing srcfile selects the default source path.
+  // An explicitly supplied NULL instead suppresses retention, even with keep.source = TRUE.
+  const srcfilePromise = bound.matched.get("srcfile")!.promise;
+  const missingSource = isMissingArgumentBinding(srcfilePromise, new Set());
+  const source = missingSource ? R_NULL : await bound.force("srcfile");
+  const encoding = await bound.force("encoding");
+  if (encoding.type !== "character" || encoding.length !== 1) {
+    throw new RTypeMismatchError("NRT3214", "invalid 'encoding' value");
+  }
+  const encodingName = isMissing(encoding, 0) ? "NA" : (encoding.values[0] ?? "");
+  if (!["unknown", "UTF-8", "latin1"].includes(encodingName)) {
+    const message = `argument 'encoding = "${encodingName}"' will be ignored`;
+    await signalWarning(
+      invocation,
+      simpleConditionValue(message, "warning", invocation.currentCall()),
+      { code: "NRW1020", message },
     );
   }
+  const maxExpressions = parseExpressionLimit(n);
+  if (maxExpressions === 0) return expressionValue([]);
 
-  const maxExpressions = parseExpressionLimit(matched.get("n"));
-  if (maxExpressions === 0) {
-    return expressionValue([]);
+  const retainSource =
+    source.type === "environment" ||
+    (missingSource &&
+      keep.type === "logical" &&
+      keep.length === 1 &&
+      !isMissing(keep, 0) &&
+      keep.values[0] === 1);
+  if (retainSource) {
+    throw new RUnsupportedFeatureError(
+      "NRU6134",
+      "parse() source-reference attributes are not implemented.",
+    );
   }
   const program = invocation.parse(parseTextSource(text), maxExpressions);
   invocation.context.allocate(program.body.length);

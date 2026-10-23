@@ -2357,3 +2357,49 @@ source/parse-data metadata remains unsupported, while general `attributes<-`, co
 multidimensional indexing and transformation/dispatch coverage remain subsequent work. Continue
 licensed datasets and isolated testing-runner parity. All five completion criteria remain the goal;
 Linux, Formula, downloads, remote actions and publication retain their existing boundaries.
+
+### Text-parse controls checkpoint (profile 0.395)
+
+The existing text route now binds defaults lazily, preserves observed missing-argument behavior and
+forces controls in the native order. File remains unused for non-NULL text. Strict logical source
+selection, explicit NULL source files, empty atomic text, zero-expression limits and selected
+encoding labels/warnings have independent evidence. Shared source helpers and the public protocol
+remain unchanged.
+
+The [verification record](../compatibility/platform-evidence/parse-controls-windows-0.395.0.json)
+binds forty unchanged main assertions and thirteen separately observed adjuncts to their native
+receipts. Profile 0.394 passed only three of the original forty; the verified candidate passes
+all 53. Five raw recursive groups pass ten strict causal controls for composite base::parse
+associations. Seven unsupported-retention guards and one interruption/recovery test receive no
+native source-retention compatibility credit. Initial prompt-masked observations remain preserved;
+later finite-prompt inputs have separate identities. No complete encoding conversion, condition
+class/call-origin or source-metadata claim is made.
+
+- Production check: 3,414 tests pass, with 95 opt-in skips; all types, lint, build and browser audit
+  pass. Evidence-only JSON layout reconciliation preserves parsed values and all prior cases.
+- Conformance: 1,491 checked-in, 1,418 live GNU R and 406 recursive cases pass; 55 NativR-only live
+  exclusions remain. There are 173 bindings with causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.395.0.json): 12/12 pass.
+  Required examples take 13.808 / 15.220 / 65.379 seconds on Chromium / Firefox / WebKit under the
+  unchanged 120-second budget. Concurrent native/checker work prevents isolated timing claims.
+- Bundles: Worker 494.2/512 KiB gzip; all four fixed caps pass.
+- Inventory: 136 partial dimensions on 26 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus verification: 39 checkpoint tests, all-source/test/config types without
+  emitting builds, checkpoint lint, formatting and generated/corpus checks pass.
+
+The [selected corpus refresh](../compatibility/package-check-evidence/corpus-0.395.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.395.0.json) preserve all
+28 observations, comparisons and stage metadata for evaluate and withr. Both remain P4, without a
+promotion. The other 22 development/regression entries and Formula are unchanged. The latest full
+24-package checkpoint remains 0.393; abind and numDeriv retain their selected 0.394 evidence.
+Original dependency-closure evidence remains separate from assisted-runner outcomes.
+
+Next measurable increment: reproduce and close bounded parse expression-limit handling, including
+atomic first-element conversion, non-atomic unlimited results, warnings and error/forcing order. The
+observed list input succeeds natively with an unlimited result; it does not establish recursive
+integer coercion. Freeze the new assertions before runtime comparison and implementation. Treat
+non-atomic empty-text behavior as a separate observed gap. Browser platform-helper leads require
+independent reproductions before any package-unblocking claim. Full source references, nested
+language attributes and parse-data generation remain unfinished. Continue licensed datasets and
+isolated testing-runner parity, preserving all existing Linux, holdout, download and remote-action
+boundaries.

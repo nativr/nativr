@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-10-22 at verified semantic profile **0.394.0**. The latest complete 24-package
+Last assessed 2026-10-22 at verified semantic profile **0.395.0**. The latest complete 24-package
 checkpoint is **0.393.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
@@ -14,12 +14,12 @@ compatibility claim follows from this preview.
 
 | Gate                               | Latest evidence                                                                                                                                              | Status              |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
-| Production check                   | Profile 0.394: 3,352 unit tests pass, 95 opt-in tests skipped; production/test/config types, build and bundle audit pass                                     | Passed              |
-| Conformance                        | Profile 0.394: 1,486 checked-in, 1,413 live GNU R and 401 recursive cases pass; 55 NativR-only live exclusions; 172 bindings have causal case links          | Passed              |
+| Production check                   | Profile 0.395: 3,414 unit tests pass, 95 opt-in tests skipped; production/test/config types, build and bundle audit pass                                     | Passed              |
+| Conformance                        | Profile 0.395: 1,491 checked-in, 1,418 live GNU R and 406 recursive cases pass; 55 NativR-only live exclusions; 173 bindings have causal case links          | Passed              |
 | Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                                 | Passed              |
-| Browser e2e                        | Profile 0.394 on Windows: 12/12 pass across Chromium, Firefox and WebKit; required examples take 13.431 / 15.737 / 69.431 s under the unchanged 120 s budget | Passed on this host |
+| Browser e2e                        | Profile 0.395 on Windows: 12/12 pass across Chromium, Firefox and WebKit; required examples take 13.808 / 15.220 / 65.379 s under the unchanged 120 s budget | Passed on this host |
 | Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                                           | Passed              |
-| Fixed bundle limits                | Profile 0.394: client 17.6/150 KiB gzip; Worker 494.0/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                          | Passed              |
+| Fixed bundle limits                | Profile 0.395: client 17.6/150 KiB gzip; Worker 494.2/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary module 311.2/384 KiB raw                          | Passed              |
 | CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                                   | Open                |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
@@ -30,11 +30,11 @@ packaging remain open. The approved roadmap does not authorize push or publicati
 
 | Criterion                                        | Current evidence                                                                                                                                                                                                                                   | Status                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,353 assigned, 1,200 pending; all 823 registered bindings assigned; 132 partial dimensions on 25 bindings; matrices need closure                                                       | Not met                 |
-| Callable evidence/exclusions                     | 796/2,522 distinct names overlap; 172 bindings have specific recursive links with causal controls. Name overlap is inventory, not a completion percentage                                                                                          | Not met                 |
-| Broad corpus evidence                            | Latest full checkpoint: 24 development/regression packages at 0.393 (1 P7, 1 P6, 10 P5, 11 P4, 1 P3). Four selected regression packages retain their tiers at 0.394; Formula remains the untouched P0 holdout                                      | Not met                 |
+| Domain evidence                                  | All **13** domains remain incomplete. Qualified inventory: 1,353 assigned, 1,200 pending; all 823 registered bindings assigned; 136 partial dimensions on 26 bindings; matrices need closure                                                       | Not met                 |
+| Callable evidence/exclusions                     | 796/2,522 distinct names overlap; 173 bindings have specific recursive links with causal controls. Name overlap is inventory, not a completion percentage                                                                                          | Not met                 |
+| Broad corpus evidence                            | Latest full checkpoint: 24 development/regression packages at 0.393 (1 P7, 1 P6, 10 P5, 11 P4, 1 P3). evaluate/withr retain P4 at 0.395; abind/numDeriv retain selected 0.394 evidence; Formula remains the untouched P0 holdout                   | Not met                 |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                 |
-| Agreement among ledger, capabilities and reports | Generated checks and the verified 0.394 checkpoint agree; the separate post-corpus checkpoint/type checks pass                                                                                                                                     | Met for this checkpoint |
+| Agreement among ledger, capabilities and reports | Generated checks and the verified 0.395 checkpoint agree; the separate post-corpus checkpoint/type checks pass                                                                                                                                     | Met for this checkpoint |
 
 There is no defensible completion date or percentage yet. Finishing requires semantic-domain
 closure, broad package evidence and platform verification. See the maintained
@@ -72,7 +72,7 @@ made GNU R file.access reject readable fixtures. These are harness constraints, 
 deviations.
 
 No Worker/protocol/playground interface changed in stabilization. E2e has now been refreshed at
-profile 0.394 on Windows, including expression names, attributes and replacement, formatting
+profile 0.395 on Windows, including text-parse control evaluation, expression metadata, formatting
 recovery, UTC conversion, S3 class history, selector forwarding, direct completion, loop/promise
 admission, generic-name validation and valid helper/default recovery with ordered cleanup. The
 earlier fixture typing errors are repaired, and `pnpm typecheck:all` checks production sources,
@@ -122,6 +122,33 @@ Seventy-seven pure tests cover attribution, source-manifest consistency and resp
 Successful local Blob responses receive no served-asset credit; unknown HTTP assets still fail. This
 adds diagnostic evidence without changing runtime semantics, bundle caps or release budgets.
 
+## Bounded text-parse controls checkpoint (profile 0.395)
+
+The [verification record](../compatibility/platform-evidence/parse-controls-windows-0.395.0.json)
+ties 40 main and 13 separate native-backed assertions to exact source tests, five recursive graphs
+and ten strict causal controls. They cover lazy defaults, missingness, control forcing, selected
+source retention decisions and encoding diagnostics. Seven unsupported-source guards and one
+resource-limit recovery test remain NativR-only evidence. Retained source metadata and transcoding
+remain unfinished; the public API and protocol are unchanged.
+
+All production and conformance gates pass at the counts above. A separate post-corpus run passes 39
+checkpoint tests, all-source/test/config types, checkpoint lint, formatting and generated-report
+checks. Evidence-file formatting was reconciled without changing parsed cases or prior entries. The
+[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.395.0.json) passes 12/12
+tests with stable inputs and unchanged budgets. Its durations describe concurrent correctness runs,
+not isolated performance measurements.
+
+The [two-package checkpoint](../compatibility/package-check-evidence/corpus-0.395.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.395.0.json) preserve all
+28 observations, comparisons and stage metadata for evaluate/withr; both remain P4. The other 22
+development/regression entries and Formula are unchanged. Full-corpus evidence remains at 0.393,
+repeated performance at 0.389, required-example profiling at 0.392 and packed-consumer evidence at
+0.388. These separate scopes do not establish full compatibility or release readiness.
+
+Next work is bounded parse expression-limit behavior, followed by independently reproduced browser
+platform-helper gaps. All thirteen semantic domains, full source references/parse data, dataset and
+runner coverage, and the broader platform/release gates remain open.
+
 ## Bounded expression metadata checkpoint (profile 0.394)
 
 Expression argument tags now remain names without assigning or forcing their cells. The frozen
@@ -166,8 +193,8 @@ evidence, and Formula is untouched. The latest full 24-package checkpoint remain
 
 Repeated performance remains at 0.389, required-example profiling at 0.392 and packed-consumer
 evidence at 0.388. Linux remains deferred; assisted-runner results receive no original dependency-
-closure or P6/P7 credit. Next work is bounded parse controls, defaults and laziness using owned
-fixtures; full source metadata remains unsupported.
+closure or P6/P7 credit. This checkpoint was followed by bounded parse controls at 0.395; full
+source metadata remains unsupported.
 
 ## Bounded recursive unlist checkpoint (profile 0.393)
 

@@ -38,6 +38,40 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Text-parse control evaluation (profile 0.395)
+
+The bounded text route of `parse` binds defaults lazily and evaluates its controls in the observed
+order. Nonempty text forces `keep.source`, `text`, `n`, `prompt`, `srcfile` and `encoding`; it
+leaves `file` unused. An `n = 0` result still evaluates the sampled controls. Empty atomic text has
+a separate early return. Literal missing arguments use their declared defaults, and forwarded
+missing arguments retain their observed errors except for the separately observed
+missing-source-file default route. The existing bounded-prefix parser behavior is preserved.
+
+Default source selection reads `keep.source` from options and requires one nonmissing logical TRUE
+value. The observed nonlogical or nonscalar controls do not enable retention. An explicitly supplied
+NULL source file suppresses retention, including with a true control. A supplied source environment
+can request metadata even with a false control. Retained-source routes remain unsupported with
+`NRU6134`; silently discarding their metadata does not satisfy this contract. File/connection input,
+including the native route for NULL text, remains outside browser text parsing.
+
+Forty frozen native-backed assertions cover the selected values, defaults, forcing traces, warnings,
+messages and error text. Thirteen separately verified assertions cover empty-text early returns,
+base-namespace option lookup, zero-expression limits and encoding labels. The observed `unknown`,
+`UTF-8` and `latin1` labels are accepted silently; missing and unrecognized scalar labels emit the
+observed ignored-encoding warning. Invalid encoding lengths remain errors. This label handling does
+not establish byte-encoding conversion. Separate retained-source guards receive no native
+compatibility credit. The original prompt-masked observations remain preserved: prompt is evaluated
+for nonempty text, so later controls need independently observed finite-prompt variants. This
+increment does not claim complete control coercion, condition-class/call-origin parity, encoding
+conversion, all source-file value types, source references or parse-data tables. In particular,
+general list-to-`n` coercion and nonstandard prompt/source-file values remain observed gaps.
+`source()` and the public protocol retain their existing boundaries.
+
+The [verification record](../compatibility/platform-evidence/parse-controls-windows-0.395.0.json)
+records the full production, foundation/live/recursive, browser and affected-package gates. Five
+composite parse groups have strict causal controls; they do not prove each component independently
+or complete the callable matrix. The evaluate/withr refresh retains its prior P4 tiers.
+
 ### Expression names and attributes (profile 0.394)
 
 Expression storage carries an immutable cell array and attribute map. Constructor argument tags

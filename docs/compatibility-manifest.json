@@ -2,8 +2,8 @@
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
   "targetRVersion": "4.6.1",
-  "semanticProfileVersion": "0.394.0",
-  "languageSubsetVersion": "0.394.0",
+  "semanticProfileVersion": "0.395.0",
+  "languageSubsetVersion": "0.395.0",
   "syntax": {
     "literals": "supported",
     "assignment": "supported",
@@ -185,6 +185,7 @@
     "unlistControlAndMethodDispatch": "supported",
     "recursiveUnlistHeterogeneousLeaves": "supported",
     "expressionNamesAndAttributes": "supported",
+    "parseTextLazyControls": "supported",
     "lengthsMethodDispatch": "supported",
     "missingNameExtraction": "supported",
     "missingCharacterReplacementIndices": "supported",

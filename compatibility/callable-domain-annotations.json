@@ -8461,8 +8461,90 @@
       "binding": "base::parse",
       "domains": ["calls-promises", "language-syntax"],
       "remainingGaps": [
-        "AST/source metadata, argument matching and forcing, quoted/evaluated forms and error/visibility behavior remain incompletely evidenced.",
-        "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
+        "Bounded text controls now have causal evidence. Full AST/source metadata, argument matching, coercions, quoted/evaluated forms, condition origins and visibility remain unfinished.",
+        "File/connection input and retained source-reference/parse-data routes remain explicit boundaries; no complete semantic domain or callable is claimed."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-path-forcing-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-source-selection-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-path-forcing-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-source-selection-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-error-order-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-path-forcing-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-default-missingness-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-source-selection-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "parse-text-controls-error-order-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Only the owned text-input controls, sampled defaults/missingness, trace ordering and error messages are evidenced. Each composite association does not prove every component independently. General coercion, source retention, full condition classes/origins and the complete dimension remain unfinished."
+          ]
+        }
       ]
     },
     {

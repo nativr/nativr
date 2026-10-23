@@ -1,0 +1,916 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-parse-text-controls-verification",
+  "date": "2026-10-22",
+  "semanticProfile": "0.395.0",
+  "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+  "sourceState": "Verified uncommitted candidate over sourceCommit; source digests identify the recorded state",
+  "platform": {
+    "os": "win32",
+    "architecture": "x64",
+    "node": "v24.19.0",
+    "oracleVersion": "4.6.1",
+    "oracleLocale": "C",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Bounded parse text-path lazy controls, option/default and literal/forwarded missing behavior, strict source-retention selection, selected encoding validation/warnings and empty/zero-expression branches",
+  "provenance": {
+    "sources": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "9f593f5885df9dc84b431b0a3ff8361c9375deff8dadb3e67e84a6ec1dca863e"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "d73ed9cbe822070b1871a334677aa13c9ec070472dacd2987776254c41a1d9f1"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "c974c77953ba4a4846228d8efaae3ab5b580d18c0e8a7d3333672d604ef0d355"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "32bd8829a4f5cb4aea7476662fd9f7d6159423657b765e7ca4f5a19b1bb19f09"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "0457504207e2fa8c1de00b14bedf067c95bf85143d1e03c4184d66a60a5742cb"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "d705ba44ba0895e6246c5105f3e06d89dffd1484d97ca516c5f0ab9f8168a6d3"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "7d61ce3274d705d3e39756ab7664094a1a149959a625c831b657e4926656d7c7"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "d904eb3e080d4d332c4f1120eeb8dc01c6ed2fccd8507b6ef0b98546d244b22a"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "c52e6595560f7d306a44f4a532c850c10d7e9a1d841f9d690be7ff6e6b826c46"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "cb258250c5bc3865a187da15b6d6d86445763e66e7a88a382e12faa36102e2d8"
+      },
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "26a093d1ed88ee62adb8a7ad4454702f0e6b983cf4431a38413cd510c9c5bf8b"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "54370f18bce3d278033919544392e8280808c5395bd5366d8e09e578617d4f08"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "0d8708109efa1e2299fc9d83f67e3f64adb1c201a6cae85733d5008561ac4d04"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "7b9175c1bb5183501a532c665345c732f0f7426dfc6a024201fec0d9a3539bfa"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "31a8e2d523774e3e48dd643a9e5adb38e4b1def2cf1713d4a34fb5bb4dbbfea7"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "bd88749ed21e8d06cccee7bef850f74c4d5367a7448fa168c278b40f8676dfe7"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.395.0/evaluate.json",
+        "sha256": "784463d5271eb6cba6017939d767fec76bf1065e15c781117682a5ebd0242556"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.395.0/withr.json",
+        "sha256": "47321f036afbb5a592d23fc4412e2fce6e714f6a57018f8a67e028c53ee5888e"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.395.0.json",
+        "sha256": "3c3164309ebc3052c9fd7df901eabf4c8daff951db518050f9422d4c957a4452"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.395.0.json",
+        "sha256": "f6890acb7b78d509d28d07582a61485ba3141d0e0304b942bc1012e04375d5ec"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.395.0.json",
+        "sha256": "b1f01b7a43ffbf2a9278645c6b2cd25fecee7774eb24ff40af862357134ed020"
+      },
+      {
+        "path": "packages/nativr/test/parse-controls.test.ts",
+        "sha256": "b6c23dba60b1fc3e845a53a874203f707b99790d03b0eba35358ae0bbc0beb63"
+      }
+    ],
+    "recorderSha256": "18d93e6f39a3c1a3b070f1ee35139201de4e5499f385cd86b55066e149f6a055",
+    "sourceVerifierSha256": "47937d735260c94b184dd4a6b0e6ee217be53553753d66dc6fd09d96e7ec05fc",
+    "sourceVerificationReceipt": {
+      "path": ".tmp/source-aware-parsing-next/evidence-0395/source-verification.json",
+      "sha256": "5ffcbb7d3f02b623293e3f02cf622f540af2f2f04acfafda7d7889f21b4efe3c"
+    },
+    "nativeEvidence": [
+      {
+        "path": ".tmp/source-aware-parsing-next/controls-frozen-inputs.json",
+        "sha256": "223ff78ba7485692706756bbc8fc23f6c3ae849976481b53abb97904c1d0cc14"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/controls-native-observations.json",
+        "sha256": "836ef8fab3c4b7f00de40a78fe76d1935caa01b58d3f409e243c0ac30dec225a"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/controls-followup-inputs.json",
+        "sha256": "b561184b442024d93704c5a5ae8d4e84c1e6b4a3ee271d3e1bc6478d496bc044"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/controls-followup-native.json",
+        "sha256": "96a3b312283de814401838c1a290aaca902f7f79599179caf9e4ce843be36b5c"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/control-boundaries-inputs.json",
+        "sha256": "b53dd82e8295fb99440b693fc575374055ec64ba226b92cb984ba18b27d00417"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/control-boundaries-native.json",
+        "sha256": "a078a6d0636baf93197ce134aef52f8751a4b7bfe8070d31a954971f7fc44611"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/accepted-controls.json",
+        "sha256": "712e41b3dd31c3b0fe9eef90afff720fbde655982d24696fa5533fd964d6344b"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/control-selection-provenance.json",
+        "sha256": "d1bbf309ed3a016935716513a8f870ad2f9a7a2258bf4a86e933cfbb0e614edb"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/control-assertions-native.json",
+        "sha256": "ca9f28d1d08875aba7e723439cc21a16ee1371d04ff7d3695304b3e9ac18771f"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/retained-source-boundaries.json",
+        "sha256": "fd788176b4a8ba3a6083cb3ed0b39a0c72cb66ed5bae4bb549e7288a0c6204f4"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/control-runtime-baseline.json",
+        "sha256": "60d75c657074f7872b4ba4fe16cd0a1ded2ba93909f86bedd1b704f55a242f87"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-inputs.json",
+        "sha256": "36a51a396a45ff43bb8267139b37cfd4225a53ec71807ac58c404cade826ccca"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-native.json",
+        "sha256": "22a1c03543e52ee342c00b7f48e6efdbe927d366640960aebbb0e272316a7395"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-assertions.json",
+        "sha256": "e46648cdc0d3c0509ab09dba419a01797e980ec4dafed15a1176e1f3ac40f56b"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-assertions-native.json",
+        "sha256": "0f76c18aed7411a96890b2b69ce5eef8ec5d17a8c17230d8fe34d8ab7acbeb38"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/encoding-label-inputs.json",
+        "sha256": "f34e0f9d57d445895a93c64dc62d21737442f0b003b71dd09da5099f81fdf431"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/encoding-label-native.json",
+        "sha256": "eb86fa6be7a18b0485852925158de4300d5e152113664ddb10ef2a14d7c0d10c"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/encoding-label-assertions.json",
+        "sha256": "908c596d96f87e39dff83337b1f4ca9d02d8cad556913751c0f468833fd35b24"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/encoding-label-assertions-native.json",
+        "sha256": "dd07bb76333c28bd58345d38e452d6464b7da0590e8f551c3952c576cb430305"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-accepted-matrix.json",
+        "sha256": "167a272ef7b2ee8c07335cf079d49731a0a32644103e38fe421d42f0d2b8710c"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-acceptance-provenance.json",
+        "sha256": "22f1f6dc91f0305e4dc9d7cbb3fc887dd6d245b7d0cdec6caade2deb253a91b8"
+      }
+    ],
+    "nativeReceipts": [
+      {
+        "path": ".tmp/source-aware-parsing-next/evidence-0395/native-validation.json",
+        "sha256": "0391515d4e6bf0767173e01054e2f3d8f078f3429da89adbe28c5b93ffe18b55"
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/evidence-0395/adjunct-native-validation.json",
+        "sha256": "f4c0a0f617eb27bdf82eea8ae863ed408d0fb0922a09c37555b356b7f9d815dd"
+      }
+    ],
+    "mainNativeInputs": {
+      "foundation.json": "e6d50be2f5ce4eb1ea77f5a677e9b01b253620406d4491cda59fd88b5347a04b",
+      "oracle-v2.json": "347661a4369dffa23f013fccec843d1c73dc7951871c772cee004e3d355bb733",
+      "native-checks.json": "18c46c949017482ec2e71f2da5ba6a2d5193f28911a8fccbf8f435b8ca000c70",
+      "provenance.json": "e77d13ed5de423f51b600147f03c8d36c5dddabfa6c25375b86cd95e1fdbd8cc",
+      "prepare.mjs": "9813a9844a86b6d4751538eae5f007746aa0e8a17b611fd08339f7bed104be2b",
+      "validate-native.mjs": "c130e64f832b8017f605a404a0469c87d05ad500d430c5d6de91ec2b8f320736",
+      "../accepted-controls.json": "712e41b3dd31c3b0fe9eef90afff720fbde655982d24696fa5533fd964d6344b",
+      "../control-assertion-inputs.json": "8b2a564a207de6ea62df89807c5ffe3560be2fe411ab94a78e9caddda9ce0ae4",
+      "../control-assertions-native.json": "ca9f28d1d08875aba7e723439cc21a16ee1371d04ff7d3695304b3e9ac18771f",
+      "../control-selection-provenance.json": "d1bbf309ed3a016935716513a8f870ad2f9a7a2258bf4a86e933cfbb0e614edb",
+      "../retained-source-boundaries.json": "fd788176b4a8ba3a6083cb3ed0b39a0c72cb66ed5bae4bb549e7288a0c6204f4",
+      "production/observer": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306",
+      "production/adapter": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+      "production/binding-helper": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46",
+      "metadata/capabilities": "0a69098d19d293d5ce770e056c63bb264c36bae31e9a5dd12c69577705d79cea",
+      "metadata/surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
+      "oracle/executable": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+    },
+    "adjunctNativeInputs": {
+      "adjunct-foundation.json": "1abe2950d2ef9b6da44aa160b90a6165daa2ac02671800771cf742cb077df803",
+      "adjunct-oracle-v2.json": "b9b9020cfaaadffb35d208a3c786d9c6244d6eeb27791d03cc2ce37c43c81fe9",
+      "adjunct-native-checks.json": "864ac30b4a627631ad3f67b282e77cc818eb66ddbdd5de20deaec7bcab88be01",
+      "adjunct-provenance.json": "c8e021a2259c0b2fce19c6f2b6ece887a78d40a08d24329cee9fe42a66ab92d0",
+      "prepare-adjunct.mjs": "22858ad01d22e5a1a6c23c0b00119c91a949791a4a79d7258ecd773891102df6",
+      "validate-adjunct.mjs": "ea1c871ec14f5e0407578b91a5369e5b99c7e07208c6ed05413c72a868399083",
+      "../adjacent-accepted-matrix.json": "167a272ef7b2ee8c07335cf079d49731a0a32644103e38fe421d42f0d2b8710c",
+      "../adjacent-acceptance-provenance.json": "22f1f6dc91f0305e4dc9d7cbb3fc887dd6d245b7d0cdec6caade2deb253a91b8",
+      "../adjacent-assertions.json": "e46648cdc0d3c0509ab09dba419a01797e980ec4dafed15a1176e1f3ac40f56b",
+      "../adjacent-assertions-native.json": "0f76c18aed7411a96890b2b69ce5eef8ec5d17a8c17230d8fe34d8ab7acbeb38",
+      "../encoding-label-assertions.json": "908c596d96f87e39dff83337b1f4ca9d02d8cad556913751c0f468833fd35b24",
+      "../encoding-label-assertions-native.json": "dd07bb76333c28bd58345d38e452d6464b7da0590e8f551c3952c576cb430305",
+      "../accepted-controls.json": "712e41b3dd31c3b0fe9eef90afff720fbde655982d24696fa5533fd964d6344b",
+      "validate-native.mjs": "c130e64f832b8017f605a404a0469c87d05ad500d430c5d6de91ec2b8f320736",
+      "production/observer": "1e13ee4759fbc9b809d962c5a80309a959ffc5743bbbfcd76b265914e5593306",
+      "production/adapter": "fa3359f789530fe9dc239af5851c175d5a6f570d8e7b5115c4ff547190f9031e",
+      "production/binding-helper": "2c6dd011d3fea70eddea26c36ba1b423ad6dee1bf647df8b783678a68fb0ee46",
+      "metadata/capabilities": "d904eb3e080d4d332c4f1120eeb8dc01c6ed2fccd8507b6ef0b98546d244b22a",
+      "metadata/surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
+      "oracle/executable": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+    },
+    "metadataQualification": "Native assembly used the metadata profiles recorded in its input hashes; historical native metadata hashes and the 0.394 runtime baseline are not represented as the built 0.395 runtime identity."
+  },
+  "acceptance": {
+    "independentNative": [
+      {
+        "path": ".tmp/source-aware-parsing-next/control-assertions-native.json",
+        "sha256": "ca9f28d1d08875aba7e723439cc21a16ee1371d04ff7d3695304b3e9ac18771f",
+        "assertions": 40,
+        "passed": 40
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/adjacent-assertions-native.json",
+        "sha256": "0f76c18aed7411a96890b2b69ce5eef8ec5d17a8c17230d8fe34d8ab7acbeb38",
+        "assertions": 9,
+        "passed": 9
+      },
+      {
+        "path": ".tmp/source-aware-parsing-next/encoding-label-assertions-native.json",
+        "sha256": "dd07bb76333c28bd58345d38e452d6464b7da0590e8f551c3952c576cb430305",
+        "assertions": 4,
+        "passed": 4
+      }
+    ],
+    "main": {
+      "cases": 40,
+      "boundaryGuards": 7,
+      "exactFrozenStrings": true,
+      "boundaryNativeCompatibilityCredit": false,
+      "caseHashes": [
+        {
+          "id": "file-and-prompt-unused-finite-prompt",
+          "codeSha256": "de9353e5e51f0d3ea2acad2068fae321238483ebfe035697e875bbcb4a182dd0"
+        },
+        {
+          "id": "false-control-order-finite-prompt",
+          "codeSha256": "b4c58d459663f01628472e9419e4da1d61e60b36e37486d021ec766c7ef25af5"
+        },
+        {
+          "id": "zero-control-order-finite-prompt",
+          "codeSha256": "01e1e1ecd26258d11ff74d8d57897a08587cff70955daaa8fdcb71685b7de91d"
+        },
+        {
+          "id": "prefix-before-invalid-suffix-finite-prompt",
+          "codeSha256": "897c394209d90ef3034f7d6673fc18ed42077c2f3614ac172ce1c78c72e0cde8"
+        },
+        {
+          "id": "default-source-off-finite-prompt",
+          "codeSha256": "e439cbd0228b1e406d0f4db7d5912aac781a5c842cdee8491f44a2f14714d585"
+        },
+        {
+          "id": "explicit-false-overrides-option-finite-prompt",
+          "codeSha256": "efe32e93520bc9573e5fdc4138b092330dffc842cc5b0a7104f962594fe8f8a8"
+        },
+        {
+          "id": "literal-missing-n-finite-prompt",
+          "codeSha256": "505f3f86dd9ded077cb34f51c0ffa5e07da2e8f6f14929efcc4f0061ee6e822d"
+        },
+        {
+          "id": "literal-missing-keep.source-finite-prompt",
+          "codeSha256": "f0330598060a24c876cbed295e91cc6a5329594e808d1376fa19c35ba7bfd83f"
+        },
+        {
+          "id": "literal-missing-srcfile-finite-prompt",
+          "codeSha256": "96e670b19aaccbba5a7c51f08832b6e292573e78907bbc96e1a6a2bc10611109"
+        },
+        {
+          "id": "literal-missing-encoding-finite-prompt",
+          "codeSha256": "9601a81774f05e85dd7b64abf30745760395e75454c435c1afa0e7880a287e69"
+        },
+        {
+          "id": "literal-missing-file",
+          "codeSha256": "2c2cbb3ea552e6cb5bebace552279fe2b30679bda19e76e8b241bc10508d2b1f"
+        },
+        {
+          "id": "literal-missing-prompt",
+          "codeSha256": "2f59d56c63e8b7b63555f3db41f34cabf19428f146694491a60f89daf0660eaa"
+        },
+        {
+          "id": "forwarded-missing-n",
+          "codeSha256": "9a95e6a70b821c2c60bd89b82f41d79b81aaba911ecc696916fdb2fd3f2ed62a"
+        },
+        {
+          "id": "forwarded-missing-keep.source",
+          "codeSha256": "6aab3789c68e79a1b5abefc963768a1804b6b419ace9923a2fd395a89e13eda7"
+        },
+        {
+          "id": "forwarded-missing-srcfile-finite-prompt",
+          "codeSha256": "f14c13396b229560eaeceb1194ce4b9dc58e3a3e2fd63543495b6c1d0298aa35"
+        },
+        {
+          "id": "forwarded-missing-encoding-finite-prompt",
+          "codeSha256": "e37893aeffb9bccebe96d38f4f52fe414ee42290cbceb56db07de921c4ffa94f"
+        },
+        {
+          "id": "forwarded-missing-file",
+          "codeSha256": "0e69180ced92379f484bcd8f97961bac71ed3921df3f84007ef122cba5fee992"
+        },
+        {
+          "id": "forwarded-missing-prompt",
+          "codeSha256": "573747349463e90b9b8661b73f648d10a682b7fe6762857630a45fcd4b38246e"
+        },
+        {
+          "id": "keep-null-finite-prompt",
+          "codeSha256": "b7f21abc3dd387114c49ac8a1ab974e26d980ad8fc19cff3b28a856205236b7a"
+        },
+        {
+          "id": "keep-empty-finite-prompt",
+          "codeSha256": "33eadbee95ac8477cbd46e096169dba0e75de07740d5f9265c6a9ba82d5fe0f4"
+        },
+        {
+          "id": "missing-srcfile-keep-integer-one",
+          "codeSha256": "b32eda5bb7fbc8271af33fc2519280ea375ddaba546ee45217cc3f32bd964219"
+        },
+        {
+          "id": "missing-srcfile-keep-double-one",
+          "codeSha256": "421e49d30e651dae436432b63369dd3bafb3f1bfc8c478fd77c66eb37b60fd25"
+        },
+        {
+          "id": "missing-srcfile-keep-character-true",
+          "codeSha256": "d93b457d33ae093d109206cf3f210149a0c0e02db68d0f7f89df9fbf9b18a055"
+        },
+        {
+          "id": "missing-srcfile-keep-multiple-first-true",
+          "codeSha256": "bed831024d020a342c7a92d0c54965a7b8efea1d62095eaeab0ab8205a497cfd"
+        },
+        {
+          "id": "missing-srcfile-keep-list-true",
+          "codeSha256": "7956f941dc4a0670356295c45651ae6aa59ae2b72d21bbdea39fc29ac3a34cf4"
+        },
+        {
+          "id": "missing-srcfile-keep-raw-one",
+          "codeSha256": "24b077f4d03ce0db69fe761dc752451dc681c0301311528646e1ac2a2a3c6c01"
+        },
+        {
+          "id": "missing-srcfile-keep-na",
+          "codeSha256": "c723c5e15534e7ee72c84b87365fe6ab91f0b4b93e765e15e72f967ebdea61cc"
+        },
+        {
+          "id": "keep-error",
+          "codeSha256": "552c1a9bfe59f33f55b1e239a0953719c97a95bda4aad20e1e245d250c0e874f"
+        },
+        {
+          "id": "text-error",
+          "codeSha256": "f55c05e6cca2a29fa117a7cf97dad10a6794ac7d2abc354afdbe8ee6e43e8403"
+        },
+        {
+          "id": "n-error",
+          "codeSha256": "649cf8a98cb2689a9e285603c884df08fbb7a933dcbd8644b1714caa06a975ae"
+        },
+        {
+          "id": "prompt-error-after-n",
+          "codeSha256": "30a611e8ad03ebf57f704d8205de05a9b9f47165fce0535ff466397f5ee9bc5b"
+        },
+        {
+          "id": "srcfile-error-finite-prompt",
+          "codeSha256": "77420521185045799108a6f445145e8418a1fec9db32191dfb9c1f81b5108319"
+        },
+        {
+          "id": "encoding-error-finite-prompt",
+          "codeSha256": "a1bf94486c4cec58924997d378e23841cc42ab13585e2af418beb9029a828239"
+        },
+        {
+          "id": "zero-still-forces-text",
+          "codeSha256": "cd4c71fa78f185ffa69af5fbef537a9082bffee3d225da97430b5ada1ec8e5bd"
+        },
+        {
+          "id": "zero-still-forces-encoding",
+          "codeSha256": "3adff2358031c357f9180bf33ebf4297e23645464aa29d7915bbd9a63a26a62d"
+        },
+        {
+          "id": "encoding-invalid-list",
+          "codeSha256": "d1a86e641431bab99b7f71803442a39990afe5a91d00f63fc85438a6c94d57e3"
+        },
+        {
+          "id": "encoding-empty",
+          "codeSha256": "b3588c0e73fc427675c70c1aec15aa397ba75b07eb5aa1fadc728adc65dcd3b4"
+        },
+        {
+          "id": "n-empty",
+          "codeSha256": "07ae98771e8314664037b066e72404292b156f59ad2af72fea227ef641b1a965"
+        },
+        {
+          "id": "text-empty-vector",
+          "codeSha256": "e2c011cf34b4a51f3628b23b872ed1cf25cb6be39b0cece64858b3c8e5b329e1"
+        },
+        {
+          "id": "keep-classed-true",
+          "codeSha256": "b654ec46068351ad6057d42ff54099ca7fbc738a813de6ddfe2d827fc95d1f81"
+        }
+      ],
+      "boundaryHashes": [
+        {
+          "id": "default-source-on-finite-prompt",
+          "codeSha256": "81ac75e0c415fb7dc79eb121dd9f3a9a22cce0b25705ee7c2fdf455b40206b72"
+        },
+        {
+          "id": "explicit-true-overrides-option-finite-prompt",
+          "codeSha256": "9045e239de1de44c046e35a37885136ca29a2cc9c87c21382661dd7414e17593"
+        },
+        {
+          "id": "literal-missing-keep-uses-true-option-finite-prompt",
+          "codeSha256": "ecb9f1e16549eb397d0f1feb54fe1379fc7ebccdda5038a44aaff050dd0decfa"
+        },
+        {
+          "id": "source-environment-despite-false-finite-prompt",
+          "codeSha256": "cd76e76abb1ccbb31272b940a375be89197506adc87f3d148fb275477155fdde"
+        },
+        {
+          "id": "missing-srcfile-keep-attributed-true",
+          "codeSha256": "fa6239522c523bfa500461f226c3cfebb4c4f9c50c23e33f968e20d7e39f2b61"
+        },
+        {
+          "id": "literal-missing-srcfile-true-option",
+          "codeSha256": "0e8beb95006ce683501b5d571cde162f7bbde50a076823417a11e0fd182c8121"
+        },
+        {
+          "id": "forwarded-missing-srcfile-true-option",
+          "codeSha256": "c68ec5aa1d0b0fd8842ca72d2d9fcf344e66564e61565581188cf22c0ef63096"
+        }
+      ]
+    },
+    "separateAdjunct": {
+      "cases": 13,
+      "exactFrozenStrings": true,
+      "separatelyObservedAdjunct": true,
+      "caseHashes": [
+        {
+          "id": "empty-character-text-lazy-controls",
+          "codeSha256": "b0fcee265ec02aae84ab99058f46dd08af49a298be170ca7ecf80e6c2c8e8809"
+        },
+        {
+          "id": "empty-integer-text-lazy-controls",
+          "codeSha256": "d2ddc2b3d3ba9ab0f75c1280039e4e78fee0bdf87c05d38087d917ac271cfa02"
+        },
+        {
+          "id": "local-getOption-shadow-option-false",
+          "codeSha256": "2cc576655fa38ba10161590fff7e864bb6caa47739f3b63f762ce802382b5141"
+        },
+        {
+          "id": "local-getOption-shadow-option-true",
+          "codeSha256": "1ca4b960eb1208e5fb41e0b4341a7fc94c6de5ce6074964bf551c85e59992d37"
+        },
+        {
+          "id": "zero-true-retention",
+          "codeSha256": "2dc1cf9b958c74b8f659ea83def7fe89b925533d58ae3ebd33b51c0bed453a21"
+        },
+        {
+          "id": "zero-explicit-source",
+          "codeSha256": "d87bf9cdf4840b23ffd5dc06816335180f9e77d7640e2fbfb9160b3b5f795a90"
+        },
+        {
+          "id": "encoding-na",
+          "codeSha256": "cc4aeaab77cc41016995778800455893d949e14a1b5a8ebd4101abce4da6c530"
+        },
+        {
+          "id": "encoding-multiple",
+          "codeSha256": "2343d09ea79c3669b96c680859a6882a47d389d85b8c8ce824f88cdbb22a2efa"
+        },
+        {
+          "id": "encoding-unknown",
+          "codeSha256": "0060a720f178738c4a88c9a102c2a65df19857f2fe61148a1957b82b5fc8280c"
+        },
+        {
+          "id": "encoding-label-utf8-hyphen",
+          "codeSha256": "c072ad683a8d0ce749beeeafcde3bbfa4903a70341933807e36fbba6574c8419"
+        },
+        {
+          "id": "encoding-label-latin1",
+          "codeSha256": "a78d0eb6317edc72e6ea5ec3be2724c93a9e44fcf28b5103ab194120f2bbf224"
+        },
+        {
+          "id": "encoding-label-utf8-no-hyphen",
+          "codeSha256": "37bac3eeda57b7110d8f09495254b886b566aa1e20b3b1be5cadaf36f63a3d57"
+        },
+        {
+          "id": "encoding-label-empty",
+          "codeSha256": "99da9d1fffa0a8001bd4713a242d781a735f4853226dd7e10e21b4eb8c816cb5"
+        }
+      ]
+    },
+    "boundaryCounting": "Seven NRU6134 guards concern native-successful retained-source inputs; they are NativR-only unfinished-boundary checks and provide no source-retention parity credit.",
+    "separateResourceGuards": {
+      "count": 1,
+      "names": [
+        "interrupts a forced encoding control before the zero-expression return and recovers"
+      ],
+      "nativeParityClaimed": false
+    },
+    "sourceTestCases": 61,
+    "baseline0394": {
+      "counts": { "total": 40, "pass": 3, "mismatch": 37, "error": 0 },
+      "separateBoundaryCounts": { "total": 7, "pass": 0, "mismatch": 0, "error": 7 },
+      "stableSourceAndArtifactFiles": 349,
+      "boundaryDiagnosis": "All seven earlier errors were NRE2300 from eagerly forcing the owned ignored-file sentinel, not the intended NRU6134 boundary."
+    },
+    "mainNativeGroups": {
+      "foundationGroupsPassed": 4,
+      "foundationAssertionsPassed": 40,
+      "recursiveGroupsPassed": 4,
+      "recursiveComponentsPassed": 40,
+      "strictControlsPassed": 8
+    },
+    "adjunctNativeGroups": {
+      "foundationGroupsPassed": 1,
+      "foundationAssertionsPassed": 13,
+      "recursiveGroupsPassed": 1,
+      "recursiveComponentsPassed": 13,
+      "strictControlsPassed": 2
+    },
+    "worker": [
+      {
+        "id": "false-control-order-finite-prompt",
+        "profileSite": "required-140",
+        "codeSha256": "b4c58d459663f01628472e9419e4da1d61e60b36e37486d021ec766c7ef25af5",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "literal-missing-n-finite-prompt",
+        "profileSite": "required-141",
+        "codeSha256": "505f3f86dd9ded077cb34f51c0ffa5e07da2e8f6f14929efcc4f0061ee6e822d",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "missing-srcfile-keep-integer-one",
+        "profileSite": "required-142",
+        "codeSha256": "b32eda5bb7fbc8271af33fc2519280ea375ddaba546ee45217cc3f32bd964219",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "cases": [
+      {
+        "suite": "foundation",
+        "id": "parse-text-controls-path-forcing",
+        "codeSha256": "51add88857ef7d5ac53e422f5e62746facf17553e458e96059b04fe5340f2036",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "parse-text-controls-default-missingness",
+        "codeSha256": "67f08f5769cfdb1795eca3f845b2e44bf33c7ee9d788b40e8239fd1e8b7162d8",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "parse-text-controls-source-selection",
+        "codeSha256": "505939843e1e268cf38f34bc4537e3e7b7833577bff3e596b0cb409343fab8bd",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "foundation",
+        "id": "parse-text-controls-error-order",
+        "codeSha256": "744d453fe9a10852e7485bf721ae3cb2aa930713aa2d5ad175b83865f8080846",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "recursive",
+        "id": "parse-text-controls-path-forcing-graph",
+        "codeSha256": "5c91a5c53ec4da561cc066ec2184a3b17f3468154091bc2190f1810b5471a356",
+        "bindingEvidence": ["base::parse"]
+      },
+      {
+        "suite": "recursive",
+        "id": "parse-text-controls-default-missingness-graph",
+        "codeSha256": "79d5efc0654c35352495053b52484bf534d467d61481364a9bdf4db40fa75779",
+        "bindingEvidence": ["base::parse"]
+      },
+      {
+        "suite": "recursive",
+        "id": "parse-text-controls-source-selection-graph",
+        "codeSha256": "7f228a5d9156bd5ab2ae49372401063d3526a3e6a6c1c3162caa874e0381d7a6",
+        "bindingEvidence": ["base::parse"]
+      },
+      {
+        "suite": "recursive",
+        "id": "parse-text-controls-error-order-graph",
+        "codeSha256": "c7f5059b90b93f5bd1735b546a49737e0c0763677023f48ccdf8b0dee450f9d5",
+        "bindingEvidence": ["base::parse"]
+      },
+      {
+        "suite": "foundation",
+        "id": "parse-text-controls-empty-default-encoding-adjunct",
+        "codeSha256": "02db9ef968961d5b19778cbc4ddf1a47340d5a1eaa56b60691d132e550a511b3",
+        "bindingEvidence": []
+      },
+      {
+        "suite": "recursive",
+        "id": "parse-text-controls-empty-default-encoding-adjunct-graph",
+        "codeSha256": "3e702fd3ae84e02bf17e2f5f8ce98c93df9535ab5af0a21fa6b193c6484f60a6",
+        "bindingEvidence": ["base::parse"]
+      }
+    ],
+    "causalScope": "Ten strict controls qualify five composite base::parse group associations. They do not prove each of the 53 components independently causal and add no causal credit for seven unsupported-retention guards.",
+    "originalObservations": "The initial 39 text-control observations are preserved, including 26 cases masked by a false unused-prompt assumption; 38 separate finite-prompt/value observations and 12 retention/default observations informed the selected 40. Later nine branch and four encoding-label assertions remain a separate 13-case adjunct.",
+    "conditionScope": "Expected error and warning messages and forcing effects are observed. Native condition classes and call origins are not newly claimed; raw projections deliberately omit unclaimed class fields."
+  },
+  "verification": {
+    "unitPassed": 3414,
+    "unitSkipped": 95,
+    "foundationPassed": 1491,
+    "livePassed": 1418,
+    "liveSkipped": 55,
+    "recursivePassed": 406,
+    "causalLinkedBindings": 173,
+    "partialMatrixDimensions": 136,
+    "partialMatrixBindings": 26,
+    "bundleGate": [
+      "PASS statically loaded public client: 17.6 KiB / 150.0 KiB gzip",
+      "PASS Worker JavaScript: 494.2 KiB / 512.0 KiB gzip",
+      "PASS combined parser Wasm: 671.9 KiB / 1536.0 KiB raw",
+      "PASS elementary-function Wasm: 311.2 KiB / 384.0 KiB raw"
+    ],
+    "gates": [
+      {
+        "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+        "logSha256": "8b55c54d2204ced1cef1d143ae682a98fc9fa0ff6db7d5197d82a207abd2a049",
+        "finishedAt": "2026-10-22T23:57:25.9049796Z",
+        "gate": "check",
+        "arguments": ["check"],
+        "log": ".tmp/profile-0395-check.log",
+        "exitCode": 0,
+        "startedAt": "2026-10-22T23:55:39.8113299Z",
+        "schemaVersion": 1,
+        "executable": "pnpm",
+        "kind": "owned-local-gate-exit",
+        "receiptSha256": "3876d1ad542985ebc96f7d218e36344c3a59238cf27324d2e0bcf6a0d69798bf"
+      },
+      {
+        "kind": "owned-local-gate-exit",
+        "logSha256": "4913be4a58250fd26902a48f3e17ed448d4d65dea6026b48fbfac5ae7855f889",
+        "arguments": ["conformance"],
+        "startedAt": "2026-10-22T23:58:27.0995966Z",
+        "schemaVersion": 1,
+        "gate": "foundation",
+        "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+        "finishedAt": "2026-10-22T23:58:30.0877960Z",
+        "executable": "pnpm",
+        "log": ".tmp/profile-0395-foundation.log",
+        "exitCode": 0,
+        "receiptSha256": "918e8b226a67a078d5b3bbf9239e3776719e8504447a96047ab739b11dde99c7"
+      },
+      {
+        "gate": "native",
+        "startedAt": "2026-10-22T23:58:28.4391924Z",
+        "exitCode": 0,
+        "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+        "executable": "pnpm",
+        "arguments": ["conformance:r"],
+        "finishedAt": "2026-10-23T00:02:43.0626426Z",
+        "logSha256": "0dc48936ab7e518c89150d8a9e7dcf5ec06dd52b92275d6bf81871acf1abbec3",
+        "schemaVersion": 1,
+        "log": ".tmp/profile-0395-native.log",
+        "kind": "owned-local-gate-exit",
+        "receiptSha256": "a914f49c25770403023103aa9a40a35aa3201f013caafc49c102909c8325fc97"
+      },
+      {
+        "startedAt": "2026-10-22T23:58:28.4962412Z",
+        "gate": "v2",
+        "arguments": ["conformance:r:v2"],
+        "kind": "owned-local-gate-exit",
+        "executable": "pnpm",
+        "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+        "schemaVersion": 1,
+        "finishedAt": "2026-10-23T00:03:45.0540586Z",
+        "log": ".tmp/profile-0395-v2.log",
+        "logSha256": "84facb03ea50d20f747f2dd26bfb1dd85b5122db34ec02a2972d43f853e3dbeb",
+        "exitCode": 0,
+        "receiptSha256": "b36cfb6def68a365b6a733a460bc5112693e5cfab5ed751368d97b2e3c7e02af"
+      },
+      {
+        "logSha256": "1c1b244d4b50187ad0822a53609ee296080de03bbff365e937318c383cdde3bb",
+        "startedAt": "2026-10-22T23:58:28.0630568Z",
+        "kind": "owned-local-gate-exit",
+        "finishedAt": "2026-10-23T00:00:19.6726928Z",
+        "gate": "e2e",
+        "log": ".tmp/profile-0395-e2e.log",
+        "exitCode": 0,
+        "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+        "executable": "pnpm",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "schemaVersion": 1,
+        "receiptSha256": "5771346b552be181ebb7289909b24a892862ac10ad3ba470450afb234729d946"
+      },
+      {
+        "log": ".tmp/profile-0395-corpus.log",
+        "finishedAt": "2026-10-22T23:59:06.8404252Z",
+        "kind": "owned-local-gate-exit",
+        "executable": "node",
+        "startedAt": "2026-10-22T23:58:28.1108371Z",
+        "arguments": [".tmp/run-corpus-0395.mjs", "--run"],
+        "sourceCommit": "6c935aa88d2dea6f1bc0d52ed20b150fbb563db6",
+        "logSha256": "98c0f0d29346cf43479840c4cea6deee9f2613e67fb853b6cab0abc291576a6f",
+        "schemaVersion": 1,
+        "gate": "corpus",
+        "exitCode": 0,
+        "receiptSha256": "ec95bee762c7413f03f9b1c2affd78dd8e8d3c9bcdd77834795ce2ef963165e0"
+      }
+    ],
+    "formatOnlyReconciliation": {
+      "path": ".tmp/profile-0395-json-layout.json",
+      "sha256": "b425b0c68e77d52e1e45fe80e4d8793826f67de94aec80bed515c32da1bbdabd",
+      "kind": "owned-format-only-reconciliation",
+      "changes": [
+        {
+          "path": "conformance/cases/foundation.json",
+          "beforeSha256": "90804ee7b828e2b49328a1f16602d3b8ffb83dc4f2a173eaa477f43d438e415f",
+          "afterSha256": "9d7786bd379a01986ea25f600f969b9efc5573397e6f06291138f42f871c1488",
+          "parsedDataIdentical": true,
+          "priorCasesOrUnrelatedEntriesIdentical": true,
+          "finalSha256": "0457504207e2fa8c1de00b14bedf067c95bf85143d1e03c4184d66a60a5742cb",
+          "untouchedLayoutPreserved": true
+        },
+        {
+          "path": "conformance/cases/oracle-v2.json",
+          "beforeSha256": "2d8ea00ff875c4ba94ae62dfb172f83f9a3509aa2747a53e365caf493745d0e7",
+          "afterSha256": "78bada7833277b152d5cb6848f4130165f083ba7cf3bc5928b2f5f34b7acb055",
+          "parsedDataIdentical": true,
+          "priorCasesOrUnrelatedEntriesIdentical": true,
+          "finalSha256": "d705ba44ba0895e6246c5105f3e06d89dffd1484d97ca516c5f0ab9f8168a6d3",
+          "untouchedLayoutPreserved": true
+        },
+        {
+          "path": "compatibility/callable-domain-annotations.json",
+          "beforeSha256": "4ba742a41512ef2e42491e2991c30a65080dde0f607fcf3fee3b27a2fc701a83",
+          "afterSha256": "e6dd4e49377c2a39ed9d38bb172a765daa225b28c72e03ae85e0c9c934992ca9",
+          "parsedDataIdentical": true,
+          "priorCasesOrUnrelatedEntriesIdentical": true,
+          "finalSha256": "9f593f5885df9dc84b431b0a3ff8361c9375deff8dadb3e67e84a6ec1dca863e",
+          "untouchedLayoutPreserved": true
+        }
+      ],
+      "fullCheckQualification": "The full check preceded final JSON layout reconciliation. Parsed case/annotation values were unchanged; prior cases and unrelated annotation entries were preserved. All conformance, browser and corpus gates used the final JSON layouts; post-corpus verification rechecks formatting and generated metadata. Runtime TypeScript and built artifacts were unchanged by this reconciliation."
+    },
+    "postCorpus": {
+      "schemaVersion": 1,
+      "gates": [
+        {
+          "finishedAt": "2026-10-23T00:00:41.4082298Z",
+          "log": ".tmp/profile-0395-post-checkpoint-tests.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:00:40.3155213Z",
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "name": "checkpoint-tests",
+          "logSha256": "e6806ac217b6d255f12763a1457d4cac9418a6315e062097231fb865ecf00e91"
+        },
+        {
+          "finishedAt": "2026-10-23T00:00:47.5880492Z",
+          "log": ".tmp/profile-0395-post-all-types.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:00:41.4268285Z",
+          "arguments": ["typecheck:all"],
+          "name": "all-types",
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b"
+        },
+        {
+          "finishedAt": "2026-10-23T00:00:50.5949905Z",
+          "log": ".tmp/profile-0395-post-checkpoint-lint.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:00:47.5902937Z",
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "name": "checkpoint-lint",
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "finishedAt": "2026-10-23T00:01:05.3191186Z",
+          "log": ".tmp/profile-0395-post-format.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:00:50.5968434Z",
+          "arguments": ["format:check"],
+          "name": "format",
+          "logSha256": "bb82da2854b692ec42c657c1c9a675174897b249b25cabda03461095d01ab5cf"
+        },
+        {
+          "finishedAt": "2026-10-23T00:01:05.9569842Z",
+          "log": ".tmp/profile-0395-post-capabilities.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:01:05.3256217Z",
+          "arguments": ["capabilities:check"],
+          "name": "capabilities",
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502"
+        },
+        {
+          "finishedAt": "2026-10-23T00:01:06.4866798Z",
+          "log": ".tmp/profile-0395-post-coverage.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:01:05.9597823Z",
+          "arguments": ["compatibility:check"],
+          "name": "coverage",
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668"
+        },
+        {
+          "finishedAt": "2026-10-23T00:01:07.3299712Z",
+          "log": ".tmp/profile-0395-post-inventory.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:01:06.4886557Z",
+          "arguments": ["inventory:check"],
+          "name": "inventory",
+          "logSha256": "4075aaca1a9b3eff78e600784cb0069eeb21355c133f4063d7ff3621ccc4b129"
+        },
+        {
+          "finishedAt": "2026-10-23T00:01:08.1957434Z",
+          "log": ".tmp/profile-0395-post-status.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:01:07.3408754Z",
+          "arguments": ["status:check"],
+          "name": "status",
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55"
+        },
+        {
+          "finishedAt": "2026-10-23T00:01:08.6530630Z",
+          "log": ".tmp/profile-0395-post-corpus.log",
+          "exitCode": 0,
+          "command": "pnpm",
+          "startedAt": "2026-10-23T00:01:08.1977787Z",
+          "arguments": ["corpus:check"],
+          "name": "corpus",
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc"
+        }
+      ],
+      "kind": "owned-post-corpus-verification",
+      "ok": true
+    },
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.395.0.json",
+      "sha256": "f6890acb7b78d509d28d07582a61485ba3141d0e0304b942bc1012e04375d5ec",
+      "passed": 12,
+      "timingScope": "Concurrent correctness gates; no isolated performance claim"
+    },
+    "affectedCorpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.395.0.json",
+      "sha256": "b1f01b7a43ffbf2a9278645c6b2cd25fecee7774eb24ff40af862357134ed020",
+      "packages": 2,
+      "observations": 28,
+      "baselineProfile": "0.394.0"
+    }
+  },
+  "remaining": [
+    "All 13 semantic domains remain incomplete; callable links and partial dimensions do not measure percentage completion.",
+    "Retained source references, function/body metadata, source environments and full parse-data remain explicitly unfinished; no grammar restrictions or source placeholders establish completeness.",
+    "The encoding cases validate labels, errors and warnings on owned text, not transcoding, byte round trips or complete encoding semantics.",
+    "General n coercion, broader control types, host file/connection input and complete condition classes/call origins remain outside this bounded increment.",
+    "Public expression snapshots remain sources-only; no public API or Worker protocol expansion is claimed.",
+    "The latest full 24-package corpus checkpoint remains 0.393; this 0.395 refresh covers only evaluate and withr against their 0.394 evidence.",
+    "Original dependency closure, nested-test coverage and assisted testing-runner evidence remain separate; no substitute-runner P6/P7 credit.",
+    "Repeated performance remains 0.389 and packed-consumer evidence remains 0.388; current browser durations are correctness evidence under concurrent gates.",
+    "Linux normative gate and Formula holdout remain deferred; no downloads, pushes, publication or remote changes."
+  ]
+}

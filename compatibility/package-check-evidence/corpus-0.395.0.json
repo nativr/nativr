@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-cached-corpus-checkpoint",
+  "date": "2026-10-22",
+  "semanticProfile": "0.395.0",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "selected-development-and-regression",
+  "runner": "original-package-entrypoints",
+  "summarizerPolicy": "allowlisted-metadata-sha256-v2",
+  "packages": [
+    {
+      "package": "withr",
+      "version": "3.0.3",
+      "partition": "regression",
+      "sourceSha256": "d86c6454164fc85678bfc85e2a6cce42f7461d45fa9a87de71f376e7956c991e",
+      "artifactSha256": "a51a19247a01ad7d3f712b2029914f2c52f6c713846d0a63ada5a989ab4187f9",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/defer.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.395.0/withr.json",
+      "summarySha256": "47321f036afbb5a592d23fc4412e2fce6e714f6a57018f8a67e028c53ee5888e",
+      "rawReportSha256": "28ab4e2c06d4fa35ab96aa0fff1a8d11b0ca9a11ed20bd9726a8c5ab0b61ec56",
+      "checkerP7Eligible": false,
+      "nestedTestsUnverified": true,
+      "examplesEvidence": "incomplete",
+      "checkerNestedTestClosureDefect": false,
+      "nestedTestFiles": 25,
+      "nestedTestCoverage": "not-recorded",
+      "testthatDependency": {
+        "name": "testthat",
+        "actualVersion": null,
+        "oracleVersion": null,
+        "actualObserved": true,
+        "oracleObserved": true
+      }
+    },
+    {
+      "package": "evaluate",
+      "version": "1.0.5",
+      "partition": "regression",
+      "sourceSha256": "47aac79f889a828a5f8b4756cb972d7c2966bb984cbae17a4bd2389a73270794",
+      "artifactSha256": "4c69fe41198004538efce999d5be1b34cd9ec3641d476e09cb9ec350f02ef041",
+      "previousTier": "P4",
+      "tier": "P4",
+      "firstBlocker": {
+        "tier": "P5",
+        "code": "example-execution-failed",
+        "path": "man/evaluate.Rd",
+        "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+      },
+      "outcome": "reported",
+      "evidence": "compatibility/package-check-evidence/0.395.0/evaluate.json",
+      "summarySha256": "784463d5271eb6cba6017939d767fec76bf1065e15c781117682a5ebd0242556",
+      "rawReportSha256": "c0e61e772a000010e5e6bf7b3f8549e55234d5bf918d0c3ff01158225db252d4",
+      "checkerP7Eligible": false,
+      "nestedTestsUnverified": true,
+      "examplesEvidence": "incomplete",
+      "checkerNestedTestClosureDefect": false,
+      "nestedTestFiles": 18,
+      "nestedTestCoverage": "not-recorded",
+      "testthatDependency": {
+        "name": "testthat",
+        "actualVersion": null,
+        "oracleVersion": null,
+        "actualObserved": true,
+        "oracleObserved": true
+      }
+    }
+  ],
+  "tierPolicyCorrections": []
+}

@@ -1427,6 +1427,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native parse control assertion: false-control-order-finite-prompt.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed <- local({ old <- options(keep.source=FALSE, keep.parse.data=FALSE); on.exit(options(old)); events <- character(); \n warnings <- character(); messages <- character(); observed <- tryCatch(withCallingHandlers({ value <- parse(encoding={events<-c(events,"encoding");"unknown"},srcfile={events<-c(events,"srcfile");NULL},n={events<-c(events,"n");1L},text={events<-c(events,"text");"7L"},keep.source={events<-c(events,"keep");FALSE},file={events<-c(events,"file");stop("owned file forbidden")},prompt={events<-c(events,"prompt");""}); list(status="value", type=typeof(value), length=length(value), attributes=names(attributes(value)), sourceKept=!is.null(attr(value,"srcfile")), values=if(is.expression(value)&&is.null(attributes(value)))as.list(value)else NULL) },warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)list(status="error",class=class(e),message=conditionMessage(e))); list(events=events,warnings=warnings,messages=messages,observed=observed) }); identical(observed$events,c("keep","text","n","prompt","srcfile","encoding")) && identical(observed$warnings,character()) && identical(observed$messages,character()) && identical(observed$observed$status,"value") && identical(observed$observed$type,"expression") && identical(observed$observed$length,1L) && is.null(observed$observed$attributes) && identical(observed$observed$sourceKept,FALSE) && identical(observed$observed$values,list(7L)) })',
+    );
+  await profiledRun(page, "required-140");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native parse control assertion: literal-missing-n-finite-prompt.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed <- local({ old <- options(keep.source=FALSE, keep.parse.data=FALSE); on.exit(options(old)); events <- character(); \n warnings <- character(); messages <- character(); observed <- tryCatch(withCallingHandlers({ value <- parse(file={events<-c(events,"file");stop("owned file forbidden")},prompt={events<-c(events,"prompt");""},text="7L",n=); list(status="value", type=typeof(value), length=length(value), attributes=names(attributes(value)), sourceKept=!is.null(attr(value,"srcfile")), values=if(is.expression(value)&&is.null(attributes(value)))as.list(value)else NULL) },warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)list(status="error",class=class(e),message=conditionMessage(e))); list(events=events,warnings=warnings,messages=messages,observed=observed) }); identical(observed$events,c("prompt")) && identical(observed$warnings,character()) && identical(observed$messages,character()) && identical(observed$observed$status,"value") && identical(observed$observed$type,"expression") && identical(observed$observed$length,1L) && is.null(observed$observed$attributes) && identical(observed$observed$sourceKept,FALSE) && identical(observed$observed$values,list(7L)) })',
+    );
+  await profiledRun(page, "required-141");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native parse control assertion: missing-srcfile-keep-integer-one.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed <- local({ old <- options(keep.source=FALSE, keep.parse.data=FALSE); on.exit(options(old)); events <- character(); \n warnings <- character(); messages <- character(); observed <- tryCatch(withCallingHandlers({ value <- parse(file={events<-c(events,"file");stop("owned file forbidden")},prompt={events<-c(events,"prompt");""},text={events<-c(events,"text");"7L"},n={events<-c(events,"n");1L},keep.source={events<-c(events,"keep");1L},encoding={events<-c(events,"encoding");"unknown"}); list(status="value", type=typeof(value), length=length(value), attributes=names(attributes(value)), sourceKept=!is.null(attr(value,"srcfile")), values=if(is.expression(value)&&is.null(attributes(value)))as.list(value)else NULL) },warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart("muffleWarning")},message=function(m){messages<<-c(messages,conditionMessage(m));invokeRestart("muffleMessage")}),error=function(e)list(status="error",class=class(e),message=conditionMessage(e))); list(events=events,warnings=warnings,messages=messages,observed=observed) }); identical(observed$events,c("keep","text","n","prompt","encoding")) && identical(observed$warnings,character()) && identical(observed$messages,character()) && identical(observed$observed$status,"value") && identical(observed$observed$type,"expression") && identical(observed$observed$length,1L) && is.null(observed$observed$attributes) && identical(observed$observed$sourceKept,FALSE) && identical(observed$observed$values,list(7L)) })',
+    );
+  await profiledRun(page, "required-142");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 
