@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.401.0",
-  "capabilityManifestHash": "b4275fa4bfa611bed0be31a1a648650785c6a5e3a8db826527d4d72b356ff198",
+  "semanticProfileVersion": "0.402.0",
+  "capabilityManifestHash": "c9164d51fefff7a7ad9ce5ffb15c90d860b44ae78b0ffc62be975ecdf4a902e1",
   "evidence": {
-    "checkedInConformanceCases": 1522,
-    "liveREligibleCases": 1449,
+    "checkedInConformanceCases": 1528,
+    "liveREligibleCases": 1455,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 435,
-    "recursiveBehaviorallyProvenBindings": 175,
+    "recursiveOracleV2Cases": 441,
+    "recursiveBehaviorallyProvenBindings": 176,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -730,6 +730,17 @@
         ]
       },
       {
+        "binding": "base::srcfilecopy",
+        "cases": [
+          "srcfilecopy-custom-return-adjunct-graph",
+          "srcfilecopy-line-attributes-reference-graph",
+          "srcfilecopy-line-coercion-graph",
+          "srcfilecopy-line-diagnostics-graph",
+          "srcfilecopy-line-encoding-graph",
+          "srcfilecopy-line-normalization-graph"
+        ]
+      },
+      {
         "binding": "base::stop",
         "cases": [
           "nested-caller-calls-suppressed-explicitly",
@@ -983,7 +994,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "2f352426dc4f9d0c88f7de6a3e25bf8a9eaabd9a54ab329c936da5b75aaa28c2",
+    "sha256": "85df663603bb4c09a96c05de509196042a6e4b9f29dcc8d589bbab033c6d812f",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -992,8 +1003,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 175,
-    "bindingsWithDeclaredMatrixEvidence": 35,
+    "recursiveLinkedBindings": 176,
+    "bindingsWithDeclaredMatrixEvidence": 36,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

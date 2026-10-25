@@ -2701,3 +2701,66 @@ broader function coercions, cell tags, malformed construction timing, parse-data
 language equality/printing remain unfinished. Continue the full domain matrices, independently
 licensed datasets and isolated runner parity. Linux, holdout, download and remote-action boundaries
 remain in force.
+
+### Source-file line normalization checkpoint (profile 0.402)
+
+The bounded srcfilecopy prerequisite now covers the sampled LF line segments, empty and missing
+inputs, CR/LF boundaries, coercion order, global versus local method lookup, encoding branches,
+source-environment fields and copy behavior. Separate custom-return fixtures cover object and
+attribute preservation on the no-LF branch and further coercion on the LF branch. These observations
+do not establish the full filename/isFile/timestamp contract or retained parsing with
+parse(keep.source=TRUE).
+
+The [verification record](../compatibility/platform-evidence/srcfilecopy-lines-windows-0.402.0.json)
+keeps two baselines separate on committed 0.401. The main 18 assertions had three passes and fifteen
+false mismatches with 2,159 stable inputs; the later three-case adjunct had zero passes and three
+false mismatches with 2,185 stable inputs. Both had zero runtime errors and harness failures. The
+main cohort remains unchanged.
+
+Five main foundation groups and five main raw graphs cover 18 assertions; one separate foundation
+group and raw graph cover the three adjunct assertions. Six composite srcfilecopy associations have
+twelve strict controls and two owned-environment alias checks. Composite controls do not establish
+each output field independently. The historical 0.401 shape classification was rejected before
+native execution. Native controls used an explicit proposed 0.402 metadata change, and final
+rendered eligibility is verified independently. An initial adjunct lexical typo produced two passing
+native assertions and one parse error; that attempt and its exact whitespace correction remain
+preserved without a runtime-defect claim.
+
+The five focused resource/visibility tests contain three owned resource guards and two separately
+observed visibility fixtures. They do not enlarge either clean baseline or the recursive evidence.
+Cancellation is injected deterministically at an existing checkpoint; no timed Worker-response or
+native resource-limit claim follows. A later third-coercion observation also remains separately
+recorded without additional compatibility credit. All 26 focused tests pass.
+
+- Production check: 3,633 unit tests pass, 96 opt-in tests skipped; types, lint, serial build,
+  browser audit and fixed caps pass.
+- Conformance: 1,528 checked-in, 1,455 live GNU R and 441 recursive cases pass; 55 NativR-only live
+  exclusions; 176 bindings have causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.402.0.json): 12/12 pass;
+  required examples take 15.699 / 18.649 / 63.975 seconds on Chromium / Firefox / WebKit under the
+  unchanged 120-second timeout. These are advisory correctness-run timings.
+- Bundle sizes: client 18.1/150 KiB gzip; Worker 496.8/512 KiB gzip; parser 671.9/1,536 KiB raw;
+  elementary 311.2/384 KiB raw.
+- Inventory: 163 partial dimensions on 36 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus checkpoint: 46 tests pass; all-types, lint, format and generated checks pass.
+
+Every final gate has genuine execution-time before/after input snapshots, with build-artifact
+continuity from the production check. Later corpus, checkpoint, documentation and evidence writes
+are distinguished explicitly; final maintained-file hashes are not backdated into earlier runs. The
+verification record preserves 1 earlier gate attempts separately from final acceptance.
+
+The [selected corpus checkpoint](../compatibility/package-check-evidence/corpus-0.402.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.402.0.json) refresh
+evaluate, withr, abind and numDeriv: four pinned archives and 49 observations against 0.401. No
+selected package tier changed. Qualified distribution: 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. Metadata
+differences are recorded explicitly; they do not independently establish a causal runtime
+improvement. The other twenty development/regression entries and Formula remain unchanged; the full
+checkpoint remains 0.397. Original dependency closure and assisted-runner results remain separate.
+
+Next measurable work remains retained parsing: independently verify and implement
+parse(keep.source=TRUE), including default keep.parse.data=TRUE, source-position and
+source-reference propagation, and partial parseData updates on syntax errors using owned source
+text. The global keep.source option default is a separate behavior. This prerequisite does not
+narrow that target or supersede the preserved retained-parsing findings. Continue the remaining
+domain matrices, independently licensed datasets and isolated runner parity. Linux, holdout,
+download and remote-action boundaries remain in force.

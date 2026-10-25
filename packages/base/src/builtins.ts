@@ -15,6 +15,7 @@ import {
   errorConditionClasses,
   deparseDiagnosticAst,
   recordErrorConditionCall,
+  recordErrorConditionClasses,
   REvaluationError,
   RSignalledConditionError,
   RResourceLimitError,
@@ -2233,7 +2234,7 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     defineBuiltin(
       "srcfilecopy",
       ["filename", "lines", "timestamp", "isFile"],
-      "shape",
+      "behavioral",
       builtinSourceFileCopy,
     ),
     [
@@ -17462,17 +17463,34 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
 async function builtinSourceFileCopy(invocation: BuiltinInvocation): Promise<REnvironment> {
   const matched = await matchExact(invocation, ["filename", "lines", "timestamp", "isFile"]);
   const filename = characterScalar(required(matched, "filename", "srcfilecopy"), "filename");
-  const suppliedLines = required(matched, "lines", "srcfilecopy");
-  const lines =
-    suppliedLines.type === "null"
-      ? characterVector([])
-      : isAtomic(suppliedLines)
-        ? coerceAtomicToCharacter(suppliedLines, invocation)
-        : suppliedLines.type === "list" || suppliedLines.type === "pairlist"
-          ? characterVector(suppliedLines.values.map(globListElementText))
-          : undefined;
-  if (lines === undefined) {
-    throw new RTypeMismatchError("NRT3443", "srcfilecopy(lines=) must be coercible to character.");
+  const suppliedLines = matched.get("lines");
+  if (suppliedLines === undefined) {
+    const error = new REvaluationError("NRE2103", 'argument "lines" is missing, with no default');
+    recordErrorConditionClasses(error, ["getvarError", "missingArgError", "error", "condition"]);
+    throw error;
+  }
+  // Detection and storage are separate observable coercions. A character input is inspected
+  // directly; a custom noncharacter method can return different values at the two stages.
+  const inspected =
+    suppliedLines.type === "character"
+      ? suppliedLines
+      : await sourceFileCharacters(suppliedLines, invocation);
+  if (inspected.type !== "character")
+    throw new RTypeMismatchError("NRT3443", "invalid 'text' argument");
+  let normalize = false;
+  for (let index = 0; index < inspected.length; index += 1) {
+    invocation.context.checkpoint();
+    if (!isMissing(inspected, index) && inspected.values[index]!.includes("\n")) {
+      normalize = true;
+      break;
+    }
+  }
+  let lines = await sourceFileCharacters(suppliedLines, invocation);
+  if (normalize) {
+    if (lines.type !== "character") lines = await sourceFileCharacters(lines, invocation);
+    if (lines.type !== "character")
+      throw new RTypeMismatchError("NRT3443", "invalid 'text' argument");
+    lines = normalizeSourceFileLines(lines, invocation);
   }
   const timestamp =
     matched.get("timestamp") ??
@@ -17488,8 +17506,84 @@ async function builtinSourceFileCopy(invocation: BuiltinInvocation): Promise<REn
   setBinding(environment, "filename", characterVector([filename]));
   setBinding(environment, "fixedNewlines", logicalVector([true]));
   environment.attributes.set("class", characterVector(["srcfilecopy", "srcfile"]));
-  invocation.context.allocate(lines.length + 9);
+  // Coercion and normalization account for their vector allocations. The unsplit custom
+  // method result can be any R value, and is retained without dropping its attributes.
+  invocation.context.allocate(9);
+  invocation.setResultVisibility("visible");
   return environment;
+}
+
+async function sourceFileCharacters(value: RValue, invocation: BuiltinInvocation): Promise<RValue> {
+  const lookupEnvironment = invocation.globalEnvironment();
+  const argument = { promise: createForcedPromise(value, lookupEnvironment) };
+  const dispatched =
+    objectClasses(value) === undefined
+      ? undefined
+      : await invocation.dispatchS3IfPresent(
+          "as.character",
+          value,
+          [argument],
+          true,
+          0,
+          undefined,
+          lookupEnvironment,
+        );
+  return (
+    dispatched ??
+    (await builtinAsCharacter({
+      ...invocation,
+      arguments: [argument],
+      dispatchS3IfPresent: () => Promise.resolve(undefined),
+    }))
+  );
+}
+
+function normalizeSourceFileLines(
+  input: RCharacterVector,
+  invocation: BuiltinInvocation,
+): RCharacterVector {
+  let length = input.length;
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) continue;
+    const text = input.values[index]!;
+    for (let offset = 0; offset < text.length; offset += 1) {
+      if (offset % 1_024 === 0) invocation.context.checkpoint();
+      if (text.charCodeAt(offset) === 10) length += 1;
+    }
+  }
+  // Check the complete vector before allocating segments, including trailing empty lines.
+  invocation.context.allocate(length);
+  const values: string[] = [];
+  const missing = new Uint8Array(length);
+  const encodings: RCharacterEncoding[] = [];
+  const byteValues: Uint8Array[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    invocation.context.checkpoint();
+    if (isMissing(input, index)) {
+      missing[values.length] = 1;
+      values.push("");
+      encodings.push("unknown");
+      byteValues.push(new Uint8Array());
+      continue;
+    }
+    const text = input.values[index]!;
+    const bytes =
+      characterEncodingAt(input, index) === "bytes" ? characterBytesAt(input, index) : undefined;
+    let start = 0;
+    while (start <= text.length) {
+      invocation.context.checkpoint();
+      const newline = text.indexOf("\n", start);
+      const end = newline < 0 ? text.length : newline;
+      const part = text.slice(start, end);
+      values.push(part);
+      encodings.push(bytes === undefined ? "UTF-8" : "bytes");
+      byteValues.push(bytes === undefined ? encodeUtf8(part) : bytes.slice(start, end));
+      if (newline < 0) break;
+      start = end + 1;
+    }
+  }
+  return characterVector(values, compactMask(missing), encodings, byteValues);
 }
 
 async function builtinSource(invocation: BuiltinInvocation): Promise<RList> {

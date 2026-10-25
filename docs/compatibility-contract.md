@@ -38,6 +38,38 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Source-file line normalization (profile 0.402)
+
+The sampled `srcfilecopy` constructor paths split embedded LF characters while preserving leading,
+trailing and repeated empty segments, literal CR characters and missing values. Ordinary character,
+atomic, factor, list and pairlist inputs use the observed character conversions. New source
+environments remain distinct and preserve the tested fields and copy-on-modification behavior.
+
+Newline detection and storage coercion are separate observable stages. Detection inspects character
+input directly; noncharacter input is converted first. Storage performs another conversion using the
+observed global method lookup scope. A custom method can change its result between these stages.
+When splitting is not selected, its stored result remains unchanged, including attributes or a
+noncharacter value. The selected splitting path performs the observed additional conversion when
+needed and drops line attributes. Latin-1 strings normalize to UTF-8 throughout a vector when
+splitting is selected; byte-marked payloads retain their bytes. The unsplit path preserves encoding.
+
+Eighteen native-backed main assertions and a separate three-case custom-return cohort establish
+these boundaries. The diagnostic cases cover missing lines, unsupported environment coercion and the
+sampled method failures, including explicitly asserted condition classes where recorded. They do not
+establish full constructor argument-force timing or condition-call equivalence. Owned resource
+guards separately bound the output vector before flattening and check work, cancellation and
+recovery; they receive no native resource-limit compatibility credit.
+
+This is a prerequisite for retained parsing. `parse(keep.source=TRUE)`, generated source positions,
+default parse-data graphs, partial parse-data mutation on syntax errors and complete source-file
+behavior remain unfinished. The public client API, Worker protocol and fixed resource limits are
+unchanged.
+
+The [verification record](../compatibility/platform-evidence/srcfilecopy-lines-windows-0.402.0.json)
+binds the separate 18-case and three-case clean baselines, native evidence, resource/visibility
+checks and final execution-time snapshots. Historical shape-metadata rejection occurred before
+native execution; the explicit 0.402 eligibility change and final rendered eligibility are recorded.
+
 ### Constructed function source cells (profile 0.401)
 
 Constructed function calls retain a non-NULL fourth cell without evaluating it. The sampled integer,

@@ -3,7 +3,7 @@
   "testTitle": "runs the required Worker examples without evaluation network traffic",
   "sourcePath": "tests/e2e/playground.spec.ts",
   "sourceHashPolicy": "lf-normalized-utf8",
-  "sourceSha256": "8db5f7b69e64b130097778e16ac152790e231635eb80dd273584dd3f3e197200",
+  "sourceSha256": "7e0ef5c2211a342a80f25e57028989a65718b8b03da7ddec55a37ffdc9d6f21c",
   "runSites": [
     { "id": "required-001", "occurrences": 1, "line": 13 },
     { "id": "required-002", "occurrences": 1, "line": 17 },
@@ -164,7 +164,10 @@
     { "id": "required-157", "occurrences": 1, "line": 1623 },
     { "id": "required-158", "occurrences": 1, "line": 1634 },
     { "id": "required-159", "occurrences": 1, "line": 1645 },
-    { "id": "required-160", "occurrences": 1, "line": 1656 }
+    { "id": "required-160", "occurrences": 1, "line": 1656 },
+    { "id": "required-161", "occurrences": 1, "line": 1666 },
+    { "id": "required-162", "occurrences": 1, "line": 1676 },
+    { "id": "required-163", "occurrences": 1, "line": 1686 }
   ],
   "sampleIds": [
     "required-001:1",
@@ -327,6 +330,9 @@
     "required-157:1",
     "required-158:1",
     "required-159:1",
-    "required-160:1"
+    "required-160:1",
+    "required-161:1",
+    "required-162:1",
+    "required-163:1"
   ]
 }

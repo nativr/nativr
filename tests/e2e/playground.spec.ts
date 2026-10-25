@@ -1658,6 +1658,36 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  await page
+    .locator("#source")
+    .fill(
+      'local({f<-function(x)srcfilecopy("owned.R",x,timestamp=0,isFile=FALSE)$lines;identical(f("a\\nb"),c("a","b"))&&identical(f("a\\n"),c("a",""))&&identical(f("\\na"),c("","a"))&&identical(f("\\n\\n"),c("","",""))&&identical(f(c("a\\n\\nb\\n","\\n","")),c("a","","b","","","",""))})',
+    );
+  await profiledRun(page, "required-161");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill(
+      'local({x<-rawToChar(as.raw(c(233L,241L)));Encoding(x)<-"bytes";a<-srcfilecopy("owned.R",c(x,"a\\nb"),timestamp=0,isFile=FALSE);u<-paste0(intToUtf8(233L),"\\n",intToUtf8(128512L));b<-srcfilecopy("owned.R",u,timestamp=0,isFile=FALSE);identical(lapply(a$lines,charToRaw),list(as.raw(c(233L,241L)),as.raw(97L),as.raw(98L)))&&identical(Encoding(a$lines),c("bytes","unknown","unknown"))&&identical(b$lines,c(intToUtf8(233L),intToUtf8(128512L)))&&identical(Encoding(b$lines),c("UTF-8","UTF-8"))&&identical(a$Enc,"unknown")&&identical(b$Enc,"unknown")})',
+    );
+  await profiledRun(page, "required-162");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill(
+      'local({events<-0L;assign("as.character.owned_lines",function(x,...){events<<-events+1L;if(events==1L)"first\\nprobe"else"second\\nresult"},envir=.GlobalEnv);on.exit(rm("as.character.owned_lines",envir=.GlobalEnv));a<-srcfilecopy("owned.R",structure(17L,class="owned_lines"),timestamp=0,isFile=FALSE);firstCount<-events;events<-0L;assign("as.character.owned_lines",function(x,...){events<<-events+1L;if(events==1L)"first"else"second\\nresult"},envir=.GlobalEnv);b<-srcfilecopy("owned.R",structure(17L,class="owned_lines"),timestamp=0,isFile=FALSE);identical(a$lines,c("second","result"))&&identical(firstCount,2L)&&identical(b$lines,"second\\nresult")&&identical(events,2L)&&identical(b$fixedNewlines,TRUE)})',
+    );
+  await profiledRun(page, "required-163");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

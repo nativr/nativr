@@ -22,27 +22,20 @@
     "policy": "exact",
     "bindingEvidence": ["base::invisible", "base::local"],
     "code": "local({ cat(\"before-value\\n\"); invisible(list(answer = 7L)) })",
-    "observationAssertions": {
-      "visible": false,
-      "stdout": "before-value\n"
-    }
+    "observationAssertions": { "visible": false, "stdout": "before-value\n" }
   },
   {
     "id": "shared-environment-identity",
     "policy": "exact",
     "bindingEvidence": ["base::new.env"],
     "code": "shared <- new.env(parent = emptyenv()); list(first = shared, second = shared)",
-    "graphAssertions": {
-      "sameNode": [[["first"], ["second"]]]
-    }
+    "graphAssertions": { "sameNode": [[["first"], ["second"]]] }
   },
   {
     "id": "self-referential-environment-binding",
     "policy": "exact",
     "code": "local({ cycle <- new.env(parent = emptyenv()); cycle$self <- cycle; cycle })",
-    "graphAssertions": {
-      "sameNode": [[[], ["self"]]]
-    }
+    "graphAssertions": { "sameNode": [[[], ["self"]]] }
   },
   {
     "id": "mutually-referential-environment-bindings",
@@ -61,14 +54,7 @@
     "policy": "exact",
     "bindingEvidence": ["base::makeActiveBinding"],
     "code": "local({ holder <- new.env(parent = emptyenv()); makeActiveBinding(\"side_effect\", function() stop(\"observer forced active binding\"), holder); holder })",
-    "graphAssertions": {
-      "activeBindings": [
-        {
-          "path": [],
-          "name": "side_effect"
-        }
-      ]
-    }
+    "graphAssertions": { "activeBindings": [{ "path": [], "name": "side_effect" }] }
   },
   {
     "id": "nested-language-call-structure",
@@ -80,38 +66,28 @@
     "policy": "exact",
     "bindingEvidence": ["base::pairlist", "base::quote"],
     "code": "pairlist(alpha = quote(a + 1L), beta = NA_integer_)",
-    "graphAssertions": {
-      "paths": [["alpha"], ["beta"]]
-    }
+    "graphAssertions": { "paths": [["alpha"], ["beta"]] }
   },
   {
     "id": "matched-call-language-and-unexpanded-dots",
     "policy": "exact",
     "bindingEvidence": ["base::match.call"],
     "code": "f <- function(alpha, beta = 2, ...) NULL; match.call(definition = f, call = quote(f(al = 1 + 2, z = 4)), expand.dots = FALSE)",
-    "graphAssertions": {
-      "paths": [["alpha"], ["..."], ["...", "z"]]
-    }
+    "graphAssertions": { "paths": [["alpha"], ["..."], ["...", "z"]] }
   },
   {
     "id": "closure-formals-body-and-environment",
     "policy": "exact",
     "bindingEvidence": ["base::local"],
     "code": "local({ captured <- 7L; function(x = captured) x + 1L })",
-    "graphAssertions": {
-      "paths": [["@environment", "captured"]]
-    }
+    "graphAssertions": { "paths": [["@environment", "captured"]] }
   },
   {
     "id": "returned-error-condition-is-a-value",
     "policy": "exact",
     "bindingEvidence": ["base::simpleError"],
     "code": "simpleError(\"returned, not signalled\")",
-    "observationAssertions": {
-      "outcome": "value",
-      "conditions": [],
-      "visible": true
-    }
+    "observationAssertions": { "outcome": "value", "conditions": [], "visible": true }
   },
   {
     "id": "signalled-error-after-stdout",
@@ -204,9 +180,7 @@
     "policy": "exact",
     "bindingEvidence": ["base::warningCondition"],
     "code": "warningCondition(\"returned warning\", class = \"probe_warning\", call = quote(probe(2L)), detail = 2L)",
-    "graphAssertions": {
-      "paths": [["message"], ["call"], ["detail"]]
-    },
+    "graphAssertions": { "paths": [["message"], ["call"], ["detail"]] },
     "observationAssertions": {
       "outcome": "value",
       "conditions": [],
@@ -626,9 +600,7 @@
       "messages": "",
       "visible": true
     },
-    "graphAssertions": {
-      "paths": [["console"], ["file"], ["text"]]
-    }
+    "graphAssertions": { "paths": [["console"], ["file"], ["text"]] }
   },
   {
     "id": "condition-accessor-values-methods-and-visibility",
@@ -659,9 +631,7 @@
     "code": "local({ x<-structure(matrix(1:6,2,dimnames=list(c(\"a\",\"b\"),c(\"x\",\"y\",\"z\"))),note=list(label=\"x\")); a<-call(\"identity\",x); b<-as.call(list(as.name(\"identity\"),x)); c<-substitute(identity(v),list(v=x)); d<-quote(identity(NULL)); d[[2]]<-x; list(calls=list(a,b,c,d),values=list(eval(a),eval(b),eval(c),eval(d)),rendered=c(deparse(a,width.cutoff=500),deparse(b,width.cutoff=500),deparse(c,width.cutoff=500),deparse(d,width.cutoff=500))) })",
     "policy": "exact",
     "bindingEvidence": ["base::call", "base::as.call", "base::substitute", "base::deparse"],
-    "graphAssertions": {
-      "paths": [["calls"], ["values"], ["rendered"]]
-    },
+    "graphAssertions": { "paths": [["calls"], ["values"], ["rendered"]] },
     "observationAssertions": {
       "outcome": "value",
       "conditions": [],
@@ -676,9 +646,7 @@
     "code": "local({ \"put<-\"<-function(x,value)stop(\"fixture\"); x<-1; e<-tryCatch({put(x)<-matrix(-1:-6,3,dimnames=list(c(\"a\",\"b\",\"c\"),c(\"x\",\"y\")))},error=identity); list(value=eval(conditionCall(e)[[3]]),text=deparse(conditionCall(e),width.cutoff=500)) })",
     "policy": "exact",
     "bindingEvidence": ["base::conditionCall", "base::deparse"],
-    "graphAssertions": {
-      "paths": [["value"], ["text"]]
-    },
+    "graphAssertions": { "paths": [["value"], ["text"]] },
     "observationAssertions": {
       "outcome": "value",
       "conditions": [],
@@ -692,9 +660,7 @@
     "id": "global-environment-binding-shared-value",
     "policy": "exact",
     "code": "local({ holder <- new.env(parent=emptyenv()); holder$value <- list(answer=42L); assign(\"global_binding_fixture\", holder, .GlobalEnv); result <- list(first=get(\"global_binding_fixture\",globalenv(),inherits=FALSE),second=holder,identity=identical(base::.GlobalEnv,globalenv())); rm(\"global_binding_fixture\",envir=.GlobalEnv); result })",
-    "graphAssertions": {
-      "sameNode": [[["first"], ["second"]]]
-    }
+    "graphAssertions": { "sameNode": [[["first"], ["second"]]] }
   },
   {
     "id": "detach-invalid-name",
@@ -702,11 +668,7 @@
     "bindingEvidence": ["base::detach"],
     "code": "detach(\"package:nativr.missing\")"
   },
-  {
-    "id": "detach-formal-defaults",
-    "policy": "exact",
-    "code": "formals(detach)"
-  },
+  { "id": "detach-formal-defaults", "policy": "exact", "code": "formals(detach)" },
   {
     "id": "length-class-and-default-dispatch",
     "policy": "exact",
@@ -763,11 +725,7 @@
     "code": "local({x<-c(person(\"Ada\"),person(\"Grace\"));c(x[[2]]$given,x[1]$giv,unlist(x[,\"given\"]))})",
     "policy": "exact"
   },
-  {
-    "id": "person-empty-print",
-    "code": "capture.output(print(person()))",
-    "policy": "exact"
-  },
+  { "id": "person-empty-print", "code": "capture.output(print(person()))", "policy": "exact" },
   {
     "id": "as-character-class-dispatch",
     "code": "local({as.character.fixture<-function(x,...) \"custom\";as.character(structure(1,class=\"fixture\"))})",
@@ -1265,7 +1223,6 @@
     "bindingEvidence": ["base::as.character", "base::split", "base::table", "base::match"],
     "code": "local({x<-structure(c(1L,2L,3L,NA_integer_),levels=c(\"\",NA,\"a\"),class=\"factor\");list(original=x,character=as.character(x),missing=is.na(x),combined=c(x,x),flattened=unlist(list(x,x)),matched=match(x,x),equal=x==x,split=split(seq_along(x),x),table=table(x,useNA=\"ifany\"),literal=table(c(\"<NA>\",NA,\"\"),useNA=\"always\"))})"
   },
-
   {
     "id": "argument-matching-recursive-calls-and-diagnostics",
     "policy": "exact",
@@ -1289,7 +1246,6 @@
     "bindingEvidence": ["utils::person"],
     "code": "local({a<-person(\"Ada\",\"Example\",,role=\"aut\");b<-person(\"Ada\",\"Example\",email=,role=\"aut\");list(positional=unclass(a),named=unclass(b),same=identical(a,b),class=class(a),visible=withVisible(person(given=,family=\"Example\")))})"
   },
-
   {
     "id": "partial-argument-warning-conditions-and-diagnostic-order",
     "policy": "exact",
@@ -1318,7 +1274,6 @@
     "policy": "exact",
     "code": "(function(){old<-options(warnPartialMatchArgs=TRUE,warn=0);on.exit(options(old));capture<-function(expr)tryCatch(expr,partialMatchWarning=function(w)w);list(mean=capture(mean(1:3,tr=0)),print=capture(print(factor(\"a\"),max.l=TRUE)))})()"
   },
-
   {
     "id": "generic-default-promises-sequence-shapes",
     "code": "local({list(empty=seq(),null=seq(NULL),missing=seq(from=,to=3),one=seq(3),integer=seq.default(1L,3L,1L),double=seq.default(1,3,1),length=seq.default(to=5,length.out=3),along=seq.default(along.with=character()),equal=seq.default(structure(2,tag=\"owned\"),2,0),signature=formals(seq.default))})",
@@ -1346,56 +1301,39 @@
     "code": "(function(){old<-options(warnPartialMatchArgs=TRUE);on.exit(options(old));capture<-function(expr){seen<-list();value<-withCallingHandlers(expr,warning=function(w){seen[[length(seen)+1]]<<-w;invokeRestart(\"muffleWarning\")});list(value=value,warnings=seen)};list(sequence=capture(seq(f=1,t=3)),sort=capture(sort(c(3,1,2),decr=TRUE)),format=capture(format(1.234,dig=2)),extra=capture(seq.default(from=1,other=stop(\"unused\"))))})()",
     "policy": "exact"
   },
-
   {
     "id": "error-origin-and-choice-call-syntax",
     "bindingEvidence": ["base::conditionCall"],
     "code": "local({capture<-function(expr)tryCatch(force(expr),error=conditionCall);f<-abs;list(builtin=capture(abs(\"x\")),alias=capture(f(\"x\")),namespace=capture(base::abs(\"x\")),binary=capture(\"x\"+1),unary=capture(!\"x\"),subset=capture(1[[2]]),control=capture(if(NA)1),default=capture(format.default(\"x\",justify=\"bad\")),evaluated=capture(eval(quote(abs(\"x\")))))})",
     "policy": "exact",
-    "observationAssertions": {
-      "outcome": "value",
-      "visible": true
-    }
+    "observationAssertions": { "outcome": "value", "visible": true }
   },
   {
     "id": "error-origin-and-choice-promises-and-explicit-calls",
     "code": "local({capture<-function(expr)tryCatch(force(expr),error=conditionCall);delayedAssign(\"owned_global_missing\",owned_missing,eval.env=.GlobalEnv);f<-function()owned_missing;g<-function(x=abs(\"x\"))x;condition<-simpleError(\"owned\",call=quote(owned(7)));seen<-list();value<-tryCatch(withCallingHandlers(abs(\"x\"),error=function(e)seen[[length(seen)+1]]<<-conditionCall(e)),error=conditionCall);list(global=capture(owned_global_missing),local=capture(f()),default=capture(g()),calling=list(value=value,seen=seen),explicit=tryCatch(stop(condition),error=identity),null=capture(stop(simpleError(\"owned\",call=NULL))))})",
     "policy": "exact",
-    "observationAssertions": {
-      "outcome": "value",
-      "visible": true
-    }
+    "observationAssertions": { "outcome": "value", "visible": true }
   },
   {
     "id": "error-origin-and-choice-selection-values",
     "bindingEvidence": ["base::match.arg"],
     "code": "local({list(one=match.arg(\"a\",c(\"alpha\",\"beta\")),some=match.arg(c(\"a\",\"bad\"),c(\"alpha\",\"beta\"),TRUE),all=match.arg(c(\"a\",\"a\"),c(\"alpha\",\"beta\"),\"all\"),named=match.arg(\"b\",c(A=\"alpha\",B=\"beta\")),integer=match.arg(\"1\",1:2),list=match.arg(\"a\",list(\"alpha\",\"beta\")),factor=match.arg(\"a\",factor(c(\"a\",\"b\"))),missing=match.arg(\"NA\",c(NA_character_,\"a\")),empty=match.arg(character(),character()),emptyList=match.arg(NULL,list()),signature=formals(match.arg))})",
     "policy": "exact",
-    "observationAssertions": {
-      "outcome": "value",
-      "visible": true
-    }
+    "observationAssertions": { "outcome": "value", "visible": true }
   },
   {
     "id": "error-origin-and-choice-public-diagnostics",
     "code": "local({capture<-function(expr)tryCatch(expr,error=function(e)list(message=conditionMessage(e),call=conditionCall(e),class=class(e)));list(type=capture(match.arg(1,c(\"a\",\"b\"))),length=capture(match.arg(character(),c(\"a\",\"b\"))),missing=capture(match.arg(,c(\"a\",\"b\"))),none=capture(match.arg(\"bad\",c(\"a\",\"b\"),TRUE)),all=capture(match.arg(c(\"a\",\"bad\"),c(\"alpha\",\"beta\"),\"all\")),duplicate=capture(match.arg(\"a\",c(\"alpha\",\"alpha\",\"beta\"))),emptyLabel=capture(match.arg(\"\",c(\"\",\"a\"))),zero=capture(match.arg(\"bad\",character())),severalType=capture(match.arg(\"a\",c(\"a\",\"b\"),1)))})",
     "policy": "exact",
-    "observationAssertions": {
-      "outcome": "value",
-      "visible": true
-    }
+    "observationAssertions": { "outcome": "value", "visible": true }
   },
   {
     "id": "error-origin-and-choice-default-forcing",
     "bindingEvidence": ["base::match.arg"],
     "code": "local({seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};explicit<-match.arg(mark(\"arg\",\"a\"),mark(\"choices\",c(\"a\",\"b\")),mark(\"several\",FALSE));first<-seen;seen<-character();f<-function(arg={seen<<-c(seen,\"default\");c(\"a\",\"b\")})match.arg(arg);implicit<-f(mark(\"actual\",\"b\"));second<-seen;seen<-character();default<-f();list(explicit=explicit,first=first,implicit=implicit,second=second,default=default,third=seen,null=match.arg(NULL,c(\"a\",\"b\"),stop(\"unused\")))})",
     "policy": "exact",
-    "observationAssertions": {
-      "outcome": "value",
-      "visible": true
-    }
+    "observationAssertions": { "outcome": "value", "visible": true }
   },
-
   {
     "id": "default-boundary-complex-sequences",
     "code": "local({list(interpolated=seq.default(from=1+2i,to=3+4i,length.out=3),forward=seq.default(from=1+2i,length.out=3),backward=seq.default(to=5+8i,by=2+3i,length.out=3),single=seq.default(from=1,by=2+3i,length.out=1),empty=seq.default(from=1+2i,length.out=0))})",
@@ -1435,7 +1373,6 @@
     "code": "local({capture<-function(expr)tryCatch(expr,error=function(e)list(message=conditionMessage(e),call=conditionCall(e),class=class(e)));seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};value<-sort.int(mark(\"x\",c(3,1,2)),partial=mark(\"partial\",2),decreasing=mark(\"decreasing\",FALSE),na.last=mark(\"na.last\",NA),method=mark(\"method\",\"auto\"),index.return=mark(\"index.return\",FALSE));list(value=value,seen=seen,radix=capture(sort.int(stop(\"x\"),partial=2,method=\"radix\")),type=capture(sort.int(1:3,partial=\"2\")),bounds=capture(sort.int(1:3,partial=4)),overflow=capture(sort.int(1:3,partial=1e100)))})",
     "policy": "exact"
   },
-
   {
     "id": "owned-reflection-body-values",
     "bindingEvidence": ["base::body"],
@@ -1487,7 +1424,6 @@
     "code": "local({f<-function(x=2)x;seen<-character();mark<-function(name,value){seen<<-c(seen,name);value};g<-`body<-`(mark(\"fun\",f),envir=mark(\"envir\",environment(f)),value=mark(\"value\",quote(x+1)));bodyOrder<-seen;seen<-character();h<-`formals<-`(mark(\"fun\",f),envir=mark(\"envir\",environment(f)),value=mark(\"value\",pairlist(x=4)));owned<-function(z=2){forceOwned<-function(x)x;c(body=identical(forceOwned(body()),body(owned)),formals=identical(forceOwned(formals()),formals(owned)))};list(bodyOrder=bodyOrder,formalsOrder=seen,values=c(g(),h()),frame=owned())})",
     "policy": "exact"
   },
-
   {
     "id": "owned-display-frame-attributed-constants",
     "bindingEvidence": ["base::deparse"],
@@ -1524,7 +1460,6 @@
     "code": "(function(){before<-sys.nframe();error<-function(expr)tryCatch(expr,error=conditionMessage);low<-error(sys.call(-1e6));high<-error(sys.function(1e6));tryCatch((function(){stop(\"owned\")})(),error=function(e)NULL);afterError<-sys.nframe();f<-function(){g<-function()return(7);g()};value<-f();afterReturn<-sys.nframe();probe<-function()sys.nframe();inside<-probe();list(nestedDelta=inside-before,low=low,high=high,value=value,restored=c(afterError==before,afterReturn==before))})()",
     "policy": "exact"
   },
-
   {
     "id": "evaluation-origin-environments",
     "bindingEvidence": ["base::eval", "base::evalq", "base::local"],
@@ -1561,7 +1496,6 @@
     "code": "local({object<-new.env();object$marker<-7L;h<-function(x)x;target<-new.env();target$object<-object;observed<-evalq(h(object),target);attr(observed,\"owned\")<-\"retained\";result<-withVisible(evalq(invisible(observed),target));list(same=identical(result$value,object),visible=result$visible,marker=object$marker,attributes=attributes(object))})",
     "policy": "exact"
   },
-
   {
     "id": "evaluation-control-return-boundaries",
     "bindingEvidence": ["base::eval", "base::evalq", "base::local", "base::with", "base::within"],
@@ -1616,7 +1550,6 @@
     "code": "c((function(){identical(withVisible(evalq(return(invisible(7L)))),list(value=7L,visible=FALSE))})(),(function(){identical(withVisible(evalq(return())),list(value=NULL,visible=TRUE))&&identical(withVisible((function()return())()),list(value=NULL,visible=TRUE))})(),(function(){identical(withVisible(evalq({on.exit(invisible(9L));7L})),list(value=7L,visible=TRUE))})(),(function(){identical(withVisible(evalq({on.exit(return(invisible(9L)));7L})),list(value=9L,visible=FALSE))})())",
     "policy": "exact"
   },
-
   {
     "id": "evaluation-adapter-source-returns",
     "bindingEvidence": ["base::source"],
@@ -1653,7 +1586,6 @@
     "code": "c((function(){message<-tryCatch({for(i in 1:3)subset(data.frame(a=1:3),break)},error=conditionMessage);identical(message,\"no loop for break/next, jumping to top level\")})(),(function(){count<-0L;for(i in 1:3){subset(matrix(1:6,3),break);count<-count+1L};identical(count,0L)})(),(function(){count<-0L;for(i in 1:3){source(exprs=expression(break),local=TRUE);count<-count+1L};identical(count,0L)})(),(function(){message<-tryCatch({for(i in 1:3)source(exprs=expression(break),local=new.env())},error=conditionMessage);identical(message,\"no loop for break/next, jumping to top level\")})())",
     "policy": "exact"
   },
-
   {
     "id": "evaluation-call-frame-depths",
     "bindingEvidence": ["base::eval", "base::evalq", "base::sys.nframe"],
@@ -1725,7 +1657,6 @@
     "bindingEvidence": ["base::evalq"],
     "policy": "exact"
   },
-
   {
     "id": "first-class-control-return-values",
     "bindingEvidence": ["base::return"],
@@ -1779,7 +1710,6 @@
     "bindingEvidence": ["base::lapply"],
     "policy": "exact"
   },
-
   {
     "id": "first-class-loop-metadata",
     "code": "c((function(){names<-c(\"break\",\"next\",\"while\",\"for\",\"repeat\",\"{\");all(vapply(names,function(n){p<-get(n,baseenv());typeof(p)==\"special\"&&is.primitive(p)&&is.null(args(p))&&is.null(formals(p))},logical(1)))})())",
@@ -1838,7 +1768,6 @@
     "code": "c((function(){`break`<-function()NULL;`next`<-function()NULL;s<-0L;for(i in 1:3){break;next;s<-s+i};identical(s,6L)})(),(function(){`for`<-function(...)7L;`while`<-function(...)8L;`repeat`<-function(...)9L;v<-c(for(i in stop(\"unused\"))NULL,while(stop(\"unused\"))NULL,repeat stop(\"unused\"));`{`<-function(...)42L;identical(v,c(7L,8L,9L))&&identical({1L;2L},42L)})(),(function(){e<-new.env();e$n<-0L;makeActiveBinding(\"while\",function(){e$n<-e$n+1L;get(\"while\",baseenv())},environment());i<-0L;evalq(while(i<3L)i<-i+1L);identical(c(i,e$n),c(3L,1L))})(),(function(){f<-function(`while`=get(\"while\",baseenv())){`for`<-1L;`{`<-2L;s<-0L;for(i in 1:3){s<-s+i};while(s<7L)s<-s+1L;s};identical(f(),7L)})())",
     "policy": "exact"
   },
-
   {
     "id": "logical-mode-logical",
     "code": "c((function(){x<-c(\"T\",\"TRUE\",\"True\",\"true\",\"F\",\"FALSE\",\"False\",\"false\",\"tRuE\",\" TRUE \",\"t\",\"f\",NA_character_);identical(as.logical(x),c(rep(TRUE,4),rep(FALSE,4),rep(NA,5)))})(),(function(){x<-structure(c(0,1,NA_real_,NaN,Inf),names=letters[1:5],note=\"owned\");identical(as.logical(x),c(FALSE,TRUE,NA,NA,TRUE))&&is.null(attributes(as.logical(x)))})(),(function(){identical(as.logical(NULL),logical())&&identical(as.logical(list()),logical())&&identical(as.logical(list(TRUE,0L,\"False\",logical(),list(1L))),c(TRUE,FALSE,FALSE,NA,NA))})(),(function(){items<-list(NULL,1:2,quote(x),new.env(),function()1L,quote(f()),pairlist(a=1L));all(vapply(items,function(x)identical(tryCatch(as.logical(list(x)),error=conditionMessage),\"'list' object cannot be coerced to type 'logical'\"),logical(1)))})(),(function(){all(vapply(list(expression(),expression(TRUE)),function(x)identical(tryCatch(as.logical(x),error=conditionMessage),\"'list' object cannot be coerced to type 'logical'\"),logical(1)))})(),(function(){identical(as.logical(pairlist(a=TRUE,b=\"False\",c=logical())),c(TRUE,FALSE,NA))&&identical(as.logical(factor(c(\"FALSE\",\"TRUE\",NA))),c(FALSE,TRUE,NA))&&identical(as.logical(list(factor(\"FALSE\"))),TRUE)})())",
@@ -1951,7 +1880,6 @@
     "bindingEvidence": ["base::as.call"],
     "policy": "exact"
   },
-
   {
     "id": "replication-metadata",
     "code": "c((function(){warnCapture<-function(expr){warnings<-character();value<-withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")});list(value=value,warnings=warnings)};capture<-function(expr){warnings<-character();value<-tryCatch(withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")}),error=function(e)list(error=conditionMessage(e)));list(value=value,warnings=warnings)};same<-function(expr,value,warnings=character()){observed<-if(is.list(value)&&identical(names(value),\"error\"))capture(expr)else warnCapture(expr);identical(observed,list(value=value,warnings=warnings))};is.primitive(rep)&&typeof(rep)==\"special\"&&is.null(formals(rep))&&identical(names(formals(args(rep))),c(\"x\",\"...\"))&&all(vapply(c(\"Date\",\"POSIXct\",\"POSIXlt\",\"difftime\",\"factor\",\"numeric_version\"),function(n){f<-get(paste0(\"rep.\",n));typeof(f)==\"closure\"&&identical(names(formals(f)),c(\"x\",\"...\"))},logical(1)))})())",
@@ -2050,7 +1978,6 @@
     "code": "c((function(){warnCapture<-function(expr){warnings<-character();value<-withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")});list(value=value,warnings=warnings)};capture<-function(expr){warnings<-character();value<-tryCatch(withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")}),error=function(e)list(error=conditionMessage(e)));list(value=value,warnings=warnings)};same<-function(expr,value,warnings=character()){observed<-if(is.list(value)&&identical(names(value),\"error\"))capture(expr)else warnCapture(expr);identical(observed,list(value=value,warnings=warnings))};e<-new.env();e$x<-1L;f<-function()1L;same(rep(e),list(error=\"attempt to replicate an object of type 'environment'\"))&&same(rep(f,times=-1L),list(error=\"attempt to replicate an object of type 'closure'\"))&&same(rep(f,each=-1L),list(error=\"invalid 'each' argument\"))&&same(rep(pairlist(a=1L),2L),list(error=\"replication of pairlists is defunct\"))})(),(function(){warnCapture<-function(expr){warnings<-character();value<-withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")});list(value=value,warnings=warnings)};capture<-function(expr){warnings<-character();value<-tryCatch(withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")}),error=function(e)list(error=conditionMessage(e)));list(value=value,warnings=warnings)};same<-function(expr,value,warnings=character()){observed<-if(is.list(value)&&identical(names(value),\"error\"))capture(expr)else warnCapture(expr);identical(observed,list(value=value,warnings=warnings))};same(rep(1:2,each=0L,length.out=3L),list(error=\"invalid 'each' argument\"))&&same(rep(1:2,each=0L,length.out=0L),integer())})())",
     "policy": "exact"
   },
-
   {
     "id": "replication-family-metadata",
     "code": "c(local({warnCapture<-function(expr){warnings<-character();value<-withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")});list(value=value,warnings=warnings)};capture<-function(expr){warnings<-character();value<-tryCatch(withCallingHandlers(expr,warning=function(w){warnings<<-c(warnings,conditionMessage(w));invokeRestart(\"muffleWarning\")}),error=function(e)list(error=conditionMessage(e)));list(value=value,warnings=warnings)};same<-function(expr,value,warnings=character()){observed<-if(is.list(value)&&identical(names(value),\"error\"))capture(expr)else warnCapture(expr);identical(observed,list(value=value,warnings=warnings))};rm(list=intersect(ls(globalenv()),c(\"rep.owned\",\"rep.default\",\"rep.int.owned\",\"rep_len.owned\",\"rep.int.second\",\"rep_len.second\",\"rep.int.default\",\"rep_len.default\")),envir=globalenv());\n typeof(rep.int)==\"closure\"&&identical(names(formals(rep.int)),c(\"x\",\"times\"))&&typeof(rep_len)==\"closure\"&&identical(names(formals(rep_len)),c(\"x\",\"length.out\"))}))",
@@ -2133,7 +2060,6 @@
     "bindingEvidence": ["base::UseMethod", "base::NextMethod"],
     "policy": "exact"
   },
-
   {
     "id": "names-dispatch-getter",
     "code": "c(local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.owned<-function(x)c(\"first\",\"second\");identical(names(structure(1:2,class=\"owned\")),c(\"first\",\"second\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.default<-function(x)\"default\";identical(names(structure(1L,class=\"owned\")),\"default\")})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.default<-function(x)\"default\";identical(names(1L),NULL)})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.second<-function(x)\"second\";identical(names(structure(1L,class=c(\"first\",\"second\"))),\"second\")})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.owned<-function(x)invisible(\"a\");identical(withVisible(names(structure(1L,class=\"owned\"))),list(value=\"a\",visible=TRUE))})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({events<-character();message<-err(names({events<-c(events,\"x\");1L},{events<-c(events,\"extra\");2L}));identical(list(message,events),list(\"2 arguments passed to 'names' which requires 1\",c(\"x\",\"extra\")))})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));identical(err(names(other=c(a=1L))),\"supplied argument name 'other' does not match 'x'\")}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));identical(err(names(stop(\"input\"),stop(\"extra\"))),\"input\")}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.owned<-function(other)\"method\";identical(err(names(other=structure(1L,class=\"owned\"))),\"supplied argument name 'other' does not match 'x'\")})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.owned<-function(x,...)\"method\";identical(err(names(structure(1L,class=\"owned\"),2L)),\"2 arguments passed to 'names' which requires 1\")})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({names.owned<-function(x)list(substitute(x),deparse(match.call()),.Generic,.Group,.Method);z<-structure(1L,class=\"owned\");identical(names(z),list(z,deparse(quote(names.owned(x=z))),\"names\",\"\",\"names.owned\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({registerS3method(\"names\",\"registeredOwned\",function(x)\"registered\",envir=baseenv());x<-structure(1L,class=\"registeredOwned\");a<-names(x);names.registeredOwned<-function(x)\"local\";identical(c(a,names(x)),c(\"registered\",\"local\"))})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({x<-structure(1L,class=\"factor\",levels=\"a\",names=\"original\");names.factor<-function(x)stop(\"local names\");identical(names(as.list.factor(x)),\"original\")})}),local({err<-function(expr)tryCatch({expr;NULL},error=function(e)conditionMessage(e));local({x<-structure(1,class=c(\"POSIXct\",\"POSIXt\"),tzone=\"UTC\",names=\"original\");names.POSIXct<-function(x)stop(\"local names\");identical(names(as.list.POSIXct(x)),\"original\")})}))",
@@ -2174,7 +2100,6 @@
     "bindingEvidence": ["base::NextMethod"],
     "policy": "exact"
   },
-
   {
     "id": "dollar-replacement-metadata",
     "policy": "exact",
@@ -3519,6 +3444,90 @@
     "policy": "exact",
     "code": "local({\n  compare<-function(name){\n    left<-function(x=3L)x+4L;right<-left\n    attr(left,name)<-31L;attr(right,name)<-47L\n    list(default=identical(left,right),ignore=identical(left,right,ignore.srcref=TRUE),strict=identical(left,right,ignore.srcref=FALSE))\n  }\n  list(note=compare(\"note\"),srcref=compare(\"srcref\"),srcfile=compare(\"srcfile\"),wholeSrcref=compare(\"wholeSrcref\"))\n})",
     "bindingEvidence": ["base::identical"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "srcfilecopy-line-normalization-graph",
+    "policy": "exact",
+    "code": "local({\n   a<-srcfilecopy(\"owned-raw.R\",c(\"h\\n\\ni\\n\",\"\\n\",NA_character_),timestamp=0,isFile=FALSE)\n   b<-srcfilecopy(\"owned-raw.R\",c(\"j\\r\\nk\",\"z\\\\nw\",\"\"),timestamp=0,isFile=FALSE)\n   list(first=if(is.environment(a))a$lines else a,second=if(is.environment(b))b$lines else b,\n     fixed=if(is.environment(a))a$fixedNewlines else a,Enc=if(is.environment(b))b$Enc else b)\n })",
+    "bindingEvidence": ["base::srcfilecopy"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "srcfilecopy-line-coercion-graph",
+    "policy": "exact",
+    "code": "local({\n   events<-0L;assign(\"as.character.owned_lines\",function(x,...){events<<-events+1L;if(events==1L)\"probe\\none\"else\"last\\nchosen\"},envir=.GlobalEnv)\n   on.exit(rm(\"as.character.owned_lines\",envir=.GlobalEnv))\n   a<-srcfilecopy(\"owned-raw.R\",structure(31L,class=\"owned_lines\"),timestamp=0,isFile=FALSE)\n   b<-srcfilecopy(\"owned-raw.R\",factor(c(\"m\\nn\",NA_character_,\"o\")),timestamp=0,isFile=FALSE)\n   d<-srcfilecopy(\"owned-raw.R\",list(\"p\\nq\",23L,NULL),timestamp=0,isFile=FALSE)\n   list(method=if(is.environment(a))a$lines else a,events=events,\n     factor=if(is.environment(b))b$lines else b,list=if(is.environment(d))d$lines else d)\n })",
+    "bindingEvidence": ["base::srcfilecopy"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "srcfilecopy-line-attributes-reference-graph",
+    "policy": "exact",
+    "code": "local({\n   owner<-new.env(parent=emptyenv());owner$marker<-17L\n   x<-structure(c(first=\"r\\ns\",second=\"t\"),owner=owner)\n   a<-srcfilecopy(\"owned-raw.R\",x,timestamp=0,isFile=FALSE);b<-srcfilecopy(\"owned-raw.R\",x,timestamp=0,isFile=FALSE)\n   before<-if(is.environment(a))a$lines else a\n   x[[1L]]<-\"input-changed\";if(is.environment(a)){a$lines[[2L]]<-\"source-changed\";a$marker<-23L}\n   owner$marker<-29L\n   list(input=x,before=before,first=if(is.environment(a))a$lines else a,\n     second=if(is.environment(b))b$lines else b,distinct=!identical(a,b),\n     leaked=if(is.environment(b))exists(\"marker\",b,inherits=FALSE)else b,\n     sourceClass=if(is.environment(a))class(a)else a,\n     lineAttributes=if(is.environment(a))attributes(a$lines)else a,\n     inputOwner=attr(x,\"owner\"),reference=owner)\n })",
+    "bindingEvidence": ["base::srcfilecopy"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "srcfilecopy-line-encoding-graph",
+    "policy": "exact",
+    "code": "local({\n   x<-rawToChar(as.raw(c(241L,233L)));Encoding(x)<-\"latin1\"\n   a<-srcfilecopy(\"owned-raw.R\",x,timestamp=0,isFile=FALSE)\n   b<-srcfilecopy(\"owned-raw.R\",c(x,\"u\\nv\"),timestamp=0,isFile=FALSE)\n   y<-x;Encoding(y)<-\"bytes\";d<-srcfilecopy(\"owned-raw.R\",c(y,\"u\\nv\"),timestamp=0,isFile=FALSE)\n   av<-if(is.environment(a))a$lines else a;bv<-if(is.environment(b))b$lines else b;dv<-if(is.environment(d))d$lines else d\n   list(originalBytes=lapply(av,charToRaw),originalEncoding=Encoding(av),\n     splitBytes=lapply(bv,charToRaw),splitEncoding=Encoding(bv),\n     byteBytes=lapply(dv,charToRaw),byteEncoding=Encoding(dv))\n })",
+    "bindingEvidence": ["base::srcfilecopy"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "srcfilecopy-line-diagnostics-graph",
+    "policy": "exact",
+    "code": "local({\n   guard<-srcfilecopy(\"owned-raw.R\",\"guard\\nline\",timestamp=0,isFile=FALSE)\n   capture<-function(expr)tryCatch(expr,error=function(e)list(classes=class(e),message=conditionMessage(e)))\n   missingLines<-capture(srcfilecopy(\"owned-raw.R\",timestamp=0,isFile=FALSE))\n   badEnvironment<-capture(srcfilecopy(\"owned-raw.R\",new.env(parent=emptyenv()),timestamp=0,isFile=FALSE))\n   assign(\"as.character.owned_lines\",function(x,...)stop(\"owned raw-coercion failure\"),envir=.GlobalEnv)\n   on.exit(rm(\"as.character.owned_lines\",envir=.GlobalEnv))\n   methodError<-capture(srcfilecopy(\"owned-raw.R\",structure(31L,class=\"owned_lines\"),timestamp=0,isFile=FALSE))\n   assign(\"as.character.owned_lines\",function(x,...)31L,envir=.GlobalEnv)\n   invalidReturn<-capture(srcfilecopy(\"owned-raw.R\",structure(31L,class=\"owned_lines\"),timestamp=0,isFile=FALSE))\n   list(guard=if(is.environment(guard))guard$lines else guard,missing=missingLines,environment=badEnvironment,method=methodError,invalid=invalidReturn)\n })",
+    "bindingEvidence": ["base::srcfilecopy"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "srcfilecopy-custom-return-adjunct-graph",
+    "policy": "exact",
+    "code": "local({\n   owner<-new.env(parent=emptyenv());owner$marker<-17L;events<-character()\n   assign(\"as.character.owned_lines\",function(x,...){events<<-c(events,\"source-int\");structure(23L,note=\"owned\",class=\"owned_return\",owner=owner)},envir=.GlobalEnv)\n   assign(\"as.character.owned_return\",function(x,...){events<<-c(events,\"returned\");\"chosen\\nvalue\"},envir=.GlobalEnv)\n   on.exit(rm(list=c(\"as.character.owned_lines\",\"as.character.owned_return\"),envir=.GlobalEnv))\n   a<-srcfilecopy(\"owned-raw.R\",structure(\"plain\",class=\"owned_lines\"),timestamp=0,isFile=FALSE)\n   b<-srcfilecopy(\"owned-raw.R\",structure(\"raw\\ntext\",class=\"owned_lines\"),timestamp=0,isFile=FALSE)\n   assign(\"as.character.owned_lines\",function(x,...){events<<-c(events,\"source-null\");NULL},envir=.GlobalEnv)\n   d<-srcfilecopy(\"owned-raw.R\",structure(\"plain\",class=\"owned_lines\"),timestamp=0,isFile=FALSE);owner$marker<-31L\n   firstValue<-if(is.environment(a))a$lines else a\n   list(firstValue=firstValue,firstOwner=attr(firstValue,\"owner\"),reference=owner,\n     selected=if(is.environment(b))b$lines else b,nil=if(is.environment(d))d$lines else d,events=events)\n })",
+    "bindingEvidence": ["base::srcfilecopy"],
     "observationAssertions": {
       "outcome": "value",
       "conditions": [],

@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.401.0",
+  "semanticProfileVersion": "0.402.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "ac1fe82b64ebcc71853bf920da4f1a1fe7acc2564cf451617dd53f50ce952fbf",
+    "capabilities": "11c3f7a9380f589fb10ccec10c03f4a9547bd0e95dde1f499e810c46eb43bb05",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "49032e39e7c0dc0013cb45e2d5e11cfee72944bc17a494d07e46df76f93000aa",
-    "oracleV2": "e909b8f55e3a91589ef1e5c8482a3226128b35ca1baa9f3f571f750e98b2d809",
+    "foundation": "be6797138955c03169583fac6b2f2aeba8191c1330e5de89b6c97487ac29ed16",
+    "oracleV2": "d3de3cb49137762440a92a848c0f57453f2b4b7e2ea0f30a72e2bad15efa1e81",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "27538f329abfecd07fa88ad35681cce18173b7e06b1c1be11551804307e506f7"
+    "annotations": "e61f62e00d9e6606b8fb9aa51b4c84381332029a05e8d44d08c7578c2aef6d5a"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -52,8 +52,8 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 175,
-    "bindingsWithDeclaredMatrixEvidence": 35,
+    "recursiveLinkedBindings": 176,
+    "bindingsWithDeclaredMatrixEvidence": 36,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -64,27 +64,27 @@
       "requirement": "Every GNU R expression and assignment form normalizes without losing semantics.",
       "completion": "incomplete",
       "assignedBindings": 30,
-      "recursiveLinkedBindings": 10,
+      "recursiveLinkedBindings": 11,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 28,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 27,
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "boundaries",
+          "pendingBindings": 27,
+          "partialDeclaredBindings": 3
+        },
+        {
+          "dimension": "errors",
           "pendingBindings": 28,
           "partialDeclaredBindings": 2
         },
         {
-          "dimension": "errors",
-          "pendingBindings": 29,
-          "partialDeclaredBindings": 1
-        },
-        {
           "dimension": "attributes",
-          "pendingBindings": 29,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 28,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
@@ -93,13 +93,13 @@
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 28,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 27,
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "identity",
-          "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 1
         }
       ]
     },
@@ -199,27 +199,27 @@
       "requirement": "Lexical lookup, superassignment, locks, active bindings, namespaces, search path, and parent manipulation.",
       "completion": "incomplete",
       "assignedBindings": 203,
-      "recursiveLinkedBindings": 19,
+      "recursiveLinkedBindings": 20,
       "matrix": [
         {
           "dimension": "ordinary",
-          "pendingBindings": 202,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 201,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "boundaries",
-          "pendingBindings": 203,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 202,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "errors",
-          "pendingBindings": 202,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 201,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "attributes",
-          "pendingBindings": 202,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 201,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "visibility",
@@ -228,13 +228,13 @@
         },
         {
           "dimension": "side-effects",
-          "pendingBindings": 202,
-          "partialDeclaredBindings": 1
+          "pendingBindings": 201,
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "identity",
-          "pendingBindings": 203,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 202,
+          "partialDeclaredBindings": 1
         }
       ]
     },
@@ -22594,13 +22594,126 @@
         "formals": ["filename", "lines", "timestamp", "isFile"]
       },
       "runtime": {
-        "compatibility": "shape"
+        "compatibility": "behavioral"
       },
       "classification": {
         "status": "assigned",
         "domains": ["environments", "language-syntax"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": [
+        "srcfilecopy-custom-return-adjunct-graph",
+        "srcfilecopy-line-attributes-reference-graph",
+        "srcfilecopy-line-coercion-graph",
+        "srcfilecopy-line-diagnostics-graph",
+        "srcfilecopy-line-encoding-graph",
+        "srcfilecopy-line-normalization-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-custom-return-adjunct-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-attributes-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "A sampled no-LF custom return retains its integer storage, note, class and owner attribute; the selected LF path coerces and normalizes separately, and an owned NULL return remains NULL. Arbitrary custom-return types and attributes remain unfinished. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link.",
+            "Sampled default normalization drops line attributes while preserving the original input metadata and the constructed source environment class. General constructor metadata and attribute interactions remain unverified. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-encoding-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-normalization-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Sampled Latin-1 cells retain their bytes without normalization, convert to UTF-8 when the LF branch is selected elsewhere, and preserve bytes-marked strings. Broader encodings and invalid byte sequences remain unverified. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link.",
+            "Sampled leading, repeated and trailing LF boundaries, empty cells, NA and CR are distinguished. Every delimiter, source size and malformed text boundary remains unverified. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-diagnostics-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Sampled missing lines, an environment input, an owned coercion error and an invalid first coercion result retain their observed messages and class vectors. Calls, origins, precedence and complete condition behavior remain unfinished. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-custom-return-adjunct-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-attributes-reference-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Sampled source environments are distinct, line replacements do not leak between copies or into the input, and an owned input-attribute environment remains shared. General source identity and copy behavior remain unfinished. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link.",
+            "The sampled no-LF custom return preserves an owned environment attribute whose later mutation is visible through the returned value. Other reference payloads and complete identity behavior remain unverified. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-coercion-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-normalization-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Sampled LF-containing cells normalize into source lines while retaining empty cells, missing values and carriage returns; fixedNewlines and Enc retain their observed values. Broader source-line inputs remain unverified. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link.",
+            "Sampled factor, list and explicitly classed integer inputs produce the observed lines through separate detection and storage coercions. General coercion classes and their complete dispatch behavior remain unfinished. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-custom-return-adjunct-graph"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "srcfilecopy-line-coercion-graph"
+            }
+          ],
+          "remainingGaps": [
+            "An owned global integer method runs separately for detection and storage, and the selected storage value determines the normalized result. Other method lookup scopes, call frames and side-effect ordering remain unverified by this graph. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link.",
+            "Sampled event order distinguishes source conversion, conversion of a returned class in the selected LF branch, and a no-LF NULL return. General nested conversion and failure ordering remain unfinished. Composite controls do not establish every output independently. General source-file metadata and argument forcing, arbitrary custom coercion and encoding behavior, complete condition metadata, retained parsing and source-position generation remain unfinished. Eligibility is evaluated against the proposed 0.402 behavioral classification; historical 0.401 shape coverage does not establish a recursive behavioral link."
+          ]
+        }
+      ],
       "remainingGaps": [
         "Source-line/encoding and file metadata, source-reference integration and environment identity/attribute/error behavior remain unfinished.",
         "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."
