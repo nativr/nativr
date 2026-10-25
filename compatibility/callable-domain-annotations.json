@@ -553,13 +553,15 @@
               "suite": "foundation",
               "caseId": "function-language-owned-reconstruction-replacement"
             },
-            { "suite": "oracle-v2", "caseId": "quoted-dots-construction-and-laziness-graph" }
+            { "suite": "oracle-v2", "caseId": "quoted-dots-construction-and-laziness-graph" },
+            { "suite": "oracle-v2", "caseId": "function-source-cell-construction-graph" }
           ],
           "remainingGaps": [
             "Converting an existing owned call retains ordinary attribute order and an environment-valued owner reference. Other inputs, malformed calls, dispatch and arbitrary graph shapes remain unaudited; ordinary call-object identity is not asserted. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
             "Owned list/expression inputs preserve argument tags while dropping container note/class metadata and the head name. Other coercions, invalid heads, class/method combinations, cyclic graphs and metadata constraints remain unaudited. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
             "Frozen owned assertions reconstruct executable function syntax from a call/list roundtrip, preserve named defaults and lexical environment, and evaluate original versus replaced formal/body cells to the expected values. These composite assertions do not isolate every intermediate operation. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::as.call. This is sampled evidence only; the complete dimension remains unfinished.",
-            "An owned call/list roundtrip reconstructs a quoted dots call without evaluating the placeholder. General constructors, names/tags, malformed calls and attribute combinations remain unaudited. General dots forwarding/dispatch, match.call, retained-source and parse-data behavior, arbitrary call/expression classes and attributes, and complete language equality remain unfinished. This association is composite and does not establish each output independently; the complete dimension remains unfinished."
+            "An owned call/list roundtrip reconstructs a quoted dots call without evaluating the placeholder. General constructors, names/tags, malformed calls and attribute combinations remain unaudited. General dots forwarding/dispatch, match.call, retained-source and parse-data behavior, arbitrary call/expression classes and attributes, and complete language equality remain unfinished. This association is composite and does not establish each output independently; the complete dimension remains unfinished.",
+            "Sampled function calls retain integer-vector and character fourth cells through construction and list projection. Other function syntax construction shapes and source payload classes remain unverified. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation."
           ]
         },
         {
@@ -641,7 +643,8 @@
             { "suite": "oracle-v2", "caseId": "language-owned-subset-replacement-graph" },
             { "suite": "oracle-v2", "caseId": "function-language-owned-cells-graph" },
             { "suite": "oracle-v2", "caseId": "quoted-dots-call-projection-graph" },
-            { "suite": "oracle-v2", "caseId": "quoted-dots-expression-projection-graph" }
+            { "suite": "oracle-v2", "caseId": "quoted-dots-expression-projection-graph" },
+            { "suite": "oracle-v2", "caseId": "function-source-cell-construction-graph" }
           ],
           "remainingGaps": [
             "Owned expression conversion retains names, attributes and opaque environment aliases without evaluation. All storage classes, methods, malformed objects and arbitrary graph shapes remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
@@ -649,7 +652,8 @@
             "A list view of one owned replaced call retains the sampled argument tags and note/class attributes. The surrounding selector/replacement results are composite observations without direct operator causal credit; broader selector, dispatch, identity and metadata behavior remains unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
             "Owned plain function syntax exposes four cells including a NULL fourth cell, with empty or nonempty formal lists and missing/dots defaults. This samples ordinary and empty-formal boundaries; wider syntax, storage, dispatch and metadata combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
             "Owned call/list and nested extraction expose the unforced dots symbol as a language cell. This covers sampled unannotated call forms only and supplies no new reference-alias, attribute or error-condition claim. General dots forwarding/dispatch, match.call, retained-source and parse-data behavior, arbitrary call/expression classes and attributes, and complete language equality remain unfinished. This association is composite and does not establish each output independently; the complete dimension remains unfinished.",
-            "Owned expression/list conversion exposes the quoted dots symbol with the sampled expression structure. This does not establish symbol-reference identity, all conversion storage kinds or annotated expressions. General dots forwarding/dispatch, match.call, retained-source and parse-data behavior, arbitrary call/expression classes and attributes, and complete language equality remain unfinished. This association is composite and does not establish each output independently; the complete dimension remains unfinished."
+            "Owned expression/list conversion exposes the quoted dots symbol with the sampled expression structure. This does not establish symbol-reference identity, all conversion storage kinds or annotated expressions. General dots forwarding/dispatch, match.call, retained-source and parse-data behavior, arbitrary call/expression classes and attributes, and complete language equality remain unfinished. This association is composite and does not establish each output independently; the complete dimension remains unfinished.",
+            "Sampled function calls project retained integer-vector and character fourth cells. General call projection and every source payload shape remain unfinished. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation."
           ]
         },
         {
@@ -761,6 +765,15 @@
       "domains": ["vector-semantics"],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ],
+      "matrix": [
+        {
+          "dimension": "identity",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "function-source-cell-reference-graph" }],
+          "remainingGaps": [
+            "Two independent native alias checks establish sampled access to the same owned source-file environment through the call source cell and evaluated closure source-reference attribute. General attribute identity semantics remain unfinished. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation."
+          ]
+        }
       ]
     },
     {
@@ -912,11 +925,13 @@
           "dimension": "side-effects",
           "evidence": [
             { "suite": "oracle-v2", "caseId": "expression-owned-construction-evaluation-graph" },
-            { "suite": "oracle-v2", "caseId": "expression-missing-marker-effects-cleanup-graph" }
+            { "suite": "oracle-v2", "caseId": "expression-missing-marker-effects-cleanup-graph" },
+            { "suite": "oracle-v2", "caseId": "function-source-cell-laziness-graph" }
           ],
           "remainingGaps": [
             "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
-            "Sampled expression sequences stop at a missing cell after earlier effects, execute owned cleanup before the outer handler and allow subsequent evaluation. Other nonlocal control and frame interactions remain unaudited. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
+            "Sampled expression sequences stop at a missing cell after earlier effects, execute owned cleanup before the outer handler and allow subsequent evaluation. Other nonlocal control and frame interactions remain unaudited. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished.",
+            "Sampled unbound-symbol and side-effecting-call source cells become closure source-reference attributes without executing those cells; owned function bodies still evaluate. Other evaluator contexts and source-cell interactions remain unverified. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation."
           ]
         },
         {
@@ -933,10 +948,14 @@
         {
           "dimension": "attributes",
           "evidence": [
-            { "suite": "foundation", "caseId": "function-language-owned-metadata-reference" }
+            { "suite": "foundation", "caseId": "function-language-owned-metadata-reference" },
+            { "suite": "oracle-v2", "caseId": "function-source-cell-reference-graph" },
+            { "suite": "oracle-v2", "caseId": "function-source-cell-replacement-deletion-graph" }
           ],
           "remainingGaps": [
-            "Frozen owned assertions preserve nested function-body metadata through reconstruction/evaluation and distinguish outer call/list notes from the unannotated reconstructed call or closure. Arbitrary attribute orders, methods and storage combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::eval. This is sampled evidence only; the complete dimension remains unfinished."
+            "Frozen owned assertions preserve nested function-body metadata through reconstruction/evaluation and distinguish outer call/list notes from the unannotated reconstructed call or closure. Arbitrary attribute orders, methods and storage combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::eval. This is sampled evidence only; the complete dimension remains unfinished.",
+            "One explicitly constructed source-reference object and its owned source-file environment survive call reconstruction and become the evaluated closure source-reference attribute. Broader source metadata and attribute interactions remain unverified. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation.",
+            "Sampled fourth-cell replacement and deletion determine the evaluated closure source-reference attribute independently of an owned body attribute and ordinary call attribute. Other metadata-copy and mutation combinations remain unverified. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation."
           ]
         },
         {
@@ -7945,10 +7964,12 @@
         {
           "dimension": "identity",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "language-owned-nested-evaluation-identity-graph" }
+            { "suite": "oracle-v2", "caseId": "language-owned-nested-evaluation-identity-graph" },
+            { "suite": "oracle-v2", "caseId": "function-source-cell-equality-graph" }
           ],
           "remainingGaps": [
-            "Owned calls compare unequal when ordinary child attributes or environment-valued attributes differ, and equal for the sampled copy with a shared owner. Environment reference identity is distinguished from structural call equality; cycles, arbitrary graph kinds, comparison options and complete identity semantics remain unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished."
+            "Owned calls compare unequal when ordinary child attributes or environment-valued attributes differ, and equal for the sampled copy with a shared owner. Environment reference identity is distinguished from structural call equality; cycles, arbitrary graph kinds, comparison options and complete identity semantics remain unfinished. The association is composite and does not establish every output independently. This is sampled evidence only; the complete dimension remains unfinished.",
+            "Sampled function calls with different integer source cells compare unequal, while their closures compare equal by default and unequal with ignore.srcref disabled. Other payload types, comparison options and closure metadata combinations remain unfinished. Composite controls do not establish each output independently. General retained parsing metadata, source-reference conventions, complete condition behavior, arbitrary object identity and full callable equivalence remain unfinished. Public language snapshots retain their existing source-text-only limitation."
           ]
         },
         {

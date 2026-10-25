@@ -1000,6 +1000,9 @@ export function languageValue(
       attributes: ordinary,
       ...(tag === undefined ? {} : { headTag: tag }),
       ...(retained?.functionSourceCellAbsent === true ? { functionSourceCellAbsent: true } : {}),
+      ...(retained?.functionSourceCell === undefined
+        ? {}
+        : { functionSourceCell: retained.functionSourceCell }),
     }),
     attributes: ordinary,
     ...(tag === undefined ? {} : { headTag: tag }),

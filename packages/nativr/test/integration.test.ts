@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.400.0",
-      languageSubsetVersion: "0.400.0",
+      semanticProfileVersion: "0.401.0",
+      languageSubsetVersion: "0.401.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -13906,6 +13906,7 @@ NeedsCompilation: no
       parseExpressionLimits: "supported",
       languageCallAttributes: "supported",
       functionLanguageCells: "supported",
+      functionSourceCells: "supported",
       quotedDotsProjection: "supported",
       expressionMissingCellsAndVisibility: "supported",
       formula: "supported",

@@ -28,6 +28,7 @@ import type {
 
 import { EvaluationContext, DEFAULT_RUNTIME_LIMITS } from "./context.js";
 import { deparseAst, deparseDiagnosticAst } from "./language.js";
+import { functionSourceCellNode } from "./language-metadata.js";
 import {
   embeddedValueAst,
   extractLanguageElement,
@@ -1403,17 +1404,23 @@ export class Evaluator {
           await this.#signalRecordedWarnings(warningStart, node, context);
           return result;
         }
-        case "FunctionExpression":
+        case "FunctionExpression": {
+          const sourceCell = functionSourceCellNode(node);
+          const sourceReference = sourceCell === undefined ? R_NULL : quoteLanguageNode(sourceCell);
           return {
             value: {
               type: "closure",
               parameters: node.parameters,
               body: node.body,
               environment,
-              attributes: new Map(),
+              attributes:
+                sourceReference.type === "null"
+                  ? new Map()
+                  : new Map([["srcref", sourceReference]]),
             },
             visible: true,
           };
+        }
         case "IfExpression":
           return await this.#evaluateSyntaxCall(
             "if",

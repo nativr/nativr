@@ -1625,6 +1625,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native function source-cell assertion: unforced-call-cell.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({events<-0L;slot<-quote({events<-events+1L;stop("owned_source_must_not_run")});q<-as.call(list(as.name("function"),pairlist(x=1L),quote(x+2L),slot));f<-eval(q);list(same=identical(attr(f,"srcref"),slot),type=typeof(attr(f,"srcref")),events=events,value=f())});identical(observed,list(same=TRUE,type="language",events=0L,value=3L))})',
+    );
+  await profiledRun(page, "required-158");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native function source-cell assertion: source-environment-reference.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({owner<-new.env(parent=emptyenv());owner$marker<-7L;slot<-structure(c(1L,1L,3L,1L,1L,1L,1L,3L),class="srcref",srcfile=owner);q<-as.call(list(as.name("function"),pairlist(x=1L),quote(x+2L),slot));rebuilt<-as.call(as.list(q));f<-eval(rebuilt);owner$marker<-9L;list(slotValues=as.integer(rebuilt[[4L]]),slotClass=class(rebuilt[[4L]]),callSame=identical(attr(rebuilt[[4L]],"srcfile"),owner),closureSame=identical(attr(attr(f,"srcref"),"srcfile"),owner),marker=attr(attr(f,"srcref"),"srcfile")$marker,value=f())});identical(observed,list(slotValues=c(1L,1L,3L,1L,1L,1L,1L,3L),slotClass="srcref",callSame=TRUE,closureSame=TRUE,marker=9L,value=3L))})',
+    );
+  await profiledRun(page, "required-159");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native function source-cell assertion: delete-cell-independent-body.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({owner<-new.env(parent=emptyenv());owner$marker<-7L;b<-quote(x+2L);attr(b,"owner")<-owner;q<-as.call(list(as.name("function"),pairlist(x=1L),b,17L));attr(q,"note")<-"owned";old<-q;q[[4L]]<-NULL;f<-eval(q);list(lengths=c(length(old),length(q)),outer=attributes(q),closure=attributes(f),bodySame=identical(attr(body(f),"owner"),owner),value=f())});identical(observed,list(lengths=c(4L,3L),outer=list(note="owned"),closure=NULL,bodySame=TRUE,value=3L))})',
+    );
+  await profiledRun(page, "required-160");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

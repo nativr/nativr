@@ -19759,5 +19759,41 @@
     "expected": [true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "function-source-cell-construction",
+    "code": "c(\nlocal({observed<-local({slot<-c(1L,2L,3L);q<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),slot));f<-eval(q);list(length=length(q),slot=q[[4L]],closureAttributes=attributes(f),value=f())});identical(observed,list(length=4L,slot=c(1L,2L,3L),closureAttributes=list(srcref=c(1L,2L,3L)),value=3L))}),\nlocal({observed<-local({slot<-\"owned-source\";q<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),slot));f<-eval(q);list(slot=q[[4L]],closureAttributes=attributes(f),value=f())});identical(observed,list(slot=\"owned-source\",closureAttributes=list(srcref=\"owned-source\"),value=3L))})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "function-source-cell-laziness",
+    "code": "c(\nlocal({observed<-local({events<-0L;slot<-as.name(\"owned_unbound_source_symbol\");q<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),slot));f<-eval(q);list(same=identical(attr(f,\"srcref\"),slot),type=typeof(attr(f,\"srcref\")),events=events,value=f())});identical(observed,list(same=TRUE,type=\"symbol\",events=0L,value=3L))}),\nlocal({observed<-local({events<-0L;slot<-quote({events<-events+1L;stop(\"owned_source_must_not_run\")});q<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),slot));f<-eval(q);list(same=identical(attr(f,\"srcref\"),slot),type=typeof(attr(f,\"srcref\")),events=events,value=f())});identical(observed,list(same=TRUE,type=\"language\",events=0L,value=3L))})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "function-source-cell-reference",
+    "code": "c(\nlocal({observed<-local({owner<-new.env(parent=emptyenv());owner$marker<-7L;slot<-structure(c(1L,1L,3L,1L,1L,1L,1L,3L),class=\"srcref\",srcfile=owner);q<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),slot));rebuilt<-as.call(as.list(q));f<-eval(rebuilt);owner$marker<-9L;list(slotValues=as.integer(rebuilt[[4L]]),slotClass=class(rebuilt[[4L]]),callSame=identical(attr(rebuilt[[4L]],\"srcfile\"),owner),closureSame=identical(attr(attr(f,\"srcref\"),\"srcfile\"),owner),marker=attr(attr(f,\"srcref\"),\"srcfile\")$marker,value=f())});identical(observed,list(slotValues=c(1L,1L,3L,1L,1L,1L,1L,3L),slotClass=\"srcref\",callSame=TRUE,closureSame=TRUE,marker=9L,value=3L))})\n)",
+    "expected": true,
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "function-source-cell-replacement-deletion",
+    "code": "c(\nlocal({observed<-local({q<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),17L));old<-q;q[[4L]]<-29L;f<-eval(q);g<-eval(old);list(oldSlot=old[[4L]],newSlot=q[[4L]],oldClosure=attr(g,\"srcref\"),newClosure=attr(f,\"srcref\"),values=c(g(),f()))});identical(observed,list(oldSlot=17L,newSlot=29L,oldClosure=17L,newClosure=29L,values=c(3L,3L)))}),\nlocal({observed<-local({owner<-new.env(parent=emptyenv());owner$marker<-7L;b<-quote(x+2L);attr(b,\"owner\")<-owner;q<-as.call(list(as.name(\"function\"),pairlist(x=1L),b,17L));attr(q,\"note\")<-\"owned\";old<-q;q[[4L]]<-NULL;f<-eval(q);list(lengths=c(length(old),length(q)),outer=attributes(q),closure=attributes(f),bodySame=identical(attr(body(f),\"owner\"),owner),value=f())});identical(observed,list(lengths=c(4L,3L),outer=list(note=\"owned\"),closure=NULL,bodySame=TRUE,value=3L))})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "function-source-cell-equality",
+    "code": "c(\nlocal({observed<-local({a<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),17L));b<-as.call(list(as.name(\"function\"),pairlist(x=1L),quote(x+2L),29L));f<-eval(a);g<-eval(b);list(callDefault=identical(a,b),callStrict=identical(a,b,ignore.srcref=FALSE),closureDefault=identical(f,g),closureStrict=identical(f,g,ignore.srcref=FALSE))});identical(observed,list(callDefault=FALSE,callStrict=FALSE,closureDefault=TRUE,closureStrict=FALSE))})\n)",
+    "expected": true,
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "closure-source-attribute-equality-adjunct",
+    "code": "c(\nlocal({observed<-local({f<-function(x=2L)x+3L;g<-f;attr(f,\"note\")<-17L;attr(g,\"note\")<-29L;different<-c(default=identical(f,g),ignore=identical(f,g,ignore.srcref=TRUE),strict=identical(f,g,ignore.srcref=FALSE));attr(g,\"note\")<-17L;list(different=different,equal=c(default=identical(f,g),strict=identical(f,g,ignore.srcref=FALSE)))});identical(observed,list(different=c(default=FALSE,ignore=FALSE,strict=FALSE),equal=c(default=TRUE,strict=TRUE)))}),\nlocal({observed<-local({f<-function(x=2L)x+3L;g<-f;attr(f,\"srcref\")<-17L;attr(g,\"srcref\")<-29L;different<-c(default=identical(f,g),ignore=identical(f,g,ignore.srcref=TRUE),strict=identical(f,g,ignore.srcref=FALSE));attr(g,\"srcref\")<-17L;same<-identical(f,g,ignore.srcref=FALSE);attr(g,\"srcref\")<-NULL;list(different=different,same=same,removed=c(default=identical(f,g),strict=identical(f,g,ignore.srcref=FALSE)))});identical(observed,list(different=c(default=TRUE,ignore=TRUE,strict=FALSE),same=TRUE,removed=c(default=TRUE,strict=FALSE)))}),\nlocal({observed<-local({observe<-function(name){f<-function(x=2L)x+3L;g<-f;attr(f,name)<-17L;attr(g,name)<-29L;c(default=identical(f,g),ignore=identical(f,g,ignore.srcref=TRUE),strict=identical(f,g,ignore.srcref=FALSE))};list(srcfile=observe(\"srcfile\"),wholeSrcref=observe(\"wholeSrcref\"))});identical(observed,list(srcfile=c(default=FALSE,ignore=FALSE,strict=FALSE),wholeSrcref=c(default=FALSE,ignore=FALSE,strict=FALSE)))})\n)",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral"
   }
 ]

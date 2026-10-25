@@ -38,6 +38,33 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Constructed function source cells (profile 0.401)
+
+Constructed function calls retain a non-NULL fourth cell without evaluating it. The sampled integer,
+character, symbol and language cells survive extraction and reconstruction, and evaluating the
+function stores the cell as the closure's srcref attribute. Independently constructed
+source-reference vectors preserve their owned source-environment identity. Replacement leaves the
+previous call intact; deletion removes the structural cell and the resulting closure attribute while
+preserving independent body attributes. Structural call equality compares the fourth cell. Closure
+comparison follows the sampled source-reference option and ordinary-attribute controls.
+
+For closure attributes, ignore.srcref omits only srcref when enabled. Ordinary note, srcfile and
+wholeSrcref attributes remain significant. Separate native adjuncts establish these sampled
+attribute comparisons; they are not retroactive additions to the original eight-case baseline.
+
+The private runtime syntax metadata carries the original cell; projection does not recursively
+render or evaluate it. Memory traversal includes source-only payloads and retains existing cycle,
+depth, work and cancellation checks. These resource guards are separate from native compatibility
+evidence. The AST schema, public client API and Worker protocol are unchanged. Version 1
+source-text-only snapshots still cannot roundtrip these structural cells. Retained parsing,
+source-position generation, parse-data, arbitrary cell tags and complete function-language behavior
+remain unfinished.
+
+The
+[verification record](../compatibility/platform-evidence/function-source-cell-windows-0.401.0.json)
+binds the eight-case baseline, separately admitted closure-attribute fixtures, native controls and
+final gates. The initial owned raw-fixture binding error is preserved with its verified correction.
+
 ### Expression missing cells and visibility (profile 0.400)
 
 Evaluating an expression vector containing an explicit missing-argument syntax cell reports the

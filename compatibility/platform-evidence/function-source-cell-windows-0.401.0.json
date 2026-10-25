@@ -1,0 +1,3427 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-function-source-cell-verification",
+  "date": "2026-10-25",
+  "semanticProfile": "0.401.0",
+  "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+  "sourceState": "Uncommitted candidate over sourceCommit. Genuine execution-time before/after snapshots bind the final gate evidence to semantic sources and consumed build artifacts. Separately captured final maintained-file digests include later corpus, checkpoint, documentation and evidence persistence; they are not represented as pre-run snapshots.",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "locale": "C",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Sampled explicitly supplied function source cells, unforced storage, source/body reference preservation, closure propagation and comparison options. Retained parsing and source-position generation remain unfinished.",
+  "provenance": {
+    "cleanRoom": "Independently authored programs and black-box observations only; no GNU R or foreign implementation bodies.",
+    "sourceHashes": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "27538f329abfecd07fa88ad35681cce18173b7e06b1c1be11551804307e506f7"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "2f352426dc4f9d0c88f7de6a3e25bf8a9eaabd9a54ab329c936da5b75aaa28c2"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+        "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+        "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+        "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+        "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+        "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+        "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+        "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "c332110e7cc29c31aff5702a31f6ce9fed79e749ae977f2ead2df29d10f5316c"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "49032e39e7c0dc0013cb45e2d5e11cfee72944bc17a494d07e46df76f93000aa"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "e909b8f55e3a91589ef1e5c8482a3226128b35ca1baa9f3f571f750e98b2d809"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "ac1fe82b64ebcc71853bf920da4f1a1fe7acc2564cf451617dd53f50ce952fbf"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+      },
+      {
+        "path": "packages/base/src/builtins.ts",
+        "sha256": "fa628aff41997076f85514ef109e4eda2faed76916c2f2a71cdcc3631a6fedbd"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "96b4e1a799e74e5aef54fd84d7fd858aa598345fb750d3bf013db1c9692b70dc"
+      },
+      {
+        "path": "packages/nativr/test/closure-identity-attributes.test.ts",
+        "sha256": "586fe6dba971aa589d945644fd934509a877efd6ce3d121044ec8b1c5e287ddc"
+      },
+      {
+        "path": "packages/nativr/test/function-source-cell.test.ts",
+        "sha256": "2c386ee23e434146d03b69c43363259b76e4e45573c1c69c0049fa165364ef59"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "93e5e6c7c4218bb6ec9a4600bae12b4f8c42ddbfeed75cfb2f1d0f469c41c023"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "9ac1ea149e48da808da897e9e810b61f303e3630147f35368dc53ed3499d5ef4"
+      },
+      {
+        "path": "packages/runtime/src/index.ts",
+        "sha256": "bbb88b5ffb4c6148d1ca838dbab8fdcbef925b73da40f3bae10932d1ce7a83a8"
+      },
+      {
+        "path": "packages/runtime/src/language-metadata.ts",
+        "sha256": "c51695e445020fe94544db34ab55a87f0febd375137d1a13f22b08fde9bd2d6b"
+      },
+      {
+        "path": "packages/runtime/src/language-subset.ts",
+        "sha256": "fff6b6b2effcc423298843c96ec4a11f67701243e5138301eea8b243673dce76"
+      },
+      {
+        "path": "packages/runtime/src/memory.ts",
+        "sha256": "bbce7c4eec35fb1ac17a0093e5f31d1e250c689f05e6a058209254208ff21b59"
+      },
+      {
+        "path": "packages/runtime/src/values.ts",
+        "sha256": "3f112c60d4d667cdcc2ec36ee8df7ed55217b10f895ca764a848abbf873c528d"
+      },
+      {
+        "path": "packages/runtime/test/function-language.test.ts",
+        "sha256": "96c20b37aa4db85794700736773d0dfcc52c8a9a324aef46291b7a9703be99ea"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "0acd67533ff4d8bfe705bbce90e7f9ed1f175fb7560087692462b7b116af8f47"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "8db5f7b69e64b130097778e16ac152790e231635eb80dd273584dd3f3e197200"
+      }
+    ],
+    "sourceHashesQualification": "Final maintained-file bytes captured after gate execution and permitted later persistence. These final digests do not replace or backdate the separate execution-time input bindings.",
+    "proofFiles": [
+      {
+        "path": ".tmp/function-source-cell-next/accepted.json",
+        "sha256": "31c62536c3bf32b41dd415c8668f753d44cdc2f5e56255333e63e2380f4ebb69"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/inputs.json",
+        "sha256": "5ad5b657ceaec65f5318438f0930b712cab7c5f35ecc5cdbb2161c4773050af5"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/native-assertions.json",
+        "sha256": "1ac2a2348886886d7701b20f0e9353f2988f6b0f428defd1aafe23240d0cdb32"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/native-observations.json",
+        "sha256": "9c4b0050f696d601fab62f4b5c0c07fdcd09907dfc8ee2e773d24c6a883025cd"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/collect.mjs",
+        "sha256": "478f70b19fae61dcb7d82f6d128ea75172b41a69dc2e8988126b7e55c18019d0"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/accept.mjs",
+        "sha256": "0fa656dada36e225b4ca565e22040a78fe8a3e97ad7608670685e3ae90e7c1cd"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/runtime-baseline.json",
+        "sha256": "6e165fee1b4d4d5800e2eec9f59b71d97511c0049f50cc79b7cbfa59a5154109"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/run-baseline.mjs",
+        "sha256": "c37f909bc9c02da9fa51feb7acef63c3c8f9d9c32c77e36ae642fe41279e33c0"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/verify-baseline-inputs.mjs",
+        "sha256": "c6610931808b19eb1412ed876e9cc609f5210792ccea1e26b8338162b11dc548"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/verify-source-tests.mjs",
+        "sha256": "f9dfa89da4a857f5d9403495d9f38fac1f2673e812a72d307116d8e250ecfebe"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/evidence-next/audit-native-evidence.mjs",
+        "sha256": "36bff16c29be67688b7c6f375e53876d1c39ed93ee7ab2620b25b119b1b062ab"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/evidence-next/native-validation.json",
+        "sha256": "e2d82a9b27aeaa41956ba4a10a32ccb27e15ef84abff9fad1b79337a21acc026"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/evidence-next/provenance.json",
+        "sha256": "3435fb8e1a5b1525a2a2cd17c0c0bcffb504e8b97abde932ef6668af0bee571f"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/evidence-next/attempt-1-correction.json",
+        "sha256": "fdec0fcf6ea3f6183b7f4b89ccdca054faa61ecb42445ba9609eee2f964ea0e0"
+      },
+      {
+        "path": ".tmp/function-source-cell-next/evidence-next/audit-closure-attributes.mjs",
+        "sha256": "ead7951bb6f492674e0b47cb8477fdb508b59ecb3029e69ab9b159395a24a7f4"
+      }
+    ],
+    "metadataQualification": "Native main evidence used historical 0.400 capability eligibility; final 0.401 gates and separate adjunct provenance are recorded independently.",
+    "capabilities": {
+      "path": "docs/compatibility-manifest.json",
+      "sha256": "ac1fe82b64ebcc71853bf920da4f1a1fe7acc2564cf451617dd53f50ce952fbf"
+    }
+  },
+  "baseline": {
+    "profile": "0.400.0",
+    "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+    "cleanBefore": true,
+    "cleanAfter": true,
+    "freshSessionPerCase": true,
+    "counts": { "total": 8, "pass": 0, "mismatch": 0, "error": 8 },
+    "stableInputs": true,
+    "inputCount": 2037,
+    "harnessFailures": [],
+    "qualification": "All eight unchanged main assertions reported NRU6261; later closure-attribute adjuncts and owned resource guards are not retroactive additions to this baseline."
+  },
+  "acceptance": {
+    "selected": [
+      {
+        "id": "integer-cell",
+        "cohort": "value",
+        "sourceSha256": "576d359ccc80260232927a9b33fdafe1750250ff2c1d7d66e7e260a30bda0871"
+      },
+      {
+        "id": "character-cell",
+        "cohort": "value",
+        "sourceSha256": "4154f11dea7fa6e2772f32710ed7670677687d42331366d78e3023bbc6f0494d"
+      },
+      {
+        "id": "unforced-symbol-cell",
+        "cohort": "value",
+        "sourceSha256": "68bb759179f61f5e8a2151eba069d2875a50fd6473a8d744ec665ba548807984"
+      },
+      {
+        "id": "unforced-call-cell",
+        "cohort": "value",
+        "sourceSha256": "9271df2e76c9653b57472a450289c9157bc0ffdd8d8ed43a8a4997b962a637ab"
+      },
+      {
+        "id": "source-environment-reference",
+        "cohort": "value",
+        "sourceSha256": "456bab1ed2896d2b9646f95ac134cbee373978538906a6f8276c6a0c6e996f5f"
+      },
+      {
+        "id": "replace-cell-copy",
+        "cohort": "value",
+        "sourceSha256": "191e68c4b62ca20701c440c603e2dd3b54fdc51857093b8cfa8cb248db44b363"
+      },
+      {
+        "id": "delete-cell-independent-body",
+        "cohort": "value",
+        "sourceSha256": "3d6e210fb98a54a26f94d8ee2b2eedaad262beecc1ccafad4c9be483f53fc5cb"
+      },
+      {
+        "id": "source-cell-equality",
+        "cohort": "value",
+        "sourceSha256": "c2b6ed8dfbb1c83d3a1454a66adbe5e15ff41ce43aa82bc068c01f205534a484"
+      }
+    ],
+    "sourceTest": {
+      "cases": 8,
+      "cohorts": { "value": 8, "diagnosticMessage": 0 },
+      "exactFrozenStrings": true,
+      "strictTrueAndEmptyEffects": true,
+      "caseHashes": [
+        {
+          "id": "integer-cell",
+          "cohort": "value",
+          "codeSha256": "576d359ccc80260232927a9b33fdafe1750250ff2c1d7d66e7e260a30bda0871"
+        },
+        {
+          "id": "character-cell",
+          "cohort": "value",
+          "codeSha256": "4154f11dea7fa6e2772f32710ed7670677687d42331366d78e3023bbc6f0494d"
+        },
+        {
+          "id": "unforced-symbol-cell",
+          "cohort": "value",
+          "codeSha256": "68bb759179f61f5e8a2151eba069d2875a50fd6473a8d744ec665ba548807984"
+        },
+        {
+          "id": "unforced-call-cell",
+          "cohort": "value",
+          "codeSha256": "9271df2e76c9653b57472a450289c9157bc0ffdd8d8ed43a8a4997b962a637ab"
+        },
+        {
+          "id": "source-environment-reference",
+          "cohort": "value",
+          "codeSha256": "456bab1ed2896d2b9646f95ac134cbee373978538906a6f8276c6a0c6e996f5f"
+        },
+        {
+          "id": "replace-cell-copy",
+          "cohort": "value",
+          "codeSha256": "191e68c4b62ca20701c440c603e2dd3b54fdc51857093b8cfa8cb248db44b363"
+        },
+        {
+          "id": "delete-cell-independent-body",
+          "cohort": "value",
+          "codeSha256": "3d6e210fb98a54a26f94d8ee2b2eedaad262beecc1ccafad4c9be483f53fc5cb"
+        },
+        {
+          "id": "source-cell-equality",
+          "cohort": "value",
+          "codeSha256": "c2b6ed8dfbb1c83d3a1454a66adbe5e15ff41ce43aa82bc068c01f205534a484"
+        }
+      ],
+      "resourceGuards": [],
+      "conditionClassesCredited": false
+    },
+    "workerTest": [
+      {
+        "id": "unforced-call-cell",
+        "profileSite": "required-158",
+        "codeSha256": "9271df2e76c9653b57472a450289c9157bc0ffdd8d8ed43a8a4997b962a637ab",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "source-environment-reference",
+        "profileSite": "required-159",
+        "codeSha256": "456bab1ed2896d2b9646f95ac134cbee373978538906a6f8276c6a0c6e996f5f",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "delete-cell-independent-body",
+        "profileSite": "required-160",
+        "codeSha256": "3d6e210fb98a54a26f94d8ee2b2eedaad262beecc1ccafad4c9be483f53fc5cb",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "foundationAndRecursive": [
+      {
+        "suite": "foundation",
+        "id": "function-source-cell-construction",
+        "codeSha256": "48a11f89b3e55c4182eaa8f4a3d54f3847a64b249f8b921c4fe253f785793498"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-source-cell-laziness",
+        "codeSha256": "af7960d7a806c381583f47e8a9176faa8808802bacf66d84ad806840bfb0a591"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-source-cell-reference",
+        "codeSha256": "2a382ce658dc3ce64e8eea2afe0ed5b3987378bbd63cb163f7587dfe3f9c1b24"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-source-cell-replacement-deletion",
+        "codeSha256": "987319a023fd41a409547b1c7d2802bc92a081c8e41045210dc3e2a3384abddb"
+      },
+      {
+        "suite": "foundation",
+        "id": "function-source-cell-equality",
+        "codeSha256": "de38de749aafaec5f9e3ac14c675c3973f30d6b1b6d4eb90da1c3413d7ebfa58"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-source-cell-construction-graph",
+        "codeSha256": "29d7b799ae3fa8b48d3b0c0794f46d541caa1d76f577995fce37c4330ba6e2d3"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-source-cell-laziness-graph",
+        "codeSha256": "5a9d3642164b8ed163eca3e84d1f2779db711c067f43713a67bf9960aa723010"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-source-cell-reference-graph",
+        "codeSha256": "ae359a8bc02db38bf32455984e14a7dbbfd5305011456b30ef3fa415209aa9d0"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-source-cell-replacement-deletion-graph",
+        "codeSha256": "8079589da09b0ae13f9778fb7a8c2218c805a8efa59747e7d2b217ce4751951f"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "function-source-cell-equality-graph",
+        "codeSha256": "4ee99ed1f637f1e9a61dbed3dfa9ed608ea1ca9224873a30f885bb21cc3fb352"
+      }
+    ],
+    "nativeCounts": {
+      "foundationGroupsPassed": 5,
+      "foundationAssertionsPassed": 8,
+      "valueAssertionsPassed": 8,
+      "diagnosticAssertionsPassed": 0,
+      "recursiveGroupsPassed": 5,
+      "strictControlsPassed": 14,
+      "environmentAliasChecksPassed": 2
+    },
+    "causal": [
+      {
+        "id": "function-source-cell-construction-graph",
+        "binding": "base::as.call",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "5d184ed273cea4552b189787f118e8cd74c3f63b1424df4be507cc6709cc0cbc",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "6047b8d5bf86cabfe1d677e7665dfa48bd3d93023ebc7b28d5979359fe386659",
+          "nodeCount": 6,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "function-source-cell-construction-graph",
+        "binding": "base::as.list",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "1c33e0490529cb59139959c34ed5e2902fe9ffb55c45eb2835808849935fb5b9",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "b696f3fd22744414a6ee7f5eae027ff74ffe467ac56d58611733075b7e56503f",
+          "nodeCount": 24,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "function-source-cell-laziness-graph",
+        "binding": "base::eval",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "c90a253d81f72a06ab2925dfce4c3ee0f7437e129624df656aae626d74b537b2",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "279206d855ceaea7cccbd939d79f72777d6a8ce8eb4f17e1d909ef93b4e7741d",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "function-source-cell-reference-graph",
+        "binding": "base::eval",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "fd3c89d5467ceb5f61ab426851ae945f1c46b04bf2a356d3b0c563d1dab7de38",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "d7b8369162368486d79d7613131148928cfd197c0740b3f03dffc4e2f962976a",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "function-source-cell-reference-graph",
+        "binding": "base::attr",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "8a5312f0d089ae2c2ab500a17b0cacd6284cbbb2824edd1703b77ea4ce07473c",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "5caf7ade7044621b524685312fd2c8b060516d26424783f173a95431ebdd0ffe",
+          "nodeCount": 13,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "function-source-cell-replacement-deletion-graph",
+        "binding": "base::eval",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "aeb40ec973ecb87975e2f22ab503131182e7596e44abf0fab1001928e26e9b20",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "51ca7da7331c1ef711e67d64b18ff9dc6c3adf5f608ef1a8f78e21380ca9f0d2",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "function-source-cell-equality-graph",
+        "binding": "base::identical",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "3743d7d29f93e33f6c95b2fd2856e39d4d312fe51033732aba87137d134b886b",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "61161c5e2db449537388149e93ed28f59f2504131a2febe0b9427aae2764b7c8",
+          "nodeCount": 13,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      }
+    ],
+    "environmentAliases": [
+      {
+        "id": "function-source-cell-reference-graph",
+        "kind": "environment",
+        "paths": [
+          ["sourceCell", "@srcfile"],
+          ["closureAttributes", "srcref", "@srcfile"],
+          ["callOwner"],
+          ["closureOwner"],
+          ["reference"]
+        ],
+        "passed": true
+      },
+      {
+        "id": "function-source-cell-replacement-deletion-graph",
+        "kind": "environment",
+        "paths": [["bodyOwner"], ["reference"]],
+        "passed": true
+      }
+    ],
+    "causalQualification": "Seven main composite associations across five bindings have fourteen strict controls; two native alias checks cover sampled owned source/body references. These do not establish every output field independently.",
+    "adjunct": {
+      "assertions": [
+        {
+          "id": "ordinary-closure-note",
+          "cohort": "value",
+          "sourceSha256": "a5e41770e4bc7a04ffbb94e2a942ae10acb738acd20133d6b24ce005a531a6bd"
+        },
+        {
+          "id": "closure-srcref-switch",
+          "cohort": "value",
+          "sourceSha256": "606b4c1a9516f0479055bb13e67be19c35037eb5a5158588e9e49a839f0b13b8"
+        },
+        {
+          "id": "closure-other-source-names",
+          "cohort": "value",
+          "sourceSha256": "72c5777f242152c0b892c3572eb0a3d9d7515990e911073fdb6ab727afb3142d"
+        }
+      ],
+      "sourceTest": {
+        "path": "packages/nativr/test/closure-identity-attributes.test.ts",
+        "sha256": "586fe6dba971aa589d945644fd934509a877efd6ce3d121044ec8b1c5e287ddc",
+        "cases": 3,
+        "cohorts": { "value": 3, "diagnosticMessage": 0 },
+        "exactFrozenStrings": true,
+        "strictTrueAndEmptyEffects": true,
+        "caseHashes": [
+          {
+            "id": "ordinary-closure-note",
+            "cohort": "value",
+            "codeSha256": "a5e41770e4bc7a04ffbb94e2a942ae10acb738acd20133d6b24ce005a531a6bd"
+          },
+          {
+            "id": "closure-srcref-switch",
+            "cohort": "value",
+            "codeSha256": "606b4c1a9516f0479055bb13e67be19c35037eb5a5158588e9e49a839f0b13b8"
+          },
+          {
+            "id": "closure-other-source-names",
+            "cohort": "value",
+            "codeSha256": "72c5777f242152c0b892c3572eb0a3d9d7515990e911073fdb6ab727afb3142d"
+          }
+        ],
+        "resourceGuards": [],
+        "conditionClassesCredited": false
+      },
+      "foundationAndRecursive": [
+        {
+          "suite": "foundation",
+          "id": "closure-source-attribute-equality-adjunct",
+          "codeSha256": "dc61de8643b123e0882dfe3763988d8908307f7880f35a6c5ac7da1af8debbcd"
+        },
+        {
+          "suite": "oracle-v2",
+          "id": "closure-source-attribute-equality-adjunct-graph",
+          "codeSha256": "ead3b2af4c2ba5d7836ab61565696723026562bfd62c43708da41f132239a2e4"
+        }
+      ],
+      "proofFiles": [
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/inputs.json",
+          "sha256": "b09db51bff8b568ce707ae98be5c0df95708f349d333df964ca6e6ec42827587"
+        },
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/native-observations.json",
+          "sha256": "0b7b740029d0f9acf292625cea4bb527cf6ff7414e8a6d27cd33eac62e9cbd19"
+        },
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/accepted.json",
+          "sha256": "b09932fb1c49c74033d1ed9c2e091589ea94d0086bcde755043f65d4646b9003"
+        },
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/native-validation.json",
+          "sha256": "c0387ca490e1f09f7be38d6b74710bb51fcbbe865cf31be9e4712ca9cfbc9d36"
+        },
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/provenance.json",
+          "sha256": "c9465b9592b5b32100be58351a59f95732e5704fd2850e8326bb84d57e5376f4"
+        },
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/native-checks.json",
+          "sha256": "a27b5158d72b083c7f256f2e14380f53558ebd458f111c87367716b1e968bc20"
+        },
+        {
+          "path": ".tmp/function-source-cell-next/evidence-next/closure-attributes-adjunct/verify-source-tests.mjs",
+          "sha256": "0baf54c804d2e46c9f1398dce033c541373b6acc198d3a9b42dfcdce28be45c5"
+        }
+      ],
+      "nativeCounts": {
+        "sourceAssertionsPassed": 3,
+        "foundationGroupsPassed": 1,
+        "foundationAssertionsPassed": 3,
+        "recursiveGroupsPassed": 1,
+        "strictControlsPassed": 2
+      },
+      "causal": [
+        {
+          "id": "closure-source-attribute-equality-adjunct-graph",
+          "binding": "base::identical",
+          "error": {
+            "passed": true,
+            "outcome": "error",
+            "visible": false,
+            "observationSha256": "545fb3a83c2c4f7511a95ee92f2d96153453c3b06655b61925007dcdb629f88e",
+            "nodeCount": 0,
+            "conditions": 1,
+            "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+          },
+          "value": {
+            "passed": true,
+            "changed": true,
+            "successful": true,
+            "outcome": "value",
+            "visible": true,
+            "observationSha256": "e280a1460408f3fb2fbbd92a159f8a41cbf2e239f2035ac71c06e9cbd6f88dad",
+            "nodeCount": 22,
+            "conditions": 0,
+            "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+          }
+        }
+      ],
+      "qualification": "Separate closure-attribute fixtures were added after the eight-case clean baseline. They do not change that baseline count or its outcomes."
+    },
+    "preservedInitialNativeAttempt": {
+      "path": ".tmp/function-source-cell-next/evidence-next/attempt-1/native-validation.json",
+      "sha256": "8566e8c0fb52381412e298de0b85ccf529d663e9f7b82eed8703278465e9d550",
+      "counts": {
+        "foundationGroupsPassed": 5,
+        "foundationAssertionsPassed": 8,
+        "valueAssertionsPassed": 8,
+        "diagnosticAssertionsPassed": 0,
+        "recursiveGroupsPassed": 4,
+        "strictControlsPassed": 12,
+        "environmentAliasChecksPassed": 1
+      },
+      "failures": [
+        {
+          "id": "function-source-cell-replacement-deletion-graph",
+          "code": "OWNED_OBSERVATION_METADATA"
+        },
+        {
+          "id": "function-source-cell-replacement-deletion-graph",
+          "binding": "base::eval",
+          "code": "OWNED_CAUSAL_BASELINE_MISSING"
+        }
+      ],
+      "correctionPath": ".tmp/function-source-cell-next/evidence-next/attempt-1-correction.json",
+      "correctionSha256": "fdec0fcf6ea3f6183b7f4b89ccdca054faa61ecb42445ba9609eee2f964ea0e0",
+      "qualification": "An independently authored local closure named c shadowed base c() in the raw mutation graph. Rename only that local binding to deletedFunction. No frozen acceptance assertion, native expected graph, foundation group or production input was changed.",
+      "acceptedAssertionsUnchanged": true,
+      "compatibilityCredit": false
+    }
+  },
+  "verification": {
+    "executionTimeBindings": {
+      "verifier": {
+        "path": ".tmp/candidate-inputs-0401.mjs",
+        "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+      },
+      "laterUpdatePolicy": [
+        {
+          "path": "docs/compatibility-contract.md",
+          "category": "final-documentation",
+          "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+        },
+        {
+          "path": "docs/development-continuation.md",
+          "category": "final-documentation",
+          "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+        },
+        {
+          "path": "docs/release-readiness.md",
+          "category": "final-documentation",
+          "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+        },
+        {
+          "path": "compatibility/platform-evidence/function-source-cell-windows-0.401.0.json",
+          "category": "final-documentation",
+          "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+        },
+        {
+          "path": "compatibility/package-corpus.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/status.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "packages/package-tools/test/check-summary.test.ts",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        },
+        {
+          "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+          "category": "post-corpus",
+          "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+        }
+      ],
+      "gates": [
+        {
+          "gate": "check",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-check-inputs-before.json",
+              "sha256": "95c8282cb5e6a213b73c27e538b0d0ab230e89f9bcd29f7f3f4734decdfae2ef"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-check-inputs-after.json",
+              "sha256": "122b0be731c3faf2162f3d2a6e412a42c79364becc5744fda665663336a96448"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:55:20.777Z",
+          "afterCapturedAt": "2026-10-25T04:57:17.271Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-profile-0401-gate.ps1",
+              "bytes": 2492,
+              "sha256": "5d30ed7bf1f57ea5c5c11b55c01d09309e339e88573fd88d83eed92466a2ef2f"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "focused",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-focused-inputs-before.json",
+              "sha256": "1122a6cba1c3aa13b7b7217886420ab0df71d7cd6bafa4e5ddef4caeaa0fc81c"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-focused-inputs-after.json",
+              "sha256": "90b2e0783a0f59ff6b82c6a3dd1925c81b11637bb5651302e464843382f9e018"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:57:22.908Z",
+          "afterCapturedAt": "2026-10-25T04:57:28.417Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-focused-0401.ps1",
+              "bytes": 1867,
+              "sha256": "eabef585361ff46c6ba387e0c341d9c81a8d884828684bf15424a9a69501d6fa"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "foundation",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-foundation-inputs-before.json",
+              "sha256": "1a12936cfa4b5de14f033dcb94c86e2b2c40922c8435156f4251ea9a93229c0b"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-foundation-inputs-after.json",
+              "sha256": "1b604ed53800e317599e2e919b890d724bc3f957cf44307ae873d1cbceada1df"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:57:22.921Z",
+          "afterCapturedAt": "2026-10-25T04:57:29.002Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-profile-0401-gate.ps1",
+              "bytes": 2492,
+              "sha256": "5d30ed7bf1f57ea5c5c11b55c01d09309e339e88573fd88d83eed92466a2ef2f"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "native",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-native-inputs-before.json",
+              "sha256": "c7a14befefbaba303c418fc81701d17f6d0a6f6177a5fdb331a30f44501ccf4f"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-native-inputs-after.json",
+              "sha256": "0ac1f7a4f16e759b9eb270b77d3b268c843f0ab98d9e6d1dca387ea1392175f3"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:57:23.012Z",
+          "afterCapturedAt": "2026-10-25T05:02:06.197Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-profile-0401-gate.ps1",
+              "bytes": 2492,
+              "sha256": "5d30ed7bf1f57ea5c5c11b55c01d09309e339e88573fd88d83eed92466a2ef2f"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "v2",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-v2-inputs-before.json",
+              "sha256": "9ec852b138034e79a0268a2a2a32bb3f838df9c8f800952aec563d081b0bd226"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-v2-inputs-after.json",
+              "sha256": "002d7a7dbd7ee46fb5960cc3a37696a3b6ab008ec1715a03796449c427e306e8"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:57:23.019Z",
+          "afterCapturedAt": "2026-10-25T05:03:37.717Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-profile-0401-gate.ps1",
+              "bytes": 2492,
+              "sha256": "5d30ed7bf1f57ea5c5c11b55c01d09309e339e88573fd88d83eed92466a2ef2f"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "e2e",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-e2e-inputs-before.json",
+              "sha256": "2547d2f3614483980f56b47d6e4f10e260dd33b0b9f2dd7e9928da7a2cf8f545"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-e2e-inputs-after.json",
+              "sha256": "9708646a3fdcf2c3258f697f0d5c92602e65627716de87134f4f62f84fe1b66a"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:57:23.045Z",
+          "afterCapturedAt": "2026-10-25T04:59:28.457Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/record-browser-0401.mjs",
+              "bytes": 6065,
+              "sha256": "af0f7b8fda842e7889ad7288c2bed4ea234356b6194126f31fa974569f284e70"
+            },
+            {
+              "path": ".tmp/run-profile-0401-gate.ps1",
+              "bytes": 2492,
+              "sha256": "5d30ed7bf1f57ea5c5c11b55c01d09309e339e88573fd88d83eed92466a2ef2f"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "corpus",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-corpus-inputs-before.json",
+              "sha256": "a0f55a6b04d6c3a54ac04d9ea6f6b1fe1a88b7981dabae53af5e66960da0a92c"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-corpus-inputs-after.json",
+              "sha256": "e3fb7c7c74358fc36d42650172ad3560b69203ff87bc4c0e7d68bb726f4308be"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T04:57:23.604Z",
+          "afterCapturedAt": "2026-10-25T04:59:23.995Z",
+          "maintainedInputCount": 1766,
+          "artifactCount": 386,
+          "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-corpus-0401.mjs",
+              "bytes": 12403,
+              "sha256": "8a8c0a50f7db4bc083585421bf28ecb48b0f0f16523884b41ee95c55571d25f6"
+            },
+            {
+              "path": ".tmp/run-profile-0401-gate.ps1",
+              "bytes": 2492,
+              "sha256": "5d30ed7bf1f57ea5c5c11b55c01d09309e339e88573fd88d83eed92466a2ef2f"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "bytes": 8759,
+                "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "bytes": 9568,
+                "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "bytes": 8938,
+                "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "bytes": 13332,
+                "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "bytes": 5206,
+                "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+              },
+              "policy": {
+                "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/package-corpus.json",
+              "recorded": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68369,
+                "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+              },
+              "current": {
+                "path": "compatibility/package-corpus.json",
+                "bytes": 68603,
+                "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+              },
+              "policy": {
+                "path": "compatibility/package-corpus.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "bytes": 14144,
+                "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "recorded": null,
+              "current": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "bytes": 378960,
+                "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+              },
+              "policy": {
+                "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            },
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "recorded": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11222,
+                "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+              },
+              "current": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "bytes": 11265,
+                "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+              },
+              "policy": {
+                "path": "packages/package-tools/test/check-summary.test.ts",
+                "category": "post-corpus",
+                "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        },
+        {
+          "gate": "post-corpus",
+          "inputBinding": {
+            "before": {
+              "path": ".tmp/profile-0401-post-corpus-inputs-before.json",
+              "sha256": "0212295b3d849047ba1bd95a7dfa5775ab62824659a7eccbc3a2507c7b945738"
+            },
+            "after": {
+              "path": ".tmp/profile-0401-post-corpus-inputs-after.json",
+              "sha256": "87554d96e651c1f5690f0ec9893a7cf20c3414741063836dc07736bc51f36afb"
+            }
+          },
+          "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+          "beforeCapturedAt": "2026-10-25T05:03:56.571Z",
+          "afterCapturedAt": "2026-10-25T05:04:22.735Z",
+          "maintainedInputCount": 1773,
+          "artifactCount": 386,
+          "maintainedSha256": "2efc82a91cb5a1a860872e0ab87f84b850641d2344edec56285d90a9c835f158",
+          "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+          "proofCount": 24,
+          "toolHashes": [
+            {
+              "path": "tool/node-executable",
+              "bytes": 92825416,
+              "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+            },
+            {
+              "path": "tool/rscript-executable",
+              "bytes": 154624,
+              "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+            },
+            {
+              "path": "tool/pnpm-entry",
+              "bytes": 12812478,
+              "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+            }
+          ],
+          "wrapperHashes": [
+            {
+              "path": ".tmp/candidate-inputs-0401.mjs",
+              "bytes": 12463,
+              "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+            },
+            {
+              "path": ".tmp/codex-env.ps1",
+              "bytes": 865,
+              "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+            },
+            {
+              "path": ".tmp/run-profile-0401-post-corpus.ps1",
+              "bytes": 2732,
+              "sha256": "5ad1dfd7aa11f540970c4f5dc8d5f9931169678f4d3ee5029285f6ef2d09da2d"
+            }
+          ],
+          "stableDuringExecution": true,
+          "currentSemanticInputsMatch": true,
+          "laterUpdates": [
+            {
+              "path": "docs/compatibility-contract.md",
+              "recorded": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408209,
+                "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+              },
+              "current": {
+                "path": "docs/compatibility-contract.md",
+                "bytes": 408513,
+                "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+              },
+              "policy": {
+                "path": "docs/compatibility-contract.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/development-continuation.md",
+              "recorded": {
+                "path": "docs/development-continuation.md",
+                "bytes": 196605,
+                "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+              },
+              "current": {
+                "path": "docs/development-continuation.md",
+                "bytes": 200855,
+                "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+              },
+              "policy": {
+                "path": "docs/development-continuation.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            },
+            {
+              "path": "docs/release-readiness.md",
+              "recorded": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134016,
+                "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+              },
+              "current": {
+                "path": "docs/release-readiness.md",
+                "bytes": 134895,
+                "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+              },
+              "policy": {
+                "path": "docs/release-readiness.md",
+                "category": "final-documentation",
+                "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+              }
+            }
+          ],
+          "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+        }
+      ],
+      "artifactContinuity": {
+        "producer": "check",
+        "consumers": ["focused", "foundation", "native", "v2", "e2e", "corpus", "post-corpus"],
+        "exact": true,
+        "consumerCapturesAfterVerifiedBuild": true
+      },
+      "qualification": "Each final gate has genuine execution-time before/after snapshots. Every maintained file is unchanged during each gate. Final-current semantic inputs and consumed artifacts match; only enumerated later corpus, checkpoint, documentation and evidence updates are separated explicitly. Post-corpus verification rebinds final checkpoint and corpus bytes."
+    },
+    "preservedEarlierGateAttempts": [
+      {
+        "log": ".tmp/profile-0401-attempt-1/focused.log",
+        "exitCode": 0,
+        "finishedAt": "2026-10-25T04:51:07.2834297Z",
+        "receipt": ".tmp/profile-0401-attempt-1/focused-exit.json",
+        "qualification": "Superseded focused run: 35 tests passed, but no execution-time candidate snapshot was captured. Retained as an unbound historical result, not final acceptance evidence.",
+        "startedAt": "2026-10-25T04:51:03.9515262Z",
+        "receiptSha256": "365865173f53ec438e9ed9ba9b728951a8479e6f18f1ec57d6e97b2dfec6f87b",
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "finalAcceptanceCredit": false,
+        "originalReceipt": ".tmp/profile-0401-focused-exit.json",
+        "originalLog": ".tmp/profile-0401-focused.log",
+        "logSha256": "4eba224d36994a910eb50dcc2c0a1e166a88be0232bb247cecff71a614e01aaa",
+        "gate": "focused",
+        "preservationRecord": {
+          "path": ".tmp/profile-0401-attempt-1/preservation.json",
+          "sha256": "5a75ce53c4130c77982245e33fb3527459085249813340c4caee2d3b70adbcce"
+        },
+        "executionTimeInputsCaptured": false,
+        "observedOutcome": "35 focused tests passed; candidate inputs were not captured."
+      },
+      {
+        "log": ".tmp/profile-0401-attempt-1/check.log",
+        "exitCode": 1,
+        "finishedAt": "2026-10-25T04:51:58.8366224Z",
+        "receipt": ".tmp/profile-0401-attempt-1/check-exit.json",
+        "qualification": "Superseded failed check: lint rejected the unused RUnsupportedFeatureError import. No unit-test failure inferred.",
+        "startedAt": "2026-10-25T04:51:11.2969926Z",
+        "receiptSha256": "d5b7832b018c2b8ab90145f80b1fef0cbbed31d89d0537a6e9a95c13aa414bc6",
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "finalAcceptanceCredit": false,
+        "originalReceipt": ".tmp/profile-0401-check-exit.json",
+        "originalLog": ".tmp/profile-0401-check.log",
+        "logSha256": "f5e1fed86a0a355c6b47237fb4a6c239002c7d1c0e4ce6756cdc20912d970c68",
+        "gate": "check",
+        "preservationRecord": {
+          "path": ".tmp/profile-0401-attempt-1/preservation.json",
+          "sha256": "5a75ce53c4130c77982245e33fb3527459085249813340c4caee2d3b70adbcce"
+        },
+        "executionTimeInputsCaptured": false,
+        "observedOutcome": "Production check stopped at lint on one unused RUnsupportedFeatureError import; no unit-test failure is inferred."
+      }
+    ],
+    "focused": {
+      "passed": 35,
+      "skipped": 0,
+      "sourceCounts": [
+        {
+          "path": "packages/nativr/test/function-source-cell.test.ts",
+          "sha256": "2c386ee23e434146d03b69c43363259b76e4e45573c1c69c0049fa165364ef59",
+          "tests": 8
+        },
+        {
+          "path": "packages/nativr/test/closure-identity-attributes.test.ts",
+          "sha256": "586fe6dba971aa589d945644fd934509a877efd6ce3d121044ec8b1c5e287ddc",
+          "tests": 3
+        },
+        {
+          "path": "packages/nativr/test/function-language.test.ts",
+          "sha256": "9e4b6c853ba3682ff3e128e7f9715f1c4425d6c4f682761ad406f93527e18c9d",
+          "tests": 13
+        },
+        {
+          "path": "packages/runtime/test/function-language.test.ts",
+          "sha256": "96c20b37aa4db85794700736773d0dfcc52c8a9a324aef46291b7a9703be99ea",
+          "tests": 11
+        }
+      ],
+      "receipt": {
+        "processExitCode": 0,
+        "finishedAt": "2026-10-25T04:57:28.3010245Z",
+        "startedAt": "2026-10-25T04:57:23.6855832Z",
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-focused-inputs-before.json",
+            "sha256": "1122a6cba1c3aa13b7b7217886420ab0df71d7cd6bafa4e5ddef4caeaa0fc81c"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-focused-inputs-after.json",
+            "sha256": "90b2e0783a0f59ff6b82c6a3dd1925c81b11637bb5651302e464843382f9e018"
+          }
+        },
+        "arguments": [
+          "exec",
+          "vitest",
+          "run",
+          "packages/nativr/test/function-source-cell.test.ts",
+          "packages/nativr/test/closure-identity-attributes.test.ts",
+          "packages/nativr/test/function-language.test.ts",
+          "packages/runtime/test/function-language.test.ts"
+        ],
+        "inputCaptureExitCode": 0,
+        "kind": "owned-local-gate-exit",
+        "logSha256": "e8a2ad8b7284f15e35495f1ab556b326a9d7e87ce31f3946adc3eba6a900358a",
+        "executable": "pnpm",
+        "gate": "focused",
+        "log": ".tmp/profile-0401-focused.log",
+        "exitCode": 0,
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "schemaVersion": 1,
+        "receiptSha256": "aaf73802937a25420afc582e62d8257faea6a3b1033d3ff29e2562c087ef0b3e"
+      },
+      "inputVerification": {
+        "gate": "focused",
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-focused-inputs-before.json",
+            "sha256": "1122a6cba1c3aa13b7b7217886420ab0df71d7cd6bafa4e5ddef4caeaa0fc81c"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-focused-inputs-after.json",
+            "sha256": "90b2e0783a0f59ff6b82c6a3dd1925c81b11637bb5651302e464843382f9e018"
+          }
+        },
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "beforeCapturedAt": "2026-10-25T04:57:22.908Z",
+        "afterCapturedAt": "2026-10-25T04:57:28.417Z",
+        "maintainedInputCount": 1766,
+        "artifactCount": 386,
+        "maintainedSha256": "0a50115fa23d6f9730f69732506c810d0f018bdb549e1011df54e985fb50d8f5",
+        "artifactSha256": "9ab71fec411208cbeedab0831cc0b8d848f825214707b4173089cbcd62feddf7",
+        "proofCount": 24,
+        "toolHashes": [
+          {
+            "path": "tool/node-executable",
+            "bytes": 92825416,
+            "sha256": "3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237"
+          },
+          {
+            "path": "tool/rscript-executable",
+            "bytes": 154624,
+            "sha256": "d829bcf7e9fa1d7e3e828c565c3cdbb1ed416f551f4fa6fd4dfcdf231e33e5e8"
+          },
+          {
+            "path": "tool/pnpm-entry",
+            "bytes": 12812478,
+            "sha256": "228451e6383cf4df0700fc19b37aba1a25e6540e62fbca70ca2d76b719a4d883"
+          }
+        ],
+        "wrapperHashes": [
+          {
+            "path": ".tmp/candidate-inputs-0401.mjs",
+            "bytes": 12463,
+            "sha256": "9eadb89cdacb5b1fd8d6272b821edc7ecde2e0fc9c0f58217c2cd5db265eb8e9"
+          },
+          {
+            "path": ".tmp/codex-env.ps1",
+            "bytes": 865,
+            "sha256": "54d872851842a232a2a68a3961632a626ce78449aef7608148508e2d26f37821"
+          },
+          {
+            "path": ".tmp/run-focused-0401.ps1",
+            "bytes": 1867,
+            "sha256": "eabef585361ff46c6ba387e0c341d9c81a8d884828684bf15424a9a69501d6fa"
+          }
+        ],
+        "stableDuringExecution": true,
+        "currentSemanticInputsMatch": true,
+        "laterUpdates": [
+          {
+            "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "bytes": 8759,
+              "sha256": "ac861b16d496782a253ab09162aa7ded07f5e1c1f9baa7823c5700e832e26fad"
+            },
+            "policy": {
+              "path": "compatibility/package-check-evidence/0.401.0/abind.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "bytes": 9568,
+              "sha256": "47234bcf3ddde4fd76b88bce71b2c0803b699a66e9e0592c4c23a6f63b171b12"
+            },
+            "policy": {
+              "path": "compatibility/package-check-evidence/0.401.0/evaluate.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "bytes": 8938,
+              "sha256": "c71fd4e005e9ba72376c77c05ed28e1ca158c6ff2becdde7363d2571942a45b3"
+            },
+            "policy": {
+              "path": "compatibility/package-check-evidence/0.401.0/numDeriv.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "bytes": 13332,
+              "sha256": "fa2796700caca0b0c83d670a3c557ff2b5791781246b419f0498eb14b814e7c1"
+            },
+            "policy": {
+              "path": "compatibility/package-check-evidence/0.401.0/withr.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "bytes": 5206,
+              "sha256": "c9305f67598b868ba68f6280e80276c844edbd7a048e135f8730b449fd938a27"
+            },
+            "policy": {
+              "path": "compatibility/package-check-evidence/corpus-0.401.0.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/package-corpus.json",
+            "recorded": {
+              "path": "compatibility/package-corpus.json",
+              "bytes": 68369,
+              "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+            },
+            "current": {
+              "path": "compatibility/package-corpus.json",
+              "bytes": 68603,
+              "sha256": "96bf551b1ed2a8fc5d20a96a7158d5c6994cdb7ece0d30be190c03b7f20b8dc7"
+            },
+            "policy": {
+              "path": "compatibility/package-corpus.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "bytes": 14144,
+              "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+            },
+            "policy": {
+              "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+            "recorded": null,
+            "current": {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "bytes": 378960,
+              "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20"
+            },
+            "policy": {
+              "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          },
+          {
+            "path": "docs/compatibility-contract.md",
+            "recorded": {
+              "path": "docs/compatibility-contract.md",
+              "bytes": 408209,
+              "sha256": "071cdffe0e180805bc4b81777663ad15d14d971e5334d1771427959c9093fa4f"
+            },
+            "current": {
+              "path": "docs/compatibility-contract.md",
+              "bytes": 408513,
+              "sha256": "34c3391da0e338fe20ea762c8425ae4632d206aa7390051d9cc2418c14211c3e"
+            },
+            "policy": {
+              "path": "docs/compatibility-contract.md",
+              "category": "final-documentation",
+              "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+            }
+          },
+          {
+            "path": "docs/development-continuation.md",
+            "recorded": {
+              "path": "docs/development-continuation.md",
+              "bytes": 196605,
+              "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+            },
+            "current": {
+              "path": "docs/development-continuation.md",
+              "bytes": 200855,
+              "sha256": "91a9de4b908ca060cac4e4d3727c6d83aa1b4e65b3b10a8afbd81fe0d98ac6a7"
+            },
+            "policy": {
+              "path": "docs/development-continuation.md",
+              "category": "final-documentation",
+              "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+            }
+          },
+          {
+            "path": "docs/release-readiness.md",
+            "recorded": {
+              "path": "docs/release-readiness.md",
+              "bytes": 134016,
+              "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+            },
+            "current": {
+              "path": "docs/release-readiness.md",
+              "bytes": 134895,
+              "sha256": "4ace193dbd877ac3c5da46cb08ef4d9131d0f254e1001951405a369a16a2088c"
+            },
+            "policy": {
+              "path": "docs/release-readiness.md",
+              "category": "final-documentation",
+              "reason": "Final prose and verification receipt are written after measured gates; their record-time digests do not claim pre-gate execution."
+            }
+          },
+          {
+            "path": "packages/package-tools/test/check-summary.test.ts",
+            "recorded": {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "bytes": 11222,
+              "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+            },
+            "current": {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "bytes": 11265,
+              "sha256": "51cb791415cb2d555f820894669582280f0a7a797ce0c07456884b8e56b3ebfa"
+            },
+            "policy": {
+              "path": "packages/package-tools/test/check-summary.test.ts",
+              "category": "post-corpus",
+              "reason": "Selected corpus evidence and its checkpoint test are persisted later and bound again by the post-corpus verification capture."
+            }
+          }
+        ],
+        "qualification": "All maintained files are captured without exclusions during execution. Explicit later-update paths apply only to final-current comparison. Build outputs are first captured after the check build; consuming gates capture them before and after."
+      },
+      "logSha256": "e8a2ad8b7284f15e35495f1ab556b326a9d7e87ce31f3946adc3eba6a900358a"
+    },
+    "ownedResourceCoverage": {
+      "path": "packages/runtime/test/function-language.test.ts",
+      "sha256": "96c20b37aa4db85794700736773d0dfcc52c8a9a324aef46291b7a9703be99ea",
+      "totalRuntimeTests": 11,
+      "newGuards": [
+        "retains and counts source-only references once through metadata copies and cycles",
+        "projects deeply nested source syntax without rendering or evaluating it",
+        "checks work and cancellation while counting source-only values and then recovers"
+      ],
+      "correctedGuard": "keeps unadmitted formals ordinary and preserves an unevaluated source cell",
+      "nativeCompatibilityCredit": false,
+      "qualification": "Owned resource and representation guards are separate from native behavioral fixtures. Source names identify tests included in the full production check; no native resource-limit equivalence is claimed."
+    },
+    "gates": [
+      {
+        "kind": "owned-local-gate-exit",
+        "logSha256": "9333e27f72fb4ea85379f238e9eb1c6588ced76c110db9e6aca020bc78e67f1c",
+        "startedAt": "2026-10-25T04:55:21.2083465Z",
+        "schemaVersion": 1,
+        "executable": "pnpm",
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-check-inputs-before.json",
+            "sha256": "95c8282cb5e6a213b73c27e538b0d0ab230e89f9bcd29f7f3f4734decdfae2ef"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-check-inputs-after.json",
+            "sha256": "122b0be731c3faf2162f3d2a6e412a42c79364becc5744fda665663336a96448"
+          }
+        },
+        "log": ".tmp/profile-0401-check.log",
+        "gate": "check",
+        "arguments": ["check"],
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "inputCaptureExitCode": 0,
+        "exitCode": 0,
+        "finishedAt": "2026-10-25T04:57:17.1890907Z",
+        "processExitCode": 0,
+        "receiptSha256": "2ff4e5db802ef7f219e86769ae259598c013f8d1894d7693eee83daf27529fd9"
+      },
+      {
+        "arguments": ["conformance"],
+        "schemaVersion": 1,
+        "startedAt": "2026-10-25T04:57:23.7062650Z",
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "finishedAt": "2026-10-25T04:57:28.8767796Z",
+        "processExitCode": 0,
+        "log": ".tmp/profile-0401-foundation.log",
+        "inputCaptureExitCode": 0,
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-foundation-inputs-before.json",
+            "sha256": "1a12936cfa4b5de14f033dcb94c86e2b2c40922c8435156f4251ea9a93229c0b"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-foundation-inputs-after.json",
+            "sha256": "1b604ed53800e317599e2e919b890d724bc3f957cf44307ae873d1cbceada1df"
+          }
+        },
+        "logSha256": "40bb2aebeaa8e98527ed093afc838398f796cf9f4d87eee4a5d92d77749f7a77",
+        "kind": "owned-local-gate-exit",
+        "executable": "pnpm",
+        "gate": "foundation",
+        "exitCode": 0,
+        "receiptSha256": "e05d45cd611c7df1b48be9ddebcbdd48578804a1d1fb7c801fd9fa54ad7df44b"
+      },
+      {
+        "kind": "owned-local-gate-exit",
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-native-inputs-before.json",
+            "sha256": "c7a14befefbaba303c418fc81701d17f6d0a6f6177a5fdb331a30f44501ccf4f"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-native-inputs-after.json",
+            "sha256": "0ac1f7a4f16e759b9eb270b77d3b268c843f0ab98d9e6d1dca387ea1392175f3"
+          }
+        },
+        "executable": "pnpm",
+        "gate": "native",
+        "logSha256": "f8a5d303a3b549affd8369881f470caf7ee08b9dead18c7eca61ad28a2c1ee5e",
+        "schemaVersion": 1,
+        "inputCaptureExitCode": 0,
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "exitCode": 0,
+        "log": ".tmp/profile-0401-native.log",
+        "finishedAt": "2026-10-25T05:02:06.0940266Z",
+        "arguments": ["conformance:r"],
+        "startedAt": "2026-10-25T04:57:23.8352088Z",
+        "processExitCode": 0,
+        "receiptSha256": "517aeeed64e1c26250e6fd098226d47454a88d91cf20e60c8564ddaa51c0cd40"
+      },
+      {
+        "processExitCode": 0,
+        "exitCode": 0,
+        "finishedAt": "2026-10-25T05:03:37.6345644Z",
+        "kind": "owned-local-gate-exit",
+        "executable": "pnpm",
+        "inputCaptureExitCode": 0,
+        "log": ".tmp/profile-0401-v2.log",
+        "startedAt": "2026-10-25T04:57:23.8385240Z",
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-v2-inputs-before.json",
+            "sha256": "9ec852b138034e79a0268a2a2a32bb3f838df9c8f800952aec563d081b0bd226"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-v2-inputs-after.json",
+            "sha256": "002d7a7dbd7ee46fb5960cc3a37696a3b6ab008ec1715a03796449c427e306e8"
+          }
+        },
+        "schemaVersion": 1,
+        "logSha256": "30faad11d9d17d1cca7bd7409c83e89b6a9c4e36de03d85e2cbc5bf4391e66e2",
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "arguments": ["conformance:r:v2"],
+        "gate": "v2",
+        "receiptSha256": "0dfe74c8e976767b214ed6a294def292186b8267f24c92e870df5ad94dfcfdcd"
+      },
+      {
+        "finishedAt": "2026-10-25T04:59:28.3515842Z",
+        "processExitCode": 0,
+        "exitCode": 0,
+        "inputCaptureExitCode": 0,
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "kind": "owned-local-gate-exit",
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-e2e-inputs-before.json",
+            "sha256": "2547d2f3614483980f56b47d6e4f10e260dd33b0b9f2dd7e9928da7a2cf8f545"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-e2e-inputs-after.json",
+            "sha256": "9708646a3fdcf2c3258f697f0d5c92602e65627716de87134f4f62f84fe1b66a"
+          }
+        },
+        "schemaVersion": 1,
+        "logSha256": "8da9c5f0192fdd34936e7e670b0c395e28831aa2fe23753917b06f49a4eb7aac",
+        "startedAt": "2026-10-25T04:57:23.8618864Z",
+        "gate": "e2e",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "log": ".tmp/profile-0401-e2e.log",
+        "executable": "pnpm",
+        "receiptSha256": "291d9b726b26964303a0ac17cd48161012c4ddd1b202d7153b66c53866108fae"
+      },
+      {
+        "executable": "node",
+        "arguments": [".tmp/run-corpus-0401.mjs", "--run"],
+        "processExitCode": 0,
+        "inputBinding": {
+          "before": {
+            "path": ".tmp/profile-0401-corpus-inputs-before.json",
+            "sha256": "a0f55a6b04d6c3a54ac04d9ea6f6b1fe1a88b7981dabae53af5e66960da0a92c"
+          },
+          "after": {
+            "path": ".tmp/profile-0401-corpus-inputs-after.json",
+            "sha256": "e3fb7c7c74358fc36d42650172ad3560b69203ff87bc4c0e7d68bb726f4308be"
+          }
+        },
+        "inputCaptureExitCode": 0,
+        "kind": "owned-local-gate-exit",
+        "logSha256": "d62b69c7fb66ac8a79408826fb911803efbd9f29790f5391c2f4820a04999b4e",
+        "sourceCommit": "debd8e2a64c998979566d19afa3c619ca1d5cc38",
+        "exitCode": 0,
+        "gate": "corpus",
+        "log": ".tmp/profile-0401-corpus.log",
+        "finishedAt": "2026-10-25T04:59:23.8752944Z",
+        "startedAt": "2026-10-25T04:57:24.3004630Z",
+        "schemaVersion": 1,
+        "receiptSha256": "85147aeb2193d8b9e384596f6e72d452854123e7b4eda8356339eeef4b16d344"
+      }
+    ],
+    "unit": { "passed": 3606, "skipped": 96 },
+    "conformance": {
+      "foundation": 1522,
+      "native": 1449,
+      "nativeSkipped": 55,
+      "recursive": 435,
+      "linkedBindings": 175
+    },
+    "bundles": [
+      { "label": "statically loaded public client", "kib": 18.1, "limit": 150, "encoding": "gzip" },
+      { "label": "Worker JavaScript", "kib": 496.4, "limit": 512, "encoding": "gzip" },
+      { "label": "combined parser Wasm", "kib": 671.9, "limit": 1536, "encoding": "raw" },
+      { "label": "elementary-function Wasm", "kib": 311.2, "limit": 384, "encoding": "raw" }
+    ],
+    "postCorpus": {
+      "inputBinding": {
+        "before": {
+          "path": ".tmp/profile-0401-post-corpus-inputs-before.json",
+          "sha256": "0212295b3d849047ba1bd95a7dfa5775ab62824659a7eccbc3a2507c7b945738"
+        },
+        "after": {
+          "path": ".tmp/profile-0401-post-corpus-inputs-after.json",
+          "sha256": "87554d96e651c1f5690f0ec9893a7cf20c3414741063836dc07736bc51f36afb"
+        }
+      },
+      "kind": "owned-post-corpus-verification",
+      "inputCaptureExitCode": 0,
+      "schemaVersion": 1,
+      "gate": "post-corpus",
+      "finishedAt": "2026-10-25T05:04:22.6544834Z",
+      "startedAt": "2026-10-25T05:03:57.1876281Z",
+      "ok": true,
+      "gates": [
+        {
+          "log": ".tmp/profile-0401-post-checkpoint-tests.log",
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "exitCode": 0,
+          "name": "checkpoint-tests",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:03:58.3627384Z",
+          "startedAt": "2026-10-25T05:03:57.1943799Z",
+          "logSha256": "daf4a679f3a8082053be14c5f957cfa7f940ee96e762da58b36919af5da4ca9d"
+        },
+        {
+          "log": ".tmp/profile-0401-post-all-types.log",
+          "arguments": ["typecheck:all"],
+          "exitCode": 0,
+          "name": "all-types",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:03.7982359Z",
+          "startedAt": "2026-10-25T05:03:58.3840116Z",
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b"
+        },
+        {
+          "log": ".tmp/profile-0401-post-checkpoint-lint.log",
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "exitCode": 0,
+          "name": "checkpoint-lint",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:06.7447629Z",
+          "startedAt": "2026-10-25T05:04:03.7998376Z",
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "log": ".tmp/profile-0401-post-format.log",
+          "arguments": ["format:check"],
+          "exitCode": 0,
+          "name": "format",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:19.3332923Z",
+          "startedAt": "2026-10-25T05:04:06.7464849Z",
+          "logSha256": "683ea8dc54a539361b860d8e772492961d7b3107cf138c980718d5ef6eaa6450"
+        },
+        {
+          "log": ".tmp/profile-0401-post-capabilities.log",
+          "arguments": ["capabilities:check"],
+          "exitCode": 0,
+          "name": "capabilities",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:19.9373794Z",
+          "startedAt": "2026-10-25T05:04:19.3410801Z",
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502"
+        },
+        {
+          "log": ".tmp/profile-0401-post-coverage.log",
+          "arguments": ["compatibility:check"],
+          "exitCode": 0,
+          "name": "coverage",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:20.4559815Z",
+          "startedAt": "2026-10-25T05:04:19.9395180Z",
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668"
+        },
+        {
+          "log": ".tmp/profile-0401-post-inventory.log",
+          "arguments": ["inventory:check"],
+          "exitCode": 0,
+          "name": "inventory",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:21.3219849Z",
+          "startedAt": "2026-10-25T05:04:20.4587078Z",
+          "logSha256": "421208174883b1bb6f7562a5178d9c3910b3f52b0ad7c3e01243f1bc4ef245a1"
+        },
+        {
+          "log": ".tmp/profile-0401-post-status.log",
+          "arguments": ["status:check"],
+          "exitCode": 0,
+          "name": "status",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:22.1946172Z",
+          "startedAt": "2026-10-25T05:04:21.3303106Z",
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55"
+        },
+        {
+          "log": ".tmp/profile-0401-post-corpus.log",
+          "arguments": ["corpus:check"],
+          "exitCode": 0,
+          "name": "corpus",
+          "command": "pnpm",
+          "finishedAt": "2026-10-25T05:04:22.6522354Z",
+          "startedAt": "2026-10-25T05:04:22.2038498Z",
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc"
+        }
+      ]
+    },
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.401.0.json",
+      "sha256": "70f2be482366e23aacfbb5ad14170dddb7b39b9561ee38b21831dc0ac6f64cd7"
+    },
+    "corpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.401.0.json",
+      "sha256": "43b0dc3dd4a6f5aabf05ae11090c06aa70aa39ab3d08647fba4ed2683c24df20",
+      "packages": 4,
+      "observations": 49,
+      "changes": [
+        {
+          "package": "withr",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/defer.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 21,
+          "changed": ["observations", "comparisons"]
+        },
+        {
+          "package": "evaluate",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/evaluate.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 7,
+          "changed": []
+        },
+        {
+          "package": "numDeriv",
+          "tier": "P6",
+          "previousTier": "P6",
+          "firstBlocker": {
+            "tier": "P7",
+            "code": "observation-mismatch",
+            "path": "tests/hessian01.R",
+            "message": "The first package-check blocker is test-output; see the redacted checkpoint for stage outcomes and repeatability."
+          },
+          "observations": 11,
+          "changed": []
+        },
+        {
+          "package": "abind",
+          "tier": "P7",
+          "previousTier": "P7",
+          "firstBlocker": null,
+          "observations": 10,
+          "changed": []
+        }
+      ]
+    },
+    "matrix": { "partialDimensions": 157, "bindings": 35 }
+  },
+  "limitations": [
+    "All thirteen required semantic domains remain unfinished.",
+    "Retained parsing, source-position generation, parse-data, malformed function construction, cell tags, general coercions and complete language equality/printing remain unfinished.",
+    "Version 1 public language snapshots contain source text and do not round-trip function source-cell metadata. Worker assertions exercise R-side behavior, not metadata transport equivalence.",
+    "Owned resource and representation guards cover bounded memory census, aliases/cycles, deep syntax, cancellation and recovery. They do not establish native resource-limit compatibility.",
+    "Four cached packages are a bounded refresh. The latest full 24-package checkpoint remains 0.397; assisted-runner results remain separate from original dependency closure.",
+    "Windows correctness timings do not establish isolated performance or the complete browser/OS matrix. Linux and Formula holdout remain deferred.",
+    "No download, push, publication or remote action performed."
+  ]
+}

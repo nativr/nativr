@@ -51,6 +51,7 @@ import {
   languageValueNames,
   materializeLanguageEntries,
   functionParametersValue,
+  functionSourceCellNode,
   languageFromCallEntries,
   replaceLanguageNames,
   doubleVector,
@@ -17081,6 +17082,7 @@ function identicalValue(
     case "closure": {
       const other = right as typeof left;
       return (
+        attributesEqual(left.attributes, other.attributes, options, checkpoint, true) &&
         left.parameters.length === other.parameters.length &&
         left.parameters.every((parameter, index) => {
           checkpoint();
@@ -17161,6 +17163,16 @@ function identicalLanguage(
           return false;
       }
       if (!compareCells(a.expression.body, b.expression.body)) return false;
+      const aSource = functionSourceCellNode(a.expression);
+      const bSource = functionSourceCellNode(b.expression);
+      if (aSource !== undefined && bSource !== undefined) {
+        if (!compareCells(aSource, bSource)) return false;
+      } else if (
+        (aSource !== undefined && quoteAst(aSource).type !== "null") ||
+        (bSource !== undefined && quoteAst(bSource).type !== "null")
+      ) {
+        return false;
+      }
       continue;
     }
     const aEntries = languageValueEntries(a);
@@ -17278,11 +17290,12 @@ function attributesEqual(
   right: ReadonlyMap<string, RValue>,
   options: IdenticalOptions,
   checkpoint: () => void,
+  onlyIgnoreSrcref = false,
 ): boolean {
   const filter = ([name]: readonly [string, RValue]): boolean =>
     !(
       options.ignoreSourceReferences &&
-      (name === "srcref" || name === "srcfile" || name === "wholeSrcref")
+      (name === "srcref" || (!onlyIgnoreSrcref && (name === "srcfile" || name === "wholeSrcref")))
     );
   const leftEntries = [...left].filter(filter);
   const rightEntries = [...right].filter(filter);

@@ -14,7 +14,7 @@ import {
   replaceLanguageElement,
 } from "../src/language-subset.js";
 import { censusRuntimeMemory, estimateRObjectSize } from "../src/memory.js";
-import { R_NULL, integerVector, languageValue, pairlistValue } from "../src/values.js";
+import { R_NULL, integerVector, languageValue, listValue, pairlistValue } from "../src/values.js";
 import type { RLanguage, RValue } from "../src/values.js";
 
 const span = {
@@ -130,20 +130,24 @@ describe("plain function-language bridge", () => {
     ).toBe(56);
   });
 
-  it("keeps unadmitted function construction ordinary and rejects retained source explicitly", () => {
+  it("keeps unadmitted formals ordinary and preserves an unevaluated source cell", () => {
     const head: AstNode = { kind: "Identifier", name: "function", span };
     expect(
       languageFromCallEntries([head, literal(1), literal(2)], undefined, context()).expression.kind,
     ).toBe("CallExpression");
     const formals = embeddedValueAst(pairlistValue([integerVector([1])], ["x"]));
-    expect(() =>
-      languageFromCallEntries([head, formals, literal(2), literal(9)], undefined, context()),
-    ).toThrowError(
-      expect.objectContaining({
-        code: "NRU6261",
-        message: "Non-NULL function source cells require retained-source support.",
-      }),
+    const sourceCell = literal(9);
+    const retained = languageFromCallEntries(
+      [head, formals, literal(2), sourceCell],
+      undefined,
+      context(),
     );
+    expect(retained.expression.kind).toBe("FunctionExpression");
+    expect(materializeLanguageEntries(retained, context())?.nodes[3]).toBe(sourceCell);
+    expect(extractLanguageElement(retained, integerVector([4]), context())).toMatchObject({
+      type: "integer",
+      values: new Int32Array([9]),
+    });
     expect(
       languageValueLength(
         languageFromCallEntries([head, formals, literal(2)], undefined, context()),
@@ -212,5 +216,97 @@ describe("plain function-language bridge", () => {
     if (rebuilt.expression.kind !== "FunctionExpression") throw new Error("Expected function.");
     expect(rebuilt.expression.body).toBe(node);
     expect(rebuilt.expression.parameters[0]?.defaultValue).toBe(node);
+  });
+
+  it("retains and counts source-only references once through metadata copies and cycles", () => {
+    const owner = createEnvironment(null);
+    const payload = integerVector(new Int32Array(512));
+    owner.bindings.set("payload", payload);
+    const source = listValue([owner, payload]);
+    const sourceCell = embeddedValueAst(source);
+    const retained = languageFromCallEntries(
+      [
+        { kind: "Identifier", name: "function", span },
+        { kind: "NullLiteral", span },
+        literal(7),
+        sourceCell,
+      ],
+      undefined,
+      context(),
+    );
+    owner.bindings.set("back", retained);
+    const changed = languageValue(retained.expression, new Map(), "owned");
+    const outer = languageValue(call(embeddedValueAst(changed)));
+    const nested = language(extractLanguageElement(outer, integerVector([2]), context()));
+    expect(materializeLanguageEntries(nested, context())?.nodes[3]).toBe(sourceCell);
+    expect(extractLanguageElement(nested, integerVector([4]), context())).toBe(source);
+    const census = censusRuntimeMemory([retained], () => undefined);
+    expect(census.vectorCells).toBeGreaterThanOrEqual(256);
+    expect(census).toEqual(
+      censusRuntimeMemory([retained, owner, source, payload], () => undefined),
+    );
+    expect(estimateRObjectSize(retained, () => undefined)).toBeGreaterThan(
+      estimateRObjectSize(languageValue(syntax()), () => undefined) + payload.values.byteLength,
+    );
+    const removed = language(
+      replaceLanguageElement(retained, integerVector([4]), R_NULL, context()),
+    );
+    expect(languageValueLength(removed)).toBe(3);
+    expect(censusRuntimeMemory([removed], () => undefined).vectorCells).toBeLessThan(256);
+    expect(extractLanguageElement(retained, integerVector([4]), context())).toBe(source);
+  });
+
+  it("projects deeply nested source syntax without rendering or evaluating it", () => {
+    let sourceCell: AstNode = literal(1);
+    for (let index = 0; index < 2_000; index += 1) sourceCell = call(sourceCell);
+    const bounded = new EvaluationContext(
+      { ...DEFAULT_RUNTIME_LIMITS, maxSteps: 64 },
+      { cancelled: false },
+    );
+    const source = languageFromCallEntries(
+      [
+        { kind: "Identifier", name: "function", span },
+        { kind: "NullLiteral", span },
+        literal(7),
+        sourceCell,
+      ],
+      undefined,
+      bounded,
+    );
+    const cells = materializeLanguageEntries(source, bounded)!;
+    expect(cells.nodes[3]).toBe(sourceCell);
+    const rebuilt = languageFromCallEntries(cells.nodes, cells.names, bounded);
+    expect(materializeLanguageEntries(rebuilt, bounded)?.nodes[3]).toBe(sourceCell);
+    expect(() => estimateRObjectSize(source, () => undefined)).toThrowError(
+      expect.objectContaining({ code: "NRL4004" }),
+    );
+  });
+
+  it("checks work and cancellation while counting source-only values and then recovers", () => {
+    const sourceCell = embeddedValueAst(
+      listValue(Array.from({ length: 256 }, (_, index) => integerVector([index]))),
+    );
+    const source = languageFromCallEntries(
+      [
+        { kind: "Identifier", name: "function", span },
+        { kind: "NullLiteral", span },
+        literal(7),
+        sourceCell,
+      ],
+      undefined,
+      context(),
+    );
+    const cancelled = new EvaluationContext(DEFAULT_RUNTIME_LIMITS, { cancelled: true });
+    expect(() => censusRuntimeMemory([source], () => cancelled.checkpoint())).toThrowError(
+      expect.objectContaining({ code: "NRL4005" }),
+    );
+    const limited = new EvaluationContext(
+      { ...DEFAULT_RUNTIME_LIMITS, maxSteps: 4 },
+      { cancelled: false },
+    );
+    expect(() => censusRuntimeMemory([source], () => limited.checkpoint())).toThrowError(
+      expect.objectContaining({ code: "NRL4001" }),
+    );
+    expect(censusRuntimeMemory([source], () => undefined).vectorCells).toBeGreaterThan(256);
   });
 });

@@ -3443,5 +3443,89 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "function-source-cell-construction-graph",
+    "policy": "exact",
+    "code": "local({\n   integerCell<-as.call(list(as.name(\"function\"),pairlist(x=2L),quote(x+5L),c(4L,7L)))\n   characterCell<-as.call(list(as.name(\"function\"),pairlist(x=2L),quote(x+5L),\"owned-source-cell\"))\n   list(integerCall=integerCell,characterCall=characterCell,\n     integerCells=if(is.language(integerCell))as.list(integerCell)else integerCell,\n     characterCells=if(is.language(characterCell))as.list(characterCell)else characterCell)\n })",
+    "bindingEvidence": ["base::as.call", "base::as.list"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-source-cell-laziness-graph",
+    "policy": "exact",
+    "code": "local({\n   events<-0L;symbolCell<-as.name(\"owned_unbound_cell\")\n   callCell<-quote({events<-events+1L;stop(\"owned_cell_must_not_execute\")})\n   symbolFunction<-eval(as.call(list(as.name(\"function\"),pairlist(x=5L),quote(x+3L),symbolCell)))\n   callFunction<-eval(as.call(list(as.name(\"function\"),pairlist(x=5L),quote(x+3L),callCell)))\n   list(symbolCell=attr(symbolFunction,\"srcref\"),callCell=attr(callFunction,\"srcref\"),events=events,\n     values=list(if(is.function(symbolFunction))symbolFunction()else symbolFunction,\n       if(is.function(callFunction))callFunction()else callFunction))\n })",
+    "bindingEvidence": ["base::eval"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-source-cell-reference-graph",
+    "policy": "exact",
+    "code": "local({\n   owner<-new.env(parent=emptyenv());owner$marker<-17L\n   sourceCell<-structure(c(1L,1L,3L,1L,1L,1L,1L,3L),class=\"srcref\",srcfile=owner)\n   original<-as.call(list(as.name(\"function\"),pairlist(x=2L),quote(x+5L),sourceCell))\n   rebuilt<-as.call(as.list(original));f<-eval(rebuilt);owner$marker<-31L\n   list(sourceCell=rebuilt[[4L]],closureAttributes=attributes(f),\n     callOwner=attr(rebuilt[[4L]],\"srcfile\"),closureOwner=attr(attr(f,\"srcref\"),\"srcfile\"),\n     reference=owner,value=if(is.function(f))f()else f)\n })",
+    "bindingEvidence": ["base::eval", "base::attr"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-source-cell-replacement-deletion-graph",
+    "policy": "exact",
+    "code": "local({\n   owner<-new.env(parent=emptyenv());owner$marker<-13L\n   ownedBody<-quote(x+5L);attr(ownedBody,\"owner\")<-owner\n   original<-as.call(list(as.name(\"function\"),pairlist(x=2L),ownedBody,17L))\n   changed<-original;changed[[4L]]<-29L;deleted<-changed;deleted[[4L]]<-NULL\n   attr(deleted,\"note\")<-\"owned\";a<-eval(original);b<-eval(changed);deletedFunction<-eval(deleted)\n   owner$marker<-23L\n   list(slots=list(original[[4L]],changed[[4L]]),lengths=c(length(original),length(changed),length(deleted)),\n     closures=list(attributes(a),attributes(b),attributes(deletedFunction)),outer=attributes(deleted),\n     bodyOwner=if(is.function(deletedFunction))attr(body(deletedFunction),\"owner\")else deletedFunction,reference=owner,\n     values=list(if(is.function(a))a()else a,if(is.function(b))b()else b,if(is.function(deletedFunction))deletedFunction()else deletedFunction))\n })",
+    "bindingEvidence": ["base::eval"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "function-source-cell-equality-graph",
+    "policy": "exact",
+    "code": "local({\n   a<-as.call(list(as.name(\"function\"),pairlist(x=2L),quote(x+5L),17L))\n   b<-as.call(list(as.name(\"function\"),pairlist(x=2L),quote(x+5L),29L));f<-eval(a);g<-eval(b)\n   list(callDefault=identical(a,b),callStrict=identical(a,b,ignore.srcref=FALSE),\n     closureDefault=identical(f,g),closureStrict=identical(f,g,ignore.srcref=FALSE),\n     closureAttributes=list(attributes(f),attributes(g)))\n })",
+    "bindingEvidence": ["base::identical"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "closure-source-attribute-equality-adjunct-graph",
+    "policy": "exact",
+    "code": "local({\n  compare<-function(name){\n    left<-function(x=3L)x+4L;right<-left\n    attr(left,name)<-31L;attr(right,name)<-47L\n    list(default=identical(left,right),ignore=identical(left,right,ignore.srcref=TRUE),strict=identical(left,right,ignore.srcref=FALSE))\n  }\n  list(note=compare(\"note\"),srcref=compare(\"srcref\"),srcfile=compare(\"srcfile\"),wholeSrcref=compare(\"wholeSrcref\"))\n})",
+    "bindingEvidence": ["base::identical"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

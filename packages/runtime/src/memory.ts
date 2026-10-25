@@ -1,6 +1,10 @@
 import type { AstNode, CallArgument, FunctionParameter } from "@nativr/ast";
 import type { RAttributes, RBinding, RCharacterVector, RPromise, RValue } from "./values.js";
-import { functionSourceCellPresent, languageSyntaxMetadata } from "./language-metadata.js";
+import {
+  functionSourceCellNode,
+  functionSourceCellPresent,
+  languageSyntaxMetadata,
+} from "./language-metadata.js";
 import { RResourceLimitError } from "./errors.js";
 
 /** Browser-owned memory represented in GNU R's two reporting cell families. */
@@ -195,12 +199,15 @@ export function estimateRObjectSize(value: RValue, checkpoint: () => void): numb
         return syntheticCallBytes(node.operator, [node.target, node.value]);
       case "CallExpression":
         return languageCallBytes(node.callee, node.arguments);
-      case "FunctionExpression":
+      case "FunctionExpression": {
+        const sourceCell = functionSourceCellNode(node);
         return (
           NODE_BYTES * (functionSourceCellPresent(node) ? 4 : 3) +
           parameterBytes(node.parameters) +
-          visitAst(node.body)
+          visitAst(node.body) +
+          (sourceCell === undefined ? 0 : visitAst(sourceCell))
         );
+      }
       case "IfExpression":
         return syntheticCallBytes(
           "if",
@@ -534,6 +541,8 @@ export function censusRuntimeMemory(
       if (metadata !== undefined) {
         visitAttributes(metadata.attributes);
         if (metadata.headTag !== undefined) vectorBytes += textBytes(metadata.headTag);
+        const sourceCell = functionSourceCellNode(value as AstNode);
+        if (sourceCell !== undefined) pendingSyntax.push([sourceCell].values());
       }
     }
     if (Array.isArray(value)) {

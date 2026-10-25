@@ -1,5 +1,6 @@
 export { EvaluationContext, DEFAULT_RUNTIME_LIMITS, RUNTIME_LIMIT_PROFILES } from "./context.js";
 export type { RuntimeProfile } from "./context.js";
+export { functionSourceCellNode } from "./language-metadata.js";
 export {
   matchArguments,
   matchArgumentsWithWarnings,

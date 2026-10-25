@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.400.0",
-  "capabilityManifestHash": "9b0ba345046d547edc50e767904190dac6bb0b693466b6af12d99eefb9a66efb",
+  "semanticProfileVersion": "0.401.0",
+  "capabilityManifestHash": "b4275fa4bfa611bed0be31a1a648650785c6a5e3a8db826527d4d72b356ff198",
   "evidence": {
-    "checkedInConformanceCases": 1516,
-    "liveREligibleCases": 1443,
+    "checkedInConformanceCases": 1522,
+    "liveREligibleCases": 1449,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 429,
+    "recursiveOracleV2Cases": 435,
     "recursiveBehaviorallyProvenBindings": 175,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -54,6 +54,7 @@
           "call-head-constant-storage",
           "embedded-attributed-call-values",
           "embedded-call-reference-identity",
+          "function-source-cell-construction-graph",
           "language-owned-conversion-evaluation-graph",
           "language-owned-copy-reference-graph",
           "logical-mode-call",
@@ -88,6 +89,7 @@
           "expression-owned-conversion-unlist-reference-graph",
           "expression-owned-selector-replacement-graph",
           "function-language-owned-cells-graph",
+          "function-source-cell-construction-graph",
           "language-owned-conversion-evaluation-graph",
           "language-owned-subset-replacement-graph",
           "quoted-dots-call-projection-graph",
@@ -150,7 +152,13 @@
       { "binding": "base::as.single", "cases": ["logical-mode-single"] },
       { "binding": "base::as.single.default", "cases": ["logical-mode-single"] },
       { "binding": "base::as.symbol", "cases": ["logical-mode-symbol"] },
-      { "binding": "base::attr", "cases": ["partial-attribute-lookup-and-time-forcing"] },
+      {
+        "binding": "base::attr",
+        "cases": [
+          "function-source-cell-reference-graph",
+          "partial-attribute-lookup-and-time-forcing"
+        ]
+      },
       {
         "binding": "base::attr<-",
         "cases": [
@@ -238,6 +246,9 @@
           "expression-missing-marker-diagnostics-graph",
           "expression-missing-marker-effects-cleanup-graph",
           "expression-owned-construction-evaluation-graph",
+          "function-source-cell-laziness-graph",
+          "function-source-cell-reference-graph",
+          "function-source-cell-replacement-deletion-graph",
           "language-owned-conversion-evaluation-graph",
           "language-owned-nested-evaluation-identity-graph",
           "quoted-dots-construction-and-laziness-graph"
@@ -324,7 +335,9 @@
       {
         "binding": "base::identical",
         "cases": [
+          "closure-source-attribute-equality-adjunct-graph",
           "function-language-owned-plain-shape-graph",
+          "function-source-cell-equality-graph",
           "language-owned-nested-evaluation-identity-graph",
           "quoted-dots-expression-projection-graph"
         ]
@@ -970,7 +983,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "3ece5b60393a1eb291a06a4e5205667ad245ee5d7ddc438df362ff26c8a6b5b9",
+    "sha256": "2f352426dc4f9d0c88f7de6a3e25bf8a9eaabd9a54ab329c936da5b75aaa28c2",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -980,7 +993,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 175,
-    "bindingsWithDeclaredMatrixEvidence": 34,
+    "bindingsWithDeclaredMatrixEvidence": 35,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

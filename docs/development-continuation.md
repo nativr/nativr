@@ -2643,3 +2643,61 @@ replacement, broader function coercions, cell tags, malformed construction timin
 complete language equality/printing remain unfinished. Continue the full domain matrices,
 independently licensed datasets and isolated runner parity. Linux, holdout, download and
 remote-action boundaries remain in force.
+
+### Function source-cell checkpoint (profile 0.401)
+
+The sampled explicitly supplied fourth function cells survive extraction, reconstruction and
+replacement without evaluation. Closure creation propagates that cell as srcref; ordinary outer call
+attributes remain separate. Owned source-environment references stay shared, and deleting the cell
+preserves independently retained body metadata. The sampled equality controls distinguish structural
+call cells from closure attributes and apply the observed source-reference options.
+
+The
+[verification record](../compatibility/platform-evidence/function-source-cell-windows-0.401.0.json)
+binds eight unchanged native assertions to clean committed 0.400: zero passes, zero mismatches and
+eight NRU6261 runtime errors, with 2,037 stable inputs and no harness failures. Five main foundation
+groups and five raw graphs retain those assertions, seven composite associations across five
+bindings, fourteen strict controls and two environment-alias checks. The first owned raw mutation
+fixture accidentally shadowed base c with a local closure; its failed receipt and local-variable
+correction are preserved. The eight main assertions were unchanged.
+
+A separate 3-case closure-attribute adjunct supplies one foundation group and one recursive graph.
+This later evidence is not a retroactive addition to the eight-case baseline. Composite associations
+do not prove every output field independently. Owned runtime guards cover source-only references,
+cycles, deep syntax, bounded work, cancellation and recovery; they receive no native resource-limit
+compatibility credit. Version 1 public language snapshots remain source-text-only and do not
+round-trip source-cell metadata.
+
+The first full check stopped at lint because an import became unused. That failed attempt and the
+first successful 35-test focused run lacked execution-time candidate snapshots and remain archived
+as earlier attempts. Focused and production checks were rerun; the final gates carry genuine
+before/after source and artifact bindings. Later corpus, checkpoint, documentation and evidence
+writes are distinguished from those execution-time captures; final file hashes are not backdated
+into the earlier runs.
+
+- Production check: 3,606 unit tests pass, 96 opt-in tests skipped; types, lint, serial build,
+  browser audit and fixed caps pass.
+- Conformance: 1,522 checked-in, 1,449 live GNU R and 435 recursive cases pass; 55 NativR-only live
+  exclusions; 175 bindings have causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.401.0.json): 12/12 pass;
+  required examples take 15.776 / 18.996 / 70.697 seconds on Chromium / Firefox / WebKit with the
+  unchanged 120-second timeout. These are advisory correctness-run timings.
+- Bundle sizes: client 18.1/150 KiB gzip; Worker 496.4/512 KiB gzip; parser 671.9/1,536 KiB raw;
+  elementary 311.2/384 KiB raw.
+- Inventory: 157 partial dimensions on 35 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus checkpoint, types, lint, format and generated checks pass.
+
+The [selected corpus checkpoint](../compatibility/package-check-evidence/corpus-0.401.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.401.0.json) refresh
+evaluate, withr, abind and numDeriv: four pinned archives and 49 observations against 0.400. No
+selected package tier changed. Qualified distribution: 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. Metadata
+differences are recorded explicitly; no causal runtime improvement is inferred from them alone. The
+other twenty development/regression entries and Formula remain unchanged; the full checkpoint
+remains 0.397. Original dependency closure and assisted-runner outcomes remain separate.
+
+Next measurable work: independently verify retained parsing, source-position generation and
+propagation using owned source text before extending that behavior. General attributes replacement,
+broader function coercions, cell tags, malformed construction timing, parse-data and complete
+language equality/printing remain unfinished. Continue the full domain matrices, independently
+licensed datasets and isolated runner parity. Linux, holdout, download and remote-action boundaries
+remain in force.

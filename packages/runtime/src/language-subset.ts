@@ -1,8 +1,8 @@
 import type { AstNode, CallArgument, FunctionParameter, SourceSpan } from "@nativr/ast";
 
 import { languageValueEntries, languageValueLength, languageValueNames } from "./language.js";
-import { withFunctionSourceCellPresence } from "./language-metadata.js";
-import { RResourceLimitError, RTypeMismatchError, RUnsupportedFeatureError } from "./errors.js";
+import { functionSourceCellNode, withFunctionSourceCellPresence } from "./language-metadata.js";
+import { RResourceLimitError, RTypeMismatchError } from "./errors.js";
 import {
   extractListMember,
   extractVectorElement,
@@ -112,7 +112,8 @@ export function materializeLanguageEntries(
     formalNode,
     expression.body,
   ];
-  if (length === 4) nodes.push({ kind: "NullLiteral", span: SYNTHETIC_SPAN });
+  if (length === 4)
+    nodes.push(functionSourceCellNode(expression) ?? { kind: "NullLiteral", span: SYNTHETIC_SPAN });
   const names = languageValueNames(value);
   return { nodes, ...(names === undefined ? {} : { names }) };
 }
@@ -275,15 +276,12 @@ export function languageFromCallEntries(
     const parameters = functionParametersFromNode(nodes[1]!, context);
     if (parameters !== undefined) {
       const sourceCell = nodes[3];
-      if (
+      const retainedSourceCell =
         sourceCell !== undefined &&
         sourceCell.kind !== "NullLiteral" &&
         !(sourceCell.kind === "ConstantExpression" && (sourceCell.value as RValue).type === "null")
-      )
-        throw new RUnsupportedFeatureError(
-          "NRU6261",
-          "Non-NULL function source cells require retained-source support.",
-        );
+          ? sourceCell
+          : undefined;
       return languageValue(
         withFunctionSourceCellPresence(
           {
@@ -293,6 +291,7 @@ export function languageFromCallEntries(
             span: SYNTHETIC_SPAN,
           },
           nodes.length === 4,
+          retainedSourceCell,
         ),
         attributes,
         headTag,
