@@ -1765,6 +1765,11 @@ export class Evaluator {
         case "ConstantExpression":
           return { value: node.value as RValue, visible: true };
         case "UnsupportedExpression":
+          if (node.feature === "missing argument") {
+            throw new REvaluationError("NRE2006", "argument is missing, with no default", {
+              span: node.span,
+            });
+          }
           if (node.feature === "dots") {
             throw new REvaluationError("NRE2011", "'...' used in an incorrect context", {
               span: node.span,
@@ -5816,7 +5821,7 @@ export class Evaluator {
       return this.#evaluateNode(value.expression, environment, context);
     }
     if (value.type === "expression") {
-      let result: EvaluationResult = { value: R_NULL, visible: false };
+      let result: EvaluationResult = { value: R_NULL, visible: true };
       for (const expression of value.values) {
         result = await this.#evaluateNode(expression, environment, context);
       }

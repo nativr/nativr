@@ -3401,5 +3401,47 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "expression-missing-marker-diagnostics-graph",
+    "policy": "exact",
+    "code": "local({\n   observe<-function(expr,expected)tryCatch(force(expr),error=function(e){\n     message<-conditionMessage(e);if(!identical(message,expected))stop(e);message})\n   list(missing=observe(eval(as.expression(list(quote(expr=)))),\"argument is missing, with no default\"),\n     named=observe(local({f<-function(x)x;f()}),\"argument \\\"x\\\" is missing, with no default\"),\n     dots=observe(eval(expression(...)),\"'...' used in an incorrect context\"))\n })",
+    "bindingEvidence": ["base::eval"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-missing-marker-effects-cleanup-graph",
+    "policy": "exact",
+    "code": "local({\n   events<-character()\n   cells<-as.expression(list(quote({events<-c(events,\"first\");7L}),quote(expr=),\n     quote({events<-c(events,\"after\");19L})))\n   sequenceOutcome<-tryCatch(eval(cells),error=function(e){\n     if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);conditionMessage(e)})\n   helper<-function(){on.exit(events<<-c(events,\"cleanup\"));events<<-c(events,\"entered\")\n     eval(as.expression(list(quote(expr=))))}\n   helperOutcome<-tryCatch(helper(),error=function(e){\n     if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e)\n     events<<-c(events,\"caught\");conditionMessage(e)})\n   recovered<-withVisible(eval(expression(31L)))\n   list(sequenceOutcome=sequenceOutcome,helperOutcome=helperOutcome,events=events,recovered=recovered)\n })",
+    "bindingEvidence": ["base::eval"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "expression-evaluation-visibility-and-na-graph",
+    "policy": "exact",
+    "code": "local({\n   events<-character()\n   ordinary<-withVisible(eval(expression({events<-c(events,\"first\");11L},{events<-c(events,\"second\");22L})))\n   invisibleFinal<-withVisible(eval(expression(13L,invisible(23L))))\n   empty<-withVisible(eval(expression()))\n   missingLiteral<-withVisible(eval(expression(NA_integer_)))\n   list(ordinary=ordinary,invisibleFinal=invisibleFinal,empty=empty,missingLiteral=missingLiteral,events=events)\n })",
+    "bindingEvidence": ["base::eval", "base::withVisible"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

@@ -1592,6 +1592,39 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  // Owned native expression-evaluation assertion: missing-cell-stops-sequence.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({events<-character();x<-as.expression(list(\n    quote({events<-c(events,"before");11L}),quote(expr=),quote({events<-c(events,"after");29L})))\n    message<-tryCatch(eval(x),error=function(e){if(!identical(conditionMessage(e),"argument is missing, with no default"))stop(e);conditionMessage(e)})\n    list(events=events,message=message)});identical(observed,list(events="before",message="argument is missing, with no default"))})',
+    );
+  await profiledRun(page, "required-155");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native expression-evaluation assertion: empty-expression-visible-null.
+  await page
+    .locator("#source")
+    .fill(
+      "local({observed<-local({result<-withVisible(eval(expression()));list(value=result$value,visible=result$visible)});identical(observed,list(value=NULL,visible=TRUE))})",
+    );
+  await profiledRun(page, "required-156");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  // Owned native expression-evaluation assertion: missing-cell-unwinds-owned-cleanup.
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({events<-character();f<-function(){on.exit(events<<-c(events,"cleanup"));\n    events<<-c(events,"entered");eval(as.expression(list(quote(expr=))))}\n    message<-tryCatch(f(),error=function(e){if(!identical(conditionMessage(e),"argument is missing, with no default"))stop(e);\n      events<<-c(events,"caught");conditionMessage(e)})\n    recovered<-withVisible(eval(expression(31L)))\n    list(events=events,message=message,value=recovered$value,visible=recovered$visible)});identical(observed,list(events=c("entered","cleanup","caught"),message="argument is missing, with no default",value=31L,visible=TRUE))})',
+    );
+  await profiledRun(page, "required-157");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

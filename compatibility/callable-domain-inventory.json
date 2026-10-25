@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.399.0",
+  "semanticProfileVersion": "0.400.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "3bed071863bf505df4c3457e70f829cdda3880fc8210756d319b81ccf9c47401",
+    "capabilities": "5c7fdd9e2cabde045cdebe68451afc8807fa6ad7c89cfa76be68111064a0a7f9",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "91df8ecb131400509a02325a11acffd62fc01bfe38894ad7d8102b8a3edd1222",
-    "oracleV2": "eb269022ab277b456208d82b3a0561b7c30331b0c8866d45548c2660300abd26",
+    "foundation": "3a89469759e1821ebe1d0ea0a8e9eb2cfe87a05a2abb232f97974591b298053f",
+    "oracleV2": "101382f94583b2bf8d87771f886802d915d10b4f5374b989bd2257d849c3b94e",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "f4fbe1cd6a49667f72c302ff3d4c78f742240060b22127f3a94e3796e7c324a9"
+    "annotations": "ea559ae758a7ba64dd771fbdc30a7723d265368991630bc5e60c731b0ac46ed3"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -53,7 +53,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 175,
-    "bindingsWithDeclaredMatrixEvidence": 33,
+    "bindingsWithDeclaredMatrixEvidence": 34,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -168,8 +168,8 @@
         },
         {
           "dimension": "errors",
-          "pendingBindings": 153,
-          "partialDeclaredBindings": 11
+          "pendingBindings": 152,
+          "partialDeclaredBindings": 12
         },
         {
           "dimension": "attributes",
@@ -178,8 +178,8 @@
         },
         {
           "dimension": "visibility",
-          "pendingBindings": 156,
-          "partialDeclaredBindings": 8
+          "pendingBindings": 155,
+          "partialDeclaredBindings": 9
         },
         {
           "dimension": "side-effects",
@@ -213,8 +213,8 @@
         },
         {
           "dimension": "errors",
-          "pendingBindings": 203,
-          "partialDeclaredBindings": 0
+          "pendingBindings": 202,
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "attributes",
@@ -11170,6 +11170,9 @@
         "evaluation-call-frame-missing-expressions",
         "evaluation-control-return-boundaries",
         "evaluation-origin-environments",
+        "expression-evaluation-visibility-and-na-graph",
+        "expression-missing-marker-diagnostics-graph",
+        "expression-missing-marker-effects-cleanup-graph",
         "expression-owned-construction-evaluation-graph",
         "language-owned-conversion-evaluation-graph",
         "language-owned-nested-evaluation-identity-graph",
@@ -11187,6 +11190,19 @@
           ],
           "remainingGaps": [
             "Frozen owned assertions preserve nested function-body metadata through reconstruction/evaluation and distinguish outer call/list notes from the unannotated reconstructed call or closure. Arbitrary attribute orders, methods and storage combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::eval. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-missing-marker-diagnostics-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Exact sampled messages distinguish an explicit missing syntax cell, named missing promise and dots cell. Broader diagnostic precedence and condition metadata remain unverified. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
           ]
         },
         {
@@ -11228,11 +11244,16 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "expression-missing-marker-effects-cleanup-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "expression-owned-construction-evaluation-graph"
             }
           ],
           "remainingGaps": [
-            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
+            "Sampled expression sequences stop at a missing cell after earlier effects, execute owned cleanup before the outer handler and allow subsequent evaluation. Other nonlocal control and frame interactions remain unaudited. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
           ]
         },
         {
@@ -11241,10 +11262,15 @@
           "evidence": [
             {
               "suite": "oracle-v2",
+              "caseId": "expression-evaluation-visibility-and-na-graph"
+            },
+            {
+              "suite": "oracle-v2",
               "caseId": "expression-owned-construction-evaluation-graph"
             }
           ],
           "remainingGaps": [
+            "Owned expression vectors preserve their final visible or invisible result; the empty vector returns visible NULL and NA_integer_ remains a value. Additional input types and context-dependent visibility remain unfinished. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished.",
             "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
           ]
         }
@@ -25518,7 +25544,25 @@
         "domains": ["calls-promises"]
       },
       "completion": "incomplete",
-      "recursiveCaseIds": ["evaluation-control-visibility"],
+      "recursiveCaseIds": [
+        "evaluation-control-visibility",
+        "expression-evaluation-visibility-and-na-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "expression-evaluation-visibility-and-na-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Sampled expression-evaluation results expose the observed visibility flag, including empty visible NULL and an invisible final expression. General visibility propagation through every callable and condition path remains unfinished. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
+          ]
+        }
+      ],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
       ]

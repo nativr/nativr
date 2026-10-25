@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.399.0",
-  "capabilityManifestHash": "e517dcb9f34929a95fdbf9ab83bddb20f0a04d7aa6a314e1f51895c592a5066a",
+  "semanticProfileVersion": "0.400.0",
+  "capabilityManifestHash": "9b0ba345046d547edc50e767904190dac6bb0b693466b6af12d99eefb9a66efb",
   "evidence": {
-    "checkedInConformanceCases": 1513,
-    "liveREligibleCases": 1440,
+    "checkedInConformanceCases": 1516,
+    "liveREligibleCases": 1443,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 426,
+    "recursiveOracleV2Cases": 429,
     "recursiveBehaviorallyProvenBindings": 175,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -234,6 +234,9 @@
           "evaluation-call-frame-missing-expressions",
           "evaluation-control-return-boundaries",
           "evaluation-origin-environments",
+          "expression-evaluation-visibility-and-na-graph",
+          "expression-missing-marker-diagnostics-graph",
+          "expression-missing-marker-effects-cleanup-graph",
           "expression-owned-construction-evaluation-graph",
           "language-owned-conversion-evaluation-graph",
           "language-owned-nested-evaluation-identity-graph",
@@ -943,7 +946,10 @@
       { "binding": "base::withCallingHandlers", "cases": ["calling-handlers-and-restarts"] },
       { "binding": "base::within", "cases": ["evaluation-control-return-boundaries"] },
       { "binding": "base::withRestarts", "cases": ["calling-handlers-and-restarts"] },
-      { "binding": "base::withVisible", "cases": ["evaluation-control-visibility"] },
+      {
+        "binding": "base::withVisible",
+        "cases": ["evaluation-control-visibility", "expression-evaluation-visibility-and-na-graph"]
+      },
       { "binding": "stats::setNames", "cases": ["names-replacement-coercion-and-metadata"] },
       {
         "binding": "utils::person",
@@ -964,7 +970,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "902c463c6ab45ac8d73f33f0eaae24c7ac74dea39412427cba8af3affbf8aeff",
+    "sha256": "3ece5b60393a1eb291a06a4e5205667ad245ee5d7ddc438df362ff26c8a6b5b9",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -974,7 +980,7 @@
     "classifiedBindings": 1353,
     "classificationPendingBindings": 1200,
     "recursiveLinkedBindings": 175,
-    "bindingsWithDeclaredMatrixEvidence": 33,
+    "bindingsWithDeclaredMatrixEvidence": 34,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

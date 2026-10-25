@@ -38,6 +38,26 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Expression missing cells and visibility (profile 0.400)
+
+Evaluating an expression vector containing an explicit missing-argument syntax cell reports the
+observed unnamed missing-argument message. Earlier expressions run in order; later expressions do
+not run after that error, and owned cleanup handlers run before the outer error handler. Named
+missing promises, dots cells and ordinary NA values remain distinct in the independent fixtures. An
+empty expression vector evaluates to visible NULL; a nonempty vector retains its final expression's
+value and visibility.
+
+Nine independently authored assertions cover these paths, including five controls already passing at
+0.399. Three foundation groups and three recursive graphs preserve the selected programs and
+observed effects. Four composite causal associations across eval and withVisible do not establish
+each output independently. Sampled diagnostic messages do not establish condition classes, call
+origins, general error precedence, full promise behavior or complete evaluator equivalence. The AST,
+parser, public API, Worker protocol and resource limits are unchanged.
+
+The
+[verification record](../compatibility/platform-evidence/expression-evaluation-windows-0.400.0.json)
+binds the clean baseline, nine frozen assertions, native controls and final verification gates.
+
 ### Quoted dots projection (profile 0.399)
 
 The shared syntax-to-value projection represents a parsed `...` cell as the symbol `...`. Bounded

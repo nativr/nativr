@@ -1,0 +1,745 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-owned-expression-evaluation-verification",
+  "date": "2026-10-25",
+  "semanticProfile": "0.400.0",
+  "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+  "sourceState": "Verified uncommitted candidate over sourceCommit; exact maintained inputs are identified by final digests.",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "locale": "C",
+    "platform": "Windows x64",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "scope": "Explicit missing syntax cells and expression-vector result visibility, with sampled evaluation order and cleanup. No complete evaluator or condition-metadata claim.",
+  "provenance": {
+    "cleanRoom": "Independently authored programs and black-box observations only; no GNU R or foreign implementation bodies.",
+    "sourceHashes": [
+      {
+        "path": "compatibility/callable-domain-annotations.json",
+        "sha256": "ea559ae758a7ba64dd771fbdc30a7723d265368991630bc5e60c731b0ac46ed3"
+      },
+      {
+        "path": "compatibility/callable-domain-inventory.json",
+        "sha256": "3ece5b60393a1eb291a06a4e5205667ad245ee5d7ddc438df362ff26c8a6b5b9"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.400.0/abind.json",
+        "sha256": "0c234b3d685659352cbe40c4623ec0ce1c3d0f3ac6651db58b9a516840560ed7"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.400.0/evaluate.json",
+        "sha256": "de8d4c291d529177f391892e053b9ef459d7c7ee2aa40a0ddb7c139831337adf"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.400.0/numDeriv.json",
+        "sha256": "70945cb438355fe6b46cc2a02dc830bcb9203561938b363ce0b3ba4bc7e9e6f0"
+      },
+      {
+        "path": "compatibility/package-check-evidence/0.400.0/withr.json",
+        "sha256": "65c38c4d5ecab58d95800f38b15742427c25ca160155a55be3cd8f52558fdb43"
+      },
+      {
+        "path": "compatibility/package-check-evidence/corpus-0.400.0.json",
+        "sha256": "a3c94ef20e58d6fd6b586f12f80e202913001471e59cc5b3924dcf9dd51f5f00"
+      },
+      {
+        "path": "compatibility/package-corpus.json",
+        "sha256": "e3c3a841515f2d7d385b639e6b643ca9600afdd4afbc430b1903101c8779f073"
+      },
+      {
+        "path": "compatibility/platform-evidence/browser-windows-0.400.0.json",
+        "sha256": "8845f4993af11aefdaf25f87833fe1a3836171fbcb1694fc72bb16c4706986ba"
+      },
+      {
+        "path": "compatibility/platform-evidence/corpus-windows-0.400.0.json",
+        "sha256": "2a006fcc0cfe4d522627cd76839c286954002dac06a0b6106e1b9bdfa241b17e"
+      },
+      {
+        "path": "compatibility/status.json",
+        "sha256": "7ebafb55ed32b3621fdbf3e22797c247d7c7e2258b5dafe9cdc12918b70080c7"
+      },
+      {
+        "path": "conformance/cases/foundation.json",
+        "sha256": "3a89469759e1821ebe1d0ea0a8e9eb2cfe87a05a2abb232f97974591b298053f"
+      },
+      {
+        "path": "conformance/cases/oracle-v2.json",
+        "sha256": "101382f94583b2bf8d87771f886802d915d10b4f5374b989bd2257d849c3b94e"
+      },
+      {
+        "path": "docs/compatibility-contract.md",
+        "sha256": "2a22c51ed4c1b7a49fd5374bc526202e3271a09aa36f70f4b488964b20ca3124"
+      },
+      {
+        "path": "docs/compatibility-manifest.json",
+        "sha256": "5c7fdd9e2cabde045cdebe68451afc8807fa6ad7c89cfa76be68111064a0a7f9"
+      },
+      {
+        "path": "docs/development-continuation.md",
+        "sha256": "8a45b0e01836bcc7340cddeedd79c1fe572136086b3a514579bc427816897480"
+      },
+      {
+        "path": "docs/release-readiness.md",
+        "sha256": "e7fa2b9e09afad7959a9f172e4d9709702c7111b15625c710ac912597b1a48c4"
+      },
+      {
+        "path": "packages/nativr/src/capabilities.ts",
+        "sha256": "2c64cf0ff729017c8754356dea1c39572c7a762e9ad109f59458614a4931aea5"
+      },
+      {
+        "path": "packages/nativr/test/expression-evaluation.test.ts",
+        "sha256": "ccd0708d77652fb168636efa9a45e62861b002f78ac168d309b27429ce4d8e08"
+      },
+      {
+        "path": "packages/nativr/test/integration.test.ts",
+        "sha256": "34f5144ead92db65540c4a41c580a469d4a412b66a82a9df845b7958d730800f"
+      },
+      {
+        "path": "packages/package-tools/test/check-summary.test.ts",
+        "sha256": "5450d5188b2aad567546ffa450d8c279570a38dc07e72869511535f72645a33b"
+      },
+      {
+        "path": "packages/runtime/src/evaluator.ts",
+        "sha256": "e530f7cf3e7b52857274f82930a675c3e502b336db15ff3e2f40ccd76438f959"
+      },
+      {
+        "path": "tests/e2e/helpers/required-example-profile-cases.json",
+        "sha256": "a43e2760956dc96f2289db00f2501a71ed6da4f5c4acf211d1cf74a9db759875"
+      },
+      {
+        "path": "tests/e2e/playground.spec.ts",
+        "sha256": "51d3f319c299c3f2cb5a0a28f2fbd5307aba4251442e7d071cbd16a18283ea66"
+      }
+    ],
+    "proofFiles": [
+      {
+        "path": ".tmp/expression-missing-next/selected.json",
+        "sha256": "9848654edeef0176f5302c3b5a43d22f6564759982c7c40586a8146e840779b6"
+      },
+      {
+        "path": ".tmp/expression-missing-next/selected-native.json",
+        "sha256": "0628ac6421f009697f2496c7656758bdd88e6d634d117e4150cab18499bff116"
+      },
+      {
+        "path": ".tmp/expression-missing-next/selection-provenance.json",
+        "sha256": "a4000d71a71091ac35378d2be61319589966f99bb1741858fc22e29208649bbe"
+      },
+      {
+        "path": ".tmp/expression-missing-next/accepted.json",
+        "sha256": "5243f048815c4e7d4a7ffd19cffc45df18680a32b5bf5123f714129bbf4feacc"
+      },
+      {
+        "path": ".tmp/expression-missing-next/native-assertions.json",
+        "sha256": "e9624dca0ac79e3519910625539bd547cda0fee210705153906ae9a23973b611"
+      },
+      {
+        "path": ".tmp/expression-missing-next/native-observations.json",
+        "sha256": "f72b11f0f070a9ec8f50ef16eeca14f76485aa5c189509b000ac834e6a3df08b"
+      },
+      {
+        "path": ".tmp/expression-missing-next/runtime-baseline.json",
+        "sha256": "53663a202b364c3beffc3bdabe883e8a89071f47d1ca3af9b2d9ad4897a8bc49"
+      },
+      {
+        "path": ".tmp/expression-missing-next/run-baseline.mjs",
+        "sha256": "7e21d6a6e5e22fc060a761548cbf5aacc4475464cdcfd3d37182e8de9c1f555b"
+      },
+      {
+        "path": ".tmp/expression-missing-next/verify-baseline-inputs.mjs",
+        "sha256": "c8f7322f80b4444c5f76a1d49b97617f90e5abce79d073bece5b55d27d8806eb"
+      },
+      {
+        "path": ".tmp/expression-missing-next/audit-native-evidence.mjs",
+        "sha256": "dbc9944a6831f6e5ac429aab8a6bc3c4628676d2586b65cb7b719147db498a1f"
+      },
+      {
+        "path": ".tmp/expression-missing-next/verify-source-tests.mjs",
+        "sha256": "a89173ead107143a7cc274f495a3eca6da0b7f2f72df1b7980365d73003714d1"
+      },
+      {
+        "path": ".tmp/expression-missing-next/evidence-next/native-validation.json",
+        "sha256": "db25a9f79a4ee2c9dd4a3cc12b458401a2c5c99d63adfaa638da915960452215"
+      },
+      {
+        "path": ".tmp/expression-missing-next/evidence-next/provenance.json",
+        "sha256": "71aef4f229050e4ccc66ffc0a88fb2529d90916a928740ff9c03ce834104d782"
+      }
+    ],
+    "metadataQualification": "Native evidence used historical 0.399 capability eligibility; final 0.400 gates are recorded separately.",
+    "capabilities": {
+      "path": "docs/compatibility-manifest.json",
+      "sha256": "5c7fdd9e2cabde045cdebe68451afc8807fa6ad7c89cfa76be68111064a0a7f9"
+    }
+  },
+  "baseline": {
+    "profile": "0.399.0",
+    "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+    "cleanBefore": true,
+    "cleanAfter": true,
+    "freshSessionPerCase": true,
+    "counts": { "total": 9, "pass": 5, "mismatch": 1, "error": 3 },
+    "stableInputs": true,
+    "inputCount": 2039,
+    "harnessFailures": []
+  },
+  "acceptance": {
+    "selected": [
+      {
+        "id": "missing-expression-cell",
+        "cohort": "diagnostic",
+        "sourceSha256": "4f6f477091dc62d2a471174d2553c3d85bde8f0aff8489aa469d024f0d1d951e"
+      },
+      {
+        "id": "missing-cell-stops-sequence",
+        "cohort": "value",
+        "sourceSha256": "87032f8f777e3a057e6443d70e4c0cddf2a77c5ce3e0a6aa44da58b0862c2fe6"
+      },
+      {
+        "id": "named-missing-promise-distinction",
+        "cohort": "diagnostic",
+        "sourceSha256": "218783628e97b4d9f3eeecd27e789c61c2f6c82a6923a076a8deda76c77cdf4f"
+      },
+      {
+        "id": "ordinary-sequence-visible-final",
+        "cohort": "value",
+        "sourceSha256": "3a14df53a1d448bb2da4e33bbc24df5b88b26ad0b6dd7edfb3d2eb7b1c93c2f2"
+      },
+      {
+        "id": "ordinary-sequence-invisible-final",
+        "cohort": "value",
+        "sourceSha256": "8f1efc42f923416c81f86d7522908655296608f35ac85a1d2b9c7a331239068e"
+      },
+      {
+        "id": "empty-expression-visible-null",
+        "cohort": "value",
+        "sourceSha256": "a275ec8b52bcac9ca5595c1a87e45902908415e4f807b8940fc3072b470ff37e"
+      },
+      {
+        "id": "dots-expression-cell-distinction",
+        "cohort": "diagnostic",
+        "sourceSha256": "d900f18ebc61211f9974bf19e816772b60d9ecfd9eba31e6f0d218a8b62bceb5"
+      },
+      {
+        "id": "missing-cell-unwinds-owned-cleanup",
+        "cohort": "value",
+        "sourceSha256": "11d208c97e613b5845f9a1455f1346288681641fecceaad0516566ac30aa5a9a"
+      },
+      {
+        "id": "missing-literal-is-ordinary-value",
+        "cohort": "value",
+        "sourceSha256": "1e92de17d425d9b7ff3e159bdfa046d70229bbfe2278bc0b60328dc95566872d"
+      }
+    ],
+    "sourceTest": {
+      "cases": 9,
+      "cohorts": { "value": 6, "diagnosticMessage": 3 },
+      "exactFrozenStrings": true,
+      "strictTrueAndEmptyEffects": true,
+      "caseHashes": [
+        {
+          "id": "missing-expression-cell",
+          "cohort": "diagnostic",
+          "codeSha256": "4f6f477091dc62d2a471174d2553c3d85bde8f0aff8489aa469d024f0d1d951e"
+        },
+        {
+          "id": "missing-cell-stops-sequence",
+          "cohort": "value",
+          "codeSha256": "87032f8f777e3a057e6443d70e4c0cddf2a77c5ce3e0a6aa44da58b0862c2fe6"
+        },
+        {
+          "id": "named-missing-promise-distinction",
+          "cohort": "diagnostic",
+          "codeSha256": "218783628e97b4d9f3eeecd27e789c61c2f6c82a6923a076a8deda76c77cdf4f"
+        },
+        {
+          "id": "ordinary-sequence-visible-final",
+          "cohort": "value",
+          "codeSha256": "3a14df53a1d448bb2da4e33bbc24df5b88b26ad0b6dd7edfb3d2eb7b1c93c2f2"
+        },
+        {
+          "id": "ordinary-sequence-invisible-final",
+          "cohort": "value",
+          "codeSha256": "8f1efc42f923416c81f86d7522908655296608f35ac85a1d2b9c7a331239068e"
+        },
+        {
+          "id": "empty-expression-visible-null",
+          "cohort": "value",
+          "codeSha256": "a275ec8b52bcac9ca5595c1a87e45902908415e4f807b8940fc3072b470ff37e"
+        },
+        {
+          "id": "dots-expression-cell-distinction",
+          "cohort": "diagnostic",
+          "codeSha256": "d900f18ebc61211f9974bf19e816772b60d9ecfd9eba31e6f0d218a8b62bceb5"
+        },
+        {
+          "id": "missing-cell-unwinds-owned-cleanup",
+          "cohort": "value",
+          "codeSha256": "11d208c97e613b5845f9a1455f1346288681641fecceaad0516566ac30aa5a9a"
+        },
+        {
+          "id": "missing-literal-is-ordinary-value",
+          "cohort": "value",
+          "codeSha256": "1e92de17d425d9b7ff3e159bdfa046d70229bbfe2278bc0b60328dc95566872d"
+        }
+      ],
+      "resourceGuards": [],
+      "conditionClassesCredited": false
+    },
+    "workerTest": [
+      {
+        "id": "missing-cell-stops-sequence",
+        "profileSite": "required-155",
+        "codeSha256": "87032f8f777e3a057e6443d70e4c0cddf2a77c5ce3e0a6aa44da58b0862c2fe6",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "empty-expression-visible-null",
+        "profileSite": "required-156",
+        "codeSha256": "a275ec8b52bcac9ca5595c1a87e45902908415e4f807b8940fc3072b470ff37e",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      },
+      {
+        "id": "missing-cell-unwinds-owned-cleanup",
+        "profileSite": "required-157",
+        "codeSha256": "11d208c97e613b5845f9a1455f1346288681641fecceaad0516566ac30aa5a9a",
+        "exactFrozenExpression": true,
+        "resultExpected": true,
+        "noErrorsAssertion": true,
+        "noEvaluationNetworkAssertion": true
+      }
+    ],
+    "foundationAndRecursive": [
+      {
+        "suite": "foundation",
+        "id": "expression-missing-marker-diagnostics",
+        "codeSha256": "73c7380fefb2baa2acb24aeef79e729e04fc9031fda3faaa17fdfdc406f1dddc"
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-missing-marker-effects-cleanup",
+        "codeSha256": "f42f48c5c1479759148b50e4b1a2b292a3edbacb52227fdb6f31021ce4caf2ec"
+      },
+      {
+        "suite": "foundation",
+        "id": "expression-evaluation-visibility-and-na",
+        "codeSha256": "8a1c93cde5e6a61042e9fe862edd2b0fc198102545d0626b6f785f6b3124174d"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "expression-missing-marker-diagnostics-graph",
+        "codeSha256": "648f7a299926a9bee790fe65787c3e4db94b42603bf1daf90ed0820f2d2c38aa"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "expression-missing-marker-effects-cleanup-graph",
+        "codeSha256": "9e054944ec6d33eaf438099b776ccb8f46efdede54fef2d063a8167c9c79dd51"
+      },
+      {
+        "suite": "oracle-v2",
+        "id": "expression-evaluation-visibility-and-na-graph",
+        "codeSha256": "e2b7ab168325fcfd64f853e327bd79606571bd5418f564e9ee6d3d58a2048d20"
+      }
+    ],
+    "nativeCounts": {
+      "foundationGroupsPassed": 3,
+      "foundationAssertionsPassed": 9,
+      "valueAssertionsPassed": 6,
+      "diagnosticAssertionsPassed": 3,
+      "recursiveGroupsPassed": 3,
+      "strictControlsPassed": 8
+    },
+    "causal": [
+      {
+        "id": "expression-missing-marker-diagnostics-graph",
+        "binding": "base::eval",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "5f7b95c0f494219563ca449b6f76c4e9adcc00043433e64315b8639949344a63",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "7a13179d0a5e7b3a5e3c96342c91790b4390adb6107c5ab8b29f7ab71d5f8386",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "expression-missing-marker-effects-cleanup-graph",
+        "binding": "base::eval",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "e745a7d59d83d735728fdc87c3b0343779188a3ab91ccc9ec040c45e02caf0e7",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "d49962b64dd45b1c9ccd2b88a5fe3a92fdd94304b60737ef9684035678ae2dab",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "expression-evaluation-visibility-and-na-graph",
+        "binding": "base::eval",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "daad006ea9485847a3fef6fae9bc36e22d1f7135692efc40870e726ba1fab674",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "1b8b2877c4bfc3d6f516a096fa9cdb4752d5ea09e77da8f3378024ece49b2887",
+          "nodeCount": 1,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      },
+      {
+        "id": "expression-evaluation-visibility-and-na-graph",
+        "binding": "base::withVisible",
+        "error": {
+          "passed": true,
+          "outcome": "error",
+          "visible": false,
+          "observationSha256": "7dbc09824af1a79c096702099e9b582c421ae202b38da2ad10d28bdc7bf1623c",
+          "nodeCount": 0,
+          "conditions": 1,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        },
+        "value": {
+          "passed": true,
+          "changed": true,
+          "successful": true,
+          "outcome": "value",
+          "visible": true,
+          "observationSha256": "e9bc70911067142859d11c483edc73fa64c609c2564fcd6c6ae2771bc410b122",
+          "nodeCount": 7,
+          "conditions": 0,
+          "streamBytes": { "stdout": 0, "stderr": 0, "messages": 0 }
+        }
+      }
+    ],
+    "selection": {
+      "unchangedOriginal": 8,
+      "correctedVisibility": 1,
+      "originalNativeTrue": 8,
+      "originalNativeFalse": 1,
+      "supersededId": "empty-expression-invisible-null",
+      "replacementId": "empty-expression-visible-null",
+      "qualification": "The initial independently authored invisibility expectation was false under GNU R. Its exact original source and failed receipt are preserved; only the separately observed visible-NULL assertion receives passing credit."
+    },
+    "causalQualification": "Four composite associations across eval and withVisible have eight strict controls. These do not establish every output independently. Diagnostic assertions establish sampled messages only."
+  },
+  "verification": {
+    "focused": {
+      "passed": 45,
+      "skipped": 0,
+      "logSha256": "6cfbc11388857e1b7ef1d1d95cbc84097bbd6acd6f88fb6f4d695f5077f776ee"
+    },
+    "gates": [
+      {
+        "executable": "pnpm",
+        "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+        "finishedAt": "2026-10-25T04:35:53.3304541Z",
+        "arguments": ["check"],
+        "kind": "owned-local-gate-exit",
+        "exitCode": 0,
+        "startedAt": "2026-10-25T04:33:32.8407876Z",
+        "log": ".tmp/profile-0400-check.log",
+        "gate": "check",
+        "logSha256": "6ff7475c90a3f5ece2dcb00903d078ef3433c6db748eebc4badbee9f55bfa990",
+        "schemaVersion": 1,
+        "receiptSha256": "8ef913b9977cc41013fa7a52c17ff94474b4d24a9ab27f838849fdbb3c196fd0"
+      },
+      {
+        "log": ".tmp/profile-0400-foundation.log",
+        "startedAt": "2026-10-25T04:36:02.1673161Z",
+        "finishedAt": "2026-10-25T04:36:04.9559163Z",
+        "schemaVersion": 1,
+        "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+        "kind": "owned-local-gate-exit",
+        "arguments": ["conformance"],
+        "executable": "pnpm",
+        "logSha256": "3678395dd857bea123224b1dd4e6d93b99e9ae398273586ecda74024226084d8",
+        "exitCode": 0,
+        "gate": "foundation",
+        "receiptSha256": "8b8de833a2b6af2e5dd8ada0827f29231c2a68929ae130a22fff42b408547c68"
+      },
+      {
+        "schemaVersion": 1,
+        "executable": "pnpm",
+        "kind": "owned-local-gate-exit",
+        "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+        "log": ".tmp/profile-0400-native.log",
+        "finishedAt": "2026-10-25T04:40:50.0653447Z",
+        "logSha256": "bf031749e258013c058b47c14a156590f87a773d9fc283da9ef74d982afc3de5",
+        "arguments": ["conformance:r"],
+        "exitCode": 0,
+        "startedAt": "2026-10-25T04:36:19.2950790Z",
+        "gate": "native",
+        "receiptSha256": "a078515119560d96fddb31cf3933233b13fca52aa99abc20545c2c79b46b4ead"
+      },
+      {
+        "schemaVersion": 1,
+        "log": ".tmp/profile-0400-v2.log",
+        "finishedAt": "2026-10-25T04:42:15.0086970Z",
+        "startedAt": "2026-10-25T04:36:18.3142335Z",
+        "logSha256": "80a810a531d4a6a074e556645af3aa373287256aff870651fcc6408376521fa8",
+        "arguments": ["conformance:r:v2"],
+        "exitCode": 0,
+        "executable": "pnpm",
+        "kind": "owned-local-gate-exit",
+        "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+        "gate": "v2",
+        "receiptSha256": "97545310ad5275952dbc5ef9e5c9427d1bef891a864f7e47d33b5e4b9505bc6e"
+      },
+      {
+        "kind": "owned-local-gate-exit",
+        "executable": "pnpm",
+        "startedAt": "2026-10-25T04:36:20.5029990Z",
+        "schemaVersion": 1,
+        "gate": "e2e",
+        "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+        "logSha256": "156e2b02bd36d10388ba0dd59bceb0d4d0f95fddea98b11ba38b1434fa763660",
+        "arguments": ["test:e2e", "--workers=1", "--reporter=list,json"],
+        "finishedAt": "2026-10-25T04:38:22.9794186Z",
+        "log": ".tmp/profile-0400-e2e.log",
+        "exitCode": 0,
+        "receiptSha256": "19da6e9bbb499b0d9f49b308b21b38ba1ef7d35c66078a621cf07e9f6004f6a5"
+      },
+      {
+        "startedAt": "2026-10-25T04:36:19.2539577Z",
+        "arguments": [".tmp/run-corpus-0400.mjs", "--run"],
+        "kind": "owned-local-gate-exit",
+        "sourceCommit": "b5e6c9c1b84759c14d123991c151040263f341ec",
+        "gate": "corpus",
+        "exitCode": 0,
+        "schemaVersion": 1,
+        "logSha256": "0447b568b264fcccf58567e4592c71b6cff8468bb773181bb6aec7babdad6e4e",
+        "finishedAt": "2026-10-25T04:38:16.6700990Z",
+        "log": ".tmp/profile-0400-corpus.log",
+        "executable": "node",
+        "receiptSha256": "4c82f77ea879475c49cfa1bea452671809722dd15d6ef25b0caf8737ad9a4327"
+      }
+    ],
+    "unit": { "passed": 3591, "skipped": 96 },
+    "conformance": {
+      "foundation": 1516,
+      "native": 1443,
+      "nativeSkipped": 55,
+      "recursive": 429,
+      "linkedBindings": 175
+    },
+    "bundles": [
+      { "label": "statically loaded public client", "kib": 18.1, "limit": 150, "encoding": "gzip" },
+      { "label": "Worker JavaScript", "kib": 496.3, "limit": 512, "encoding": "gzip" },
+      { "label": "combined parser Wasm", "kib": 671.9, "limit": 1536, "encoding": "raw" },
+      { "label": "elementary-function Wasm", "kib": 311.2, "limit": 384, "encoding": "raw" }
+    ],
+    "postCorpus": {
+      "ok": true,
+      "gates": [
+        {
+          "logSha256": "17b506886c19e60f1f809590e71bfe72a9ecac37fe6d79a8cc69e6ccae221ea6",
+          "name": "checkpoint-tests",
+          "finishedAt": "2026-10-25T04:42:42.0172777Z",
+          "arguments": [
+            "exec",
+            "vitest",
+            "run",
+            "packages/package-tools/test/check-summary.test.ts"
+          ],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:42:40.8333565Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-checkpoint-tests.log"
+        },
+        {
+          "logSha256": "05840b247ea5a8f852b07b46e2efd022713e04d028774f7a2095b4dab520819b",
+          "name": "all-types",
+          "finishedAt": "2026-10-25T04:42:47.6909275Z",
+          "arguments": ["typecheck:all"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:42:42.0387201Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-all-types.log"
+        },
+        {
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "name": "checkpoint-lint",
+          "finishedAt": "2026-10-25T04:42:51.0848776Z",
+          "arguments": ["exec", "eslint", "packages/package-tools/test/check-summary.test.ts"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:42:47.6930978Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-checkpoint-lint.log"
+        },
+        {
+          "logSha256": "7a137ca65bf8a8ea795bc489a8133a09deea61f809747bb2bc519f98d0ec470d",
+          "name": "format",
+          "finishedAt": "2026-10-25T04:43:02.4985672Z",
+          "arguments": ["format:check"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:42:51.0866546Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-format.log"
+        },
+        {
+          "logSha256": "83c42b7ef10782d566de86aee1de9f838679fa72e7854c66a6486a97753f4502",
+          "name": "capabilities",
+          "finishedAt": "2026-10-25T04:43:03.1024936Z",
+          "arguments": ["capabilities:check"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:43:02.5059353Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-capabilities.log"
+        },
+        {
+          "logSha256": "f2f2abda99b7f01c46e497a0759a609fa81785b0c60410eda1f105cb1ab25668",
+          "name": "coverage",
+          "finishedAt": "2026-10-25T04:43:03.6188008Z",
+          "arguments": ["compatibility:check"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:43:03.1103388Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-coverage.log"
+        },
+        {
+          "logSha256": "183e821aa421252691804241155357795a17f4460ec288c570b46e448da4f88b",
+          "name": "inventory",
+          "finishedAt": "2026-10-25T04:43:04.4752481Z",
+          "arguments": ["inventory:check"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:43:03.6278718Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-inventory.log"
+        },
+        {
+          "logSha256": "6c5b76db0a4a6794b17644eecc80b95fee93b584706acc3c08e5823db4516e55",
+          "name": "status",
+          "finishedAt": "2026-10-25T04:43:05.3464476Z",
+          "arguments": ["status:check"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:43:04.4833446Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-status.log"
+        },
+        {
+          "logSha256": "6b3d261bfe6a07bcf679915f39a31e0f9ed49fab2b36ac517008e4fc6f5ebabc",
+          "name": "corpus",
+          "finishedAt": "2026-10-25T04:43:05.8133946Z",
+          "arguments": ["corpus:check"],
+          "exitCode": 0,
+          "startedAt": "2026-10-25T04:43:05.3564007Z",
+          "command": "pnpm",
+          "log": ".tmp/profile-0400-post-corpus.log"
+        }
+      ],
+      "schemaVersion": 1,
+      "kind": "owned-post-corpus-verification"
+    },
+    "browser": {
+      "path": "compatibility/platform-evidence/browser-windows-0.400.0.json",
+      "sha256": "8845f4993af11aefdaf25f87833fe1a3836171fbcb1694fc72bb16c4706986ba"
+    },
+    "corpus": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.400.0.json",
+      "sha256": "2a006fcc0cfe4d522627cd76839c286954002dac06a0b6106e1b9bdfa241b17e",
+      "packages": 4,
+      "observations": 49,
+      "changes": [
+        {
+          "package": "withr",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/defer.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 21,
+          "changed": ["observations", "comparisons"]
+        },
+        {
+          "package": "evaluate",
+          "tier": "P4",
+          "previousTier": "P4",
+          "firstBlocker": {
+            "tier": "P5",
+            "code": "example-execution-failed",
+            "path": "man/evaluate.Rd",
+            "message": "The NativR or native oracle evaluation did not complete; see the redacted checkpoint for capture status."
+          },
+          "observations": 7,
+          "changed": []
+        },
+        {
+          "package": "numDeriv",
+          "tier": "P6",
+          "previousTier": "P6",
+          "firstBlocker": {
+            "tier": "P7",
+            "code": "observation-mismatch",
+            "path": "tests/hessian01.R",
+            "message": "The first package-check blocker is test-output; see the redacted checkpoint for stage outcomes and repeatability."
+          },
+          "observations": 11,
+          "changed": []
+        },
+        {
+          "package": "abind",
+          "tier": "P7",
+          "previousTier": "P7",
+          "firstBlocker": null,
+          "observations": 10,
+          "changed": []
+        }
+      ]
+    },
+    "matrix": { "partialDimensions": 156, "bindings": 34 }
+  },
+  "limitations": [
+    "All thirteen required semantic domains remain unfinished.",
+    "Condition classes, call origins, general precedence, complete promise/dots behavior, source retention and full evaluator equivalence remain unverified.",
+    "Fixed-work evaluator changes preserve existing per-node checkpoints and resource limits; no native resource-limit compatibility claim.",
+    "Four cached packages are a bounded refresh. The latest full 24-package checkpoint remains 0.397; assisted-runner results remain separate from original dependency closure.",
+    "Windows correctness timings do not establish isolated performance or the complete browser/OS matrix. Linux and Formula holdout remain deferred.",
+    "No download, push, publication or remote action performed."
+  ]
+}

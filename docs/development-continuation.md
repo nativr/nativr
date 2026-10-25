@@ -2597,3 +2597,49 @@ attributes replacement, broader function coercions, cell tags, malformed constru
 parse-data and complete language equality/printing remain unfinished. Continue domain matrices,
 independently licensed datasets and isolated runner parity within the existing Linux, holdout,
 download and remote-action boundaries.
+
+### Expression-evaluation checkpoint (profile 0.400)
+
+Expression vectors now diagnose explicit missing syntax cells using the independently observed
+message. Earlier effects and owned cleanup are preserved; later expressions do not run after the
+error. Empty expression vectors return visible NULL; nonempty vectors preserve final visibility.
+Named missing promises, dots and literal NA remain distinct in the sampled controls.
+
+The
+[verification record](../compatibility/platform-evidence/expression-evaluation-windows-0.400.0.json)
+binds nine assertions to clean committed 0.399: five pass, one mismatch and three runtime errors,
+with 2,039 stable inputs and no harness failures. Eight original assertions are unchanged; one
+independently corrected native visibility expectation replaces the original failed assumption, whose
+receipt remains preserved. Nine source assertions, three foundation groups and three recursive
+graphs pass. Four composite associations across two bindings have eight strict controls; individual
+output fields, general condition metadata and full evaluator behavior are not claimed. The runtime
+change adds fixed work and preserves existing resource limits and checkpoints.
+
+- Production check: 3,591 unit tests pass, 96 opt-in tests skipped; types, lint, serial build,
+  browser audit and fixed caps pass.
+- Conformance: 1,516 checked-in, 1,443 live GNU R and 429 recursive cases pass; 55 NativR-only live
+  exclusions; 175 bindings have causal links.
+- [Browser checkpoint](../compatibility/platform-evidence/browser-windows-0.400.0.json): 12/12 pass;
+  required examples take 15.563 / 18.671 / 67.247 seconds on Chromium / Firefox / WebKit with the
+  unchanged 120-second timeout. These are advisory correctness-run timings.
+- Bundle sizes: client 18.1/150 KiB gzip; Worker 496.3/512 KiB gzip; parser 671.9/1,536 KiB raw;
+  elementary 311.2/384 KiB raw.
+- Inventory: 156 partial dimensions on 34 bindings; all thirteen domains remain incomplete.
+- Separate post-corpus checkpoint, types, lint, format and generated checks pass.
+
+The [selected corpus checkpoint](../compatibility/package-check-evidence/corpus-0.400.0.json) and
+[stable-input receipt](../compatibility/platform-evidence/corpus-windows-0.400.0.json) refresh
+evaluate, withr, abind and numDeriv: four pinned archives and 49 observations against 0.399. No
+selected package tier changed. Qualified distribution: 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. Metadata
+differences are recorded explicitly; no causal runtime improvement is inferred from them alone. The
+other twenty development/regression entries and Formula remain unchanged; the full checkpoint
+remains 0.397. Original dependency closure and assisted-runner outcomes remain separate.
+
+Next measurable work: baseline eight frozen native-backed function source-cell assertions against
+clean committed 0.400, then implement confirmed construction and propagation gaps. Native probes
+cover unforced cells, reference preservation, replacement/deletion and equality controls. Retained
+parsing and source-position generation remain separate unfinished work. General attributes
+replacement, broader function coercions, cell tags, malformed construction timing, parse-data and
+complete language equality/printing remain unfinished. Continue the full domain matrices,
+independently licensed datasets and isolated runner parity. Linux, holdout, download and
+remote-action boundaries remain in force.

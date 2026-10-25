@@ -911,19 +911,23 @@
         {
           "dimension": "side-effects",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "expression-owned-construction-evaluation-graph" }
+            { "suite": "oracle-v2", "caseId": "expression-owned-construction-evaluation-graph" },
+            { "suite": "oracle-v2", "caseId": "expression-missing-marker-effects-cleanup-graph" }
           ],
           "remainingGaps": [
-            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
+            "Sampled expression sequences stop at a missing cell after earlier effects, execute owned cleanup before the outer handler and allow subsequent evaluation. Other nonlocal control and frame interactions remain unaudited. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
           ]
         },
         {
           "dimension": "visibility",
           "evidence": [
-            { "suite": "oracle-v2", "caseId": "expression-owned-construction-evaluation-graph" }
+            { "suite": "oracle-v2", "caseId": "expression-owned-construction-evaluation-graph" },
+            { "suite": "oracle-v2", "caseId": "expression-evaluation-visibility-and-na-graph" }
           ],
           "remainingGaps": [
-            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished."
+            "Owned named expression cells run once in order in an explicit environment and retain final invisibility without assigning tags. General promise/evaluation contexts and source metadata remain unaudited. This composite association does not prove every component independently; the complete dimension remains unfinished.",
+            "Owned expression vectors preserve their final visible or invisible result; the empty vector returns visible NULL and NA_integer_ remains a value. Additional input types and context-dependent visibility remain unfinished. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
           ]
         },
         {
@@ -933,6 +937,15 @@
           ],
           "remainingGaps": [
             "Frozen owned assertions preserve nested function-body metadata through reconstruction/evaluation and distinguish outer call/list notes from the unannotated reconstructed call or closure. Arbitrary attribute orders, methods and storage combinations remain unaudited. Generic call(function, ...) construction, function-cell tags/names, malformed-shape timing, non-NULL fourth cells, retained-source propagation and parse-data remain outside this increment. This reviewed foundation reference supplies no recursive causal association for base::eval. This is sampled evidence only; the complete dimension remains unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "expression-missing-marker-diagnostics-graph" }
+          ],
+          "remainingGaps": [
+            "Exact sampled messages distinguish an explicit missing syntax cell, named missing promise and dots cell. Broader diagnostic precedence and condition metadata remain unverified. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
           ]
         }
       ]
@@ -2305,6 +2318,17 @@
       "domains": ["calls-promises"],
       "remainingGaps": [
         "Existing exact causal observations cover bounded cases; the complete behavioral matrix has not been audited or established."
+      ],
+      "matrix": [
+        {
+          "dimension": "visibility",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "expression-evaluation-visibility-and-na-graph" }
+          ],
+          "remainingGaps": [
+            "Sampled expression-evaluation results expose the observed visibility flag, including empty visible NULL and an invisible final expression. General visibility propagation through every callable and condition path remains unfinished. Composite controls do not establish each output independently. General evaluation contexts, complete promise/dots behavior, condition classes and origins, source retention and full evaluator equivalence remain unfinished."
+          ]
+        }
       ]
     },
     {

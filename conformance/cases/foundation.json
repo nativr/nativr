@@ -19738,5 +19738,26 @@
     "expected": [true, true, true, true, true, true, true, true, true],
     "expectedCompatibility": "behavioral",
     "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "expression-missing-marker-diagnostics",
+    "code": "c(\ntryCatch({eval(as.expression(list(quote(expr=))));FALSE},error=function(e){if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);TRUE}),\ntryCatch({local({f<-function(x)x;f()});FALSE},error=function(e){if(!identical(conditionMessage(e),\"argument \\\"x\\\" is missing, with no default\"))stop(e);TRUE}),\ntryCatch({eval(expression(...));FALSE},error=function(e){if(!identical(conditionMessage(e),\"'...' used in an incorrect context\"))stop(e);TRUE})\n)",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "expression-missing-marker-effects-cleanup",
+    "code": "c(\nlocal({observed<-local({events<-character();x<-as.expression(list(\n    quote({events<-c(events,\"before\");11L}),quote(expr=),quote({events<-c(events,\"after\");29L})))\n    message<-tryCatch(eval(x),error=function(e){if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);conditionMessage(e)})\n    list(events=events,message=message)});identical(observed,list(events=\"before\",message=\"argument is missing, with no default\"))}),\nlocal({observed<-local({events<-character();f<-function(){on.exit(events<<-c(events,\"cleanup\"));\n    events<<-c(events,\"entered\");eval(as.expression(list(quote(expr=))))}\n    message<-tryCatch(f(),error=function(e){if(!identical(conditionMessage(e),\"argument is missing, with no default\"))stop(e);\n      events<<-c(events,\"caught\");conditionMessage(e)})\n    recovered<-withVisible(eval(expression(31L)))\n    list(events=events,message=message,value=recovered$value,visible=recovered$visible)});identical(observed,list(events=c(\"entered\",\"cleanup\",\"caught\"),message=\"argument is missing, with no default\",value=31L,visible=TRUE))})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
+  },
+  {
+    "id": "expression-evaluation-visibility-and-na",
+    "code": "c(\nlocal({observed<-local({events<-character();result<-withVisible(eval(expression(\n    {events<-c(events,\"first\");11L},{events<-c(events,\"second\");22L})))\n    list(value=result$value,visible=result$visible,events=events)});identical(observed,list(value=22L,visible=TRUE,events=c(\"first\",\"second\")))}),\nlocal({observed<-local({result<-withVisible(eval(expression(13L,invisible(23L))));list(value=result$value,visible=result$visible)});identical(observed,list(value=23L,visible=FALSE))}),\nlocal({observed<-local({result<-withVisible(eval(expression()));list(value=result$value,visible=result$visible)});identical(observed,list(value=NULL,visible=TRUE))}),\nlocal({observed<-local({result<-withVisible(eval(expression(NA_integer_)));list(value=result$value,type=typeof(result$value),visible=result$visible)});identical(observed,list(value=NA_integer_,type=\"integer\",visible=TRUE))})\n)",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral",
+    "rOracleWithoutCallingHandlers": true
   }
 ]
