@@ -1317,7 +1317,7 @@ export function isDataFrame(value: RValue): value is RList {
   return (
     classes?.type === "character" &&
     classes.values.includes("data.frame") &&
-    rowNames?.type === "character"
+    (rowNames?.type === "character" || rowNames?.type === "integer")
   );
 }
 
@@ -1374,7 +1374,42 @@ export function dataFrameRowCount(value: RList): number {
     throw new RTypeMismatchError("NRT3007", "The value is not a data frame.");
   }
   const rowNames = value.attributes.get("row.names");
-  return rowNames?.type === "character" ? rowNames.length : 0;
+  if (
+    rowNames?.type === "integer" &&
+    rowNames.length === 2 &&
+    isMissing(rowNames, 0) &&
+    !isMissing(rowNames, 1)
+  ) {
+    return Math.abs(rowNames.values[1]!);
+  }
+  return rowNames?.type === "character" || rowNames?.type === "integer" ? rowNames.length : 0;
+}
+
+/** Read one display/matching label without changing the stored row-name representation. */
+export function dataFrameRowName(value: RList, index: number): string | undefined {
+  const names = value.attributes.get("row.names");
+  if (names?.type === "character") return isMissing(names, index) ? undefined : names.values[index];
+  if (names?.type !== "integer") return undefined;
+  if (names.length === 2 && isMissing(names, 0) && !isMissing(names, 1)) {
+    return index >= 0 && index < Math.abs(names.values[1]!) ? String(index + 1) : undefined;
+  }
+  return index >= 0 && index < names.length && !isMissing(names, index)
+    ? String(names.values[index])
+    : undefined;
+}
+
+/** Materialize labels for APIs that expose character row names, with ordinary work accounting. */
+export function dataFrameRowNames(value: RList, context: OperatorContext): RCharacterVector {
+  const names = value.attributes.get("row.names");
+  if (names?.type === "character") return names;
+  const count = dataFrameRowCount(value);
+  context.allocate(count);
+  return characterVector(
+    Array.from({ length: count }, (_, index) => {
+      context.checkpoint();
+      return dataFrameRowName(value, index) ?? String(index + 1);
+    }),
+  );
 }
 
 /** Read stored textual names; callers requiring NA identity inspect the names attribute mask. */
@@ -1473,7 +1508,16 @@ export function withAttribute<T extends RAttributedSequence>(
   return {
     ...value,
     attributes,
-    ...(value.type === "list" && name === "row.names" ? { automaticRowNames: false } : {}),
+    ...(value.type === "list" && name === "row.names"
+      ? {
+          automaticRowNames:
+            attribute.type === "integer" &&
+            attribute.length === 2 &&
+            isMissing(attribute, 0) &&
+            !isMissing(attribute, 1) &&
+            attribute.values[1]! <= 0,
+        }
+      : {}),
   };
 }
 

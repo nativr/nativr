@@ -1728,6 +1728,26 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  await page
+    .locator("#source")
+    .fill(
+      'local({sf<-srcfilecopy("owned.R","17L + 29L",timestamp=0,isFile=FALSE);p<-parse(text="17L + 29L",srcfile=sf,keep.source=TRUE);d<-utils::getParseData(p);identical(names(d),c("line1","col1","line2","col2","id","parent","token","terminal","text"))&&identical(class(d),"data.frame")&&identical(d$id,c(7L,1L,2L,3L,4L,5L))&&identical(d$parent,c(0L,2L,7L,7L,5L,7L))&&identical(d$text,c("","17L","","+","29L",""))&&identical(attr(d,"srcfile"),sf)&&identical(attr(d,"row.names"),d$id)})',
+    );
+  await profiledRun(page, "required-168");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill(
+      'local({sf<-srcfilecopy("owned.R",c("alpha","beta"),timestamp=0,isFile=FALSE);a<-new.env(parent=emptyenv());a$original<-sf;a$filename<-"alias.R";a$lines<-"alias lines";class(a)<-c("srcfilealias","srcfile");identical(getSrcLines(a,1L,9L),c("alpha","beta"))})',
+    );
+  await profiledRun(page, "required-169");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

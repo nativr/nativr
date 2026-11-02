@@ -49,6 +49,7 @@ it.each([
   "0.401.0",
   "0.402.0",
   "0.403.0",
+  "0.404.0",
 ])("pins checkpoint %s without evaluating the holdout", async (profile) => {
   const read = async (path: string) =>
     JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
@@ -76,9 +77,16 @@ it.each([
   }[];
   const expectedNames = ["0.395.0", "0.396.0"].includes(profile)
     ? ["evaluate", "withr"]
-    : ["0.394.0", "0.398.0", "0.399.0", "0.400.0", "0.401.0", "0.402.0", "0.403.0"].includes(
-          profile,
-        )
+    : [
+          "0.394.0",
+          "0.398.0",
+          "0.399.0",
+          "0.400.0",
+          "0.401.0",
+          "0.402.0",
+          "0.403.0",
+          "0.404.0",
+        ].includes(profile)
       ? ["evaluate", "withr", "abind", "numDeriv"]
       : ["0.381.0", "0.383.0"].includes(profile)
         ? ["prettyunits"]
@@ -110,6 +118,7 @@ it.each([
       "0.401.0",
       "0.402.0",
       "0.403.0",
+      "0.404.0",
     ].includes(profile)
   ) {
     expect(checkpoint.scope).toBe("selected-development-and-regression");

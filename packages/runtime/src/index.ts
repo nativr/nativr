@@ -110,6 +110,8 @@ export {
   characterLiteralValue,
   complexVector,
   dataFrameRowCount,
+  dataFrameRowName,
+  dataFrameRowNames,
   dataFrameValue,
   doubleVector,
   expressionValue,

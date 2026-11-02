@@ -4,14 +4,14 @@
   "warning": "Name overlap is an inventory metric only. It is not evidence of behavioral compatibility.",
   "totals": {
     "referenceCoreCallableNames": 2522,
-    "nativrRegisteredNames": 823,
-    "overlappingNames": 796,
-    "missingReferenceNames": 1726,
+    "nativrRegisteredNames": 825,
+    "overlappingNames": 798,
+    "missingReferenceNames": 1724,
     "nativrExtensionNames": 27,
-    "nameCoverage": 0.315623
+    "nameCoverage": 0.316416
   },
   "byPackage": [
-    { "package": "base", "callableNames": 1367, "overlappingNames": 602, "nameCoverage": 0.44038 },
+    { "package": "base", "callableNames": 1367, "overlappingNames": 603, "nameCoverage": 0.441112 },
     { "package": "stats", "callableNames": 464, "overlappingNames": 76, "nameCoverage": 0.163793 },
     {
       "package": "methods",
@@ -19,7 +19,7 @@
       "overlappingNames": 14,
       "nameCoverage": 0.066986
     },
-    { "package": "utils", "callableNames": 262, "overlappingNames": 41, "nameCoverage": 0.156489 },
+    { "package": "utils", "callableNames": 262, "overlappingNames": 42, "nameCoverage": 0.160305 },
     {
       "package": "grDevices",
       "callableNames": 135,
@@ -365,7 +365,9 @@
     "getLoadedDLLs",
     "getNamespaceExports",
     "getOption",
+    "getParseData",
     "getRversion",
+    "getSrcLines",
     "getwd",
     "gl",
     "glob2rx",
@@ -1673,14 +1675,12 @@
     "getNamespaceVersion",
     "getNativeSymbolInfo",
     "getPackageName",
-    "getParseData",
     "getParseText",
     "getRefClass",
     "getS3method",
     "getSlots",
     "getSrcDirectory",
     "getSrcFilename",
-    "getSrcLines",
     "getSrcLocation",
     "getSrcref",
     "getTaskCallbackNames",

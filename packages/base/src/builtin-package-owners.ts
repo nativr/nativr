@@ -71,6 +71,7 @@ export const BUILTIN_PACKAGE_OWNERS: Readonly<Record<string, string>> = {
   formula: "stats",
   frequency: "stats",
   getFromNamespace: "utils",
+  getParseData: "utils",
   glob2rx: "utils",
   globalVariables: "utils",
   "graphics.off": "grDevices",

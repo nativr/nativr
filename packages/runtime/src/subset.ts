@@ -9,6 +9,7 @@ import {
   characterVector,
   complexVector,
   dataFrameRowCount,
+  dataFrameRowNames,
   dataFrameValue,
   doubleVector,
   expressionValue,
@@ -1093,13 +1094,9 @@ function coordinateMatrixSelection(
   }
 
   const rows = indexDimensions[0] ?? 0;
-  const rowNamesValue = dataFrame ? target.attributes.get("row.names") : undefined;
   const dimNames = dataFrame
     ? {
-        axes: [
-          rowNamesValue?.type === "character" ? rowNamesValue.values : undefined,
-          vectorNames(target),
-        ],
+        axes: [dataFrameRowNames(target, context).values, vectorNames(target)],
       }
     : arrayDimensionNames(target, dimensions);
   const positions: SelectedIndex[] = [];
@@ -1349,7 +1346,7 @@ function subsetDataFrame(
   context: OperatorContext,
 ): RVector {
   const rowNamesValue = target.attributes.get("row.names");
-  const rowNames = rowNamesValue?.type === "character" ? rowNamesValue.values : undefined;
+  const rowNames = dataFrameRowNames(target, context).values;
   const selectedRows = resolveAxisIndices(dataFrameRowCount(target), rowIndex, rowNames);
   const selectedColumns = resolveAxisIndices(target.length, columnIndex, vectorNames(target));
   if (selectedColumns.some((position) => position === undefined)) {
@@ -1378,7 +1375,14 @@ function subsetDataFrame(
   const outputRowNames = selectedRows.map((position, index) =>
     position === undefined ? `NA${index + 1}` : (rowNames?.[position] ?? String(position + 1)),
   );
-  const output = dataFrameValue(columns, columnNames, outputRowNames);
+  let output = dataFrameValue(columns, columnNames, outputRowNames);
+  if (
+    rowNamesValue?.type === "integer" &&
+    selectedRows.every((position) => position !== undefined) &&
+    new Set(outputRowNames).size === outputRowNames.length
+  ) {
+    output = withAttribute(output, "row.names", integerVector(outputRowNames.map(Number)));
+  }
   return classes === undefined ? output : withClasses(output, classes);
 }
 
@@ -1498,11 +1502,7 @@ function replaceDataFrameSubset(
       "Data-frame rectangular replacement requires a non-empty atomic or list value.",
     );
   }
-  const rowNamesValue = target.attributes.get("row.names");
-  const existingRowNames =
-    rowNamesValue?.type === "character"
-      ? rowNamesValue.values
-      : Array.from({ length: dataFrameRowCount(target) }, (_, position) => String(position + 1));
+  const existingRowNames = dataFrameRowNames(target, context).values;
   const rowSelection = resolveDataFrameRows(dataFrameRowCount(target), existingRowNames, rowIndex);
   const columnSelection = resolveReplacementSelection(target, columnIndex);
   if (
@@ -1585,7 +1585,13 @@ function replaceDataFrameSubset(
   }
   const output = cloneList(target, values, columnNames);
   const attributes = new Map(output.attributes);
-  attributes.set("row.names", characterVector(rowSelection.names ?? existingRowNames));
+  const storedRows = target.attributes.get("row.names");
+  attributes.set(
+    "row.names",
+    storedRows?.type === "integer" && rowSelection.resultLength === dataFrameRowCount(target)
+      ? storedRows
+      : characterVector(rowSelection.names ?? existingRowNames),
+  );
   return { ...output, attributes };
 }
 

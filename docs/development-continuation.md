@@ -2800,3 +2800,33 @@ artifacts remain unchanged throughout the native and NativR baseline runs. This 
 evidence, with no new compatibility credit. The
 [implementation plan](superpowers/plans/2026-11-02-source-accessors.md) records exact observed
 requirements, the preserved fixture correction and the remaining matrix work before implementation.
+
+### Source metadata accessor semantic checkpoint — 2026-11-02 (0.404)
+
+The [semantic record](../compatibility/platform-evidence/source-accessors-windows-0.404.0.json)
+preserves the eleven original failing-baseline assertions separately from later adjuncts. Seven
+foundation groups cover 36 assertions; eight independent raw graphs have sixteen strict native
+controls. Only the two accessors receive new binding associations. Four independent review findings
+were reproduced and fixed with regression tests: missing masks, strict text controls, compact row
+names and duplicate IDs. A later resource correction distinguishes per-vector admission from the
+cumulative allocation budget. Valid table buffers fit individually; repeated construction is
+bounded, with cancellation and same-session recovery checks.
+
+Production check: 3,989 unit tests pass and 96 opt-in tests skip. Conformance: 1,551 checked-in,
+1,478 live native and 457 recursive cases pass; 55 NativR-only exclusions; 178 causal-linked
+bindings. Source/artifact stability is recorded during execution, and earlier attempts remain
+separate. The Worker is 506.9/512 KiB gzip; client 18.3/150 KiB gzip.
+
+The [four-package refresh](../compatibility/package-check-evidence/corpus-0.404.0.json) validates 49
+observations against the resource-reviewed 0.403 checkpoint. Observations and tiers are unchanged:
+evaluate P4, withr P4, abind P7 and numDeriv P6. The full 24-package checkpoint remains 0.397;
+Formula and original dependency-closure rules remain intact.
+
+Browser launch failed for all twelve attempts because the pinned binaries are missing. Two accessor
+Worker programs are authored but unexecuted; the last passing browser checkpoint remains 0.402.
+Download approval is pending. No browser timing, CI, packaging or Linux result is added.
+
+Next measurable work: mutable double-matrix metadata, exact malformed-coordinate/error-call behavior
+and file encoding parity; the reproduced shared duplicate-row-label selection defect; missing
+row.names and rowSums. Continue the remaining domain matrices, full corpus refresh, independently
+licensed datasets and isolated runner parity. All thirteen domains remain incomplete.

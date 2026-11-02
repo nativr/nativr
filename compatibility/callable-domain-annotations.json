@@ -13374,6 +13374,128 @@
         "Window boundaries, sampling frequency, extension/recycling, replacement, multivariate shapes, metadata and diagnostics require binding-specific evidence.",
         "This public-purpose classification adds no implementation, registration or behavioral evidence. The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished."
       ]
+    },
+    {
+      "binding": "base::getSrcLines",
+      "domains": ["language-syntax", "io-platform"],
+      "remainingGaps": [
+        "The complete source/connection, encoding, error-call, visibility, mutation and identity matrix remains unfinished; no blanket browser exclusion is claimed."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-line-range-graph" }],
+          "remainingGaps": ["General source classes and connection routes remain unaudited."]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            { "suite": "foundation", "caseId": "source-accessors-line-ranges-and-laziness" }
+          ],
+          "remainingGaps": ["Complete invalid-range and coercion boundaries remain unfinished."]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-line-attributes-graph" }],
+          "remainingGaps": [
+            "Further classes, encoding marks and malformed source attributes require evidence."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-line-range-graph" }],
+          "remainingGaps": ["Only ordinary visible returns are observed."]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            { "suite": "foundation", "caseId": "source-accessors-text-active-and-file-boundaries" }
+          ],
+          "remainingGaps": [
+            "Only sampled active reads, laziness and session-memory file access are observed."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-line-alias-graph" }],
+          "remainingGaps": [
+            "Nested aliases and complete mutation/identity interactions remain unfinished."
+          ]
+        }
+      ]
+    },
+    {
+      "binding": "utils::getParseData",
+      "domains": ["language-syntax", "vector-semantics"],
+      "remainingGaps": [
+        "The complete mutable metadata, source-selector, encoding, error-call and identity matrix remains unfinished; double-matrix input and malformed-coordinate parity need further work."
+      ],
+      "matrix": [
+        {
+          "dimension": "ordinary",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-default-table-graph" }],
+          "remainingGaps": [
+            "Source selectors beyond the observed expression, closure and source-file cases need evidence."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "evidence": [
+            { "suite": "oracle-v2", "caseId": "source-accessor-empty-table-graph" },
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-missingness-controls-and-row-identity"
+            }
+          ],
+          "remainingGaps": [
+            "The complete empty, missing and mutable metadata matrix remains unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-missingness-controls-and-row-identity"
+            }
+          ],
+          "remainingGaps": [
+            "Only selected row-ID diagnostics and forcing are asserted; exact calls and the complete condition matrix remain unfinished."
+          ]
+        },
+        {
+          "dimension": "attributes",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-full-table-graph" }],
+          "remainingGaps": [
+            "All table/source attributes and encoded character representations are not established."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-default-table-graph" }],
+          "remainingGaps": ["Only sampled visible values are observed."]
+        },
+        {
+          "dimension": "side-effects",
+          "evidence": [
+            { "suite": "foundation", "caseId": "source-accessors-text-active-and-file-boundaries" },
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-missingness-controls-and-row-identity"
+            }
+          ],
+          "remainingGaps": [
+            "Only selected active reads, lazy controls and validation ordering are observed."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "evidence": [{ "suite": "oracle-v2", "caseId": "source-accessor-alias-table-graph" }],
+          "remainingGaps": [
+            "Complete alias and function-source mutation interactions remain unfinished."
+          ]
+        }
+      ]
     }
   ]
 }

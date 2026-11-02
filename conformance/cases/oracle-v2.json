@@ -3648,5 +3648,117 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "source-accessor-default-table-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);list(table=getParseData(p),source=sf)})",
+    "bindingEvidence": ["utils::getParseData"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-full-table-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);list(table=getParseData(p,TRUE),source=sf)})",
+    "bindingEvidence": ["utils::getParseData"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-none-table-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);list(table=getParseData(p,FALSE),source=sf)})",
+    "bindingEvidence": ["utils::getParseData"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-empty-table-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",\"\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=\"\",srcfile=sf,keep.source=TRUE);list(table=getParseData(p,TRUE),source=sf)})",
+    "bindingEvidence": ["utils::getParseData"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-alias-table-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",c('#line 41 \"alias.R\"',\"17L + 29L\"),timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=c('#line 41 \"alias.R\"',\"17L + 29L\"),srcfile=sf,keep.source=TRUE);alias<-attr(p,\"srcfile\");list(table=getParseData(p,TRUE),alias=alias,original=sf)})",
+    "bindingEvidence": ["utils::getParseData"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-line-range-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",c(\"alpha\",\"beta\",\"gamma\"),timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";list(lines=getSrcLines(sf,2L,9L),source=sf)})",
+    "bindingEvidence": ["base::getSrcLines"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-line-alias-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",c(\"alpha\",\"beta\",\"gamma\"),timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";alias<-new.env(parent=emptyenv());alias$original<-sf;alias$filename<-\"alias.R\";alias$lines<-\"alias-local lines\";class(alias)<-c(\"srcfilealias\",\"srcfile\");list(lines=getSrcLines(alias,1L,9L),alias=alias,original=sf)})",
+    "bindingEvidence": ["base::getSrcLines"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "source-accessor-line-attributes-graph",
+    "policy": "exact",
+    "code": "local({sf<-srcfilecopy(\"owned-raw.R\",c(\"alpha\",\"beta\",\"gamma\"),timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";sf$lines<-structure(c(\"alpha\",\"beta\",\"gamma\"),names=c(\"a\",\"b\",\"c\"),owned=17L);list(lines=getSrcLines(sf,2L,3L),source=sf)})",
+    "bindingEvidence": ["base::getSrcLines"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

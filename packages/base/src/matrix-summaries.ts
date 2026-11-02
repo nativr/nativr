@@ -6,6 +6,7 @@ import {
   characterVector,
   complexVector,
   dataFrameRowCount,
+  dataFrameRowNames,
   doubleVector,
   isDataFrame,
   isFactor,
@@ -77,7 +78,7 @@ async function builtinMatrixSummary(
   const { matched } = await matchBuiltinArguments(invocation, ["x", "na.rm", "dims"]);
   const inputArgument = requiredArgument(matched.get("x"), call);
   const value = await invocation.force(inputArgument.promise);
-  const input = columnSummaryInput(value);
+  const input = columnSummaryInput(value, invocation);
   const removeMissing = await logicalFlag(invocation, matched.get("na.rm"), "na.rm", false, call);
   const dimensions = await dimensionCount(
     invocation,
@@ -181,8 +182,8 @@ async function dimensionCount(
   return dimensions;
 }
 
-function columnSummaryInput(value: RValue): ColumnSummaryInput {
-  if (isDataFrame(value)) return dataFrameSummaryInput(value);
+function columnSummaryInput(value: RValue, invocation: BuiltinInvocation): ColumnSummaryInput {
+  if (isDataFrame(value)) return dataFrameSummaryInput(value, invocation);
   if (
     (value.type !== "logical" &&
       value.type !== "integer" &&
@@ -216,7 +217,7 @@ function columnSummaryInput(value: RValue): ColumnSummaryInput {
   };
 }
 
-function dataFrameSummaryInput(value: RList): ColumnSummaryInput {
+function dataFrameSummaryInput(value: RList, invocation: BuiltinInvocation): ColumnSummaryInput {
   const rows = dataFrameRowCount(value);
   const columns = value.values.map((column) => {
     if (
@@ -232,7 +233,7 @@ function dataFrameSummaryInput(value: RList): ColumnSummaryInput {
     return column;
   });
   const names = vectorNames(value);
-  const rowNames = value.attributes.get("row.names");
+  const rowNames = dataFrameRowNames(value, invocation.context);
   return {
     dimensions: [rows, columns.length],
     complex: columns.some((column) => column.type === "complex"),

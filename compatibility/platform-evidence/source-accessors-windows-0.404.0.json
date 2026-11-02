@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-source-accessor-semantic-checkpoint",
+  "date": "2026-11-02",
+  "semanticProfile": "0.404.0",
+  "sourceCommit": "98ec42522747383dfb5fdd2080e2e44c55ed8226",
+  "sourceState": "verified uncommitted semantic candidate followed by explicit metadata/documentation persistence",
+  "semanticGatesPassed": true,
+  "fullIncrementVerified": false,
+  "releaseReady": false,
+  "gates": {
+    "check": {
+      "schemaVersion": 1,
+      "gate": "check",
+      "attempt": "per-buffer-reservation",
+      "profile": "0.404.0",
+      "sourceCommit": "98ec42522747383dfb5fdd2080e2e44c55ed8226",
+      "startedAt": "2026-11-02T21:46:19.996Z",
+      "finishedAt": "2026-11-02T21:48:13.308Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/source-accessor-0404-check-per-buffer-reservation-before.json",
+        "sha256": "694e8e905b20d9917fcf0981943b5b7f6a9209df51067198ab6d826f2ec5d19b"
+      },
+      "after": {
+        "path": ".tmp/source-accessor-0404-check-per-buffer-reservation-after.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "log": {
+        "path": ".tmp/source-accessor-0404-check-per-buffer-reservation.log",
+        "sha256": "fae0d2257aba3541b62e50fd5b272393fc11c8755cd48bcab2894a670d70ac39"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/source-accessor-0404-check-per-buffer-reservation.json",
+        "sha256": "5ba1aec1d65c6e15f9538bd1b977f015e015528a6c734f12a0fa9707e740a627"
+      }
+    },
+    "foundation": {
+      "schemaVersion": 1,
+      "gate": "foundation",
+      "attempt": "per-buffer-reservation",
+      "profile": "0.404.0",
+      "sourceCommit": "98ec42522747383dfb5fdd2080e2e44c55ed8226",
+      "startedAt": "2026-11-02T21:49:43.990Z",
+      "finishedAt": "2026-11-02T21:49:47.013Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/source-accessor-0404-foundation-per-buffer-reservation-before.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "after": {
+        "path": ".tmp/source-accessor-0404-foundation-per-buffer-reservation-after.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "log": {
+        "path": ".tmp/source-accessor-0404-foundation-per-buffer-reservation.log",
+        "sha256": "1a275243e1d23de5740a82613b35e4a2ca44b31196a8b0bae6f5b042ebce3031"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/source-accessor-0404-foundation-per-buffer-reservation.json",
+        "sha256": "3c53fa0c6c721d94043d44d377c30df954f678346a8bfcf29a46a4b757702ace"
+      }
+    },
+    "native": {
+      "schemaVersion": 1,
+      "gate": "native",
+      "attempt": "per-buffer-reservation",
+      "profile": "0.404.0",
+      "sourceCommit": "98ec42522747383dfb5fdd2080e2e44c55ed8226",
+      "startedAt": "2026-11-02T21:49:46.424Z",
+      "finishedAt": "2026-11-02T21:53:11.131Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/source-accessor-0404-native-per-buffer-reservation-before.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "after": {
+        "path": ".tmp/source-accessor-0404-native-per-buffer-reservation-after.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "log": {
+        "path": ".tmp/source-accessor-0404-native-per-buffer-reservation.log",
+        "sha256": "d66d5d588c005c1295e0901fa17508eed63a422302efbb4ce87eb0a932b7ca5c"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/source-accessor-0404-native-per-buffer-reservation.json",
+        "sha256": "83a9289b346aa5f9714e8848816dcc76c8f66b15791b3f1f70cc99e904496816"
+      }
+    },
+    "v2": {
+      "schemaVersion": 1,
+      "gate": "v2",
+      "attempt": "per-buffer-reservation",
+      "profile": "0.404.0",
+      "sourceCommit": "98ec42522747383dfb5fdd2080e2e44c55ed8226",
+      "startedAt": "2026-11-02T21:49:46.331Z",
+      "finishedAt": "2026-11-02T21:54:40.614Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/source-accessor-0404-v2-per-buffer-reservation-before.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "after": {
+        "path": ".tmp/source-accessor-0404-v2-per-buffer-reservation-after.json",
+        "sha256": "8e3202eb0495f8dfa491131269045c54c71f7c6b3c649c04ef8e445e38a19a9b"
+      },
+      "log": {
+        "path": ".tmp/source-accessor-0404-v2-per-buffer-reservation.log",
+        "sha256": "d2cd9034806e04819eafa52f0100466832f3be989140ddafe99aa18e6e09d556"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/source-accessor-0404-v2-per-buffer-reservation.json",
+        "sha256": "4e8bdc125c14962ce7961757f8aacf46cc41015edb3d6e5562586dfcb8da9c7c"
+      }
+    }
+  },
+  "counts": {
+    "unitPassed": 3989,
+    "unitSkipped": 96,
+    "foundation": 1551,
+    "native": 1478,
+    "nativrOnlyExcluded": 55,
+    "recursive": 457,
+    "recursiveLinkedBindings": 178,
+    "newFoundationGroups": 7,
+    "newAssertions": 36,
+    "newRawGraphs": 8,
+    "newStrictNativeControls": 16,
+    "focusedAccessorTests": 43
+  },
+  "nativeEvidence": {
+    "validation": {
+      "path": ".tmp/source-accessor-evidence-next/native-validation.json",
+      "sha256": "aebd69da9a22fee6a010905cdd66d110390afed91057fc4fb865a60a302767a3"
+    },
+    "audit": {
+      "path": ".tmp/source-accessor-evidence-next/final-evidence-audit.json",
+      "sha256": "2cabbf69a80841a3727e24b794f08821c6cd15568d5e6881c1e056cd4d7100f3"
+    },
+    "canonicalFoundation": {
+      "path": "conformance/cases/foundation.json",
+      "sha256": "0d44953145758b20967ef9c7f715bb8dc17751b9c222004b4c1f8ee877063e87"
+    },
+    "canonicalRecursive": {
+      "path": "conformance/cases/oracle-v2.json",
+      "sha256": "e64c5bdd971fcf039bd53f5a3efb5f4b8a18a2ee29a376123dfe42ff5725d83c"
+    },
+    "originalFailingBaseline": {
+      "path": "compatibility/platform-evidence/source-accessors-baseline-0.403.0.json",
+      "sha256": "82a9f4603b0f19a3811304ab12365aec8961b45cddca55176d9dff712c313b43"
+    },
+    "originalAssertionsUnchanged": 11,
+    "newRawBaselineCredit": false,
+    "qualification": "Proposed binding eligibility was rechecked against the final generated manifest; formatting-only test-file edits are not backdated into native snapshots."
+  },
+  "review": {
+    "independentReviewBeforeFixes": true,
+    "reReviewed": false,
+    "findings": 4,
+    "allFindingsReproducedAndFixed": true,
+    "regressionCases": 10,
+    "resolved": [
+      "missing numeric/text/token/terminal masks retained through ordering",
+      "strict logical TRUE text reconstruction and lazy invalid-ID validation",
+      "both compact row-name signs and automatic/explicit distinction",
+      "duplicate parse IDs warn then fail before forcing controls"
+    ],
+    "rootResourceCorrection": {
+      "perVectorAndCumulativeBudgetsDistinguished": true,
+      "redTests": 2,
+      "focusedTests": 43,
+      "qualification": "Earlier aggregate reservation rejected valid tables. Per-buffer reservation now admits the owned 80-row case under vector limit1024; repeated construction hits cumulative NRL4003 with source/recovery checks."
+    }
+  },
+  "browser": {
+    "status": "unexecuted-missing-pinned-browsers",
+    "downloadApproval": "requested-awaiting-user",
+    "attempt": {
+      "path": ".tmp/source-accessor-0404-e2e-per-buffer-reservation.json",
+      "sha256": "a123ca9fbd65351ccbaf827bc624ad186f0af74f23e74811167460d75b67cf31"
+    },
+    "inventory": {
+      "path": ".tmp/source-accessor-0404-browser-inventory.json",
+      "sha256": "e2bc929698c23ad2e211314a5a3bc03bee258eb1c8b98d1760bdb4d1e6764a1b"
+    },
+    "launchFailures": 12,
+    "authoredAccessorWorkerCases": 2,
+    "workerSites": 169,
+    "workerSamples": 170,
+    "lastPassingProfile": "0.402.0",
+    "qualification": "All twelve attempts failed before browser launch. No Worker body or new source-accessor case is claimed to have executed."
+  },
+  "corpus": {
+    "checkpoint": {
+      "path": "compatibility/package-check-evidence/corpus-0.404.0.json",
+      "sha256": "f6365692a41c1c4adaa682399c75b0cf58c5ae19a604fe581b1b15458eeac864"
+    },
+    "receipt": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.404.0.json",
+      "sha256": "920029b2bc2460a856c105a042865923591fe4ae7bec672866933de6fa4ddf11"
+    },
+    "packages": 4,
+    "observations": 49,
+    "tiersChanged": false,
+    "observationsChanged": false,
+    "fullCorpusProfile": "0.397.0",
+    "originalDependencyClosure": true,
+    "holdoutUntouched": true
+  },
+  "bundles": {
+    "clientGzipKiB": 18.3,
+    "workerGzipKiB": 506.9,
+    "parserRawKiB": 671.9,
+    "elementaryRawKiB": 311.2
+  },
+  "preservedEarlierAttempts": [
+    {
+      "path": ".tmp/source-accessor-0404-check-first.json",
+      "sha256": "cafac808bd886ac3297e72cb6184c4138ae04ce80a475d037de8f3884f895bd9"
+    },
+    {
+      "path": ".tmp/source-accessor-0404-check-ownership-corrected.json",
+      "sha256": "04d8cf424219471335ce1e39527066493284520b1e6e053a8e4bae78e2a41b22"
+    },
+    {
+      "path": ".tmp/source-accessor-0404-foundation-first.json",
+      "sha256": "cbd76d3d8fd1438a25aab8d8f5dc64bfc93187d04403c1ca8f400cda360d86c1"
+    },
+    {
+      "path": ".tmp/source-accessor-0404-native-first.json",
+      "sha256": "ddbeca69add4e2507b6f89af46ce9ea9c40a2c8653201ea717c8123633ce0395"
+    },
+    {
+      "path": ".tmp/source-accessor-0404-v2-first.json",
+      "sha256": "da2c19729250f7bb47d4448588f02026ea3848f6443d349c34b74e1ec37ce577"
+    },
+    {
+      "path": ".tmp/profile-0404-final-packages/index.json",
+      "sha256": "2aa73226c455658c9076886dc69c96bb5cd9c0e62a4cecc2e203dfe18bf1385f"
+    }
+  ],
+  "qualifications": [
+    "The execution-time gate snapshots precede corpus persistence, checkpoint tests and final documentation; separate post-metadata verification is required.",
+    "No source/public API/protocol change follows those consuming gates. Browser verification remains open.",
+    "The full mutable double-matrix, encoded-source/file adapter and exact error-call/malformed-coordinate matrix remains unfinished.",
+    "The pre-existing duplicate-row-label selection gap, missing row.names and rowSums remain queued; no added callable-count completion credit is claimed.",
+    "No packaging change or new packaging smoke result is claimed. Windows is advisory; Linux and Formula gates remain deferred. All thirteen domains and all five overall completion criteria remain unfinished."
+  ]
+}

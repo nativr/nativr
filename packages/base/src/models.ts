@@ -6,6 +6,7 @@ import {
   characterVector,
   createEnvironment,
   dataFrameRowCount,
+  dataFrameRowName,
   dataFrameValue,
   doubleVector,
   factorLevels,
@@ -1948,6 +1949,12 @@ function modelRowNames(
   if (data !== undefined && isDataFrame(data)) {
     const rowNames = data.attributes.get("row.names");
     if (rowNames?.type === "character" && rowNames.length === rows) return rowNames.values;
+    if (rowNames?.type === "integer" && dataFrameRowCount(data) === rows) {
+      return Array.from(
+        { length: rows },
+        (_, index) => dataFrameRowName(data, index) ?? String(index + 1),
+      );
+    }
   }
   const names = response === undefined ? undefined : vectorNames(response);
   return names ?? Array.from({ length: rows }, (_, index) => String(index + 1));

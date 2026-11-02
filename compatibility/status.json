@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.403.0",
-  "capabilityManifestHash": "ee7ef89bd5e83a4b86db0399c05814a13033fd8fcaa8593f561552a88728517e",
+  "semanticProfileVersion": "0.404.0",
+  "capabilityManifestHash": "e1dd0b9b63ee63ad1975004d6d56b6409917a77061817de64f03ad5cde93fb16",
   "evidence": {
-    "checkedInConformanceCases": 1544,
-    "liveREligibleCases": 1471,
+    "checkedInConformanceCases": 1551,
+    "liveREligibleCases": 1478,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 449,
-    "recursiveBehaviorallyProvenBindings": 176,
+    "recursiveOracleV2Cases": 457,
+    "recursiveBehaviorallyProvenBindings": 178,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -331,6 +331,14 @@
       {
         "binding": "base::getOption",
         "cases": ["partial-argument-warning-handler-controls-and-muffling"]
+      },
+      {
+        "binding": "base::getSrcLines",
+        "cases": [
+          "source-accessor-line-alias-graph",
+          "source-accessor-line-attributes-graph",
+          "source-accessor-line-range-graph"
+        ]
       },
       {
         "binding": "base::identical",
@@ -984,6 +992,16 @@
       },
       { "binding": "stats::setNames", "cases": ["names-replacement-coercion-and-metadata"] },
       {
+        "binding": "utils::getParseData",
+        "cases": [
+          "source-accessor-alias-table-graph",
+          "source-accessor-default-table-graph",
+          "source-accessor-empty-table-graph",
+          "source-accessor-full-table-graph",
+          "source-accessor-none-table-graph"
+        ]
+      },
+      {
         "binding": "utils::person",
         "cases": [
           "partial-argument-warning-builtins-and-match-call",
@@ -996,23 +1014,23 @@
   },
   "nameInventory": {
     "referenceVersion": "R version 4.6.1 (2026-06-24 ucrt)",
-    "registeredBindings": 823,
-    "gnuRNameOverlaps": 796,
+    "registeredBindings": 825,
+    "gnuRNameOverlaps": 798,
     "referenceCoreCallableNames": 2522
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "c481d23dc7b34a32d8444f885218179f9fcd33d7b3ca87c9ef0ba64b62350e7c",
+    "sha256": "7f4e93155efa6dcc1ed9747d9cfa00d3e74a5e6720c50102704a23c037718d04",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 823,
-    "qualifiedOverlaps": 795,
+    "registeredBindings": 825,
+    "qualifiedOverlaps": 797,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 1353,
-    "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 176,
-    "bindingsWithDeclaredMatrixEvidence": 36,
+    "classifiedBindings": 1355,
+    "classificationPendingBindings": 1198,
+    "recursiveLinkedBindings": 178,
+    "bindingsWithDeclaredMatrixEvidence": 38,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,
     "note": "Qualified bindings use exact package and name identity. Classification and causal links are declarations, not completed compatibility. All thirteen domain matrices remain incomplete."

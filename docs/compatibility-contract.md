@@ -38,6 +38,28 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Source metadata accessors (profile 0.404, browser verification pending)
+
+`utils::getParseData` exposes the sampled retained metadata as source-ordered data frames, with
+integer row IDs, shared source identity, missing-value masks and the observed default/TRUE/FALSE
+text selection. Full text reconstructs sampled multiline, tab and explicitly UTF-8 positions.
+`base::getSrcLines` covers sampled copied sources, aliases, line ranges and session-memory files.
+Reversed ranges preserve source laziness; the tested active bindings retain their observed reads.
+Shared data-frame operations recognize explicit and compact integer row names without converting the
+stored row-ID type merely to obtain display labels.
+
+The original eleven native-TRUE assertions retain their committed failing baseline. Separate
+adjuncts, review regressions and eight raw graphs do not inherit that baseline credit. Recursive
+associations are limited to the two accessors. These observations do not establish complete
+accessor, mutable metadata, encoding, file-adapter or error-call behavior. In particular, mutable
+double-matrix metadata, exact malformed-coordinate diagnostics, full file encoding conversion and
+the pre-existing duplicate-row-label selection gap remain unfinished. Resource guards cover
+allocation, alias cycles, cancellation and same-session recovery without claiming GNU R's resource
+policy or timed Worker responsiveness. The production check, all three conformance suites and four
+affected cached-package checks pass. Browser execution remains blocked by missing pinned binaries;
+download approval is pending. See the
+[semantic checkpoint](../compatibility/platform-evidence/source-accessors-windows-0.404.0.json).
+
 ### Retained text parsing (profile 0.403, browser verification pending)
 
 The text route of `parse` retains root and block source references and the structural fourth

@@ -1,5 +1,6 @@
 import { ExtendedSum } from "./extended-sum.js";
 import { retainParsedSource } from "./retained-source.js";
+import { builtinGetParseData, builtinGetSrcLines } from "./source-accessors.js";
 import { selectRanks } from "./selection.js";
 import { BUILTIN_PACKAGE_OWNERS } from "./builtin-package-owners.js";
 import {
@@ -37,6 +38,8 @@ import {
   createMissingPromise,
   createPromise,
   dataFrameRowCount,
+  dataFrameRowName,
+  dataFrameRowNames,
   dataFrameValue,
   decodeRBase64Resource,
   decodeRSerialization,
@@ -2230,6 +2233,26 @@ export const baseBuiltins: readonly BuiltinDefinition[] = [
     ["file", "n", "text", "prompt", "keep.source", "srcfile", "encoding"],
     "behavioral",
     builtinParse,
+  ),
+  withBuiltinFormals(
+    defineBuiltin("getSrcLines", ["srcfile", "first", "last"], "behavioral", builtinGetSrcLines),
+    [{ name: "srcfile" }, { name: "first" }, { name: "last" }],
+  ),
+  withBuiltinFormals(
+    definePackageBuiltin(
+      "utils",
+      "getParseData",
+      ["x", "includeText"],
+      "behavioral",
+      builtinGetParseData,
+    ),
+    [
+      { name: "x" },
+      {
+        name: "includeText",
+        defaultValue: { kind: "MissingLiteral", declaredType: "logical", span: SYNTHETIC_SPAN },
+      },
+    ],
   ),
   withBuiltinFormals(
     defineBuiltin(
@@ -18864,7 +18887,7 @@ function transformSource(
 
   if (isDataFrame(input)) {
     const rowCount = dataFrameRowCount(input);
-    const rowNames = input.attributes.get("row.names");
+    const rowNames = dataFrameRowNames(input, invocation.context);
     return {
       columns: input.values.map((column) => {
         if (!isVector(column)) {
@@ -25774,7 +25797,7 @@ async function builtinIsNa(invocation: BuiltinInvocation): Promise<RValue> {
         }
       }
       invocation.context.allocate(output.length);
-      const rowNames = input.attributes.get("row.names") ?? R_NULL;
+      const rowNames = dataFrameRowNames(input, invocation.context);
       const columnNames = characterVector(
         vectorNames(input) ?? Array.from({ length: input.length }, (_, index) => `V${index + 1}`),
       );
@@ -27773,7 +27796,7 @@ async function builtinAxisNames(
     );
   }
   if (isDataFrame(value)) {
-    if (axis === "row") return value.attributes.get("row.names") ?? R_NULL;
+    if (axis === "row") return dataFrameRowNames(value, invocation.context);
     const names = vectorNames(value);
     return names === undefined ? R_NULL : characterVector(names);
   }
@@ -33329,7 +33352,10 @@ function writeTableStoredRowNames(value: RList, rowCount: number): readonly stri
   const rowNames = value.attributes.get("row.names");
   return rowNames?.type === "character" && rowNames.length === rowCount
     ? rowNames.values
-    : Array.from({ length: rowCount }, (_unused, index) => String(index + 1));
+    : Array.from(
+        { length: rowCount },
+        (_unused, index) => dataFrameRowName(value, index) ?? String(index + 1),
+      );
 }
 
 function writeTableRowNames(
@@ -35879,11 +35905,10 @@ function printedDecimalCoefficient(value: number, places: number): bigint {
 function formatPrintedDataFrame(value: RList, options: PrintOptions): string {
   const names = vectorNames(value) ?? value.values.map((_, index) => `V${index + 1}`);
   const rowCount = dataFrameRowCount(value);
-  const rowNamesValue = value.attributes.get("row.names");
-  const rowNames =
-    rowNamesValue?.type === "character"
-      ? rowNamesValue.values
-      : Array.from({ length: rowCount }, (_, index) => String(index + 1));
+  const rowNames = Array.from(
+    { length: rowCount },
+    (_, index) => dataFrameRowName(value, index) ?? String(index + 1),
+  );
   const columns = value.values.map((column) =>
     isAtomic(column)
       ? Array.from({ length: rowCount }, (_, row) => printedAtom(column, row, options, false))
@@ -48450,13 +48475,12 @@ async function builtinAsMatrix(invocation: BuiltinInvocation): Promise<RValue> {
     }
     invocation.context.allocate(cells.length);
     const matrix = withDimensions(atomicCells(cells, invocation), [rows, value.length]);
-    const rowNames = value.attributes.get("row.names");
     const columnNames = vectorNames(value);
     return withAttribute(
       matrix,
       "dimnames",
       listValue([
-        value.automaticRowNames || rowNames?.type !== "character" ? R_NULL : rowNames,
+        value.automaticRowNames ? R_NULL : dataFrameRowNames(value, invocation.context),
         columnNames === undefined ? R_NULL : characterVector(columnNames),
       ]),
     );
@@ -48938,8 +48962,7 @@ function transposeDataFrame(input: RList, invocation: BuiltinInvocation): RVecto
   let output: RVector = withDimensions(atomicCells(cells, invocation), [columns.length, rowCount]);
   const columnNames =
     vectorNames(input) ?? Array.from({ length: columns.length }, (_, index) => `X${index + 1}`);
-  const rowNamesValue = input.attributes.get("row.names");
-  const rowNames = rowNamesValue?.type === "character" ? rowNamesValue.values : undefined;
+  const rowNames = dataFrameRowNames(input, invocation.context).values;
   const explicitRowNames =
     rowNames?.every((name, index) => name === String(index + 1)) === true ? undefined : rowNames;
   output = withAttribute(
@@ -50923,7 +50946,7 @@ function naOmitDataFrame(input: RList, invocation: BuiltinInvocation): RVector {
     false,
     invocation.context,
   );
-  const rowNames = input.attributes.get("row.names");
+  const rowNames = dataFrameRowNames(input, invocation.context);
   return withAttribute(
     output,
     "na.action",
@@ -51821,8 +51844,7 @@ function scaleDataFrameMatrix(input: RList, invocation: BuiltinInvocation): Scal
   let value: NumericVector = withDimensions(atomic, [rows, columns.length]);
   const columnNames =
     vectorNames(input) ?? Array.from({ length: columns.length }, (_, index) => `X${index + 1}`);
-  const rowNamesValue = input.attributes.get("row.names");
-  const rowNames = rowNamesValue?.type === "character" ? rowNamesValue.values : undefined;
+  const rowNames = dataFrameRowNames(input, invocation.context).values;
   const explicitRowNames =
     rowNames?.every((name, index) => name === String(index + 1)) === true ? undefined : rowNames;
   value = withAttribute(
@@ -54364,11 +54386,7 @@ async function builtinView(invocation: BuiltinInvocation): Promise<RValue> {
         }`
       : viewTitle(await invocation.force(titleArgument.promise));
   const names = vectorNames(frame) ?? frame.values.map((_, index) => `V${index + 1}`);
-  const rowNamesValue = frame.attributes.get("row.names");
-  const rowNames =
-    rowNamesValue?.type === "character"
-      ? [...rowNamesValue.values]
-      : Array.from({ length: rows }, (_, index) => String(index + 1));
+  const rowNames = [...dataFrameRowNames(frame, invocation.context).values];
   const defaultRowNames = rowNames.every((name, index) => name === String(index + 1));
   invocation.context.allocate(rows * frame.length);
   invocation.context.writeDataView({

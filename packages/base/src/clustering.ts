@@ -4,6 +4,7 @@ import {
   R_NULL,
   characterVector,
   dataFrameRowCount,
+  dataFrameRowNames as rowNameVector,
   doubleVector,
   factorLevels,
   integerVector,
@@ -200,7 +201,7 @@ function numericMatrix(
     if (coercionWarning) {
       invocation.context.warn({ code: "NRW1006", message: "NAs introduced by coercion" });
     }
-    const rowNames = dataFrameRowNames(value);
+    const rowNames = rowNameVector(value, invocation.context).values;
     const columnNames = vectorNames(value);
     return {
       values: output,
@@ -268,13 +269,6 @@ function numericText(value: string): number {
   if (value.trim() === "") return Number.NaN;
   const result = Number(value);
   return Number.isFinite(result) ? result : Number.NaN;
-}
-
-function dataFrameRowNames(value: RList): readonly string[] | undefined {
-  const rowNames = value.attributes.get("row.names");
-  return rowNames?.type === "character" && rowNames.missing === undefined
-    ? rowNames.values
-    : undefined;
 }
 
 function matrixDimensionNames(value: RVector): {

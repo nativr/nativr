@@ -3,19 +3,19 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.403.0",
+  "semanticProfileVersion": "0.404.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "74bcf4be7b423908243db18ae99122c83db1b35c11f4bb1fb9cfba1934317c4b",
+    "capabilities": "cd75331897b2f71c632ec0e66665980e604e3378e4b435850a29562ccde3caf3",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "c592af2221377babde7f4e95bba3f7746d8d5d305ad275839cbe9f55034c2ad7",
-    "oracleV2": "67906fea41aabf790c36c887de6c608c3c258495eed14f19d7b61570f58f5dfb",
+    "foundation": "0d44953145758b20967ef9c7f715bb8dc17751b9c222004b4c1f8ee877063e87",
+    "oracleV2": "e64c5bdd971fcf039bd53f5a3efb5f4b8a18a2ee29a376123dfe42ff5725d83c",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
-    "annotations": "e61f62e00d9e6606b8fb9aa51b4c84381332029a05e8d44d08c7578c2aef6d5a"
+    "annotations": "619be31f972f793745ee9fefad6fed5ade3c9a20f9de0a6e237d4895106f4b72"
   },
   "requiredBehavioralDimensions": [
     "ordinary",
@@ -47,13 +47,13 @@
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
-    "registeredBindings": 823,
-    "qualifiedOverlaps": 795,
+    "registeredBindings": 825,
+    "qualifiedOverlaps": 797,
     "registeredOutsideExportSnapshot": 28,
-    "classifiedBindings": 1353,
-    "classificationPendingBindings": 1200,
-    "recursiveLinkedBindings": 176,
-    "bindingsWithDeclaredMatrixEvidence": 36,
+    "classifiedBindings": 1355,
+    "classificationPendingBindings": 1198,
+    "recursiveLinkedBindings": 178,
+    "bindingsWithDeclaredMatrixEvidence": 38,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
   },
@@ -63,43 +63,43 @@
       "label": "Language syntax",
       "requirement": "Every GNU R expression and assignment form normalizes without losing semantics.",
       "completion": "incomplete",
-      "assignedBindings": 30,
-      "recursiveLinkedBindings": 11,
+      "assignedBindings": 32,
+      "recursiveLinkedBindings": 13,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 27,
-          "partialDeclaredBindings": 3
+          "partialDeclaredBindings": 5
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 27,
-          "partialDeclaredBindings": 3
+          "partialDeclaredBindings": 5
         },
         {
           "dimension": "errors",
-          "pendingBindings": 28,
-          "partialDeclaredBindings": 2
+          "pendingBindings": 29,
+          "partialDeclaredBindings": 3
         },
         {
           "dimension": "attributes",
           "pendingBindings": 28,
-          "partialDeclaredBindings": 2
+          "partialDeclaredBindings": 4
         },
         {
           "dimension": "visibility",
           "pendingBindings": 30,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 2
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 27,
-          "partialDeclaredBindings": 3
+          "partialDeclaredBindings": 5
         },
         {
           "dimension": "identity",
           "pendingBindings": 29,
-          "partialDeclaredBindings": 1
+          "partialDeclaredBindings": 3
         }
       ]
     },
@@ -243,43 +243,43 @@
       "label": "Vector semantics",
       "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type.",
       "completion": "incomplete",
-      "assignedBindings": 420,
-      "recursiveLinkedBindings": 66,
+      "assignedBindings": 421,
+      "recursiveLinkedBindings": 67,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 405,
-          "partialDeclaredBindings": 15
+          "partialDeclaredBindings": 16
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 408,
-          "partialDeclaredBindings": 12
+          "partialDeclaredBindings": 13
         },
         {
           "dimension": "errors",
           "pendingBindings": 411,
-          "partialDeclaredBindings": 9
+          "partialDeclaredBindings": 10
         },
         {
           "dimension": "attributes",
           "pendingBindings": 406,
-          "partialDeclaredBindings": 14
+          "partialDeclaredBindings": 15
         },
         {
           "dimension": "visibility",
           "pendingBindings": 413,
-          "partialDeclaredBindings": 7
+          "partialDeclaredBindings": 8
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 412,
-          "partialDeclaredBindings": 8
+          "partialDeclaredBindings": 9
         },
         {
           "dimension": "identity",
           "pendingBindings": 411,
-          "partialDeclaredBindings": 9
+          "partialDeclaredBindings": 10
         }
       ]
     },
@@ -513,43 +513,43 @@
       "label": "I/O and platform",
       "requirement": "Files, URLs, compression, processes, environment variables, capabilities, and browser-safe host adapters.",
       "completion": "incomplete",
-      "assignedBindings": 211,
-      "recursiveLinkedBindings": 9,
+      "assignedBindings": 212,
+      "recursiveLinkedBindings": 10,
       "matrix": [
         {
           "dimension": "ordinary",
           "pendingBindings": 211,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "boundaries",
           "pendingBindings": 211,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "errors",
-          "pendingBindings": 211,
+          "pendingBindings": 212,
           "partialDeclaredBindings": 0
         },
         {
           "dimension": "attributes",
           "pendingBindings": 211,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "visibility",
           "pendingBindings": 211,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "side-effects",
           "pendingBindings": 211,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         },
         {
           "dimension": "identity",
           "pendingBindings": 211,
-          "partialDeclaredBindings": 0
+          "partialDeclaredBindings": 1
         }
       ]
     },
@@ -13039,11 +13039,96 @@
         "type": "closure",
         "formals": ["srcfile", "first", "last"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["io-platform", "language-syntax"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "source-accessor-line-alias-graph",
+        "source-accessor-line-attributes-graph",
+        "source-accessor-line-range-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-line-attributes-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Further classes, encoding marks and malformed source attributes require evidence."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-line-ranges-and-laziness"
+            }
+          ],
+          "remainingGaps": ["Complete invalid-range and coercion boundaries remain unfinished."]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-line-alias-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Nested aliases and complete mutation/identity interactions remain unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-line-range-graph"
+            }
+          ],
+          "remainingGaps": ["General source classes and connection routes remain unaudited."]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-text-active-and-file-boundaries"
+            }
+          ],
+          "remainingGaps": [
+            "Only sampled active reads, laziness and session-memory file access are observed."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-line-range-graph"
+            }
+          ],
+          "remainingGaps": ["Only ordinary visible returns are observed."]
+        }
+      ],
+      "remainingGaps": [
+        "The complete source/connection, encoding, error-call, visibility, mutation and identity matrix remains unfinished; no blanket browser exclusion is claimed."
+      ]
     },
     {
       "binding": "base::getTaskCallbackNames",
@@ -43329,11 +43414,123 @@
         "type": "closure",
         "formals": ["x", "includeText"]
       },
-      "runtime": null,
-      "classification": {
-        "status": "pending"
+      "runtime": {
+        "compatibility": "behavioral"
       },
-      "completion": "incomplete"
+      "classification": {
+        "status": "assigned",
+        "domains": ["language-syntax", "vector-semantics"]
+      },
+      "completion": "incomplete",
+      "recursiveCaseIds": [
+        "source-accessor-alias-table-graph",
+        "source-accessor-default-table-graph",
+        "source-accessor-empty-table-graph",
+        "source-accessor-full-table-graph",
+        "source-accessor-none-table-graph"
+      ],
+      "matrix": [
+        {
+          "dimension": "attributes",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-full-table-graph"
+            }
+          ],
+          "remainingGaps": [
+            "All table/source attributes and encoded character representations are not established."
+          ]
+        },
+        {
+          "dimension": "boundaries",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-missingness-controls-and-row-identity"
+            },
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-empty-table-graph"
+            }
+          ],
+          "remainingGaps": [
+            "The complete empty, missing and mutable metadata matrix remains unfinished."
+          ]
+        },
+        {
+          "dimension": "errors",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-missingness-controls-and-row-identity"
+            }
+          ],
+          "remainingGaps": [
+            "Only selected row-ID diagnostics and forcing are asserted; exact calls and the complete condition matrix remain unfinished."
+          ]
+        },
+        {
+          "dimension": "identity",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-alias-table-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Complete alias and function-source mutation interactions remain unfinished."
+          ]
+        },
+        {
+          "dimension": "ordinary",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-default-table-graph"
+            }
+          ],
+          "remainingGaps": [
+            "Source selectors beyond the observed expression, closure and source-file cases need evidence."
+          ]
+        },
+        {
+          "dimension": "side-effects",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-missingness-controls-and-row-identity"
+            },
+            {
+              "suite": "foundation",
+              "caseId": "source-accessors-text-active-and-file-boundaries"
+            }
+          ],
+          "remainingGaps": [
+            "Only selected active reads, lazy controls and validation ordering are observed."
+          ]
+        },
+        {
+          "dimension": "visibility",
+          "status": "partial-declared",
+          "evidence": [
+            {
+              "suite": "oracle-v2",
+              "caseId": "source-accessor-default-table-graph"
+            }
+          ],
+          "remainingGaps": ["Only sampled visible values are observed."]
+        }
+      ],
+      "remainingGaps": [
+        "The complete mutable metadata, source-selector, encoding, error-call and identity matrix remains unfinished; double-matrix input and malformed-coordinate parity need further work."
+      ]
     },
     {
       "binding": "utils::getParseText",

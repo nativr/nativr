@@ -130,3 +130,26 @@ continuation/readiness documentation and digest-bound platform/package records.
 
 Completion of these tasks does not supersede the five overall completion criteria or the remaining
 thirteen-domain work. Continue the roadmap after this increment.
+
+## Execution record — semantic checkpoint 0.404
+
+The
+[verified semantic record](../../../compatibility/platform-evidence/source-accessors-windows-0.404.0.json)
+records the completed bounded implementation and keeps browser execution open. Production check:
+3,989 unit tests pass, 96 skip. Foundation/native/recursive suites pass 1,551 / 1,478 / 457 cases.
+Four cached packages preserve 49 observations and their preceding tiers. The original eleven
+assertions remain unchanged; separate adjuncts and raw graphs receive no inherited baseline credit.
+
+Independent review found missing masks, truthy text controls, positive compact row names and
+duplicate IDs. All four were reproduced and fixed with regression tests. Root additionally corrected
+allocation reservation so individually valid buffers are admitted while repeated table construction
+reaches the cumulative budget. The 43 focused tests include alias limits, cancellation, admission,
+exhaustion and same-session recovery.
+
+Scope rulings: file-backed encoding, double-matrix acceptance and exact malformed-coordinate/error
+provenance remain explicit unfinished work. The reproduced duplicate-row-selection label defect also
+affects preceding character-row-name frames and remains a shared primitive gap. Missing `row.names`
+and `rowSums` remain queued. Treating these as complete would produce incorrect results; neither
+this checkpoint nor its partial domain declarations do so. The browser attempt failed before launch
+because all pinned engines are missing. Two accessor Worker cases are authored but unexecuted, and
+download approval remains pending. No full-plan or overall completion is claimed.
