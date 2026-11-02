@@ -348,7 +348,15 @@ const retainedSourceBoundaries = [
 
 it.each(retainedSourceBoundaries)("parse source-retention boundary: $id", async ({ code }) => {
   await runtime.reset();
-  await expect(runtime.eval(code)).rejects.toMatchObject({ code: "NRU6134" });
+  // Exact wrapper independently verified against GNU R 4.6.1 before upgrading the old guards.
+  const result = await runtime.evalDetailed(
+    `local({p<-(${code});identical(names(attributes(p)),c("srcref","srcfile","wholeSrcref"))&&identical(as.integer(attr(p,"srcref")[[1L]]),c(1L,1L,1L,2L,1L,2L,1L,1L))&&is.environment(attr(p,"srcfile"))&&identical(eval(p),7L)})`,
+  );
+  expect(result.value).toBe(true);
+  expect(result.visible).toBe(true);
+  expect(result.warnings).toEqual([]);
+  expect(result.output).toEqual([]);
+  expect(result.topLevelErrors).toEqual([]);
 });
 
 // NativR-only resource/recovery guard: n=0 must not skip a forced control or its checkpoints.

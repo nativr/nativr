@@ -16074,5 +16074,101 @@
     "code": "c(\nlocal({owner<-new.env(parent=emptyenv());owner$marker<-17L;returned<-structure(c(first=\"one\",second=\"two\"),note=\"owned\",class=\"owned_return\",owner=owner);assign(\"as.character.owned_lines\",function(x,...)returned,envir=.GlobalEnv);on.exit(rm(\"as.character.owned_lines\",envir=.GlobalEnv));sf<-srcfilecopy(\"owned.R\",structure(\"plain\",class=\"owned_lines\"),timestamp=0,isFile=FALSE);owner$marker<-29L;identical(sf$lines,returned)&&identical(names(sf$lines),c(\"first\",\"second\"))&&identical(attr(sf$lines,\"note\"),\"owned\")&&identical(class(sf$lines),\"owned_return\")&&identical(attr(sf$lines,\"owner\"),owner)&&identical(attr(sf$lines,\"owner\")$marker,29L)&&identical(sf$fixedNewlines,TRUE)}),\nlocal({assign(\"as.character.owned_lines\",function(x,...)structure(17L,note=\"owned\"),envir=.GlobalEnv);on.exit(rm(\"as.character.owned_lines\",envir=.GlobalEnv));a<-srcfilecopy(\"owned.R\",structure(\"plain\",class=\"owned_lines\"),timestamp=0,isFile=FALSE);assign(\"as.character.owned_lines\",function(x,...)NULL,envir=.GlobalEnv);b<-srcfilecopy(\"owned.R\",structure(\"plain\",class=\"owned_lines\"),timestamp=0,isFile=FALSE);events<-0L;assign(\"as.character.owned_lines\",function(x,...){events<<-events+1L;if(events==1L)\"plain\"else 29L},envir=.GlobalEnv);d<-srcfilecopy(\"owned.R\",structure(17L,class=\"owned_lines\"),timestamp=0,isFile=FALSE);identical(a$lines,structure(17L,note=\"owned\"))&&is.null(b$lines)&&identical(d$lines,29L)&&identical(events,2L)&&identical(a$fixedNewlines,TRUE)&&identical(b$fixedNewlines,TRUE)}),\nlocal({events<-character();assign(\"as.character.owned_lines\",function(x,...){events<<-c(events,\"source\");structure(17L,note=\"owned\",class=\"owned_return\")},envir=.GlobalEnv);assign(\"as.character.owned_return\",function(x,...){events<<-c(events,\"return\");\"recoerced\\nvalue\"},envir=.GlobalEnv);on.exit(rm(list=c(\"as.character.owned_lines\",\"as.character.owned_return\"),envir=.GlobalEnv));a<-srcfilecopy(\"owned.R\",structure(\"raw\\nvalue\",class=\"owned_lines\"),timestamp=0,isFile=FALSE);firstEvents<-events;events<-character();assign(\"as.character.owned_lines\",function(x,...){events<<-c(events,\"source\");structure(\"original\\nreturn\",note=\"owned\",class=\"owned_return\")},envir=.GlobalEnv);b<-srcfilecopy(\"owned.R\",structure(\"raw\\nvalue\",class=\"owned_lines\"),timestamp=0,isFile=FALSE);identical(a$lines,c(\"recoerced\",\"value\"))&&identical(firstEvents,c(\"source\",\"return\"))&&identical(b$lines,c(\"original\",\"return\"))&&identical(events,\"source\")&&is.null(attributes(a$lines))&&is.null(attributes(b$lines))})\n)",
     "expected": [true, true, true],
     "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-root-and-empty",
+    "code": "c(\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));stopifnot(identical(getOption(\"keep.parse.data\"),TRUE));p<-parse(text=\"17L + 29L\",keep.source=TRUE);sf<-attr(p,\"srcfile\");pd<-sf$parseData;identical(names(attributes(p)),c(\"srcref\",\"srcfile\",\"wholeSrcref\"))&&identical(as.integer(attr(p,\"srcref\")[[1L]]),c(1L,1L,1L,9L,1L,9L,1L,1L))&&identical(as.integer(attr(p,\"wholeSrcref\")),c(1L,0L,2L,0L,0L,0L,1L,2L))&&identical(class(sf),c(\"srcfilecopy\",\"srcfile\"))&&identical(sf$filename,\"<text>\")&&identical(sf$lines,\"17L + 29L\")&&identical(parent.env(sf),emptyenv())&&identical(class(pd),\"parseData\")&&identical(dim(pd),c(8L,6L))&&identical(as.integer(pd),c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,7L,1L,5L,1L,5L,1L,43L,3L,7L,1L,7L,1L,9L,1L,261L,4L,5L,1L,7L,1L,9L,0L,79L,5L,7L,1L,1L,1L,9L,0L,79L,7L,0L))&&identical(attr(pd,\"tokens\"),c(\"NUM_CONST\",\"expr\",\"'+'\",\"NUM_CONST\",\"expr\",\"expr\"))&&identical(attr(pd,\"text\"),c(\"17L\",\"\",\"+\",\"29L\",\"\",\"\"))&&identical(eval(p),46L)}),\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));a<-parse(text=\"\",keep.source=TRUE);b<-parse(text=character(),keep.source=TRUE);d<-parse(text=\"17L\",n=0L,keep.source=TRUE);identical(length(a),0L)&&identical(names(attributes(a)),c(\"srcref\",\"srcfile\",\"wholeSrcref\"))&&identical(attr(a,\"srcref\"),list())&&identical(as.integer(attr(a,\"wholeSrcref\")),c(1L,0L,2L,0L,0L,0L,1L,2L))&&identical(dim(attr(a,\"srcfile\")$parseData),c(8L,0L))&&is.null(attributes(b))&&is.null(attributes(d))})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-block-and-function",
+    "code": "c(\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));text<-c(\"{\",\"  17L; {29L; 31L}\",\"  37L\",\"}\");sf<-srcfilecopy(\"owned.R\",text,timestamp=0,isFile=FALSE);p<-parse(text=text,keep.source=TRUE,srcfile=sf);b<-p[[1L]];inner<-b[[3L]];outerRefs<-lapply(attr(b,\"srcref\"),as.integer);innerRefs<-lapply(attr(inner,\"srcref\"),as.integer);identical(outerRefs,list(c(1L,1L,1L,1L,1L,1L,1L,1L),c(2L,3L,2L,5L,3L,5L,2L,2L),c(2L,8L,2L,17L,8L,17L,2L,2L),c(3L,3L,3L,5L,3L,5L,3L,3L)))&&identical(innerRefs,list(c(2L,8L,2L,8L,8L,8L,2L,2L),c(2L,9L,2L,11L,9L,11L,2L,2L),c(2L,14L,2L,16L,14L,16L,2L,2L)))&&identical(as.integer(attr(inner,\"wholeSrcref\")),c(1L,0L,2L,17L,0L,17L,1L,2L))&&identical(attr(inner,\"srcfile\"),sf)&&identical(attr(b,\"srcfile\"),sf)&&identical(eval(p),37L)}),\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));text<-c(\"function(x = 1L) {\",\"  x + 2L\",\"}\");sf<-srcfilecopy(\"owned.R\",text,timestamp=0,isFile=FALSE);p<-parse(text=text,keep.source=TRUE,srcfile=sf);q<-p[[1L]];f<-eval(as.call(as.list(q)));sf$marker<-71L;identical(as.integer(q[[4L]]),c(1L,1L,3L,1L,1L,1L,1L,3L))&&identical(class(q[[4L]]),\"srcref\")&&identical(attr(q[[4L]],\"srcfile\"),sf)&&identical(names(attributes(f)),\"srcref\")&&identical(attr(f,\"srcref\"),q[[4L]],ignore.srcref=FALSE)&&identical(attr(body(f),\"srcfile\"),sf)&&identical(attr(attr(f,\"srcref\"),\"srcfile\")$marker,71L)&&identical(body(f),q[[3L]],ignore.srcref=FALSE)&&identical(f(),3L)})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-coordinates-and-alias",
+    "code": "c(\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));text<-c(paste0('\"',intToUtf8(c(233L,128512L)),'\"; 17L'),paste0('\t\"',intToUtf8(233L),'\";29L'));sf<-srcfilecopy(\"owned.R\",text,timestamp=0,isFile=FALSE);p<-parse(text=text,keep.source=TRUE,srcfile=sf,encoding=\"UTF-8\");identical(lapply(attr(p,\"srcref\"),as.integer),list(c(1L,1L,1L,8L,1L,4L,1L,1L),c(1L,11L,1L,13L,7L,9L,1L,1L),c(2L,2L,2L,5L,9L,11L,2L,2L),c(2L,7L,2L,9L,13L,15L,2L,2L)))&&identical(eval(p),29L)}),\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));text<-c('#line 41 \"owned-mapped.R\"',' 17L','29L');sf<-srcfilecopy(\"owned.R\",text,timestamp=0,isFile=FALSE);p<-parse(text=text,keep.source=TRUE,srcfile=sf);alias<-attr(p,\"srcfile\");r<-attr(p,\"srcref\");identical(lapply(r,as.integer),list(c(41L,2L,41L,4L,2L,4L,2L,2L),c(42L,1L,42L,3L,1L,3L,3L,3L)))&&identical(as.integer(attr(p,\"wholeSrcref\")),c(1L,0L,43L,0L,0L,0L,1L,4L))&&identical(class(alias),c(\"srcfilealias\",\"srcfile\"))&&identical(alias$filename,\"owned-mapped.R\")&&identical(alias$original,sf)&&identical(attr(r[[1L]],\"srcfile\"),alias)&&identical(attr(r[[2L]],\"srcfile\"),alias)&&identical(eval(p),29L)}),\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));text<-c(\"17L\\n29L\",\"31L\\n\",\"37L\");sf<-srcfilecopy(\"owned.R\",text,timestamp=0,isFile=FALSE);before<-sf$lines;p<-parse(text=text,keep.source=TRUE,srcfile=sf);identical(before,c(\"17L\",\"29L\",\"31L\",\"\",\"37L\"))&&identical(sf$lines,before)&&identical(sf$fixedNewlines,TRUE)&&identical(lapply(attr(p,\"srcref\"),as.integer),list(c(1L,1L,1L,3L,1L,3L,1L,1L),c(2L,1L,2L,3L,1L,3L,2L,2L),c(3L,1L,3L,3L,1L,3L,3L,3L),c(5L,1L,5L,3L,1L,3L,5L,5L)))&&identical(eval(p),37L)})\n)",
+    "expected": [true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-finite-consumption",
+    "code": "c(\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));sf<-srcfilecopy(\"owned.R\",c(\"17L  ; 29L\",\"31L\"),timestamp=0,isFile=FALSE);p<-parse(text=c(\"17L  ; 29L\",\"31L\"),n=1L,keep.source=TRUE,srcfile=sf);q<-parse(text=c(\"17L\",\"29L +\"),n=1L,keep.source=TRUE);identical(length(p),1L)&&identical(as.integer(attr(p,\"wholeSrcref\")),c(1L,0L,1L,6L,0L,6L,1L,1L))&&identical(as.integer(attr(q,\"wholeSrcref\")),c(1L,0L,2L,0L,0L,0L,1L,2L))&&identical(attr(sf$parseData,\"tokens\"),c(\"NUM_CONST\",\"expr\",\"';'\"))&&identical(eval(p),17L)&&identical(eval(q),17L)})\n)",
+    "expected": true,
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-source-selection",
+    "code": "c(\nlocal({old<-options(keep.source=FALSE);on.exit(options(old));options(keep.parse.data=FALSE);sf<-srcfilecopy(\"owned.R\",\"different source lines\",timestamp=0,isFile=FALSE);sf$parseData<-71L;a<-parse(text=\"17L\",keep.source=FALSE,srcfile=sf);b<-parse(text=\"17L\",keep.source=TRUE,srcfile=NULL);d<-parse(text=\"17L\",keep.source=TRUE,srcfile=\"owned-string.R\");identical(attr(a,\"srcfile\"),sf)&&identical(sf$lines,\"different source lines\")&&identical(sf$parseData,71L)&&is.null(attributes(b))&&is.null(attributes(d))&&identical(eval(a),17L)})\n)",
+    "expected": true,
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-error-state",
+    "code": "c(\nlocal({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=TRUE);on.exit(options(old));text<-c(\"17L\", \"29L +\");sf<-srcfilecopy(\"owned.R\",c(\"caller owned lines\"),timestamp=0,isFile=FALSE);sf$parseData<-71L;caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists(\"parseData\",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,\"tokens\"),text=attr(pd,\"text\"),class=class(pd))});identical(observed,list(error=list(classes=c(\"simpleError\",\"error\",\"condition\"),message=\"owned.R:3:0: unexpected end of input\\n1: 17L\\n2: 29L +\\n  ^\"),valueLength=0L,sourceLines=\"caller owned lines\",parseDataPresent=TRUE,parseDataType=\"integer\",matrix=c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,0L,2L,1L,2L,3L,1L,261L,6L,7L,2L,1L,2L,3L,0L,79L,7L,0L,2L,5L,2L,5L,1L,43L,8L,0L),dim=c(8L,5L),tokens=c(\"NUM_CONST\",\"expr\",\"NUM_CONST\",\"expr\",\"'+'\"),text=c(\"17L\",\"\",\"29L\",\"\",\"+\"),class=\"parseData\"))}),\nlocal({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));text<-c(\"17L\", \"29L +\");sf<-srcfilecopy(\"owned.R\",c(\"caller owned lines\"),timestamp=0,isFile=FALSE);sf$parseData<-71L;caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists(\"parseData\",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,\"tokens\"),text=attr(pd,\"text\"),class=class(pd))});identical(observed,list(error=list(classes=c(\"simpleError\",\"error\",\"condition\"),message=\"owned.R:3:0: unexpected end of input\\n1: 17L\\n2: 29L +\\n  ^\"),valueLength=0L,sourceLines=\"caller owned lines\",parseDataPresent=TRUE,parseDataType=\"integer\",matrix=71L,dim=NULL,tokens=NULL,text=NULL,class=\"integer\"))}),\nlocal({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=TRUE);on.exit(options(old));text<-c(\"17L\", \"29L +\");sf<-srcfilecopy(\"owned.R\",c(\"caller owned lines\"),timestamp=0,isFile=FALSE);caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists(\"parseData\",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,\"tokens\"),text=attr(pd,\"text\"),class=class(pd))});identical(observed,list(error=list(classes=c(\"simpleError\",\"error\",\"condition\"),message=\"owned.R:3:0: unexpected end of input\\n1: 17L\\n2: 29L +\\n  ^\"),valueLength=0L,sourceLines=\"caller owned lines\",parseDataPresent=TRUE,parseDataType=\"integer\",matrix=c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,0L,2L,1L,2L,3L,1L,261L,6L,7L,2L,1L,2L,3L,0L,79L,7L,0L,2L,5L,2L,5L,1L,43L,8L,0L),dim=c(8L,5L),tokens=c(\"NUM_CONST\",\"expr\",\"NUM_CONST\",\"expr\",\"'+'\"),text=c(\"17L\",\"\",\"29L\",\"\",\"+\"),class=\"parseData\"))}),\nlocal({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=TRUE);on.exit(options(old));text<-c(\"17L\", \"29L )\");sf<-srcfilecopy(\"owned.R\",c(\"caller owned lines\"),timestamp=0,isFile=FALSE);sf$parseData<-71L;caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists(\"parseData\",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,\"tokens\"),text=attr(pd,\"text\"),class=class(pd))});identical(observed,list(error=list(classes=c(\"simpleError\",\"error\",\"condition\"),message=\"owned.R:2:5: unexpected ')'\\n1: 17L\\n2: 29L )\\n       ^\"),valueLength=0L,sourceLines=\"caller owned lines\",parseDataPresent=TRUE,parseDataType=\"integer\",matrix=c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,0L,2L,1L,2L,3L,1L,261L,6L,7L,2L,1L,2L,3L,0L,79L,7L,0L,2L,5L,2L,5L,1L,41L,8L,0L),dim=c(8L,5L),tokens=c(\"NUM_CONST\",\"expr\",\"NUM_CONST\",\"expr\",\"')'\"),text=c(\"17L\",\"\",\"29L\",\"\",\")\"),class=\"parseData\"))})\n)",
+    "expected": [true, true, true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-parse-prefix-state",
+    "code": "c(\nlocal({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=TRUE);on.exit(options(old));text<-c(\"17L\", \"29L +\");sf<-srcfilecopy(\"owned.R\",c(\"caller owned lines\"),timestamp=0,isFile=FALSE);sf$parseData<-71L;caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf,n=1L),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists(\"parseData\",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,\"tokens\"),text=attr(pd,\"text\"),class=class(pd))});identical(observed,list(error=NULL,valueLength=1L,sourceLines=\"caller owned lines\",parseDataPresent=TRUE,parseDataType=\"integer\",matrix=c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,0L),dim=c(8L,2L),tokens=c(\"NUM_CONST\",\"expr\"),text=c(\"17L\",\"\"),class=\"parseData\"))}),\nlocal({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));text<-c(\"17L\", \"29L +\");sf<-srcfilecopy(\"owned.R\",c(\"caller owned lines\"),timestamp=0,isFile=FALSE);sf$parseData<-71L;caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf,n=1L),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists(\"parseData\",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,\"tokens\"),text=attr(pd,\"text\"),class=class(pd))});identical(observed,list(error=NULL,valueLength=1L,sourceLines=\"caller owned lines\",parseDataPresent=TRUE,parseDataType=\"integer\",matrix=71L,dim=NULL,tokens=NULL,text=NULL,class=\"integer\"))})\n)",
+    "expected": [true, true],
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-string-partial-state",
+    "code": "local({sf<-srcfilecopy(\"owned.R\",\"owned\",timestamp=0,isFile=FALSE);sf$parseData<-71L;message<-tryCatch({parse(text=c(\"17L\",'\"owned'),keep.source=TRUE,srcfile=sf);NULL},error=function(e)conditionMessage(e));identical(message,\"owned.R:2:1: unexpected INCOMPLETE_STRING\\n1: 17L\\n2: \\\"owned\\n   ^\")&&identical(attr(sf$parseData,\"tokens\"),c(\"NUM_CONST\",\"expr\"))})",
+    "expected": true,
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-1",
+    "code": "tryCatch(parse(text=\"\\\"owned\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: \"owned\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-2",
+    "code": "tryCatch(parse(text=\"'owned\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: 'owned\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-3",
+    "code": "tryCatch(parse(text=\"`owned\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: `owned\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-4",
+    "code": "tryCatch(parse(text=\"r\\\"(owned\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: r\"(owned\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-5",
+    "code": "tryCatch(parse(text=\"R\\\"---[owned\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: R\"---[owned\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-6",
+    "code": "tryCatch(parse(text=\"\\\"owned\\\\\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: \"owned\\\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-7",
+    "code": "tryCatch(parse(text=\"'owned\\\\\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: 'owned\\\n    ^",
+    "expectedCompatibility": "behavioral"
+  },
+  {
+    "id": "retained-incomplete-quote-8",
+    "code": "tryCatch(parse(text=\"`owned\\\\\",keep.source=TRUE),error=function(e)conditionMessage(e))",
+    "expected": "<text>:1:1: unexpected INCOMPLETE_STRING\n1: `owned\\\n    ^",
+    "expectedCompatibility": "behavioral"
   }
 ]

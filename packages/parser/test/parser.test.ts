@@ -15,6 +15,37 @@ beforeAll(async () => {
 afterAll(() => parser.dispose());
 
 describe("Tree-sitter normalization", () => {
+  it("preserves argument slots in a wide call", () => {
+    const count = 20000;
+    const source = `f(${Array.from({ length: count }, (_, index) => (index % 3 === 0 ? "" : `${index}L`)).join(",")})`;
+    const result = parser.parse(source);
+    expect(result.diagnostics).toEqual([]);
+    const call = result.ast.body[0]!;
+    expect(call.kind).toBe("CallExpression");
+    if (call.kind !== "CallExpression") throw new Error("Expected owned call");
+    expect(call.arguments).toHaveLength(count);
+    for (let index = 0; index < count; index++)
+      expect(call.arguments[index]!.value).toMatchObject(
+        index % 3 === 0
+          ? { kind: "UnsupportedExpression", feature: "missing argument" }
+          : { kind: "IntegerLiteral", value: index },
+      );
+  });
+  it("normalizes a long flat expression without using the JavaScript call stack", () => {
+    const count = 20000;
+    const result = parser.parse(Array.from({ length: count }, () => "17L").join("+"));
+    expect(result.diagnostics).toEqual([]);
+    let node = result.ast.body[0]!;
+    let terms = 1;
+    while (node.kind === "BinaryExpression") {
+      expect(node.operator).toBe("+");
+      expect(node.right.kind).toBe("IntegerLiteral");
+      node = node.left;
+      terms++;
+    }
+    expect(node.kind).toBe("IntegerLiteral");
+    expect(terms).toBe(count);
+  });
   it("normalizes scalar arithmetic with stable spans", () => {
     const result = parser.parse("1 + 1");
     expect(result.diagnostics).toEqual([]);

@@ -3536,5 +3536,117 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "retained-parse-root-data-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE);on.exit(options(old));sf<-srcfilecopy(\"owned-raw.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=\"17L + 29L\",keep.source=TRUE,srcfile=sf);if(!is.expression(p))return(p);list(parsed=p,source=sf,parseData=sf$parseData,value=eval(p))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-parse-function-block-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));sf<-srcfilecopy(\"owned-raw.R\",\"function(x) {x + 2L}\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=\"function(x) {x + 2L}\",keep.source=TRUE,srcfile=sf);if(!is.expression(p))return(p);q<-p[[1L]];f<-eval(as.call(as.list(q)));sf$marker<-71L;list(call=q,body=body(f),closureReference=attr(f,\"srcref\"),source=sf,bodySource=attr(body(f),\"srcfile\"),referenceSource=attr(attr(f,\"srcref\"),\"srcfile\"),value=f(3L))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-parse-alias-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));text<-c('#line 41 \"owned-map.R\"','17L','29L');sf<-srcfilecopy(\"owned-raw.R\",text,timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=text,keep.source=TRUE,srcfile=sf);if(!is.expression(p))return(p);alias<-attr(p,\"srcfile\");sf$marker<-53L;list(parsed=p,alias=alias,source=sf,firstSource=attr(attr(p,\"srcref\")[[1L]],\"srcfile\"),secondSource=attr(attr(p,\"srcref\")[[2L]],\"srcfile\"),original=alias$original,value=eval(p))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-parse-finite-data-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE);on.exit(options(old));sf<-srcfilecopy(\"owned-raw.R\",\"caller-owned lines\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";sf$parseData<-71L;p<-parse(text=c(\"17L\",\"29L +\"),keep.source=TRUE,srcfile=sf,n=1L);if(!is.expression(p))return(p);list(parsed=p,source=sf,parseData=sf$parseData,value=eval(p))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-parse-unicode-references-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));text<-c(paste0('\"',intToUtf8(c(233L,128512L)),'\"; 17L'),paste0('\t\"',intToUtf8(233L),'\";29L'));sf<-srcfilecopy(\"owned-raw.R\",text,timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";p<-parse(text=text,keep.source=TRUE,srcfile=sf,encoding=\"UTF-8\");if(!is.expression(p))return(p);list(references=attr(p,\"srcref\"),whole=attr(p,\"wholeSrcref\"),source=sf,value=eval(p))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-parse-partial-error-data-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE);on.exit(options(old));guard<-parse(text=\"5L\",keep.source=FALSE);if(!is.expression(guard))return(guard);sf<-srcfilecopy(\"owned-raw.R\",\"caller-owned lines\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";sf$parseData<-71L;error<-tryCatch({parse(text=c(\"17L\",\"29L +\"),keep.source=TRUE,srcfile=sf);NULL},error=function(e)list(classes=class(e),message=conditionMessage(e)));list(error=error,source=sf,parseData=sf$parseData,guard=eval(guard))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-parse-preserved-error-data-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE,keep.parse.data=FALSE);on.exit(options(old));guard<-parse(text=\"5L\",keep.source=FALSE);if(!is.expression(guard))return(guard);sf<-srcfilecopy(\"owned-raw.R\",\"caller-owned lines\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";sf$parseData<-71L;error<-tryCatch({parse(text=c(\"17L\",\"29L +\"),keep.source=TRUE,srcfile=sf);NULL},error=function(e)list(classes=class(e),message=conditionMessage(e)));list(error=error,source=sf,parseData=sf$parseData,guard=eval(guard))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "retained-incomplete-quote-partial-state-graph",
+    "policy": "exact",
+    "code": "local({old<-options(keep.source=FALSE);on.exit(options(old));guard<-parse(text=\"5L\",keep.source=FALSE);if(!is.expression(guard))return(guard);sf<-srcfilecopy(\"owned-raw.R\",\"caller-owned lines\",timestamp=0,isFile=FALSE);sf$wd<-\"owned-wd\";sf$parseData<-71L;error<-tryCatch({parse(text=c(\"17L\",'\"owned'),keep.source=TRUE,srcfile=sf);NULL},error=function(e)list(classes=class(e),message=conditionMessage(e)));list(error=error,source=sf,parseData=sf$parseData,guard=eval(guard))})",
+    "bindingEvidence": ["base::parse"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

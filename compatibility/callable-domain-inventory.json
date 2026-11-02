@@ -3,17 +3,17 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.402.0",
+  "semanticProfileVersion": "0.403.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "11c3f7a9380f589fb10ccec10c03f4a9547bd0e95dde1f499e810c46eb43bb05",
+    "capabilities": "74bcf4be7b423908243db18ae99122c83db1b35c11f4bb1fb9cfba1934317c4b",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "be6797138955c03169583fac6b2f2aeba8191c1330e5de89b6c97487ac29ed16",
-    "oracleV2": "d3de3cb49137762440a92a848c0f57453f2b4b7e2ea0f30a72e2bad15efa1e81",
+    "foundation": "c592af2221377babde7f4e95bba3f7746d8d5d305ad275839cbe9f55034c2ad7",
+    "oracleV2": "67906fea41aabf790c36c887de6c608c3c258495eed14f19d7b61570f58f5dfb",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
     "annotations": "e61f62e00d9e6606b8fb9aa51b4c84381332029a05e8d44d08c7578c2aef6d5a"
   },
@@ -18388,7 +18388,15 @@
         "parse-text-controls-empty-default-encoding-adjunct-graph",
         "parse-text-controls-error-order-graph",
         "parse-text-controls-path-forcing-graph",
-        "parse-text-controls-source-selection-graph"
+        "parse-text-controls-source-selection-graph",
+        "retained-incomplete-quote-partial-state-graph",
+        "retained-parse-alias-graph",
+        "retained-parse-finite-data-graph",
+        "retained-parse-function-block-graph",
+        "retained-parse-partial-error-data-graph",
+        "retained-parse-preserved-error-data-graph",
+        "retained-parse-root-data-graph",
+        "retained-parse-unicode-references-graph"
       ],
       "matrix": [
         {

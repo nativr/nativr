@@ -5,6 +5,7 @@ import type {
   FunctionParameter,
   IdentifierNode,
   ProgramNode,
+  ParseWorkCallbacks,
   SourceSpan,
 } from "@nativr/ast";
 import type { Node } from "web-tree-sitter";
@@ -12,19 +13,32 @@ import type { Node } from "web-tree-sitter";
 import { Utf8SourceMap } from "./source-map.js";
 import { decodeStringLiteral, StringLiteralError } from "./string-literal.js";
 
+interface NormalizationSession {
+  readonly values: Map<number, AstNode>;
+  readonly work: ParseWorkCallbacks | undefined;
+  composing: number | undefined;
+}
+// Scoped to one mapper/tree and removed even when decoding fails. CST identities are internal
+// memoization keys only; they never supply observable parseData IDs.
+const normalizationSessions = new WeakMap<Utf8SourceMap, NormalizationSession>();
+
 /** Normalize a Tree-sitter R concrete tree without leaking its node model. */
 export function normalizeProgram(
   root: Node,
   source: string,
+  work?: ParseWorkCallbacks,
 ): { readonly ast: ProgramNode; readonly diagnostics: readonly Diagnostic[] } {
-  const mapper = new Utf8SourceMap(source);
-  const diagnostics = [...collectSyntaxDiagnostics(root, mapper, source.length)];
+  const mapper = new Utf8SourceMap(source, work);
+  const diagnostics = [...collectSyntaxDiagnostics(root, mapper, source.length, work)];
   const body: AstNode[] = [];
 
+  work?.allocate(root.namedChildCount);
   for (const child of root.namedChildren) {
+    work?.checkpoint();
     if (child.type !== "comment" && !child.hasError && !child.isError && !child.isMissing) {
       try {
-        body.push(normalizeNode(child, mapper));
+        work?.allocate(1);
+        body.push(normalizeTree(child, mapper, work));
       } catch (error) {
         if (!(error instanceof StringLiteralError)) throw error;
         diagnostics.push({
@@ -43,7 +57,104 @@ export function normalizeProgram(
   };
 }
 
+function normalizeTree(root: Node, mapper: Utf8SourceMap, work?: ParseWorkCallbacks): AstNode {
+  const session: NormalizationSession = { values: new Map(), work, composing: undefined };
+  normalizationSessions.set(mapper, session);
+  const pending: { node: Node; visited: boolean }[] = [];
+  try {
+    work?.allocate(1);
+    pending.push({ node: root, visited: false });
+    while (pending.length > 0) {
+      work?.checkpoint();
+      const { node, visited } = pending.pop()!;
+      if (visited) {
+        session.composing = node.id;
+        work?.allocate(1);
+        session.values.set(node.id, normalizeNode(node, mapper));
+      } else {
+        work?.allocate(node.namedChildCount + 1);
+        const children = normalizationChildren(node, work);
+        pending.push({ node, visited: true });
+        for (let index = children.length - 1; index >= 0; index--) {
+          work?.checkpoint();
+          pending.push({ node: children[index]!, visited: false });
+        }
+      }
+    }
+    return session.values.get(root.id)!;
+  } finally {
+    normalizationSessions.delete(mapper);
+  }
+}
+
+/** Only dependencies the existing composers actually normalize; unsupported syntax stays opaque. */
+function normalizationChildren(node: Node, work?: ParseWorkCallbacks): readonly Node[] {
+  const field = (name: string): Node => requiredField(node, name);
+  const arguments_ = (): Node[] => {
+    const argumentsNode = field("arguments");
+    for (let copy = 0; copy < 3; copy++) work?.allocate(argumentsNode.namedChildCount);
+    return argumentsNode.childrenForFieldName("argument").flatMap((argument) => {
+      work?.checkpoint();
+      const value = argument.childForFieldName("value");
+      return value === null ? [] : [value];
+    });
+  };
+  switch (node.type) {
+    case "parenthesized_expression":
+    case "repeat_statement":
+      return [field("body")];
+    case "braced_expression":
+      return node.childrenForFieldName("body");
+    case "unary_operator":
+      return [field("rhs")];
+    case "binary_operator":
+    case "namespace_operator":
+      return [field("lhs"), field("rhs")];
+    case "extract_operator": {
+      const member = field("rhs");
+      return member.type === "dots" ? [field("lhs")] : [field("lhs"), member];
+    }
+    case "call":
+    case "subset":
+    case "subset2":
+      return [field("function"), ...arguments_()];
+    case "function_definition": {
+      const parameters = field("parameters");
+      for (let copy = 0; copy < 3; copy++) work?.allocate(parameters.namedChildCount);
+      return [
+        ...parameters.childrenForFieldName("parameter").flatMap((parameter) => {
+          work?.checkpoint();
+          const value = parameter.childForFieldName("default");
+          return value === null ? [] : [value];
+        }),
+        field("body"),
+      ];
+    }
+    case "if_statement": {
+      const alternative = node.childForFieldName("alternative");
+      return [
+        field("condition"),
+        field("consequence"),
+        ...(alternative === null ? [] : [alternative]),
+      ];
+    }
+    case "for_statement":
+      return [field("variable"), field("sequence"), field("body")];
+    case "while_statement":
+      return [field("condition"), field("body")];
+    default:
+      return [];
+  }
+}
+
 function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
+  const session = normalizationSessions.get(mapper);
+  if (session !== undefined) {
+    const normalized = session.values.get(node.id);
+    if (normalized !== undefined) return normalized;
+    if (session.composing !== node.id)
+      throw new Error("Missing iterative normalization dependency.");
+  }
   const span = mapper.span(node.startIndex, node.endIndex);
   switch (node.type) {
     case "float":
@@ -282,10 +393,17 @@ function normalizeCall(node: Node, mapper: Utf8SourceMap, span: SourceSpan): Ast
 }
 
 function normalizeArguments(node: Node, mapper: Utf8SourceMap): readonly CallArgument[] {
-  const separators = node.children
-    .filter((child) => child.type === "comma")
-    .map((child) => child.startIndex);
+  const work = normalizationSessions.get(mapper)?.work;
+  work?.allocate(node.childCount);
+  work?.allocate(node.childCount);
+  const separators: number[] = [];
+  for (const child of node.children) {
+    work?.checkpoint();
+    if (child.type === "comma") separators.push(child.startIndex);
+  }
+  work?.allocate(node.namedChildCount);
   const argumentNodes = node.childrenForFieldName("argument");
+  work?.allocate(argumentNodes.length);
   const arguments_ = argumentNodes.map((argument): CallArgument => {
     const name = argument.childForFieldName("name");
     const value = argument.childForFieldName("value");
@@ -306,17 +424,25 @@ function normalizeArguments(node: Node, mapper: Utf8SourceMap): readonly CallArg
       : { name: decodeRIdentifier(name.text), value: normalized, span };
   });
   if (separators.length === 0) return arguments_;
+  work?.allocate(separators.length + 1);
   const slots: (CallArgument | undefined)[] = Array.from(
     { length: separators.length + 1 },
     () => undefined,
   );
+  let slot = 0;
   for (let argumentIndex = 0; argumentIndex < arguments_.length; argumentIndex += 1) {
+    work?.checkpoint();
     const argument = arguments_[argumentIndex] as CallArgument;
     const startIndex = argumentNodes[argumentIndex]?.startIndex ?? node.startIndex;
-    const slot = separators.filter((separator) => separator < startIndex).length;
+    while (slot < separators.length && separators[slot]! < startIndex) {
+      work?.checkpoint();
+      slot++;
+    }
     slots[slot] = argument;
   }
+  work?.allocate(slots.length);
   return slots.map((argument, index): CallArgument => {
+    work?.checkpoint();
     if (argument !== undefined) return argument;
     const offset =
       index === 0
@@ -408,23 +534,28 @@ function collectSyntaxDiagnostics(
   root: Node,
   mapper: Utf8SourceMap,
   sourceLength: number,
+  work?: ParseWorkCallbacks,
 ): readonly Diagnostic[] {
   if (!root.hasError) return [];
   const diagnostics: Diagnostic[] = [];
-  visit(root, (node) => {
-    if (!node.isError && !node.isMissing) return;
-    const span = mapper.span(node.startIndex, node.endIndex);
-    const incomplete = node.isMissing && span.start.offset >= sourceLength;
-    diagnostics.push({
-      code: incomplete ? "NRP1002" : "NRP1001",
-      severity: "error",
-      message: incomplete ? "Incomplete R expression." : "Invalid R syntax.",
-      span,
-      hint: incomplete
-        ? "Complete the expression and try again."
-        : "Inspect the highlighted source range.",
-    });
-  });
+  visit(
+    root,
+    (node) => {
+      if (!node.isError && !node.isMissing) return;
+      const span = mapper.span(node.startIndex, node.endIndex);
+      const incomplete = node.isMissing && span.start.offset >= sourceLength;
+      diagnostics.push({
+        code: incomplete ? "NRP1002" : "NRP1001",
+        severity: "error",
+        message: incomplete ? "Incomplete R expression." : "Invalid R syntax.",
+        span,
+        hint: incomplete
+          ? "Complete the expression and try again."
+          : "Inspect the highlighted source range.",
+      });
+    },
+    work,
+  );
   if (diagnostics.length === 0) {
     diagnostics.push({
       code: "NRP1001",
@@ -436,9 +567,18 @@ function collectSyntaxDiagnostics(
   return diagnostics;
 }
 
-function visit(node: Node, callback: (node: Node) => void): void {
-  callback(node);
-  for (const child of node.children) {
-    visit(child, callback);
+function visit(node: Node, callback: (node: Node) => void, work?: ParseWorkCallbacks): void {
+  work?.allocate(1);
+  const pending = [node];
+  while (pending.length > 0) {
+    work?.checkpoint();
+    const current = pending.pop()!;
+    callback(current);
+    work?.allocate(current.childCount);
+    const children = current.children;
+    for (let index = children.length - 1; index >= 0; index--) {
+      work?.checkpoint();
+      pending.push(children[index]!);
+    }
   }
 }

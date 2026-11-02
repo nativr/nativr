@@ -100,6 +100,8 @@ export class RuntimeHost {
         ...(elementary === undefined ? {} : { elementaryMath: createElementaryMath(elementary) }),
         ...(sessionProcessId === undefined ? {} : { sessionProcessId }),
         parseSource: (source, maxExpressions) => parseProgram(parser, source, maxExpressions),
+        parseSourceDetailed: (source, maxExpressions, work) =>
+          parser.parseDetailed(source, maxExpressions, work),
         packages: packageDefinitions,
         systemPackageResources,
         nativeModules,

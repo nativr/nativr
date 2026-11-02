@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-retained-text-parsing-semantic-checkpoint",
+  "date": "2026-11-02",
+  "semanticProfile": "0.403.0",
+  "sourceCommit": "885b1b4dc5617607700eea89f455ba6727c522b1",
+  "sourceState": "local semantic checkpoint; browser gate remains open",
+  "semanticGatesPassed": true,
+  "fullIncrementVerified": false,
+  "releaseReady": false,
+  "gates": {
+    "check": {
+      "schemaVersion": 1,
+      "gate": "check",
+      "attempt": "resource-fixes",
+      "profile": "0.403.0",
+      "sourceCommit": "885b1b4dc5617607700eea89f455ba6727c522b1",
+      "startedAt": "2026-11-01T20:35:37.328Z",
+      "finishedAt": "2026-11-01T20:37:41.577Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/retained-0403-check-resource-fixes-before.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "after": {
+        "path": ".tmp/retained-0403-check-resource-fixes-after.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "log": {
+        "path": ".tmp/retained-0403-check-resource-fixes.log",
+        "sha256": "ecee9707947ca82517fa1f8d9e867c08c83fd35f725955f900e463eb5721d493"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/retained-0403-check-resource-fixes.json",
+        "sha256": "2502a7449cb7fd09856d851c3c5180abeeeacbd48474602a0bf664481dc9b7cb"
+      }
+    },
+    "foundation": {
+      "schemaVersion": 1,
+      "gate": "foundation",
+      "attempt": "resource-fixes",
+      "profile": "0.403.0",
+      "sourceCommit": "885b1b4dc5617607700eea89f455ba6727c522b1",
+      "startedAt": "2026-11-02T20:41:31.658Z",
+      "finishedAt": "2026-11-02T20:41:34.570Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/retained-0403-foundation-resource-fixes-before.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "after": {
+        "path": ".tmp/retained-0403-foundation-resource-fixes-after.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "log": {
+        "path": ".tmp/retained-0403-foundation-resource-fixes.log",
+        "sha256": "794323df137a90a19b8faea601a679d0466edbbbd44bfc491cdba633479135e2"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/retained-0403-foundation-resource-fixes.json",
+        "sha256": "546d1e5391111670ad0c698cdae7bf75cfc222862da004976dcd4a08c44ef4af"
+      }
+    },
+    "native": {
+      "schemaVersion": 1,
+      "gate": "native",
+      "attempt": "resource-fixes",
+      "profile": "0.403.0",
+      "sourceCommit": "885b1b4dc5617607700eea89f455ba6727c522b1",
+      "startedAt": "2026-11-02T20:41:35.719Z",
+      "finishedAt": "2026-11-02T20:44:57.920Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/retained-0403-native-resource-fixes-before.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "after": {
+        "path": ".tmp/retained-0403-native-resource-fixes-after.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "log": {
+        "path": ".tmp/retained-0403-native-resource-fixes.log",
+        "sha256": "89d45c52c050921fecea109a5edd9865370bcb3fb3b7b8eb4ad53f3af4013591"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/retained-0403-native-resource-fixes.json",
+        "sha256": "5625a469e3c315e5e7af229a3c81112f68de0bbbae33a3f3bd6892164491d3f4"
+      }
+    },
+    "v2": {
+      "schemaVersion": 1,
+      "gate": "v2",
+      "attempt": "resource-fixes",
+      "profile": "0.403.0",
+      "sourceCommit": "885b1b4dc5617607700eea89f455ba6727c522b1",
+      "startedAt": "2026-11-02T20:41:35.914Z",
+      "finishedAt": "2026-11-02T20:46:24.399Z",
+      "result": { "code": 0, "signal": null },
+      "stableDuringExecution": true,
+      "before": {
+        "path": ".tmp/retained-0403-v2-resource-fixes-before.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "after": {
+        "path": ".tmp/retained-0403-v2-resource-fixes-after.json",
+        "sha256": "4f2c2b9c4f302b66e3b7ce05673ef0e6bb63c3249e61c5cb4824f86fc86badf3"
+      },
+      "log": {
+        "path": ".tmp/retained-0403-v2-resource-fixes.log",
+        "sha256": "1ca94e8b7132ecdd40ea8e4706e17bb1c8728549e06fbaa080b3b9c0a29a2fd6"
+      },
+      "passed": true,
+      "receipt": {
+        "path": ".tmp/retained-0403-v2-resource-fixes.json",
+        "sha256": "3de1310e4eab91561dabd7a81af65cde4b273a8ad3b45ba13bc175ad63383337"
+      }
+    }
+  },
+  "counts": {
+    "unitPassed": 3946,
+    "unitSkipped": 96,
+    "foundation": 1544,
+    "native": 1471,
+    "nativrOnlyExcluded": 55,
+    "recursive": 449,
+    "recursiveLinkedBindings": 176
+  },
+  "review": {
+    "blockingFindings": 0,
+    "resolved": [
+      "comment association scaling and checkpoint accounting",
+      "sparse UTF-8 mapping with charged storage",
+      "iterative AST normalization and diagnostics",
+      "linear argument separator association"
+    ]
+  },
+  "browser": {
+    "status": "unexecuted-missing-pinned-browsers",
+    "downloadApproval": "requested-awaiting-user",
+    "latestAttempt": {
+      "path": ".tmp/retained-0403-e2e-ordinary-permissions.json",
+      "sha256": "4c3b65f446ce8b93f0cd23a6b886b7c0d79ce08cad17d6a174d8c902c33158d6"
+    },
+    "qualification": "Earlier 0.403 attempt failed before browser launch. The four new retained-parsing Worker assertions have not executed. The last passing browser checkpoint remains 0.402.0."
+  },
+  "corpus": {
+    "checkpoint": {
+      "path": "compatibility/package-check-evidence/corpus-0.403.0-resources.json",
+      "sha256": "59ac9575e1e0562d039565b4c988cdb628ea0ad387e17d7cee226a508b090b69"
+    },
+    "receipt": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.403.0-resources.json",
+      "sha256": "4cbf48a726e6c0de4b327fa809720d0fba07b4dac2c1881b592a7485254d5e5a"
+    },
+    "packages": 4,
+    "observations": 49,
+    "tiersChanged": false,
+    "fullCorpusProfile": "0.397.0"
+  },
+  "bundles": {
+    "clientGzipKiB": 18.1,
+    "workerGzipKiB": 505,
+    "parserRawKiB": 671.9,
+    "elementaryRawKiB": 311.2
+  },
+  "previousProgress": {
+    "path": "compatibility/platform-evidence/retained-parse-windows-0.403.0-progress.json",
+    "sha256": "8021de3996e557cc2cc3c097d27ad39e3879d5ac42c336a3297f02f4b238149e"
+  },
+  "qualifications": [
+    "Execution-time snapshots bind each semantic gate; no final documentation or later metadata edits are backdated into those runs.",
+    "Resource corpus persistence and inventory/status regeneration followed the consuming gates. Separate post-metadata checks are required.",
+    "No packaging change or packaging smoke result is claimed.",
+    "Windows native evidence is advisory; Linux remains deferred. All thirteen domains and the overall completion goal remain incomplete.",
+    "Full lexical grammar, encoding conversion, exact error formatting, source accessors and source(keep.source=TRUE) remain unfinished."
+  ]
+}

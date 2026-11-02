@@ -1688,6 +1688,46 @@ test("runs the required Worker examples without evaluation network traffic", asy
   await expect(page.locator("#errors")).toHaveText("No errors.");
   expect(evaluationRequests).toEqual([]);
 
+  await page
+    .locator("#source")
+    .fill(
+      'local({old<-options(keep.source=FALSE);on.exit(options(old));stopifnot(identical(getOption("keep.parse.data"),TRUE));p<-parse(text="17L + 29L",keep.source=TRUE);sf<-attr(p,"srcfile");pd<-sf$parseData;identical(names(attributes(p)),c("srcref","srcfile","wholeSrcref"))&&identical(as.integer(attr(p,"srcref")[[1L]]),c(1L,1L,1L,9L,1L,9L,1L,1L))&&identical(as.integer(attr(p,"wholeSrcref")),c(1L,0L,2L,0L,0L,0L,1L,2L))&&identical(class(sf),c("srcfilecopy","srcfile"))&&identical(sf$filename,"<text>")&&identical(sf$lines,"17L + 29L")&&identical(parent.env(sf),emptyenv())&&identical(class(pd),"parseData")&&identical(dim(pd),c(8L,6L))&&identical(as.integer(pd),c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,7L,1L,5L,1L,5L,1L,43L,3L,7L,1L,7L,1L,9L,1L,261L,4L,5L,1L,7L,1L,9L,0L,79L,5L,7L,1L,1L,1L,9L,0L,79L,7L,0L))&&identical(attr(pd,"tokens"),c("NUM_CONST","expr","\'+\'","NUM_CONST","expr","expr"))&&identical(attr(pd,"text"),c("17L","","+","29L","",""))&&identical(eval(p),46L)})',
+    );
+  await profiledRun(page, "required-164");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill(
+      'local({old<-options(keep.source=FALSE);on.exit(options(old));text<-c("function(x = 1L) {","  x + 2L","}");sf<-srcfilecopy("owned.R",text,timestamp=0,isFile=FALSE);p<-parse(text=text,keep.source=TRUE,srcfile=sf);q<-p[[1L]];f<-eval(as.call(as.list(q)));sf$marker<-71L;identical(as.integer(q[[4L]]),c(1L,1L,3L,1L,1L,1L,1L,3L))&&identical(class(q[[4L]]),"srcref")&&identical(attr(q[[4L]],"srcfile"),sf)&&identical(names(attributes(f)),"srcref")&&identical(attr(f,"srcref"),q[[4L]],ignore.srcref=FALSE)&&identical(attr(body(f),"srcfile"),sf)&&identical(attr(attr(f,"srcref"),"srcfile")$marker,71L)&&identical(body(f),q[[3L]],ignore.srcref=FALSE)&&identical(f(),3L)})',
+    );
+  await profiledRun(page, "required-165");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill(
+      'local({observed<-local({old<-options(keep.source=FALSE,keep.parse.data=TRUE);on.exit(options(old));text<-c("17L", "29L +");sf<-srcfilecopy("owned.R",c("caller owned lines"),timestamp=0,isFile=FALSE);sf$parseData<-71L;caught<-NULL;p<-tryCatch(parse(text=text,keep.source=TRUE,srcfile=sf),error=function(e){caught<<-list(classes=class(e),message=conditionMessage(e));NULL});pd<-sf$parseData;list(error=caught,valueLength=length(p),sourceLines=sf$lines,parseDataPresent=exists("parseData",sf,inherits=FALSE),parseDataType=typeof(pd),matrix=as.integer(pd),dim=dim(pd),tokens=attr(pd,"tokens"),text=attr(pd,"text"),class=class(pd))});identical(observed,list(error=list(classes=c("simpleError","error","condition"),message="owned.R:3:0: unexpected end of input\\n1: 17L\\n2: 29L +\\n  ^"),valueLength=0L,sourceLines="caller owned lines",parseDataPresent=TRUE,parseDataType="integer",matrix=c(1L,1L,1L,3L,1L,261L,1L,2L,1L,1L,1L,3L,0L,79L,2L,0L,2L,1L,2L,3L,1L,261L,6L,7L,2L,1L,2L,3L,0L,79L,7L,0L,2L,5L,2L,5L,1L,43L,8L,0L),dim=c(8L,5L),tokens=c("NUM_CONST","expr","NUM_CONST","expr","\'+\'"),text=c("17L","","29L","","+"),class="parseData"))})',
+    );
+  await profiledRun(page, "required-166");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
+  await page
+    .locator("#source")
+    .fill(
+      'local({sf<-srcfilecopy("owned.R","owned",timestamp=0,isFile=FALSE);sf$parseData<-71L;message<-tryCatch({parse(text=c("17L",\'"owned\'),keep.source=TRUE,srcfile=sf);NULL},error=function(e)conditionMessage(e));identical(message,"owned.R:2:1: unexpected INCOMPLETE_STRING\\n1: 17L\\n2: \\"owned\\n   ^")&&identical(attr(sf$parseData,"tokens"),c("NUM_CONST","expr"))})',
+    );
+  await profiledRun(page, "required-167");
+  await expect(page.locator("#result")).toHaveText("true");
+  await expect(page.locator("#errors")).toHaveText("No errors.");
+  expect(evaluationRequests).toEqual([]);
+
   expect(pageErrors).toEqual([]);
 });
 

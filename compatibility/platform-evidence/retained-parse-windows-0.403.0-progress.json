@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-retained-text-parsing-verification-progress",
+  "date": "2026-11-01",
+  "semanticProfile": "0.403.0",
+  "sourceCommit": "885b1b4dc5617607700eea89f455ba6727c522b1",
+  "sourceState": "uncommitted candidate",
+  "readyForVerifiedCommit": false,
+  "reviewStatus": "resource-findings-closed-full-gates-pending",
+  "reviewIssues": [],
+  "reviewFixesAwaitingFullGates": [
+    "Comment association now uses a charged, checkpointed sweep and min-heap. The two new resource guards and all 255 native parser metadata specimens pass in a 281-test focused run; TypeScript and focused lint also pass.",
+    "Normalization source mapping now stores sparse non-ASCII anchors and line starts, reserves index storage before construction and checks cancellation. Retained parse work callbacks reach normalization. All 304 parser tests and 61 focused parser/retained tests pass; TypeScript and focused lint pass. Full gates remain pending.",
+    "AST normalization and diagnostic traversal now use explicit work stacks with scoped child-result memoization. The owned 20000-term regression succeeds under the configured budget, with same-session recovery. Wide argument slots now use a checkpointed monotonic separator cursor with reserved temporary arrays. A 20000-argument missing-slot regression passes. The final 335-test focused run, TypeScript and focused lint pass. Independent re-review closed all four findings and passed 349 focused tests. Serial build and fixed bundle budgets pass; full gates remain pending."
+  ],
+  "currentCandidateChangedAfterRecordedGates": true,
+  "subsequentChange": "Incomplete-string diagnostics were corrected after the recorded gates. Nine new native-backed regressions and the 288-test focused run pass; full gates must be rerun. Recorded earlier gate receipts remain historical evidence for their exact input hashes.",
+  "check": {
+    "passed": true,
+    "tests": 3928,
+    "skipped": 96,
+    "receipt": {
+      "path": ".tmp/retained-0403-check-corrected-profile-assertion.json",
+      "sha256": "de977341928e4593fd0a43ac625ebce2c85a56e7483d12c511eb1fc2f4077059"
+    }
+  },
+  "foundation": {
+    "passed": 1535,
+    "total": 1535,
+    "log": {
+      "path": ".tmp/retained-parse-0403-foundation-attempt2.log",
+      "sha256": "7b01f9918703e2c2e4f7afa18327dc8827d7f4150bd7c0cbea8bd79e30c763d0"
+    },
+    "qualification": "Observed consuming run; no retrospective before/after input receipt is claimed."
+  },
+  "native": {
+    "passed": 1462,
+    "total": 1462,
+    "nativrOnlyExcluded": 55,
+    "receipt": {
+      "path": ".tmp/retained-0403-native-ordinary-permissions.json",
+      "sha256": "d720273831c0741f509bd46278eaed2ef60bf37e1f459ae46b55a9721888fe38"
+    }
+  },
+  "recursive": {
+    "passed": 448,
+    "total": 448,
+    "linkedBindings": 176,
+    "log": {
+      "path": ".tmp/retained-parse-0403-v2.log",
+      "sha256": "a8b9d68a4b35e2624c8490b5c2c6d79066719c5ea4558b5a0132fb042250aa38"
+    },
+    "qualification": "Observed consuming run; no retrospective before/after input receipt is claimed."
+  },
+  "artifactContinuity": {
+    "nativeAndFinalCheckArtifactsIdentical": true,
+    "maintainedChangesAfterNative": [
+      "compatibility/callable-domain-inventory.json",
+      "compatibility/package-corpus.json",
+      "compatibility/status.json",
+      "packages/nativr/test/integration.test.ts",
+      "packages/package-tools/test/check-summary.test.ts",
+      "compatibility/package-check-evidence/0.403.0/abind.json",
+      "compatibility/package-check-evidence/0.403.0/evaluate.json",
+      "compatibility/package-check-evidence/0.403.0/numDeriv.json",
+      "compatibility/package-check-evidence/0.403.0/withr.json",
+      "compatibility/package-check-evidence/corpus-0.403.0.json",
+      "compatibility/platform-evidence/corpus-windows-0.403.0.json"
+    ],
+    "qualification": "Only redacted corpus/report persistence and test expectations changed after native execution; runtime sources and every recorded artifact match."
+  },
+  "nativeFixtures": {
+    "path": ".tmp/retained-parse-evidence-next/native-validation.json",
+    "sha256": "ca6af8e68bfa2405aab412f78c8e93847e37ab5d855b93aefb892e7aefe488a6"
+  },
+  "corpus": {
+    "packages": 4,
+    "observations": 49,
+    "changedOutcomes": 0,
+    "receipt": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.403.0.json",
+      "sha256": "23bcce9c6aad6ccefa144dab956db08a2392e16330b6b834931abb612e3a840f"
+    }
+  },
+  "browser": {
+    "status": "blocked-missing-pinned-browser-executables",
+    "downloadApproval": "requested-pending",
+    "attempts": [
+      {
+        "path": ".tmp/retained-0403-e2e-first.json",
+        "sha256": "d90b8beadf176e9572fd7adb47a9ce55a1a79ad002c5334b3f06598695089a5c"
+      },
+      {
+        "path": ".tmp/retained-0403-e2e-ordinary-permissions.json",
+        "sha256": "4c3b65f446ce8b93f0cd23a6b886b7c0d79ce08cad17d6a174d8c902c33158d6"
+      }
+    ]
+  },
+  "preservedFailures": [
+    {
+      "path": ".tmp/retained-0403-check-first.json",
+      "sha256": "33f9dd164339638834a2ea2da93a698b2a619b2bdb7a774b4d33e94d0117d9ce"
+    },
+    {
+      "path": ".tmp/retained-parse-0403-native.log",
+      "sha256": "d8e18f41d7098bd99ae5aa0458c510c60c568cf16aa9bc44e5c16b58b38ed6ef"
+    },
+    {
+      "path": ".tmp/retained-parse-evidence-next/attempt-1/native-validation.json",
+      "sha256": "d7d46524365542f7b676feb167a55a4b13d3d248fb3b276ff9a2d4dcd52b3575"
+    }
+  ],
+  "confirmedNextGap": {
+    "name": "incomplete-string diagnostic",
+    "proof": {
+      "path": ".tmp/retained-incomplete-string-counterexample.json",
+      "sha256": "0c6fe1efcf7feda9ef7a7f1038ffb7069f30aad55abaccdf5ec99a6ed1c2b72a"
+    },
+    "nativeAssertion": true,
+    "candidateAssertion": false,
+    "qualification": "Separate exploration; does not alter the frozen nine/six cohorts or grant compatibility credit."
+  },
+  "limitations": [
+    "All thirteen semantic domains and the full five-criterion objective remain incomplete.",
+    "Browser execution has not passed for this candidate; local commit is deferred.",
+    "Formula holdout untouched; Linux execution remains deferred; no downloads, pushes or publication performed."
+  ]
+}

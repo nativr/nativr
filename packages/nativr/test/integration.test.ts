@@ -13895,8 +13895,8 @@ NeedsCompilation: no
     const capabilities = await runtime.capabilities();
     expect(capabilities).toMatchObject({
       targetRVersion: "4.6.1",
-      semanticProfileVersion: "0.402.0",
-      languageSubsetVersion: "0.402.0",
+      semanticProfileVersion: "0.403.0",
+      languageSubsetVersion: "0.403.0",
     });
     expect(capabilities.syntax).toMatchObject({
       atomicCoercion: "supported",
@@ -13908,6 +13908,7 @@ NeedsCompilation: no
       functionLanguageCells: "supported",
       functionSourceCells: "supported",
       sourceFileLineNormalization: "supported",
+      retainedTextParsing: "supported",
       quotedDotsProjection: "supported",
       expressionMissingCellsAndVisibility: "supported",
       formula: "supported",
@@ -20893,9 +20894,7 @@ NeedsCompilation: no
     await expect(runtime.eval('parse(file = "script.R")')).rejects.toMatchObject({
       code: "NRU6133",
     });
-    await expect(runtime.eval('parse(text = "1", keep.source = TRUE)')).rejects.toMatchObject({
-      code: "NRU6134",
-    });
+    await expect(runtime.eval('eval(parse(text = "1", keep.source = TRUE))')).resolves.toBe(1);
     await runtime.dispose();
   });
 

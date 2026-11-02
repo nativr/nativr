@@ -22,6 +22,8 @@ import type {
   CallArgument,
   CallExpressionNode,
   ProgramNode,
+  ParseWorkCallbacks,
+  RetainedParseResult,
   SourceSpan,
   SubsetExpressionNode,
 } from "@nativr/ast";
@@ -177,6 +179,11 @@ export interface DetailedEvaluationResult extends EvaluationResult {
 export interface EvaluatorOptions {
   readonly limits?: Partial<RuntimeLimits>;
   readonly parseSource?: (source: string, maxExpressions?: number) => ProgramNode;
+  readonly parseSourceDetailed?: (
+    source: string,
+    maxExpressions: number | undefined,
+    work: ParseWorkCallbacks,
+  ) => RetainedParseResult;
   readonly packages?: readonly RuntimePackageDefinition[];
   /** Immutable text resources for registered core packages, supplied at session creation. */
   readonly systemPackageResources?: readonly RuntimeSystemPackageTextResource[];
@@ -618,6 +625,7 @@ export class Evaluator {
   readonly #limits: RuntimeLimits;
   readonly #math: ElementaryMath;
   readonly #parseSource: EvaluatorOptions["parseSource"];
+  readonly #parseSourceDetailed: EvaluatorOptions["parseSourceDetailed"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
   readonly #readline: EvaluatorOptions["readline"];
   readonly #urlRequest: EvaluatorOptions["urlRequest"];
@@ -672,6 +680,7 @@ export class Evaluator {
     this.#limits = { ...DEFAULT_RUNTIME_LIMITS, ...options.limits };
     this.#math = options.elementaryMath ?? HOST_ELEMENTARY_MATH;
     this.#parseSource = options.parseSource;
+    this.#parseSourceDetailed = options.parseSourceDetailed;
     this.#initializeBuiltinState = options.initializeBuiltinState;
     this.#readline = options.readline;
     this.#urlRequest = options.urlRequest;
@@ -2867,6 +2876,28 @@ export class Evaluator {
               );
             }
             return this.#parseSource(source, maxExpressions);
+          },
+          parseDetailed: (source, maxExpressions) => {
+            if (this.#parseSourceDetailed === undefined) {
+              throw new RUnsupportedFeatureError(
+                "NRU6134",
+                "Retained parsing is unavailable in this evaluator host.",
+              );
+            }
+            return this.#parseSourceDetailed(source, maxExpressions, {
+              checkpoint: () => context.checkpoint(),
+              allocate: (elements) => context.allocate(elements),
+              maxDepth: Math.min(256, Math.max(0, context.limits.maxCallDepth - context.callDepth)),
+              onDepthExceeded: () => {
+                throw new RResourceLimitError(
+                  "NRL4004",
+                  "Maximum retained-parser depth exceeded.",
+                  {
+                    details: { maxCallDepth: context.limits.maxCallDepth },
+                  },
+                );
+              },
+            });
           },
           evaluate: async (value, environment) =>
             this.#evaluateLanguageValue(value, environment, context),

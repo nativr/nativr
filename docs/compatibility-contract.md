@@ -38,6 +38,27 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Retained text parsing (profile 0.403, browser verification pending)
+
+The text route of `parse` retains root and block source references and the structural fourth
+function cell. Source references share supplied or generated source environments, preserve UTF-8
+byte positions and tab-expanded columns, and distinguish logical from physical lines under `#line`.
+Finite expression limits retain the consumed separator and exclude later syntax. The default
+`keep.parse.data=TRUE` records the observed token/reduction matrix; syntax errors update the
+supplied environment with partial data before raising the error. FALSE preserves existing data. An
+additional native-backed adjunct covers incomplete ordinary/raw quotes and escaped endings: errors
+identify `INCOMPLETE_STRING` at the opening quote while retaining earlier parse-data records.
+
+Evidence includes the unchanged nine retained-source assertions, six separate error-state
+assertions, 255 independently authored parser metadata specimens and seven recursive graphs with
+fourteen native causal controls. These are bounded observations. Complete lexical grammar, encoding
+conversion, exact error formatting, source accessors and `source(keep.source=TRUE)` remain
+unfinished. The public Worker protocol is unchanged. The production check, all three conformance
+suites and four affected cached-package checks pass. Browser execution remains blocked by missing
+pinned browser binaries; download approval is pending. The
+[semantic checkpoint](../compatibility/platform-evidence/retained-parse-windows-0.403.0.json)
+records this limitation separately from the passing semantic gates.
+
 ### Source-file line normalization (profile 0.402)
 
 The sampled `srcfilecopy` constructor paths split embedded LF characters while preserving leading,
@@ -60,10 +81,9 @@ establish full constructor argument-force timing or condition-call equivalence. 
 guards separately bound the output vector before flattening and check work, cancellation and
 recovery; they receive no native resource-limit compatibility credit.
 
-This is a prerequisite for retained parsing. `parse(keep.source=TRUE)`, generated source positions,
-default parse-data graphs, partial parse-data mutation on syntax errors and complete source-file
-behavior remain unfinished. The public client API, Worker protocol and fixed resource limits are
-unchanged.
+This increment supplied a prerequisite for the retained parsing added in profile 0.403 above.
+Complete source-file behavior remains unfinished. The public client API, Worker protocol and fixed
+resource limits are unchanged.
 
 The [verification record](../compatibility/platform-evidence/srcfilecopy-lines-windows-0.402.0.json)
 binds the separate 18-case and three-case clean baselines, native evidence, resource/visibility
@@ -245,9 +265,9 @@ missing-source-file default route. The existing bounded-prefix parser behavior i
 Default source selection reads `keep.source` from options and requires one nonmissing logical TRUE
 value. The observed nonlogical or nonscalar controls do not enable retention. An explicitly supplied
 NULL source file suppresses retention, including with a true control. A supplied source environment
-can request metadata even with a false control. Retained-source routes remain unsupported with
-`NRU6134`; silently discarding their metadata does not satisfy this contract. File/connection input,
-including the native route for NULL text, remains outside browser text parsing.
+can request metadata even with a false control. Profile 0.403 adds the bounded retained text route
+described above; unsupported syntax remains explicit. File/connection input, including the native
+route for NULL text, remains outside browser text parsing.
 
 Forty frozen native-backed assertions cover the selected values, defaults, forcing traces, warnings,
 messages and error text. Thirteen separately verified assertions cover empty-text early returns,

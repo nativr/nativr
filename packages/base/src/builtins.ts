@@ -1,4 +1,5 @@
 import { ExtendedSum } from "./extended-sum.js";
+import { retainParsedSource } from "./retained-source.js";
 import { selectRanks } from "./selection.js";
 import { BUILTIN_PACKAGE_OWNERS } from "./builtin-package-owners.js";
 import {
@@ -15647,6 +15648,7 @@ function optionsState(invocation: BuiltinInvocation): Map<string, RValue> {
     ["expressions", integerVector([5000])],
     ["help.try.all.packages", logicalVector([false])],
     ["help_type", characterVector(["text"])],
+    ["keep.parse.data", logicalVector([true])],
     ["max.print", integerVector([99_999])],
     ["prompt", characterVector(["> "])],
     ["pkgType", characterVector(["source"])],
@@ -15675,8 +15677,8 @@ function applyOption(
   validateOptionName(name);
   previous.push(state.get(name) ?? R_NULL);
   names.push(name);
-  if (value.type === "null" && name === "warnPartialMatchArgs") {
-    throw new RTypeMismatchError("NRT3223", "option 'warnPartialMatchArgs' cannot be deleted");
+  if (value.type === "null" && (name === "warnPartialMatchArgs" || name === "keep.parse.data")) {
+    throw new RTypeMismatchError("NRT3223", `option '${name}' cannot be deleted`);
   }
   if (value.type === "null") state.delete(name);
   else state.set(name, normalizeOptionValue(name, value));
@@ -17450,10 +17452,32 @@ async function builtinParse(invocation: BuiltinInvocation): Promise<RExpression>
       !isMissing(keep, 0) &&
       keep.values[0] === 1);
   if (retainSource) {
-    throw new RUnsupportedFeatureError(
-      "NRU6134",
-      "parse() source-reference attributes are not implemented.",
-    );
+    const parsedText = parseTextSource(text);
+    const sourceFile =
+      source.type === "environment"
+        ? source
+        : await builtinSourceFileCopy({
+            ...invocation,
+            arguments: [
+              {
+                name: "filename",
+                promise: createForcedPromise(
+                  characterVector(["<text>"]),
+                  invocation.globalEnvironment(),
+                ),
+              },
+              { name: "lines", promise: createForcedPromise(text, invocation.globalEnvironment()) },
+            ],
+          });
+    let keepData: boolean;
+    try {
+      keepData = productRemoveMissing(optionsState(invocation).get("keep.parse.data"), invocation);
+    } catch (error) {
+      if (error instanceof NativRError) recordErrorConditionCall(error, null);
+      throw error;
+    }
+    const parsed = invocation.parseDetailed(parsedText, maxExpressions);
+    return retainParsedSource(parsedText, sourceFile, parsed, keepData, invocation);
   }
   const program = invocation.parse(parseTextSource(text), maxExpressions);
   invocation.context.allocate(program.body.length);

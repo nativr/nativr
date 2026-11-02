@@ -41,6 +41,58 @@ export interface ProgramNode extends AstNodeBase {
   readonly body: readonly AstNode[];
 }
 
+/** Observable parser record; offsets are half-open UTF-16 positions in the effective input. */
+export interface ParseDataRecord {
+  readonly id: number;
+  readonly parent: number;
+  readonly terminal: boolean;
+  readonly token: string;
+  readonly tokenCode: number;
+  readonly startOffset: number;
+  readonly endOffset: number;
+  /** Observable terminal spelling when lexical metadata intentionally differs from its slice. */
+  readonly text?: string;
+}
+
+/** A lexically recognized line directive, never a match inside a string or comment payload. */
+export interface ParseSourceDirective {
+  readonly startOffset: number;
+  readonly endOffset: number;
+  readonly nextLogicalLine: number;
+  readonly filename?: string;
+}
+
+/** Syntax failure retained alongside the records produced before it. */
+export interface ParseDataDiagnostic {
+  readonly kind: "unexpected-token" | "incomplete" | "disabled-feature";
+  readonly offset: number;
+  readonly token?: string;
+}
+
+/** Host-independent resource accounting used during retained parsing. */
+export interface ParseWorkCallbacks {
+  checkpoint(): void;
+  allocate(elements: number): void;
+  readonly maxDepth?: number;
+  readonly onDepthExceeded?: () => never;
+}
+
+/** Parser event evidence, including a partial result when syntax is rejected. */
+export interface ParseDataResult {
+  readonly records: readonly ParseDataRecord[];
+  readonly consumedOffset: number;
+  readonly selectedCount: number;
+  readonly diagnostic?: ParseDataDiagnostic;
+  readonly sourceDirectives: readonly ParseSourceDirective[];
+}
+
+/** Detailed internal parse route; callers may publish partial metadata before raising an error. */
+export interface RetainedParseResult {
+  readonly ast: ProgramNode;
+  readonly diagnostics: readonly Diagnostic[];
+  readonly data: ParseDataResult;
+}
+
 /** A braced sequence of expressions. */
 export interface BlockNode extends AstNodeBase {
   readonly kind: "Block";

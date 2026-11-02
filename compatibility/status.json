@@ -5,13 +5,13 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.402.0",
-  "capabilityManifestHash": "c9164d51fefff7a7ad9ce5ffb15c90d860b44ae78b0ffc62be975ecdf4a902e1",
+  "semanticProfileVersion": "0.403.0",
+  "capabilityManifestHash": "ee7ef89bd5e83a4b86db0399c05814a13033fd8fcaa8593f561552a88728517e",
   "evidence": {
-    "checkedInConformanceCases": 1528,
-    "liveREligibleCases": 1455,
+    "checkedInConformanceCases": 1544,
+    "liveREligibleCases": 1471,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 441,
+    "recursiveOracleV2Cases": 449,
     "recursiveBehaviorallyProvenBindings": 176,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
@@ -585,7 +585,15 @@
           "parse-text-controls-empty-default-encoding-adjunct-graph",
           "parse-text-controls-error-order-graph",
           "parse-text-controls-path-forcing-graph",
-          "parse-text-controls-source-selection-graph"
+          "parse-text-controls-source-selection-graph",
+          "retained-incomplete-quote-partial-state-graph",
+          "retained-parse-alias-graph",
+          "retained-parse-finite-data-graph",
+          "retained-parse-function-block-graph",
+          "retained-parse-partial-error-data-graph",
+          "retained-parse-preserved-error-data-graph",
+          "retained-parse-root-data-graph",
+          "retained-parse-unicode-references-graph"
         ]
       },
       {
@@ -994,7 +1002,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "85df663603bb4c09a96c05de509196042a6e4b9f29dcc8d589bbab033c6d812f",
+    "sha256": "c481d23dc7b34a32d8444f885218179f9fcd33d7b3ca87c9ef0ba64b62350e7c",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,

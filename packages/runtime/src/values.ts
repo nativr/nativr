@@ -3,6 +3,7 @@ import type {
   CallExpressionNode,
   FunctionParameter,
   ProgramNode,
+  RetainedParseResult,
   StringLiteralNode,
 } from "@nativr/ast";
 
@@ -314,6 +315,8 @@ export interface BuiltinInvocation {
     call?: CallExpressionNode,
   ): Promise<RValue>;
   parse(source: string, maxExpressions?: number): ProgramNode;
+  /** Retain partial syntax records without raising a syntax error before source mutation. */
+  parseDetailed(source: string, maxExpressions?: number): RetainedParseResult;
   evaluate(value: RValue, environment: REnvironment): Promise<RValue>;
   evaluateDetailed(
     value: RValue,

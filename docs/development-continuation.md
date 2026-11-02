@@ -2764,3 +2764,29 @@ text. The global keep.source option default is a separate behavior. This prerequ
 narrow that target or supersede the preserved retained-parsing findings. Continue the remaining
 domain matrices, independently licensed datasets and isolated runner parity. Linux, holdout,
 download and remote-action boundaries remain in force.
+
+### Retained text parsing semantic checkpoint — 2026-11-02 (0.403)
+
+Retained text parsing now preserves sampled source references, function fourth cells, shared source
+environments, token/reduction metadata and partial parse-data updates on errors. Incomplete string
+diagnostics and resource accounting have independent regressions. Four review findings were closed:
+comment association scaling, sparse source mapping, iterative normalization and linear argument-slot
+association. This is bounded evidence, not complete syntax compatibility.
+
+The [semantic checkpoint](../compatibility/platform-evidence/retained-parse-windows-0.403.0.json)
+records 3,946 unit tests passing (96 skipped), 1,544 foundation cases, 1,471 live native comparisons
+and 449 recursive cases, with stable execution-time input/artifact hashes. The four-package
+[resource refresh](../compatibility/package-check-evidence/corpus-0.403.0-resources.json) validates
+49 observations; tiers remain evaluate P4, withr P4, abind P7 and numDeriv P6. The full 24-package
+checkpoint remains 0.397. Earlier initial and incomplete-string refreshes are preserved separately.
+
+Browser verification is open: the pinned Playwright executables are missing, and download approval
+has been requested. Four retained-parsing Worker scenarios are authored but unexecuted. The last
+passing browser checkpoint remains 0.402; no new browser, performance or OS-matrix claim follows.
+The Worker is 505.0/512 KiB gzip, so further implementation must preserve the fixed budget.
+
+Next measurable work: execute the existing browser gate when binaries are authorized; independently
+reproduce source-accessor and source(keep.source=TRUE) gaps, remaining lexical/encoding/error-format
+boundaries and the next shared corpus blocker. Continue all domain matrices, independently licensed
+datasets and isolated testing-runner parity. All thirteen domains remain incomplete. Linux and
+Formula remain deferred, and no download or remote action is authorized by this checkpoint.
