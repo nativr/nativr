@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-source-accessor-failing-baseline",
+  "date": "2026-11-02",
+  "semanticProfile": "0.403.0",
+  "sourceCommit": "de48b0eb4e0eb552be996af10e0c7e4d48b2225e",
+  "sourceState": "clean committed baseline before research documentation",
+  "oracle": {
+    "implementation": "GNU R",
+    "version": "4.6.1",
+    "locale": "C",
+    "classification": "advisory-pending-rfc-0007-linux"
+  },
+  "baseline": {
+    "nativeTrue": 11,
+    "nativrPassed": 0,
+    "nativrMissingBindingErrors": 11,
+    "inputsStable": true,
+    "startedAt": "2026-11-02T20:53:13.751Z",
+    "finishedAt": "2026-11-02T20:53:16.439Z",
+    "maintainedAndArtifactInputs": 2176
+  },
+  "cases": [
+    {
+      "id": "parse-data-default",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);d<-utils::getParseData(p);identical(names(d),c(\"line1\",\"col1\",\"line2\",\"col2\",\"id\",\"parent\",\"token\",\"terminal\",\"text\"))&&identical(class(d),\"data.frame\")&&identical(d$id,c(7L,1L,2L,3L,4L,5L))&&identical(d$parent,c(0L,2L,7L,7L,5L,7L))&&identical(d$text,c(\"\",\"17L\",\"\",\"+\",\"29L\",\"\"))&&identical(attr(d,\"srcfile\"),sf)&&identical(attr(d,\"row.names\"),d$id)})",
+      "sourceSha256": "3a247375d43677d09f7ac8f128366410497d4089453f994dc7e8bb73f4bbafcd",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "parse-data-full-text",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);d<-utils::getParseData(p,includeText=TRUE);identical(d$text,c(\"17L + 29L\",\"17L\",\"17L\",\"+\",\"29L\",\"29L\"))&&identical(names(attributes(d)),c(\"names\",\"row.names\",\"srcfile\",\"class\"))&&identical(attr(d,\"srcfile\"),sf)})",
+      "sourceSha256": "e6affb3842e6493ea7e9b0ff329269deffd19a23fc58d48b1bbbc60db8e5e6b3",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "parse-data-no-text",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);d<-utils::getParseData(p,includeText=FALSE);identical(names(d),c(\"line1\",\"col1\",\"line2\",\"col2\",\"id\",\"parent\",\"token\",\"terminal\"))&&identical(names(attributes(d)),c(\"names\",\"row.names\",\"srcfile\",\"class\"))&&identical(d$terminal,c(FALSE,TRUE,FALSE,TRUE,TRUE,FALSE))})",
+      "sourceSha256": "bbaae9fa504d98673849eff4cd634d3476baea80a9205c5586d7ace3de03bdff",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "parse-data-source-identity",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);a<-utils::getParseData(p);b<-utils::getParseData(sf);sf$marker<-83L;identical(a,b)&&identical(attr(a,\"srcfile\")$marker,83L)&&identical(sf$parseData,attr(p,\"srcfile\")$parseData)})",
+      "sourceSha256": "662db0f8b90778d6f2dc57b4af9504a8ae56690b0f509b3db563c88cc1076d5b",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "parse-data-empty",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"\",timestamp=0,isFile=FALSE);p<-parse(text=\"\",srcfile=sf,keep.source=TRUE);d<-utils::getParseData(p,includeText=TRUE);identical(nrow(d),0L)&&identical(ncol(d),9L)&&identical(d$text,character())&&identical(attr(d,\"row.names\"),integer())})",
+      "sourceSha256": "4f2521036caa13986a41e625f38b27849ce4d021ebe166f5d5cd2c42fcf2872d",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "parse-data-absent",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"17L + 29L\",timestamp=0,isFile=FALSE);p<-parse(text=\"17L + 29L\",srcfile=sf,keep.source=TRUE);is.null(utils::getParseData(parse(text=\"17L\",keep.source=FALSE)))&&is.null(utils::getParseData(sf$parseData))})",
+      "sourceSha256": "6faace71efd0704b56dd0e4c88117603bec2867c8b6aff440ad57a4819e5ac75",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "parse-data-function",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",\"function(x) x+17L\",timestamp=0,isFile=FALSE);p<-parse(text=\"function(x) x+17L\",srcfile=sf,keep.source=TRUE);f<-eval(p);d<-utils::getParseData(f,includeText=TRUE);identical(d$id,c(14L,1L,2L,3L,4L,12L,6L,8L,7L,9L,10L))&&identical(d$text,c(\"function(x) x+17L\",\"function\",\"(\",\"x\",\")\",\"x+17L\",\"x\",\"x\",\"+\",\"17L\",\"17L\"))&&identical(attr(d,\"srcfile\"),sf)})",
+      "sourceSha256": "39728705c5ebd7839815ed72afd090e6429f5b37e2fcaf4c01bbb83345f4859f",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2211",
+        "message": "'getParseData' is not a registered exported binding in namespace 'utils'."
+      }
+    },
+    {
+      "id": "source-lines-bounds",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",c(\"alpha\",\"beta\",\"gamma\"),timestamp=0,isFile=FALSE);identical(getSrcLines(sf,2L,8L),c(\"beta\",\"gamma\"))&&identical(getSrcLines(sf,0L,2L),c(\"alpha\",\"beta\"))&&identical(getSrcLines(sf,3L,1L),character())&&identical(getSrcLines(sf,1.8,2.9),c(\"alpha\",\"beta\"))&&identical(getSrcLines(sf,1L,Inf),c(\"alpha\",\"beta\",\"gamma\"))})",
+      "sourceSha256": "f72e735e4b14fcda01381cf634aacef4403530056736843bc799f599a1541b0b",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2001",
+        "message": "could not find function \"getSrcLines\""
+      }
+    },
+    {
+      "id": "source-lines-alias",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",c(\"alpha\",\"beta\"),timestamp=0,isFile=FALSE);a<-new.env(parent=emptyenv());a$original<-sf;a$filename<-\"alias.R\";a$lines<-\"alias lines\";class(a)<-c(\"srcfilealias\",\"srcfile\");identical(getSrcLines(a,1L,9L),c(\"alpha\",\"beta\"))})",
+      "sourceSha256": "957e06521f30d144a364f20435cbdf25d698142fadb55d6f244dd2b11b30d298",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2001",
+        "message": "could not find function \"getSrcLines\""
+      }
+    },
+    {
+      "id": "source-lines-attributes",
+      "code": "local({sf<-srcfilecopy(\"owned.R\",c(\"alpha\",\"beta\"),timestamp=0,isFile=FALSE);sf$lines<-structure(c(\"alpha\",\"beta\"),names=c(\"a\",\"b\"),owned=17L);identical(getSrcLines(sf,1L,2L),structure(c(\"alpha\",\"beta\"),names=c(\"a\",\"b\")))})",
+      "sourceSha256": "288bb9057a0d7fb1dd43c16e196e49146bdc4d15b96cb5de5a1f1cb754247a70",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2001",
+        "message": "could not find function \"getSrcLines\""
+      }
+    },
+    {
+      "id": "source-lines-lazy-reversal",
+      "code": "local({identical(getSrcLines(stop(\"owned source must stay lazy\"),3L,1L),character())&&identical(getSrcLines(first=3L,last=1L),character())})",
+      "sourceSha256": "0953176388d273baeed3d2610e3767dbaf4cf8dfc1d81272ae88d337ba2001e9",
+      "native": { "value": true, "visible": true, "conditions": [], "streamsEmpty": true },
+      "baseline": {
+        "passed": false,
+        "code": "NRE2001",
+        "message": "could not find function \"getSrcLines\""
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".tmp/source-accessors-next/inputs.json",
+      "sha256": "0b22182401199c32a594b564e75471a9ab6f64b02c905d7e1349b3a1224b1851"
+    },
+    {
+      "path": ".tmp/source-accessors-next/native-observations.json",
+      "sha256": "c1ac7ea9f15d22f417758ced998cc649d8e205b7c2b0416920fb1842676e7a2e"
+    },
+    {
+      "path": ".tmp/source-accessors-next/acceptance-candidates.json",
+      "sha256": "a62a3f5139ab4b63c7c6b61f89572720803f41f7dadad8f4de3075b54c2ce9ee"
+    },
+    {
+      "path": ".tmp/source-accessors-next/acceptance-native.json",
+      "sha256": "29f444444c41a5a3fb0e55dfa7c49017af7d57d0c4ac2ed8e2b8883c9d4e26b3"
+    },
+    {
+      "path": ".tmp/source-accessors-next/acceptance-candidates-corrected.json",
+      "sha256": "05726f3af8733333e62258f9d692d90a596e2b6c4dec6f85c2b04977cb543632"
+    },
+    {
+      "path": ".tmp/source-accessors-next/acceptance-native-corrected.json",
+      "sha256": "42a3689f7d62d6b84bbad85b121a8ccd86df562bcc17b66a0107684b09663f62"
+    },
+    {
+      "path": ".tmp/source-accessors-next/baseline-0403.json",
+      "sha256": "9b101eadac95861801a441604bd621cc43d6f8ad5aa50032a18e8b21696f7951"
+    }
+  ],
+  "fixtureCorrection": {
+    "id": "parse-data-no-text",
+    "kind": "expected-attribute-order-only",
+    "nativeFirstAttemptPassed": 10,
+    "nativeCorrectedPassed": 11,
+    "nativrFirstDraftExecuted": false,
+    "previousOrder": ["names", "row.names", "class", "srcfile"],
+    "correctedOrder": ["names", "row.names", "srcfile", "class"]
+  },
+  "compatibilityCredit": false,
+  "limitations": [
+    "These eleven assertions are independently authored acceptance candidates, not a complete accessor behavior matrix.",
+    "The missing callable bindings are reproduced; metadata corruption, active binding, resource, file capability and text reconstruction boundaries still need separate probes.",
+    "No capability declaration, semantic profile, passing conformance case or corpus tier changes. No GNU R implementation body was inspected."
+  ]
+}

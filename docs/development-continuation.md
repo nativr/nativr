@@ -2790,3 +2790,13 @@ reproduce source-accessor and source(keep.source=TRUE) gaps, remaining lexical/e
 boundaries and the next shared corpus blocker. Continue all domain matrices, independently licensed
 datasets and isolated testing-runner parity. All thirteen domains remain incomplete. Linux and
 Formula remain deferred, and no download or remote action is authorized by this checkpoint.
+
+### Source-accessor baseline — 2026-11-02
+
+The next source-accessor gap is reproduced on clean committed `de48b0e` (profile 0.403). Eleven
+independently authored scalar assertions pass in GNU R 4.6.1 and fail in NativR: seven encounter the
+missing utils `getParseData` binding and four encounter missing `getSrcLines`. Sources and built
+artifacts remain unchanged throughout the native and NativR baseline runs. This is failing baseline
+evidence, with no new compatibility credit. The
+[implementation plan](superpowers/plans/2026-11-02-source-accessors.md) records exact observed
+requirements, the preserved fixture correction and the remaining matrix work before implementation.
