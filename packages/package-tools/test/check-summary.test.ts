@@ -50,6 +50,7 @@ it.each([
   "0.402.0",
   "0.403.0",
   "0.404.0",
+  "0.405.0",
 ])("pins checkpoint %s without evaluating the holdout", async (profile) => {
   const read = async (path: string) =>
     JSON.parse(await readFile(new URL(`../../../${path}`, import.meta.url), "utf8")) as Record<
@@ -86,6 +87,7 @@ it.each([
           "0.402.0",
           "0.403.0",
           "0.404.0",
+          "0.405.0",
         ].includes(profile)
       ? ["evaluate", "withr", "abind", "numDeriv"]
       : ["0.381.0", "0.383.0"].includes(profile)
@@ -119,6 +121,7 @@ it.each([
       "0.402.0",
       "0.403.0",
       "0.404.0",
+      "0.405.0",
     ].includes(profile)
   ) {
     expect(checkpoint.scope).toBe("selected-development-and-regression");

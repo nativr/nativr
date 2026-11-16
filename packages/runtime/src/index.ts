@@ -82,6 +82,7 @@ export {
 export { deparseAstLines, deparseClosureLines } from "./language-deparse.js";
 export type { DeparseLinesOptions } from "./language-deparse.js";
 export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";
+export { makeUniqueNames } from "./unique-names.js";
 export {
   compressGzipBytes,
   decodeRBase64Resource,
@@ -112,7 +113,9 @@ export {
   dataFrameRowCount,
   dataFrameRowName,
   dataFrameRowNames,
+  dataFrameRowNamesAttribute,
   dataFrameValue,
+  hasAutomaticRowSequence,
   doubleVector,
   expressionValue,
   languageValue,

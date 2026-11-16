@@ -3760,5 +3760,72 @@
       "messages": "",
       "visible": true
     }
+  },
+  {
+    "id": "data-frame-row-label-repeat-graph",
+    "policy": "exact",
+    "code": "local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"oak\",\"oak.1\",\"elm\");list(repeated=d[c(1L,1L,2L,3L,1L),,drop=FALSE],automatic=data.frame(value=1:3)[c(1L,1L,3L),,drop=FALSE])})",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "data-frame-row-label-missing-graph",
+    "policy": "exact",
+    "code": "local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));list(missing=d[c(NA_integer_,1L,NA_integer_),,drop=FALSE],beyond=d[c(4L,5L,1L),,drop=FALSE],logical=d[c(TRUE,FALSE,TRUE,TRUE),,drop=FALSE])})",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "data-frame-row-label-prefix-graph",
+    "policy": "exact",
+    "code": "local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"oak\",\"oakwood\",\"olive\");list(exact=d[\"oak\",,drop=FALSE],ambiguous=d[\"o\",,drop=FALSE],unique=d[c(\"oakw\",\"ol\",\"oakw\"),,drop=FALSE])})",
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "data-frame-row-label-integer-attribute-graph",
+    "policy": "exact",
+    "code": "local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));list(automatic=attr(d,\"row.names\"),attributes=attributes(d),selected=attr(d[c(3L,1L),,drop=FALSE],\"row.names\"),empty=attr(d[integer(),,drop=FALSE],\"row.names\"))})",
+    "bindingEvidence": ["base::attr"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
+  },
+  {
+    "id": "make-unique-reserved-suffix-graph",
+    "policy": "exact",
+    "code": "list(reserved=make.unique(c(\"oak\",\"oak\",\"oak.1\",\"oak.2\",\"oak\")),missing=make.unique(c(NA_character_,\"NA\",NA_character_,\"NA\",\"NA.1\")),separator=make.unique(c(\"a\",\"a\",\"a_1\"),sep=\"_\"))",
+    "bindingEvidence": ["base::make.unique"],
+    "observationAssertions": {
+      "outcome": "value",
+      "conditions": [],
+      "stdout": "",
+      "stderr": "",
+      "messages": "",
+      "visible": true
+    }
   }
 ]

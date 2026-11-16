@@ -2830,3 +2830,37 @@ Next measurable work: mutable double-matrix metadata, exact malformed-coordinate
 and file encoding parity; the reproduced shared duplicate-row-label selection defect; missing
 row.names and rowSums. Continue the remaining domain matrices, full corpus refresh, independently
 licensed datasets and isolated runner parity. All thirteen domains remain incomplete.
+
+### Data-frame row-label repair semantic checkpoint — 2026-11-16 (0.405)
+
+The [semantic record](../compatibility/platform-evidence/data-frame-row-labels-windows-0.405.0.json)
+closes the duplicate-row-label selection defect reproduced at 0.404. The seventeen original
+assertions keep their committed failing baseline (three passed, fourteen failed). Five foundation
+groups cover 23 assertions and five raw graphs add exact recursive evidence. `base::make.unique`
+gains a causal link and `base::attr` gains one case; `[` is not shadowable and receives none.
+
+The first candidate stored automatic row labels as integers in the shared data-frame constructor.
+That broke explicit `read.table` labels, `dput`/`structure` round trips, `transform` and
+serialization identity, so it was reverted. Integer exposure now happens at `attr()`/`attributes()`
+and in subset results, and results equal to `1..n` reuse the automatic representation. Review also
+removed the repair allocation for already-unique labels and replaced the per-selector prefix scan
+with a lazily sorted index. The recursive oracle then exposed a pre-existing attribute-order
+difference: row-indexed results place `class` after `row.names`.
+
+Production check: 4,009 unit tests pass and 96 opt-in tests skip. Conformance: 1,556 checked-in,
+1,483 live native and 462 recursive cases pass; 55 NativR-only exclusions; 179 causal-linked
+bindings. The Worker is 507.5/512 KiB gzip; client 18.4/150 KiB gzip.
+
+The [four-package refresh](../compatibility/package-check-evidence/corpus-0.405.0.json) validates 49
+observations against 0.404. Tiers are unchanged: evaluate P4, withr P4, abind P7 and numDeriv P6.
+One withr wall-clock timezone example became nonrepeatable in the native oracle repeat; its outcome
+and comparison are unchanged. The full 24-package checkpoint remains 0.397; Formula is untouched.
+
+Pinned browser binaries are still missing, so no browser result is added; the last passing browser
+checkpoint remains 0.402. Download approval is pending.
+
+Next measurable work: compact `c(NA, -n)` row-name storage with `.row_names_info`, `dput` and
+`structure()` parity; deparse of integer ranges; the C-locale non-ASCII generated-suffix
+discrepancy; the source-accessor review leads, rerun against HEAD. Continue the remaining domain
+matrices, full corpus refresh, independently licensed datasets and isolated runner parity. All
+thirteen domains remain incomplete.

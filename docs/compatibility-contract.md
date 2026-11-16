@@ -38,6 +38,34 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
+### Data-frame row-label repair (profile 0.405, browser verification pending)
+
+Row-indexed `[` on data frames repairs duplicated, missing and out-of-range row labels with the
+shared `make.unique` algorithm, including reserved suffixes, literal `"NA"` labels, empty labels,
+overlong logical selectors, zero-column results and owned subclasses. Character row selectors use
+exact matching before unique-prefix matching; ambiguous, empty and missing selectors select a
+missing row. Unrepaired results from automatic or integer row labels keep integer labels, and
+results equal to `1..n` reuse the automatic representation, so `identical(d, d[1:n, ])` holds.
+`attr()` and `attributes()` expose automatic labels as integer `1..n`, including after serialization
+round trips. Row-indexed results order attributes as names, row.names, class; results with a missing
+row index keep the constructor order. Matrix and vector name handling is unchanged, and row-label
+replacement leaves labels untouched.
+
+Repair is skipped when selected labels are already unique. Unmatched character selectors use a
+lazily sorted prefix index instead of a scan per selector, so 4,000 unmatched selectors against
+4,000 rows fit the default step budget. All loops checkpoint for cancellation and account
+allocations. The stored representation of automatic labels is unchanged; GNU R's compact `c(NA, -n)`
+storage, `.row_names_info`, `dput` output of compact labels and integer row-name replacement through
+`structure()` remain unfinished. Generated-suffix encoding for non-ASCII labels under the C locale
+remains a recorded, unresolved discrepancy. The original seventeen assertions retain their committed
+failing baseline (three passed, fourteen failed at 0.404); separate adjuncts and five raw graphs do
+not inherit that baseline credit. Recursive associations are limited to `base::attr` and
+`base::make.unique`, whose shadow controls intercept the graphs; `[` itself is not shadowable and
+receives no causal credit. The production check, all three conformance suites and four cached
+package checks pass. Browser execution remains blocked by missing pinned binaries; download approval
+is pending. See the
+[semantic checkpoint](../compatibility/platform-evidence/data-frame-row-labels-windows-0.405.0.json).
+
 ### Source metadata accessors (profile 0.404, browser verification pending)
 
 `utils::getParseData` exposes the sampled retained metadata as source-ordered data frames, with

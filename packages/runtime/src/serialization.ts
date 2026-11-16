@@ -5,6 +5,7 @@ import {
   characterEncodingAt,
   characterVector,
   complexVector,
+  dataFrameRowCount,
   doubleVector,
   integerVector,
   isMissing,
@@ -539,8 +540,8 @@ class XdrSerializationWriter {
     if (value.type === "pairlist") attributes.delete("names");
     if (value.type === "list" && value.automaticRowNames === true) {
       const rowNames = attributes.get("row.names");
-      if (rowNames?.type === "character") {
-        attributes.set("row.names", integerVector([0, -rowNames.length], [1, 0]));
+      if (rowNames?.type === "character" || rowNames?.type === "integer") {
+        attributes.set("row.names", integerVector([0, -dataFrameRowCount(value)], [1, 0]));
       }
     }
     return attributes;

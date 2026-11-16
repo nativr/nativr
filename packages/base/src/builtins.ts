@@ -86,6 +86,8 @@ import {
   logicalVector,
   logicalCondition,
   matchArguments,
+  makeUniqueNames,
+  dataFrameRowNamesAttribute,
   parseLogicalString as parseRLogical,
   missingValue,
   objectAttributes,
@@ -27135,35 +27137,7 @@ async function builtinMakeUnique(invocation: BuiltinInvocation): Promise<RValue>
     }
     separator = separatorValue.values[0] ?? "";
   }
-  const usedText = new Set(input.values.filter((_, index) => !isMissing(input, index)));
-  const seen = new Set<string>();
-  const nextSuffix = new Map<string, number>();
-  const output = new Array<string>(input.length);
-  const missing = new Uint8Array(input.length);
-  for (let index = 0; index < input.length; index += 1) {
-    invocation.context.checkpoint();
-    const inputMissing = isMissing(input, index);
-    const value = inputMissing ? "NA" : (input.values[index] ?? "");
-    const key = inputMissing ? "\u0000NA" : `\u0001${value}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      output[index] = value;
-      if (inputMissing) missing[index] = 1;
-      continue;
-    }
-    let suffix = nextSuffix.get(key) ?? 1;
-    let candidate = `${value}${separator}${suffix}`;
-    while (usedText.has(candidate)) {
-      invocation.context.checkpoint();
-      suffix += 1;
-      candidate = `${value}${separator}${suffix}`;
-    }
-    nextSuffix.set(key, suffix + 1);
-    usedText.add(candidate);
-    output[index] = candidate;
-  }
-  invocation.context.allocate(input.length);
-  return characterVector(output, compactMask(missing));
+  return makeUniqueNames(input, separator, invocation.context);
 }
 
 function makeNamesCharacterInput(input: RValue, invocation: BuiltinInvocation): RCharacterVector {
@@ -27682,7 +27656,7 @@ async function matchedObjectAttribute(
     if (names !== undefined) attributes = new Map([...attributes, ["names", names]]);
   }
   const direct = attributes.get(name);
-  if (direct !== undefined) return direct;
+  if (direct !== undefined) return exposedAttribute(value, name, direct, invocation);
   if (exact || name.length === 0) return R_NULL;
   const candidates = [...attributes.keys()].filter((key) => key.startsWith(name));
   if (candidates.length !== 1) return R_NULL;
@@ -27701,7 +27675,17 @@ async function matchedObjectAttribute(
       ],
     });
   }
-  return attributes.get(key) ?? R_NULL;
+  return exposedAttribute(value, key, attributes.get(key) ?? R_NULL, invocation);
+}
+
+function exposedAttribute(
+  value: RValue,
+  name: string,
+  attribute: RValue,
+  invocation: BuiltinInvocation,
+): RValue {
+  if (name !== "row.names" || !isDataFrame(value)) return attribute;
+  return dataFrameRowNamesAttribute(value, invocation.context) ?? attribute;
 }
 
 async function builtinAttrReplacement(invocation: BuiltinInvocation): Promise<RValue> {
@@ -27778,7 +27762,7 @@ async function builtinAttributes(invocation: BuiltinInvocation): Promise<RValue>
   const entries = [...attributes.entries()];
   invocation.context.allocate(entries.length);
   return listValue(
-    entries.map(([, attribute]) => attribute),
+    entries.map(([name, attribute]) => exposedAttribute(value, name, attribute, invocation)),
     entries.map(([name]) => name),
   );
 }

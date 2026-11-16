@@ -1,0 +1,90 @@
+{
+  "provenance": "Independently authored GNU R 4.6.1 observations; clean committed 0.404 baseline has 3 passes and 14 false mismatches. Unicode generated-suffix encoding remains a separate recorded lead.",
+  "cases": [
+    {
+      "id": "integer-repeat",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(1L,1L,2L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"1\",\"1.1\",\"2\"))&&identical(x$value,c(17L,17L,29L))})",
+      "sourceSha256": "f53f6ec2e570a98639a3b457db301c3c4984ab21cb955c1b0bddff430b484d65"
+    },
+    {
+      "id": "character-repeat",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"oak\",\"pine\",\"elm\");d[c(1L,1L,2L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"oak\",\"oak.1\",\"pine\"))&&identical(x$value,c(17L,17L,29L))})",
+      "sourceSha256": "6b4754b73221c8ef84cdcc0fdd97786802acab0c08e58b181834d50bcf4f9ed7"
+    },
+    {
+      "id": "reserved-suffix",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"oak\",\"oak.1\",\"oak.2\");d[c(1L,1L,2L,3L,1L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"oak\",\"oak.3\",\"oak.1\",\"oak.2\",\"oak.4\"))&&identical(x$value,c(17L,17L,29L,31L,17L))})",
+      "sourceSha256": "7055cb68c620406c759f44e3dce3e925bc56ce11ae7e7e956dbaf3e7375dde0e"
+    },
+    {
+      "id": "missing-rows",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(NA_integer_,1L,NA_integer_,1L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"NA\",\"1\",\"NA.1\",\"1.1\"))&&identical(x$value,c(NA_integer_,17L,NA_integer_,17L))})",
+      "sourceSha256": "0b12317cc7a3186aea571f501432bfefc76fbb49648074e1ab9f662eb04a89b7"
+    },
+    {
+      "id": "beyond-rows",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(4L,5L,4L,1L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"NA\",\"NA.1\",\"NA.2\",\"1\"))&&identical(x$value,c(NA_integer_,NA_integer_,NA_integer_,17L))})",
+      "sourceSha256": "31ad59d2820b42d1b75e08c6957cb521eb052aefbb78b28a7b103f527d040b3c"
+    },
+    {
+      "id": "literal-na-label",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"NA\",\"NA.1\",\"elm\");d[c(NA_integer_,1L,NA_integer_,2L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"NA\",\"NA.2\",\"NA.3\",\"NA.1\"))&&identical(x$value,c(NA_integer_,17L,NA_integer_,29L))})",
+      "sourceSha256": "39a67c999ff35ec05cbc0646a09ec96838ab591efa4b313e97e24fd97022fdac"
+    },
+    {
+      "id": "empty-label",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"\",\"x\",\".1\");d[c(1L,1L,3L,1L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"\",\".2\",\".1\",\".3\"))&&identical(x$value,c(17L,17L,31L,17L))})",
+      "sourceSha256": "3694aca0260c75f4d340a1e2d4f8e190aa18b8023e5f41ee5bbb831aa7c0cefe"
+    },
+    {
+      "id": "named-partial-rows",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"oak\",\"pine\",\"elm\");d[c(\"oa\",\"oa\",\"missing\"),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"oak\",\"oak.1\",\"NA\"))&&identical(x$value,c(17L,17L,NA_integer_))})",
+      "sourceSha256": "e7cb65ce49a5da77a48a20a11514d8553169d4af7fd69808eb5ef8890e354785"
+    },
+    {
+      "id": "logical-long-rows",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(TRUE,FALSE,TRUE,TRUE,TRUE),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"1\",\"3\",\"NA\",\"NA.1\"))&&identical(x$value,c(17L,31L,NA_integer_,NA_integer_))})",
+      "sourceSha256": "a3e1078a3bcf7a13d3b83d92458394470aaf712dfc4e4af0ca2e64291701d280"
+    },
+    {
+      "id": "integer-unique",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(3L,1L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(3L,1L))&&identical(x$value,c(31L,17L))})",
+      "sourceSha256": "bd78fb1bea0476ca55f4c0f633fdcea06f79f9bc7ecb94e7d492e81678ab6b3b"
+    },
+    {
+      "id": "zero-rows",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[integer(),,drop=FALSE]});identical(attr(x,\"row.names\"),integer())&&identical(x$value,integer())})",
+      "sourceSha256": "4fbd2602a7cad51c86b88e7ddf7b2b014ce8f004465bbad414939c496ae70798"
+    },
+    {
+      "id": "zero-columns-repeat",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(1L,1L),integer(),drop=FALSE]});identical(attr(x,\"row.names\"),c(\"1\",\"1.1\"))&&identical(x$value,NULL)})",
+      "sourceSha256": "67267055099f42565a58440743a54c34442fb18efd0c11fb60ce7f5ac7bffdb3"
+    },
+    {
+      "id": "replacement-repeat",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));d[c(1L,1L),\"value\"]<-c(41L,43L);d});identical(attr(x,\"row.names\"),1L:3L)&&identical(x$value,c(43L,29L,31L))})",
+      "sourceSha256": "64ac5edd4c091f1bf273923f41bb7d84d732569a38ec492d2cd8168f23e63179"
+    },
+    {
+      "id": "replacement-named-repeat",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));rownames(d)<-c(\"oak\",\"pine\",\"elm\");d[c(\"oak\",\"oak\"),\"value\"]<-c(41L,43L);d});identical(attr(x,\"row.names\"),c(\"oak\",\"pine\",\"elm\"))&&identical(x$value,c(43L,29L,31L))})",
+      "sourceSha256": "7bed79902c0e568d8bdf0516aae66751c96582af754becac5cf28f3f5f88d879"
+    },
+    {
+      "id": "owned-subclass",
+      "code": "local({x<-local({d<-data.frame(value=c(17L,29L,31L),tag=c(\"a\",\"b\",\"c\"));class(d)<-c(\"owned\",\"data.frame\");d[c(1L,1L),,drop=FALSE]});identical(attr(x,\"row.names\"),c(\"1\",\"1.1\"))&&identical(x$value,c(17L,17L))})",
+      "sourceSha256": "754b80b7c70d16b7e70f0fea14de13e3eaff911c7b3c8f19cf455773f2f6c545"
+    },
+    {
+      "id": "unique-primitive",
+      "code": "identical(make.unique(c(\"oak\",\"oak\",\"oak.1\",\"oak.2\",\"oak\")),c(\"oak\",\"oak.3\",\"oak.1\",\"oak.2\",\"oak.4\"))",
+      "sourceSha256": "bd2d05634283cb188fe7d34f9a3456d8ab0c238d7879d1c266d1bbbeaf53b0f8"
+    },
+    {
+      "id": "unique-missing",
+      "code": "identical(make.unique(c(NA_character_,\"NA\",NA_character_,\"NA\",\"NA.1\")),c(NA_character_,\"NA\",\"NA.2\",\"NA.3\",\"NA.1\"))",
+      "sourceSha256": "cd71ee48cbb4c28aba78b326745e507f7be17e8dfd73d8a0421b00ac7d9a0a35"
+    }
+  ]
+}

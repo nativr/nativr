@@ -3,17 +3,17 @@
   "targetRVersion": "4.6.1",
   "compatibilityProfile": "r-4.6.1",
   "platformProfile": "browser-admissible",
-  "semanticProfileVersion": "0.404.0",
+  "semanticProfileVersion": "0.405.0",
   "reference": {
     "version": "R version 4.6.1 (2026-06-24 ucrt)",
     "platform": "x86_64-w64-mingw32"
   },
   "sourceDigests": {
     "profiles": "91482a39379a9beb520294c8b0fc9ed90e98780201a381b5ae0bca3d1e337795",
-    "capabilities": "cd75331897b2f71c632ec0e66665980e604e3378e4b435850a29562ccde3caf3",
+    "capabilities": "118cf43e6b63ff60ea2887d86fd73d1cd03384163707ab4f773c634d81f893a7",
     "surface": "3a2af094ee0274c49ca7bb2c90ce12a2e179ea986b01ee9c69b2c60e89ef7c8e",
-    "foundation": "0d44953145758b20967ef9c7f715bb8dc17751b9c222004b4c1f8ee877063e87",
-    "oracleV2": "e64c5bdd971fcf039bd53f5a3efb5f4b8a18a2ee29a376123dfe42ff5725d83c",
+    "foundation": "4c36d383c5cfb217b4b30928e60b10cee11bf29c6f5968757519325eff12f7b8",
+    "oracleV2": "976dc38e8a5ab2831fe4424d625f50ff993509e5538f78601ec7df8bea313318",
     "domains": "dd48be8d9419c3d92307448c53724210f16201e1668a958a5e8d7fbd9231f4f8",
     "annotations": "619be31f972f793745ee9fefad6fed5ade3c9a20f9de0a6e237d4895106f4b72"
   },
@@ -52,7 +52,7 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1355,
     "classificationPendingBindings": 1198,
-    "recursiveLinkedBindings": 178,
+    "recursiveLinkedBindings": 179,
     "bindingsWithDeclaredMatrixEvidence": 38,
     "incompleteBindings": 2553,
     "incompleteDomains": 13
@@ -244,7 +244,7 @@
       "requirement": "Coercion, recycling, names/attributes, NA/NaN/Inf, indexing, replacement, and dispatch across every atomic/list type.",
       "completion": "incomplete",
       "assignedBindings": 421,
-      "recursiveLinkedBindings": 67,
+      "recursiveLinkedBindings": 68,
       "matrix": [
         {
           "dimension": "ordinary",
@@ -469,7 +469,7 @@
       "requirement": "Factors, frames, arrays, time zones, locales, encodings, connections, serialization, and native data formats.",
       "completion": "incomplete",
       "assignedBindings": 314,
-      "recursiveLinkedBindings": 43,
+      "recursiveLinkedBindings": 44,
       "matrix": [
         {
           "dimension": "ordinary",
@@ -8224,6 +8224,7 @@
       },
       "completion": "incomplete",
       "recursiveCaseIds": [
+        "data-frame-row-label-integer-attribute-graph",
         "function-source-cell-reference-graph",
         "partial-attribute-lookup-and-time-forcing"
       ],
@@ -16468,6 +16469,7 @@
         "domains": ["data-time", "vector-semantics"]
       },
       "completion": "incomplete",
+      "recursiveCaseIds": ["make-unique-reserved-suffix-graph"],
       "remainingGaps": [
         "Complete string recycling, missingness, byte/Unicode/locale, naming and error/attribute behavior remains unfinished.",
         "The complete ordinary, boundary, error, attribute, visibility, side-effect and identity matrix remains unfinished; this purpose assignment adds no behavioral evidence."

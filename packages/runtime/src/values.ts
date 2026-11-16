@@ -1412,6 +1412,32 @@ export function dataFrameRowNames(value: RList, context: OperatorContext): RChar
   );
 }
 
+/** Return true when stored row labels are the automatic `1..n` sequence. */
+export function hasAutomaticRowSequence(value: RList, context: OperatorContext): boolean {
+  const names = value.attributes.get("row.names");
+  if (names?.type === "integer") {
+    return names.length === 2 && isMissing(names, 0) && !isMissing(names, 1);
+  }
+  if (names?.type !== "character" || value.automaticRowNames !== true) return false;
+  for (let index = 0; index < names.length; index += 1) {
+    context.checkpoint();
+    if (isMissing(names, index) || names.values[index] !== String(index + 1)) return false;
+  }
+  return true;
+}
+
+/** Expose automatic row labels as the integer sequence without changing stored labels. */
+export function dataFrameRowNamesAttribute(
+  value: RList,
+  context: OperatorContext,
+): RValue | undefined {
+  const names = value.attributes.get("row.names");
+  if (names === undefined || !hasAutomaticRowSequence(value, context)) return names;
+  const count = dataFrameRowCount(value);
+  context.allocate(count);
+  return integerVector(Int32Array.from({ length: count }, (_, index) => index + 1));
+}
+
 /** Read stored textual names; callers requiring NA identity inspect the names attribute mask. */
 export function vectorNames(value: RAttributedSequence): readonly string[] | undefined {
   const names = value.attributes.get("names");

@@ -5,14 +5,14 @@
   "platformProfile": "browser-admissible",
   "nativrVersion": "0.1.1",
   "protocolVersion": 1,
-  "semanticProfileVersion": "0.404.0",
-  "capabilityManifestHash": "e1dd0b9b63ee63ad1975004d6d56b6409917a77061817de64f03ad5cde93fb16",
+  "semanticProfileVersion": "0.405.0",
+  "capabilityManifestHash": "c4bf9dae5f972ba21b6ad8a862fc91044d3c529522bf4943928b763d37e7cd67",
   "evidence": {
-    "checkedInConformanceCases": 1551,
-    "liveREligibleCases": 1478,
+    "checkedInConformanceCases": 1556,
+    "liveREligibleCases": 1483,
     "packageLoaderCases": 18,
-    "recursiveOracleV2Cases": 457,
-    "recursiveBehaviorallyProvenBindings": 178,
+    "recursiveOracleV2Cases": 462,
+    "recursiveBehaviorallyProvenBindings": 179,
     "recursiveBindingEvidence": [
       { "binding": "base::.subset", "cases": ["default-boundary-internal-extraction"] },
       { "binding": "base::.subset2", "cases": ["default-boundary-internal-extraction"] },
@@ -155,6 +155,7 @@
       {
         "binding": "base::attr",
         "cases": [
+          "data-frame-row-label-integer-attribute-graph",
           "function-source-cell-reference-graph",
           "partial-attribute-lookup-and-time-forcing"
         ]
@@ -465,6 +466,7 @@
           "recursive-stdout-and-invisible-result"
         ]
       },
+      { "binding": "base::make.unique", "cases": ["make-unique-reserved-suffix-graph"] },
       {
         "binding": "base::makeActiveBinding",
         "cases": [
@@ -1020,7 +1022,7 @@
   },
   "callableInventory": {
     "report": "compatibility/callable-domain-inventory.json",
-    "sha256": "7f4e93155efa6dcc1ed9747d9cfa00d3e74a5e6720c50102704a23c037718d04",
+    "sha256": "bc8f6b55d90d704ca17c442886b49624ab96dacd1f2576546bbdaa7bf1b88d3d",
     "callableBindings": 2553,
     "referenceCallableBindings": 2525,
     "referenceCallableNames": 2522,
@@ -1029,7 +1031,7 @@
     "registeredOutsideExportSnapshot": 28,
     "classifiedBindings": 1355,
     "classificationPendingBindings": 1198,
-    "recursiveLinkedBindings": 178,
+    "recursiveLinkedBindings": 179,
     "bindingsWithDeclaredMatrixEvidence": 38,
     "incompleteBindings": 2553,
     "incompleteDomains": 13,

@@ -1,6 +1,7 @@
 import type { AstNode } from "@nativr/ast";
 
 import { REvaluationError, RTypeMismatchError } from "./errors.js";
+import { makeUniqueNames } from "./unique-names.js";
 import {
   R_NULL,
   characterBytesAt,
@@ -15,6 +16,7 @@ import {
   expressionValue,
   factorLevels,
   factorLabelAt,
+  hasAutomaticRowSequence,
   integerVector,
   isAtomic,
   isDataFrame,
@@ -1347,7 +1349,12 @@ function subsetDataFrame(
 ): RVector {
   const rowNamesValue = target.attributes.get("row.names");
   const rowNames = dataFrameRowNames(target, context).values;
-  const selectedRows = resolveAxisIndices(dataFrameRowCount(target), rowIndex, rowNames);
+  const selectedRows = resolveDataFrameSubsetRows(
+    dataFrameRowCount(target),
+    rowIndex,
+    rowNames,
+    context,
+  );
   const selectedColumns = resolveAxisIndices(target.length, columnIndex, vectorNames(target));
   if (selectedColumns.some((position) => position === undefined)) {
     throw new REvaluationError("NRE2202", "Data-frame column subscript is out of bounds.");
@@ -1372,18 +1379,95 @@ function subsetDataFrame(
   }
   const sourceNames = vectorNames(target) ?? [];
   const columnNames = selectedColumns.map((position) => sourceNames[position ?? 0] ?? "");
-  const outputRowNames = selectedRows.map((position, index) =>
-    position === undefined ? `NA${index + 1}` : (rowNames?.[position] ?? String(position + 1)),
+  const outputRowNames = selectedRows.map((position) =>
+    position === undefined ? "NA" : (rowNames[position] ?? String(position + 1)),
   );
-  let output = dataFrameValue(columns, columnNames, outputRowNames);
-  if (
-    rowNamesValue?.type === "integer" &&
-    selectedRows.every((position) => position !== undefined) &&
-    new Set(outputRowNames).size === outputRowNames.length
-  ) {
+  const complete = selectedRows.every((position) => position !== undefined);
+  const repair = !complete || hasDuplicateText(outputRowNames, context);
+  const integerLabels =
+    !repair && (rowNamesValue?.type === "integer" || hasAutomaticRowSequence(target, context));
+  const automatic =
+    integerLabels && outputRowNames.every((name, index) => name === String(index + 1));
+  let output = dataFrameValue(
+    columns,
+    columnNames,
+    repair ? makeUniqueNames(characterVector(outputRowNames), ".", context).values : outputRowNames,
+    automatic,
+  );
+  if (integerLabels && !automatic) {
     output = withAttribute(output, "row.names", integerVector(outputRowNames.map(Number)));
   }
-  return classes === undefined ? output : withClasses(output, classes);
+  if (classes !== undefined) output = withClasses(output, classes);
+  return rowIndex === undefined ? output : withClassAfterRowNames(output);
+}
+
+/** Row-indexed data-frame results order their attributes as names, row.names, then class. */
+function withClassAfterRowNames(value: RList): RList {
+  const classes = value.attributes.get("class");
+  if (classes === undefined) return value;
+  const attributes = new Map(value.attributes);
+  attributes.delete("class");
+  attributes.set("class", classes);
+  return { ...value, attributes };
+}
+
+function hasDuplicateText(values: readonly string[], context: OperatorContext): boolean {
+  context.allocate(values.length);
+  const seen = new Set<string>();
+  for (const value of values) {
+    context.checkpoint();
+    if (seen.has(value)) return true;
+    seen.add(value);
+  }
+  return false;
+}
+
+/** Character row selectors use exact, then unique-prefix matching; ambiguity selects NA. */
+function resolveDataFrameSubsetRows(
+  length: number,
+  index: RValue | undefined,
+  names: readonly string[],
+  context: OperatorContext,
+): readonly SelectedIndex[] {
+  if (index?.type !== "character") return resolveAxisIndices(length, index, names);
+  context.allocate(names.length + index.length);
+  const exact = new Map<string, number>();
+  for (let row = 0; row < names.length; row += 1) {
+    context.checkpoint();
+    if (!exact.has(names[row]!)) exact.set(names[row]!, row);
+  }
+  let sorted: readonly number[] | undefined;
+  return Array.from({ length: index.length }, (_, at) => {
+    context.checkpoint();
+    if (isMissing(index, at)) return undefined;
+    const prefix = index.values[at]!;
+    if (prefix === "") return undefined;
+    const matched = exact.get(prefix);
+    if (matched !== undefined) return matched;
+    sorted ??= sortedRowOrder(names, context);
+    let low = 0;
+    let high = sorted.length;
+    while (low < high) {
+      context.checkpoint();
+      const middle = (low + high) >>> 1;
+      if (names[sorted[middle]!]! < prefix) low = middle + 1;
+      else high = middle;
+    }
+    const row = sorted[low];
+    if (row === undefined || !names[row]!.startsWith(prefix)) return undefined;
+    const next = sorted[low + 1];
+    return next !== undefined && names[next]!.startsWith(prefix) ? undefined : row;
+  });
+}
+
+function sortedRowOrder(names: readonly string[], context: OperatorContext): readonly number[] {
+  context.allocate(names.length);
+  return Array.from({ length: names.length }, (_, row) => row).sort((left, right) => {
+    context.checkpoint();
+    const a = names[left]!;
+    const b = names[right]!;
+    return a < b ? -1 : a > b ? 1 : left - right;
+  });
 }
 
 function replaceDataFrameColumns(

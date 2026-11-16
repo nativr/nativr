@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "kind": "nativr-data-frame-row-label-semantic-checkpoint",
+  "date": "2026-11-16",
+  "semanticProfile": "0.405.0",
+  "sourceCommit": "573e946a8fd5a714926e82bbbd7d17dea9ddb717",
+  "sourceState": "verified uncommitted semantic candidate followed by metadata/documentation persistence",
+  "semanticGatesPassed": true,
+  "fullIncrementVerified": false,
+  "releaseReady": false,
+  "gates": {
+    "check": {
+      "log": {
+        "path": ".tmp/check-0405-final.log",
+        "sha256": "7c38f0f4d1a57a8fae5957d95bc99e75cebbc642ac4d8f62f22eecaa2bc439e4"
+      },
+      "summary": "Tests  4009 passed | 96 skipped (4105)"
+    },
+    "foundation": {
+      "log": {
+        "path": ".tmp/conformance-0405-final.log",
+        "sha256": "7858511aedc6324969afe3fb453c7877f095d6e7b9217d180b3eb169c8f0620b"
+      },
+      "summary": "Checked-in conformance: 1556/1556 passed"
+    },
+    "native": {
+      "log": {
+        "path": ".tmp/conformance-r-0405-final.log",
+        "sha256": "480bbb066e0d3b9d362b53188914be28bf63607690f2e374d53efde14e92aa69"
+      },
+      "summary": "Live R oracle: 1483/1483 passed; 55 NativR-only cases skipped"
+    },
+    "recursive": {
+      "log": {
+        "path": ".tmp/conformance-r-v2-0405-final.log",
+        "sha256": "9551f5c2b343bd4d43ff4dd1e2e52f3f91da99a3eb1ea6a9ab531c2c031b0a23"
+      },
+      "summary": "Recursive live R oracle v2: 462/462 passed; 179 registered bindings have case links with causal shadow controls."
+    }
+  },
+  "counts": {
+    "unitPassed": 4009,
+    "unitSkipped": 96,
+    "foundation": 1556,
+    "native": 1483,
+    "nativrOnlyExcluded": 55,
+    "recursive": 462,
+    "recursiveLinkedBindings": 179,
+    "newFoundationGroups": 5,
+    "newFoundationAssertions": 23,
+    "newRawGraphs": 5,
+    "newCausalBindings": ["base::make.unique"],
+    "additionalCausalCases": { "base::attr": ["data-frame-row-label-integer-attribute-graph"] },
+    "focusedRowLabelTests": 19
+  },
+  "baseline": {
+    "fixture": {
+      "path": "packages/nativr/test/fixtures/data-frame-row-labels.json",
+      "sha256": "b3e472997ea33b04418c781ae166f301354f60736d33b6a623f8f85986c5d398"
+    },
+    "originalAssertions": 17,
+    "passedAt0404": 3,
+    "failedAt0404": 14,
+    "redLog": {
+      "path": ".tmp/row-label-tests-red-0404.log",
+      "sha256": "be5a24d84bb7be3dac77d5acde7efb59a21fdadcc519c0e501559ce44ab6983a"
+    },
+    "note": "Adjunct assertions and raw graphs authored during this increment do not inherit the committed failing-baseline credit."
+  },
+  "nativeProbes": {
+    "representation": {
+      "inputs": {
+        "path": ".tmp/row-label-probe/inputs.R",
+        "sha256": "4130dd9bf6070959f603d93f0b93503ecbf630104dc767565e5187367df7dc0b"
+      },
+      "oracle": {
+        "path": ".tmp/row-label-probe/oracle.txt",
+        "sha256": "f293d10735225bc32e519a79e5c32de7fa4483cc5c8cbd64d08dd55664535208"
+      },
+      "nativr": {
+        "path": ".tmp/row-label-probe/native.txt",
+        "sha256": "88535c33294313ee6ca3130831fa77470b4ba175462872bea6cbb363249cdb45"
+      }
+    },
+    "attributeOrder": {
+      "inputs": {
+        "path": ".tmp/row-label-probe/order.R",
+        "sha256": "5e47ef8657db1e6e506b15552d667e71c81bc3b5340a98105e2d3bfaa2ffb4fd"
+      },
+      "oracle": {
+        "path": ".tmp/row-label-probe/order-oracle.txt",
+        "sha256": "0b5d7b62919a304a78f92186f83713c0777366a3a5a2a7132b89d4b827bd427d"
+      },
+      "nativr": {
+        "path": ".tmp/row-label-probe/order-native.txt",
+        "sha256": "de40cf1a956ca81fbff3fc9e733254766c702e8e877965f47334cff8458b6250"
+      }
+    },
+    "adjuncts": {
+      "inputs": {
+        "path": ".tmp/row-label-probe/extra.R",
+        "sha256": "79bd90a6d3792af41f50115b618c7ac91be6c4b4fa77faed6f4fc8ec56364d0a"
+      },
+      "nativr": {
+        "path": ".tmp/row-label-probe/extra-native.txt",
+        "sha256": "a1c7c67b1686295aa31a982005d6f60a33f6db9c1022687e3c6280fd93c3a0db"
+      }
+    },
+    "scale": {
+      "path": ".tmp/row-label-probe/scale.txt",
+      "sha256": "a4e390b98293b3323dad1d4162c20b62e3cead34ca212390370f2c310aeedfe8"
+    },
+    "note": "Remaining representation-probe differences are deparse formatting only (for example 1:3 versus c(1L, 2L, 3L)); values agree."
+  },
+  "review": {
+    "sharedRepresentationChangeReverted": true,
+    "reason": "Storing automatic labels as integers in the shared data-frame constructor broke read.table explicit labels, dput/structure round trips, transform and serialization identity. Integer exposure is applied at attr/attributes and subset results instead.",
+    "revertedDiff": {
+      "path": ".tmp/row-label-probe/values-change.diff",
+      "sha256": "82e08eb04261645d8d4cea3b4391709b09e83888fc74f1ee1889dfd95a1bf883"
+    },
+    "resolved": [
+      "unique labels skip make.unique allocation",
+      "unmatched character selectors use a lazily sorted prefix index",
+      "results equal to 1..n reuse the automatic representation",
+      "row-indexed results order class after row.names"
+    ]
+  },
+  "browser": {
+    "status": "unexecuted-missing-pinned-browsers",
+    "downloadApproval": "pending",
+    "lastPassingProfile": "0.402.0"
+  },
+  "corpus": {
+    "checkpoint": {
+      "path": "compatibility/package-check-evidence/corpus-0.405.0.json",
+      "sha256": "38ae6eb1498844707fc1ea4d9fe5f31de3992a24ebc063909b9f944c4afe1b23"
+    },
+    "receipt": {
+      "path": "compatibility/platform-evidence/corpus-windows-0.405.0.json",
+      "sha256": "3168ae21b592d09c23a4c42b4c27645325e13d36d76e685a0dc54d3c2dede673"
+    },
+    "runLog": {
+      "path": ".tmp/profile-0405-corpus.log",
+      "sha256": "f07f6a9b17ddf5b40622629924fa11217c7a561364b761e2b6309673a0171a99"
+    },
+    "packages": 4,
+    "observations": 49,
+    "tiersChanged": false,
+    "changes": [
+      {
+        "package": "withr",
+        "path": "man/with_timezone.Rd",
+        "field": "repeatable",
+        "before": true,
+        "after": false,
+        "interpretation": "Native oracle repeat of a wall-clock timezone example; actual, expected and comparison outcomes are unchanged."
+      }
+    ],
+    "fullCorpusCheckpoint": "0.397.0"
+  },
+  "bundles": {
+    "clientGzipKiB": 18.4,
+    "workerGzipKiB": 507.5,
+    "parserRawKiB": 671.9,
+    "elementaryRawKiB": 311.2
+  },
+  "preservedEarlierAttempts": [
+    {
+      "path": ".tmp/check-0405-candidate1.log",
+      "sha256": "4e2c8621b601803556c59b7e0e394430ab852010665e6ab267624a70234fbdc2",
+      "outcome": "format check failed before tests"
+    },
+    {
+      "path": ".tmp/vitest-0405-candidate1.log",
+      "sha256": "c951a0047c7265e0204b6b6ac27026416bab8601f8aaf01b97029d4687df8a6b",
+      "outcome": "five regressions from the shared integer row-name representation"
+    },
+    {
+      "path": ".tmp/conformance-r-v2-0405.log",
+      "sha256": "3831e3b8d427511c7543819b69b4089b64c4321829e74ded71e4766ed2685304",
+      "outcome": "three raw graphs differed only in attribute order"
+    },
+    {
+      "path": ".tmp/conformance-0405.log",
+      "sha256": "7858511aedc6324969afe3fb453c7877f095d6e7b9217d180b3eb169c8f0620b",
+      "outcome": "passed before the attribute-order correction"
+    },
+    {
+      "path": ".tmp/conformance-r-0405.log",
+      "sha256": "480bbb066e0d3b9d362b53188914be28bf63607690f2e374d53efde14e92aa69",
+      "outcome": "passed before the attribute-order correction"
+    }
+  ],
+  "qualifications": [
+    "Gate logs are hashed after execution; unlike the 0.404 record, no before/after input snapshots were captured around each gate.",
+    "The checkpoint test pin, corpus persistence and documentation follow the consuming check; separate post-metadata checks are required.",
+    "Compact c(NA, -n) storage, .row_names_info, dput of compact labels and integer row.names through structure() remain unfinished.",
+    "The C-locale generated-suffix encoding discrepancy for non-ASCII labels remains open.",
+    "Windows oracle evidence is advisory; the Linux RFC-0007 gate and Formula holdout remain separately authorized."
+  ]
+}
