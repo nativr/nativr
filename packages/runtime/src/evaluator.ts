@@ -5,31 +5,29 @@ import {
   partialMatchWarningsEnabled,
 } from "./arguments.js";
 import type { PartialArgumentMatch } from "./arguments.js";
-import { translatePosixCharacterClasses } from "./regex.js";
-import { logicalCondition } from "./logical-condition.js";
-import {
-  extractExpressionElement,
-  extractExpressionMember,
-  replaceExpressionElement,
-  replaceExpressionMember,
-  replaceExpressionSubset,
-  subsetExpression,
-} from "./expression-subset.js";
 import { assertNever } from "@nativr/ast";
 import type {
   AssignmentExpressionNode,
   AstNode,
   CallArgument,
   CallExpressionNode,
-  ProgramNode,
+  FunctionParameter,
   ParseWorkCallbacks,
+  ProgramNode,
   RetainedParseResult,
   SourceSpan,
   SubsetExpressionNode,
 } from "@nativr/ast";
 
 import { EvaluationContext, DEFAULT_RUNTIME_LIMITS } from "./context.js";
-import { deparseAst, deparseDiagnosticAst } from "./language.js";
+import {
+  deparseAst,
+  deparseDiagnosticAst,
+  languageEntries,
+  languageFromEntries,
+  languageValueAst,
+  quoteLanguageAst,
+} from "./language.js";
 import { functionSourceCellNode } from "./language-metadata.js";
 import {
   embeddedValueAst,
@@ -42,6 +40,17 @@ import {
   subsetLanguage,
 } from "./language-subset.js";
 import { censusRuntimeMemory } from "./memory.js";
+import { isCanonicalBase64 } from "./base64.js";
+import { normalizePosixCharacterClasses, translatePosixCharacterClasses } from "./regex.js";
+import { logicalCondition } from "./logical-condition.js";
+import {
+  extractExpressionElement,
+  extractExpressionMember,
+  replaceExpressionElement,
+  replaceExpressionMember,
+  replaceExpressionSubset,
+  subsetExpression,
+} from "./expression-subset.js";
 import {
   createEnvironment,
   createForcedPromise,
@@ -51,60 +60,88 @@ import {
   lookupBinding,
   missingArgumentMessage,
   setBinding,
+  setParentEnvironment,
 } from "./environment.js";
 import {
-  NativRError,
   errorConditionCall,
   errorConditionClasses,
+  NativRError,
+  RConditionError,
   recordErrorConditionCall,
   REvaluationError,
-  RSignalledConditionError,
   RResourceLimitError,
   RRuntimeDisposedError,
+  RSignalledConditionError,
   RTypeMismatchError,
   RUnsupportedFeatureError,
 } from "./errors.js";
 import { decodeRBase64Resource, decodeRWorkspaceFile } from "./serialization.js";
 import {
-  characterVector,
+  BASE_OPTIONS_STATE_KEY,
   characterLiteralValue,
+  characterVector,
   complexVector,
   doubleVector,
-  functionDebugRegistry,
-  integerVector,
-  languageValue,
-  isFactor,
+  DYNAMIC_CALLING_HANDLERS_STATE_KEY,
+  EXITING_HANDLER_STACK_STATE_KEY,
+  ExitingHandlerJump,
   factorLevelVector,
+  functionDebugRegistry,
+  GLOBAL_CALLING_HANDLERS_STATE_KEY,
+  HOST_ELEMENTARY_MATH,
+  integerVector,
   isAtomic,
   isDataFrame,
+  isFactor,
   isMissing,
   isVector,
+  languageValue,
   listValue,
   logicalVector,
   missingValue,
-  objectClasses,
-  pairlistValue,
-  BASE_OPTIONS_STATE_KEY,
   NATIVR_PACKAGE_LIBRARY_PATH,
   NATIVR_PACKAGE_SOURCE_RESOURCE_ROOT,
   NATIVR_SYSTEM_LIBRARY_PATH,
+  objectClasses,
   PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
+  pairlistValue,
   R_NULL,
-  vectorDimensions,
-  withClasses,
-  withAttribute,
-  GLOBAL_CALLING_HANDLERS_STATE_KEY,
-  USER_HOOKS_STATE_KEY,
+  RESTART_FRAME_COUNTER_STATE_KEY,
+  RESTART_STACK_STATE_KEY,
+  RestartJump,
   runtimeOutputRouter,
-  HOST_ELEMENTARY_MATH,
+  rVersionValue,
+  S4_SLOT_REPLACEMENT_VALIDATOR_STATE_KEY,
+  SOURCE_REFERENCE_CONTEXT_STATE_KEY,
+  USER_HOOKS_STATE_KEY,
+  vectorDimensions,
+  vectorNames,
+  withAttribute,
+  withClasses,
+  withNames,
 } from "./values.js";
+
+const SYNTHETIC_SOURCE_SPAN = {
+  start: { offset: 0, line: 1, column: 1 },
+  end: { offset: 0, line: 1, column: 1 },
+} as const;
+
+function mutableAtomicVector(value: RValue): boolean {
+  return (
+    value.type === "logical" ||
+    value.type === "integer" ||
+    value.type === "double" ||
+    value.type === "complex" ||
+    value.type === "raw"
+  );
+}
 import {
   extractListMember,
   extractVectorElement,
+  prepareListMemberTarget,
   replaceCoordinateMatrix,
   replaceDimensions,
   replaceListMember,
-  prepareListMemberTarget,
   replaceVectorElement,
   replaceVectorSubset,
   subsetCoordinateMatrix,
@@ -115,32 +152,38 @@ import type {
   BuiltinCallArgument,
   BuiltinDefinition,
   BuiltinInvocation,
-  RBuiltin,
+  ElementaryMath,
+  ExitingConditionHandlerFrame,
   RBinding,
   RBrowseEvent,
-  RClosure,
+  RBuiltin,
   RCharacterVector,
-  REnvironment,
+  RClosure,
   RDataViewEvent,
+  REnvironment,
+  RFormula,
+  RGraphicsEvent,
+  RIntegerVector,
   RLanguage,
   RList,
   RNativeCallRequest,
   RNativeModuleDefinition,
-  RGraphicsEvent,
   ROutput,
+  RPairlist,
   RPromise,
-  RSystemCommandRequest,
-  RSystemCommandResult,
   RSocketRequest,
   RSocketResult,
-  RUrlRequest,
-  RUrlResult,
+  RSystemCommandRequest,
+  RSystemCommandResult,
   RuntimeLimits,
   RuntimeMemoryStatistics,
   RuntimeOperators,
+  RUrlRequest,
+  RUrlResult,
   RValue,
+  RVector,
   RWarning,
-  ElementaryMath,
+  S4SlotReplacementValidator,
 } from "./values.js";
 
 /** Internal value and visibility returned by one expression. */
@@ -185,12 +228,21 @@ export interface EvaluatorOptions {
     work: ParseWorkCallbacks,
   ) => RetainedParseResult;
   readonly packages?: readonly RuntimePackageDefinition[];
-  /** Immutable text resources for registered core packages, supplied at session creation. */
-  readonly systemPackageResources?: readonly RuntimeSystemPackageTextResource[];
+  /** Browser-owned resources and eagerly loaded data exported by bundled core packages. */
+  readonly staticPackages?: readonly RuntimeStaticPackageDefinition[];
+  /** Immutable non-callable values installed into browser-owned core namespaces. */
+  readonly builtinBindings?: readonly RuntimeBuiltinBinding[];
+  /** Immutable browser-owned text files exposed below the deterministic runtime root. */
+  readonly runtimeTextResources?: readonly RuntimePackageTextResource[];
   /** Positive session identity supplied by the embedding facade for Sys.getpid(). */
   readonly sessionProcessId?: number;
   /** Recreate evaluator-owned builtin state at construction and reset. */
   readonly initializeBuiltinState?: (state: Map<string, unknown>) => void;
+  /** Install base-environment data whose lifetime must track evaluator construction and reset. */
+  readonly initializeBaseEnvironment?: (
+    environment: REnvironment,
+    state: Map<string, unknown>,
+  ) => void;
   /** Explicit line-prompt capability. Undefined preserves non-interactive GNU R behavior. */
   readonly readline?: (prompt: string) => Promise<string> | string;
   /** Explicit URL-byte transport. Undefined means that URL connections cannot perform I/O. */
@@ -212,17 +264,21 @@ export interface EvaluatorOptions {
 /** One dependency imported by a normalized source-only package. */
 export interface RuntimePackageImport {
   readonly package: string;
-  /** Undefined imports the dependency's complete exported surface. */
+  /** Undefined imports the dependency's complete exported surface; empty imports no bindings. */
   readonly names?: readonly string[];
   /** Local binding names corresponding to explicit export names. */
   readonly localNames?: readonly string[];
   /** Export names omitted from a full import. */
   readonly except?: readonly string[];
+  /** S4 method names whose defining namespace must be loaded before this package is evaluated. */
+  readonly methodNames?: readonly string[];
 }
 
 /** One package requirement retained from DESCRIPTION. */
 export interface RuntimePackageDependency {
   readonly package: string;
+  /** DESCRIPTION relationship; only Depends packages join the search path on attachment. */
+  readonly kind?: "Depends" | "Imports";
   readonly constraint?: {
     readonly operator: ">=" | "<=" | "==" | ">" | "<" | "!=";
     readonly version: string;
@@ -249,15 +305,101 @@ export interface RuntimePackageTextResource {
   readonly text: string;
 }
 
-/** One browser-supplied data resource belonging to a registered core package. */
-export interface RuntimeSystemPackageTextResource extends RuntimePackageTextResource {
+/** One browser-owned core-package resource set composed into the static R namespaces. */
+export interface RuntimeStaticPackageDefinition {
+  readonly name: string;
+  readonly exports: readonly string[];
+  readonly autoloadData: readonly string[];
+  readonly resourceTextEncoding: "utf8" | "latin1";
+  readonly textResources: readonly RuntimePackageTextResource[];
+  readonly resources: readonly RuntimePackageResource[];
+}
+
+/** One immutable non-callable value installed into a browser-owned core namespace. */
+export interface RuntimeBuiltinBinding {
   readonly package: string;
+  readonly name: string;
+  readonly value: RValue;
+  readonly compatibility: "api" | "shape" | "numeric" | "behavioral";
+}
+
+function validateStaticPackageDefinition(definition: RuntimeStaticPackageDefinition): void {
+  const paths = new Set<string>();
+  const exports = new Set<string>();
+  for (const name of definition.exports) {
+    if (name.length === 0 || exports.has(name)) {
+      throw new REvaluationError(
+        "NRE2254",
+        `Static core package '${definition.name}' has invalid exports.`,
+      );
+    }
+    exports.add(name);
+  }
+  for (const name of definition.autoloadData) {
+    if (name.length === 0) {
+      throw new REvaluationError(
+        "NRE2254",
+        `Static core package '${definition.name}' has an invalid autoload data resource name.`,
+      );
+    }
+  }
+  for (const resource of [...definition.textResources, ...definition.resources]) {
+    const parts = resource.path.split("/");
+    if (
+      resource.path.length === 0 ||
+      resource.path.startsWith("/") ||
+      resource.path.endsWith("/") ||
+      resource.path.includes("\\") ||
+      parts.some((part) => part.length === 0 || part === "." || part === "..") ||
+      paths.has(resource.path)
+    ) {
+      throw new REvaluationError(
+        "NRE2254",
+        `Static core package '${definition.name}' has invalid resource path '${resource.path}'.`,
+      );
+    }
+    paths.add(resource.path);
+  }
+  for (const resource of definition.resources) {
+    if (!isCanonicalBase64(resource.data)) {
+      throw new REvaluationError(
+        "NRE2254",
+        `Static core package '${definition.name}' resource '${resource.path}' is not canonical base64.`,
+      );
+    }
+  }
+}
+
+function validateRuntimeTextResources(
+  resources: readonly RuntimePackageTextResource[],
+): ReadonlyMap<string, RuntimePackageTextResource> {
+  const validated = new Map<string, RuntimePackageTextResource>();
+  for (const resource of resources) {
+    const parts = resource.path.split("/");
+    if (
+      resource.path.length === 0 ||
+      resource.path.startsWith("/") ||
+      resource.path.endsWith("/") ||
+      resource.path.includes("\\") ||
+      parts.some((part) => part.length === 0 || part === "." || part === "..") ||
+      validated.has(resource.path)
+    ) {
+      throw new REvaluationError(
+        "NRE2254",
+        `The runtime has invalid text resource path '${resource.path}'.`,
+      );
+    }
+    validated.set(resource.path, resource);
+  }
+  return validated;
 }
 
 /** Parser-independent package input accepted by the runtime. */
 export interface RuntimePackageDefinition {
   readonly name: string;
   readonly version: string;
+  /** Whether installed data sets are exposed through memoized package-data promises. */
+  readonly lazyData?: boolean;
   readonly descriptionFields: readonly {
     readonly name: string;
     readonly value: string;
@@ -266,40 +408,108 @@ export interface RuntimePackageDefinition {
   readonly dependencies: readonly RuntimePackageDependency[];
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
-  /** exportPattern() declarations, including C-locale POSIX character classes. */
+  /** POSIX-ERE-compatible exportPattern() declarations evaluated after local bindings load. */
   readonly exportPatterns: readonly string[];
+  /** S4 class names declared by exportClasses(); exported as their .__C__ metadata bindings. */
+  readonly classExports: readonly string[];
   /** S4 method names declared by exportMethods(); they need not be ordinary namespace bindings. */
   readonly methodExports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
   readonly programs: readonly ProgramNode[];
   readonly textResources: readonly RuntimePackageTextResource[];
   readonly resources: readonly RuntimePackageResource[];
+  /** Public LazyData object names and the source data-resource basenames that create them. */
+  readonly datasets?: readonly {
+    readonly name: string;
+    readonly resource: string;
+  }[];
 }
 
 interface RuntimePackageRecord {
   readonly definition: RuntimePackageDefinition;
   namespace: REnvironment | undefined;
+  dataEnvironment: REnvironment | undefined;
   exportNames: readonly string[] | undefined;
   loading: boolean;
+  readonly loadingData: Set<string>;
   attached: boolean;
+}
+
+interface DeferredS3MethodRegistration {
+  readonly ownerPackage: string;
+  readonly genericPackage: string;
+  readonly generic: string;
+  readonly className: string;
+  readonly method: RBinding;
+}
+
+const PACKAGE_DATA_RESOURCE = /^data\/([^/]+)\.(?:r|rdata|rda|tab|txt|csv)(?:\.gz)?$/iu;
+
+function runtimePackageDatasets(
+  record: RuntimePackageRecord,
+): readonly { readonly name: string; readonly resource: string }[] {
+  const datasets = new Map<string, { readonly name: string; readonly resource: string }>();
+  const explicitlyMappedResources = new Set<string>();
+  for (const dataset of record.definition.datasets ?? []) {
+    datasets.set(dataset.name, dataset);
+    explicitlyMappedResources.add(dataset.resource);
+  }
+  for (const resource of record.definition.resources) {
+    const name = PACKAGE_DATA_RESOURCE.exec(resource.path)?.[1];
+    if (
+      name !== undefined &&
+      name.length > 0 &&
+      !explicitlyMappedResources.has(name) &&
+      !datasets.has(name)
+    ) {
+      datasets.set(name, Object.freeze({ name, resource: name }));
+    }
+  }
+  return Object.freeze(
+    [...datasets.values()].sort((left, right) => left.name.localeCompare(right.name)),
+  );
 }
 
 function runtimePackageExportNames(record: RuntimePackageRecord): readonly string[] {
   return (
     record.exportNames ??
-    Object.freeze([...new Set([...record.definition.exports, ...record.definition.methodExports])])
+    Object.freeze([
+      ...new Set([
+        ...record.definition.exports,
+        ...record.definition.classExports.map((name) => `.__C__${name}`),
+        ...record.definition.methodExports,
+      ]),
+    ])
   );
+}
+
+function runtimePackageExportBinding(
+  record: RuntimePackageRecord,
+  name: string,
+): RBinding | undefined {
+  const namespace = record.namespace;
+  if (namespace === undefined) return undefined;
+  // An ordinary export may intentionally re-export an imported binding.
+  // exportMethods() is metadata and must not accidentally expose an inherited
+  // Base generic when the package has no ordinary binding of that name.
+  return record.definition.exports.includes(name)
+    ? lookupBinding(namespace, name)
+    : namespace.bindings.get(name);
 }
 
 function resolveRuntimePackageExportNames(
   record: RuntimePackageRecord,
   namespace: REnvironment,
 ): readonly string[] {
-  const names = new Set([...record.definition.exports, ...record.definition.methodExports]);
+  const names = new Set([
+    ...record.definition.exports,
+    ...record.definition.classExports.map((name) => `.__C__${name}`),
+    ...record.definition.methodExports,
+  ]);
   for (const pattern of record.definition.exportPatterns) {
     let matcher: RegExp;
     try {
-      matcher = new RegExp(translatePosixCharacterClasses(pattern), "u");
+      matcher = new RegExp(normalizePosixCharacterClasses(pattern), "u");
     } catch (error) {
       throw new REvaluationError(
         "NRE2230",
@@ -307,8 +517,39 @@ function resolveRuntimePackageExportNames(
         { cause: error },
       );
     }
+    let exportsClassMetadata = false;
     for (const name of namespace.bindings.keys()) {
+      matcher.lastIndex = 0;
       if (matcher.test(name)) names.add(name);
+      if (name.startsWith(".__C__")) {
+        matcher.lastIndex = 0;
+        if (matcher.test(name.slice(".__C__".length))) {
+          names.add(name);
+          exportsClassMetadata = true;
+        }
+      } else if (name.startsWith(".__T__")) {
+        const separator = name.lastIndexOf(":");
+        const genericName = name.slice(".__T__".length, separator);
+        matcher.lastIndex = 0;
+        if (
+          separator > ".__T__".length &&
+          namespace.bindings.has(genericName) &&
+          matcher.test(genericName)
+        ) {
+          names.add(name);
+        }
+      }
+    }
+    if (exportsClassMetadata) {
+      for (const name of [
+        ".__T__$:base",
+        ".__T__$<-:base",
+        ".__T__[:base",
+        ".__T__[<-:base",
+        ".__T__[[<-:base",
+      ]) {
+        if (namespace.bindings.has(name)) names.add(name);
+      }
     }
   }
   return Object.freeze([...names]);
@@ -363,6 +604,12 @@ interface ExitHandler {
   readonly environment: REnvironment;
 }
 
+interface RegisteredEnvironmentFinalizer {
+  readonly environment: REnvironment;
+  readonly finalizer: RClosure;
+  readonly onExit: boolean;
+}
+
 interface FunctionControlFrame {
   readonly kind: "function" | "evaluation";
   readonly target: symbol;
@@ -387,6 +634,8 @@ interface ClosureCallFrame {
   readonly matched: ReadonlyMap<string, RPromise>;
   readonly matchedByPosition: ReadonlyMap<number, BuiltinCallArgument>;
   readonly methodFrame?: S3DispatchFrame;
+  /** Explicit override for synthetic evaluation frames such as eval()/evalq(). */
+  readonly nargs?: number;
   readonly call?: CallExpressionNode;
 }
 
@@ -416,6 +665,11 @@ interface S3DispatchFrame {
 
 type PreparedSubsetOperation =
   | {
+      readonly operator: "@";
+      readonly target: RValue;
+      readonly member: string;
+    }
+  | {
       readonly operator: "$";
       readonly target: RValue;
       readonly member: string;
@@ -430,6 +684,18 @@ type PreparedSubsetOperation =
       readonly target: RValue;
       readonly index: RValue;
       readonly exact: boolean | null;
+    }
+  | {
+      readonly operator: "dimensions";
+      readonly target: RVector;
+      readonly indices: readonly (RValue | undefined)[];
+      readonly drop: boolean;
+      readonly elementReplacement: boolean;
+    }
+  | {
+      readonly operator: "coordinates";
+      readonly target: RVector;
+      readonly index: RValue;
     };
 
 const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all">([
@@ -440,24 +706,50 @@ const REGISTERED_NAMESPACE_EXPORTS = new Map<string, ReadonlySet<string> | "all"
   ["graphics", "all"],
   ["utils", "all"],
   ["datasets", "all"],
+  ["stats4", "all"],
+  ["compiler", "all"],
+  ["parallel", "all"],
   ["tools", "all"],
+  ["grid", "all"],
   ["R6", new Set(["R6Class"])],
   ["vctrs", new Set(["new_class", "new_vctr"])],
-  ["tibble", new Set(["tibble", "tribble"])],
+  ["tibble", new Set(["as_tibble", "tibble", "tribble"])],
+]);
+
+const CORE_NAMESPACE_FULL_IMPORT_INTERNALS = new Map<string, readonly string[]>([
+  ["methods", Object.freeze(["asS4"])],
 ]);
 const BASE_NAMESPACE_CONSTANTS = new Set([
-  ".GlobalEnv",
   "pi",
   "letters",
   "LETTERS",
+  "month.abb",
+  "month.name",
   "T",
   "F",
+  ".GlobalEnv",
+  ".BaseNamespaceEnv",
   ".Machine",
   ".Platform",
+  ".leap.seconds",
   ".LC.categories",
   ".Library",
   ".Library.site",
+  ".knownS3Generics",
+  ".S3PrimitiveGenerics",
+  ".sys.timezone",
 ]);
+
+export function coreBuiltinPackageName(declaredPackage: string, bindingName: string): string {
+  if (declaredPackage !== "base") return declaredPackage;
+  let owner: string | undefined;
+  for (const [name, exports] of REGISTERED_NAMESPACE_EXPORTS) {
+    if (name === "base" || exports === "all" || !exports.has(bindingName)) continue;
+    if (owner !== undefined) return "base";
+    owner = name;
+  }
+  return owner ?? "base";
+}
 const PRIMITIVE_S3_GENERICS = new Set([
   "$",
   "[",
@@ -484,6 +776,7 @@ const PRIMITIVE_S3_GENERICS = new Set([
   "&",
   "|",
 ]);
+const IMPLICIT_S3_GROUP_GENERICS = new Set(["Math", "Ops", "Summary", "Complex", "matrixOps"]);
 const CORE_R_PACKAGE_NAMES = new Set([
   "base",
   "stats",
@@ -492,8 +785,40 @@ const CORE_R_PACKAGE_NAMES = new Set([
   "utils",
   "datasets",
   "methods",
+  "stats4",
+  "compiler",
+  "parallel",
   "tools",
 ]);
+
+const NATIVR_TARGET_R_VERSION = "4.6.1";
+const NATIVR_TARGET_RELEASE_TIMESTAMP = "2026-06-24 00:00:00 UTC";
+
+function installedPackageBuildTimestamp(
+  fields: readonly { readonly name: string; readonly value: string }[],
+): string {
+  const values = new Map(fields.map((field) => [field.name, field.value]));
+  for (const name of ["Packaged", "Date/Publication"] as const) {
+    const value = values.get(name)?.trim();
+    const timestamp = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC)(?:;|$)/u.exec(value ?? "")?.[1];
+    if (timestamp !== undefined) return timestamp;
+  }
+  const date = /^(\d{4}-\d{2}-\d{2})$/u.exec(values.get("Date")?.trim() ?? "")?.[1];
+  return date === undefined ? NATIVR_TARGET_RELEASE_TIMESTAMP : `${date} 00:00:00 UTC`;
+}
+
+function installedPureRDescriptionFields(
+  fields: readonly { readonly name: string; readonly value: string }[],
+): readonly { readonly name: string; readonly value: string }[] {
+  if (fields.some((field) => field.name === "Built")) return fields;
+  return Object.freeze([
+    ...fields,
+    Object.freeze({
+      name: "Built",
+      value: `R ${NATIVR_TARGET_R_VERSION}; ; ${installedPackageBuildTimestamp(fields)}; browser`,
+    }),
+  ]);
+}
 
 function corePackageDescriptionFields(
   name: string,
@@ -501,8 +826,37 @@ function corePackageDescriptionFields(
   return Object.freeze([
     Object.freeze({ name: "Package", value: name }),
     Object.freeze({ name: "Version", value: "4.6.1" }),
-    ...(CORE_R_PACKAGE_NAMES.has(name) ? [Object.freeze({ name: "Priority", value: "base" })] : []),
+    ...(CORE_R_PACKAGE_NAMES.has(name)
+      ? [
+          Object.freeze({
+            name: "Priority",
+            value: "base",
+          }),
+        ]
+      : []),
+    Object.freeze({
+      name: "Built",
+      value: `R ${NATIVR_TARGET_R_VERSION}; wasm32-unknown-browser; ${NATIVR_TARGET_RELEASE_TIMESTAMP}; browser`,
+    }),
   ]);
+}
+
+const CORE_PACKAGE_METADATA_PATHS = Object.freeze(["DESCRIPTION", "NAMESPACE"]);
+
+function corePackageMetadataText(
+  name: string,
+  path: string,
+  exports_: readonly string[],
+): string | undefined {
+  if (path === "DESCRIPTION") {
+    return `${corePackageDescriptionFields(name)
+      .map((field) => `${field.name}: ${field.value}`)
+      .join("\n")}\n`;
+  }
+  if (path === "NAMESPACE") {
+    return `${exports_.map((binding) => `export(${JSON.stringify(binding)})`).join("\n")}\n`;
+  }
+  return undefined;
 }
 
 class ReturnSignal extends Error {
@@ -627,6 +981,7 @@ export class Evaluator {
   readonly #parseSource: EvaluatorOptions["parseSource"];
   readonly #parseSourceDetailed: EvaluatorOptions["parseSourceDetailed"];
   readonly #initializeBuiltinState: EvaluatorOptions["initializeBuiltinState"];
+  readonly #initializeBaseEnvironment: EvaluatorOptions["initializeBaseEnvironment"];
   readonly #readline: EvaluatorOptions["readline"];
   readonly #urlRequest: EvaluatorOptions["urlRequest"];
   readonly #socketRequest: EvaluatorOptions["socketRequest"];
@@ -636,8 +991,8 @@ export class Evaluator {
   readonly #sessionProcessId: number;
   #emptyEnvironment: REnvironment;
   #baseEnvironment: REnvironment;
-  #baseNamespace: REnvironment;
-  readonly #staticNamespaces = new Map<string, REnvironment>();
+  readonly #baseNamespaceEnvironment: REnvironment;
+  #attachedPackagesEnvironment: REnvironment;
   #globalEnvironment: REnvironment;
   readonly #controlFrames: ControlFrame[] = [];
   readonly #closureCallFrames: ClosureCallFrame[] = [];
@@ -655,14 +1010,25 @@ export class Evaluator {
   // Errors already offered to the handler stack where they were raised, such as stop().
   readonly #signalledErrors = new WeakSet<NativRError>();
   readonly #packages = new Map<string, RuntimePackageRecord>();
-  readonly #namespaceNames = new WeakMap<REnvironment, string>();
-  readonly #systemPackageResources = new Map<string, Map<string, string>>();
+  readonly #builtinPackageNamespaces = new Map<string, REnvironment>();
+  readonly #staticPackages = new Map<
+    string,
+    { readonly definition: RuntimeStaticPackageDefinition; readonly namespace: REnvironment }
+  >();
+  readonly #runtimeTextResources: ReadonlyMap<string, RuntimePackageTextResource>;
   readonly #registeredS3Methods = new Map<string, RBinding>();
+  readonly #deferredS3Methods = new Map<string, DeferredS3MethodRegistration[]>();
+  readonly #environmentFinalizers: RegisteredEnvironmentFinalizer[] = [];
   readonly #s3RegistrationTransactions: Map<string, RBinding | undefined>[] = [];
+  readonly #mutableVectorOwners = new WeakMap<
+    RValue,
+    { readonly environment: REnvironment; readonly name: string }
+  >();
   #searchPath = [...DEFAULT_SEARCH_PATH];
   #libraryPaths = [...DEFAULT_LIBRARY_PATHS];
   readonly #searchEnvironments = new Map<string, REnvironment>();
   readonly #searchEnvironmentNames = new Map<number, string>();
+  readonly #userSearchEnvironments = new Map<string, REnvironment>();
   #disposed = false;
   #activeCancellation: { cancelled: boolean } | undefined;
   #memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
@@ -682,52 +1048,14 @@ export class Evaluator {
     this.#parseSource = options.parseSource;
     this.#parseSourceDetailed = options.parseSourceDetailed;
     this.#initializeBuiltinState = options.initializeBuiltinState;
+    this.#initializeBaseEnvironment = options.initializeBaseEnvironment;
     this.#readline = options.readline;
     this.#urlRequest = options.urlRequest;
     this.#socketRequest = options.socketRequest;
     this.#systemCommand = options.systemCommand;
     this.#nativeModules = options.nativeModules ?? [];
     this.#nativeCall = options.nativeCall;
-    let systemResourceBytes = 0;
-    let systemResourceCount = 0;
-    for (const resource of options.systemPackageResources ?? []) {
-      if (
-        typeof resource !== "object" ||
-        resource === null ||
-        typeof resource.package !== "string" ||
-        typeof resource.path !== "string" ||
-        typeof resource.text !== "string" ||
-        !REGISTERED_NAMESPACE_EXPORTS.has(resource.package) ||
-        resource.path.length === 0 ||
-        resource.path
-          .split("/")
-          .some((part) => part.length === 0 || part === "." || part === "..") ||
-        resource.path.includes("\\") ||
-        [...resource.path].some((character) => {
-          const codePoint = character.codePointAt(0)!;
-          return codePoint <= 0x1f || codePoint === 0x7f;
-        })
-      ) {
-        throw new REvaluationError("NRE2231", "Invalid core package resource path.");
-      }
-      const resources =
-        this.#systemPackageResources.get(resource.package) ?? new Map<string, string>();
-      if (resources.has(resource.path)) {
-        throw new REvaluationError("NRE2231", "Duplicate core package resource path.");
-      }
-      systemResourceCount += 1;
-      // Three bytes per UTF-16 code unit is a conservative UTF-8 upper bound.
-      systemResourceBytes += 3 * (resource.path.length + resource.text.length);
-      if (
-        !Number.isSafeInteger(systemResourceBytes) ||
-        systemResourceBytes > this.#limits.maxPackageResourceBytes ||
-        systemResourceCount > this.#limits.maxVectorLength
-      ) {
-        throw new RResourceLimitError("NRL4002", "Core package resource limit exceeded.");
-      }
-      resources.set(resource.path, resource.text);
-      this.#systemPackageResources.set(resource.package, resources);
-    }
+    this.#runtimeTextResources = validateRuntimeTextResources(options.runtimeTextResources ?? []);
     this.#sessionProcessId = options.sessionProcessId ?? allocateRuntimeSessionProcessId();
     if (
       !Number.isInteger(this.#sessionProcessId) ||
@@ -742,22 +1070,58 @@ export class Evaluator {
     this.#initializeBuiltinState?.(this.#builtinState);
     this.#emptyEnvironment = createEnvironment(null, true);
     this.#baseEnvironment = createEnvironment(this.#emptyEnvironment, true);
-    this.#globalEnvironment = createEnvironment(this.#baseEnvironment, true);
-    this.#baseNamespace = {
-      ...createEnvironment(this.#globalEnvironment, true),
-      bindings: this.#baseEnvironment.bindings,
-      lockedBindings: this.#baseEnvironment.lockedBindings,
-    };
-    this.#namespaceNames.set(this.#baseNamespace, "base");
-    this.#staticNamespaces.set("base", this.#baseNamespace);
-    for (const name of REGISTERED_NAMESPACE_EXPORTS.keys()) {
-      if (name === "base") continue;
-      const namespace = createEnvironment(createEnvironment(this.#baseNamespace, true), true);
-      this.#staticNamespaces.set(name, namespace);
-      this.#namespaceNames.set(namespace, name);
+    this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
+    this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
+    this.#baseNamespaceEnvironment = createEnvironment(this.#globalEnvironment, true);
+    for (const definition of this.#builtins) {
+      const packageName = definition.package;
+      if (packageName !== "base" && !this.#builtinPackageNamespaces.has(packageName)) {
+        this.#builtinPackageNamespaces.set(
+          packageName,
+          createEnvironment(this.#baseNamespaceEnvironment, true),
+        );
+      }
     }
     this.#installBuiltins();
-    this.#ensureSearchEnvironments();
+    for (const binding of options.builtinBindings ?? []) {
+      const environment =
+        binding.package === "base"
+          ? this.#baseEnvironment
+          : this.#builtinPackageNamespaces.get(binding.package);
+      if (
+        environment === undefined ||
+        binding.name.length === 0 ||
+        environment.bindings.has(binding.name)
+      ) {
+        throw new REvaluationError(
+          "NRE2254",
+          `Core binding '${binding.package}::${binding.name}' is not uniquely registered.`,
+        );
+      }
+      setBinding(environment, binding.name, binding.value);
+    }
+    this.#initializeBaseEnvironment?.(this.#baseEnvironment, this.#builtinState);
+    this.#installBuiltinS3Methods();
+    this.#syncBaseNamespaceBindings();
+    for (const definition of options.staticPackages ?? []) {
+      if (
+        !REGISTERED_NAMESPACE_EXPORTS.has(definition.name) ||
+        definition.name === "base" ||
+        this.#staticPackages.has(definition.name)
+      ) {
+        throw new REvaluationError(
+          "NRE2254",
+          `Static core package '${definition.name}' is not uniquely registered.`,
+        );
+      }
+      validateStaticPackageDefinition(definition);
+      this.#staticPackages.set(definition.name, {
+        definition,
+        namespace:
+          this.#builtinPackageNamespaces.get(definition.name) ??
+          createEnvironment(this.#baseNamespaceEnvironment, true),
+      });
+    }
     for (const definition of options.packages ?? []) {
       if (this.#packages.has(definition.name) || CORE_R_PACKAGE_NAMES.has(definition.name)) {
         throw new REvaluationError(
@@ -768,11 +1132,40 @@ export class Evaluator {
       this.#packages.set(definition.name, {
         definition,
         namespace: undefined,
+        dataEnvironment: undefined,
         exportNames: undefined,
         loading: false,
+        loadingData: new Set(),
         attached: false,
       });
     }
+    this.#rebuildAttachedSearchBindings();
+  }
+
+  /** Materialize declared core-package lazy data before exposing the session. */
+  public async initialize(): Promise<void> {
+    this.#ensureActive();
+    if (this.#parseSource === undefined) {
+      if (
+        [...this.#staticPackages.values()].some(({ definition }) => definition.autoloadData.length)
+      ) {
+        throw new REvaluationError("NRE2255", "Static package data requires a source parser.");
+      }
+      return;
+    }
+    for (const { definition } of this.#staticPackages.values()) {
+      if (definition.autoloadData.length === 0) continue;
+      for (const name of definition.autoloadData) {
+        const source = `data(list = ${JSON.stringify(name)}, package = ${JSON.stringify(
+          definition.name,
+        )}, envir = asNamespace(${JSON.stringify(definition.name)}))`;
+        const context = new EvaluationContext(DEFAULT_RUNTIME_LIMITS, { cancelled: false }, () =>
+          runtimeOutputRouter(this.#builtinState),
+        );
+        await this.#evaluateNode(this.#parseSource(source), this.#globalEnvironment, context);
+      }
+    }
+    this.#rebuildAttachedSearchBindings();
   }
 
   /** Evaluate a normalized program in the session global environment. */
@@ -805,7 +1198,7 @@ export class Evaluator {
       return {
         ...result,
         topLevelErrors,
-        warnings: [...context.warnings],
+        warnings: context.warnings.map(({ condition: _condition, ...warning }) => warning),
         output: [...context.output],
         dataViews: [...context.dataViews],
         browseRequests: [...context.browseRequests],
@@ -955,49 +1348,77 @@ export class Evaluator {
   }
 
   /** Replace user state with a fresh global environment while retaining base builtins. */
-  public reset(): void {
+  public async reset(): Promise<void> {
     this.#ensureActive();
-    this.#globalEnvironment = createEnvironment(this.#baseEnvironment, true);
-    this.#baseNamespace.parent = this.#globalEnvironment;
-    this.#builtinState.clear();
-    this.#installGlobalEnvironmentBinding();
-    this.#initializeBuiltinState?.(this.#builtinState);
-    this.#registeredS3Methods.clear();
-    this.#installBuiltinS3Methods();
-    this.#s3RegistrationTransactions.length = 0;
-    for (const record of this.#packages.values()) {
-      record.namespace?.bindings.clear();
-      record.namespace = undefined;
-      record.exportNames = undefined;
-      record.loading = false;
-      record.attached = false;
+    const context = this.#lifecycleContext();
+    try {
+      await this.#runEnvironmentFinalizers(true, undefined, context);
+    } finally {
+      this.#environmentFinalizers.length = 0;
+      this.#attachedPackagesEnvironment = createEnvironment(this.#baseEnvironment, true);
+      this.#globalEnvironment = createEnvironment(this.#attachedPackagesEnvironment, true);
+      this.#baseEnvironment.bindings.set(".GlobalEnv", this.#globalEnvironment);
+      setParentEnvironment(this.#baseNamespaceEnvironment, this.#globalEnvironment);
+      this.#syncBaseNamespaceBindings();
+      this.#builtinState.clear();
+      this.#initializeBuiltinState?.(this.#builtinState);
+      this.#initializeBaseEnvironment?.(this.#baseEnvironment, this.#builtinState);
+      this.#registeredS3Methods.clear();
+      this.#installBuiltinS3Methods();
+      this.#s3RegistrationTransactions.length = 0;
+      for (const record of this.#packages.values()) {
+        record.namespace?.bindings.clear();
+        record.dataEnvironment?.bindings.clear();
+        record.namespace = undefined;
+        record.dataEnvironment = undefined;
+        record.exportNames = undefined;
+        record.loading = false;
+        record.loadingData.clear();
+        record.attached = false;
+      }
+      this.#searchPath = [...DEFAULT_SEARCH_PATH];
+      this.#userSearchEnvironments.clear();
+      this.#libraryPaths = [...DEFAULT_LIBRARY_PATHS];
+      this.#invalidateSearchEnvironments(true);
+      this.#rebuildAttachedSearchBindings();
+      this.#memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
+      this.#memoryTrigger = { nodeCells: 0, vectorCells: 0 };
+      this.#memoryCollections = 0;
+      this.#memoryFullCollections = 0;
     }
-    this.#searchPath = [...DEFAULT_SEARCH_PATH];
-    this.#libraryPaths = [...DEFAULT_LIBRARY_PATHS];
-    this.#invalidateSearchEnvironments(true);
-    this.#ensureSearchEnvironments();
-    this.#memoryMaxUsed = { nodeCells: 0, vectorCells: 0 };
-    this.#memoryTrigger = { nodeCells: 0, vectorCells: 0 };
-    this.#memoryCollections = 0;
-    this.#memoryFullCollections = 0;
   }
 
   /** Release this session and reject future operations. */
-  public dispose(): void {
+  public async dispose(): Promise<void> {
     if (!this.#disposed) {
       this.interrupt();
-      this.#disposed = true;
-      this.#globalEnvironment.bindings.clear();
-      this.#baseEnvironment.bindings.clear();
-      for (const namespace of this.#staticNamespaces.values()) namespace.bindings.clear();
-      this.#staticNamespaces.clear();
-      this.#emptyEnvironment.bindings.clear();
-      this.#builtinState.clear();
-      this.#registeredS3Methods.clear();
-      this.#s3RegistrationTransactions.length = 0;
-      this.#invalidateSearchEnvironments(true);
-      for (const record of this.#packages.values()) record.namespace?.bindings.clear();
-      this.#packages.clear();
+      const context = this.#lifecycleContext();
+      try {
+        await this.#runEnvironmentFinalizers(true, undefined, context);
+      } finally {
+        this.#environmentFinalizers.length = 0;
+        this.#disposed = true;
+        this.#globalEnvironment.bindings.clear();
+        this.#attachedPackagesEnvironment.bindings.clear();
+        this.#baseNamespaceEnvironment.bindings.clear();
+        this.#baseEnvironment.bindings.clear();
+        this.#emptyEnvironment.bindings.clear();
+        this.#builtinState.clear();
+        this.#registeredS3Methods.clear();
+        this.#s3RegistrationTransactions.length = 0;
+        this.#invalidateSearchEnvironments(true);
+        for (const record of this.#packages.values()) {
+          record.namespace?.bindings.clear();
+          record.dataEnvironment?.bindings.clear();
+        }
+        for (const record of this.#staticPackages.values()) record.namespace.bindings.clear();
+        for (const namespace of this.#builtinPackageNamespaces.values()) {
+          namespace.bindings.clear();
+        }
+        this.#packages.clear();
+        this.#staticPackages.clear();
+        this.#builtinPackageNamespaces.clear();
+      }
     }
   }
 
@@ -1061,7 +1482,8 @@ export class Evaluator {
             }
             return await this.#forceDetailed(argument.promise, context);
           }
-          const binding = lookupBinding(environment, node.name);
+          const binding =
+            lookupBinding(environment, node.name) ?? this.#attachedUserSearchBinding(node.name);
           if (binding === undefined) {
             throw new REvaluationError("NRE2001", `object '${node.name}' not found`, {
               span: node.span,
@@ -1199,8 +1621,19 @@ export class Evaluator {
           const replacement =
             earlyReplacement ?? (await this.#evaluateValue(node.value, environment, context));
           let updated: RValue;
-          if (node.target.operator === "@") throw unsupported("slot replacement", node.span);
-          if (node.target.operator === "$") {
+          if (node.target.operator === "@") {
+            const member = node.target.arguments[0]?.value;
+            if (member === undefined) {
+              throw new REvaluationError("NRE2206", "The @ operator requires a slot name.");
+            }
+            updated = replaceS4Slot(
+              target,
+              staticName(member, "slot"),
+              replacement,
+              context,
+              this.#builtinState,
+            );
+          } else if (node.target.operator === "$") {
             const member = node.target.arguments[0]?.value;
             if (member === undefined) {
               throw new REvaluationError("NRE2206", "The $ operator requires a member name.");
@@ -1481,7 +1914,18 @@ export class Evaluator {
         }
         case "SubsetExpression": {
           const target = await this.#evaluateValue(node.target, environment, context);
-          if (node.operator === "@") throw unsupported("slot extraction", node.span);
+          if (node.operator === "@") {
+            const member = node.arguments[0]?.value;
+            if (member === undefined) {
+              throw new REvaluationError("NRE2206", "The @ operator requires a slot name.", {
+                span: node.span,
+              });
+            }
+            return {
+              value: extractS4Slot(target, staticName(member, "slot"), context),
+              visible: true,
+            };
+          }
           if (node.operator === "$") {
             const member = node.arguments[0]?.value;
             if (member === undefined) {
@@ -1531,6 +1975,27 @@ export class Evaluator {
               value: extractListMember(target, name, context),
               visible: true,
             };
+          }
+          if (isVector(target) && target.s4 === true) {
+            const binding = lookupBinding(this.#baseEnvironment, node.operator);
+            if (binding !== undefined) {
+              const callable = await this.#force(binding, context);
+              if (isCallableValue(callable)) {
+                return this.#invokeCallableResult(
+                  callable,
+                  [
+                    {
+                      promise: createForcedPromise(target, environment, node.target),
+                      span: node.target.span,
+                    },
+                    ...this.#prepareArguments(node.arguments, environment),
+                  ],
+                  context,
+                  undefined,
+                  environment,
+                );
+              }
+            }
           }
           if (objectClasses(target) !== undefined) {
             const dispatched = await this.#invokeS3MethodIfPresentResult(
@@ -1726,7 +2191,7 @@ export class Evaluator {
           const member = staticName(node.member, "namespace member");
           const exports = this.#staticNamespaceExports(namespace);
           if (exports !== undefined) {
-            const namespaceEnvironment = this.#staticNamespaces.get(namespace);
+            const namespaceEnvironment = this.#staticNamespaceEnvironment(namespace);
             const binding =
               namespaceEnvironment === undefined
                 ? undefined
@@ -2021,7 +2486,13 @@ export class Evaluator {
     environment: REnvironment,
     context: EvaluationContext,
   ): Promise<PreparedSubsetOperation> {
-    if (node.operator === "@") throw unsupported("slot replacement", node.span);
+    if (node.operator === "@") {
+      const member = node.arguments[0]?.value;
+      if (member === undefined) {
+        throw new REvaluationError("NRE2206", "The @ operator requires a slot name.");
+      }
+      return { operator: "@", target, member: staticName(member, "slot") };
+    }
     if (node.operator === "$") {
       const member = node.arguments[0]?.value;
       if (member === undefined) {
@@ -2029,29 +2500,94 @@ export class Evaluator {
       }
       return { operator: "$", target, member: staticName(member, "member") };
     }
-    const positional = node.arguments.filter((argument) => argument.name === undefined);
+    let positional = node.arguments.filter((argument) => argument.name === undefined);
+    const dropArgument = node.arguments.find((argument) => argument.name === "drop");
+    const positionalDropArgument =
+      isDataFrame(target) && node.operator === "[" && positional.length === 3
+        ? positional[2]
+        : undefined;
+    if (positionalDropArgument !== undefined) {
+      if (dropArgument !== undefined) {
+        throw new REvaluationError("NRE2102", "Argument 'drop' matched more than once.");
+      }
+      positional = positional.slice(0, 2);
+    }
+    const exactArguments = node.arguments.filter((entry) => entry.name === "exact");
+    if (exactArguments.length > 1) {
+      throw new REvaluationError("NRE2102", "Argument 'exact' matched more than once.");
+    }
+    const unknownNamed = node.arguments.find(
+      (argument) =>
+        argument.name !== undefined && argument.name !== (node.operator === "[" ? "drop" : "exact"),
+    );
+    if (unknownNamed !== undefined) {
+      throw unsupported(`named subscript '${unknownNamed.name ?? ""}'`, unknownNamed.span);
+    }
+    const dimensions = isVector(target) ? vectorDimensions(target) : undefined;
+    const dimensional =
+      positional.length >= 2 || (dimensions?.length === 1 && positional.length === 1);
+    if (dimensional) {
+      if (!isVector(target)) {
+        throw new RTypeMismatchError(
+          "NRT3306",
+          "Nested multidimensional replacement requires an atomic vector or list.",
+          { details: { type: target.type } },
+        );
+      }
+      const indices: (RValue | undefined)[] = [];
+      for (const entry of positional) {
+        indices.push(await this.#evaluateOptionalSubscript(entry.value, environment, context));
+      }
+      const positionalDrop =
+        positionalDropArgument === undefined
+          ? undefined
+          : await this.#evaluateOptionalSubscript(
+              positionalDropArgument.value,
+              environment,
+              context,
+            );
+      const drop =
+        dropArgument !== undefined
+          ? conditionState(
+              await this.#evaluateValue(dropArgument.value, environment, context),
+              dropArgument.span,
+            )
+          : positionalDrop === undefined
+            ? true
+            : conditionState(positionalDrop, positionalDropArgument?.span ?? node.span);
+      return {
+        operator: "dimensions",
+        target,
+        indices,
+        drop,
+        elementReplacement: node.operator === "[[",
+      };
+    }
     if (positional.length !== 1) {
-      throw unsupported("multidimensional nested replacement", node.span);
+      throw new REvaluationError(
+        "NRE2204",
+        `${node.operator} nested replacement requires one or one-per-dimension subscript.`,
+      );
     }
     const argument = positional[0]?.value;
     const missing =
       argument?.kind === "UnsupportedExpression" && argument.feature === "missing argument";
     if (node.operator === "[") {
+      const index =
+        argument === undefined || missing
+          ? undefined
+          : await this.#evaluateValue(argument, environment, context);
+      if (isVector(target) && isCoordinateMatrixSubscript(target, index)) {
+        return { operator: "coordinates", target, index };
+      }
       return {
         operator: "[",
         target,
-        index:
-          argument === undefined || missing
-            ? undefined
-            : await this.#evaluateValue(argument, environment, context),
+        index,
       };
     }
     if (argument === undefined || missing) {
       throw new REvaluationError("NRE2204", "[[ requires one non-missing subscript.");
-    }
-    const exactArguments = node.arguments.filter((entry) => entry.name === "exact");
-    if (exactArguments.length > 1) {
-      throw new REvaluationError("NRE2102", "Argument 'exact' matched more than once.");
     }
     if (exactArguments.length > 0) {
       throw new REvaluationError(
@@ -2073,11 +2609,13 @@ export class Evaluator {
             ),
     };
   }
-
   async #extractPreparedSubset(
     operation: PreparedSubsetOperation,
     context: EvaluationContext,
   ): Promise<RValue> {
+    if (operation.operator === "@") {
+      return extractS4Slot(operation.target, operation.member, context);
+    }
     if (operation.operator === "$") {
       if (operation.target.type === "environment") {
         const binding = operation.target.bindings.get(operation.member);
@@ -2087,6 +2625,22 @@ export class Evaluator {
         return extractExpressionMember(operation.target, operation.member, context);
       return extractListMember(operation.target, operation.member, context);
     }
+    if (operation.operator === "dimensions") {
+      const selected = subsetDimensions(
+        operation.target,
+        operation.indices,
+        operation.drop,
+        context,
+      );
+      if (!operation.elementReplacement) return selected;
+      if (selected.length !== 1) {
+        throw new REvaluationError("NRE2204", "[[ requires exactly one selected element.");
+      }
+      return extractVectorElement(selected, integerVector([1]), context);
+    }
+    if (operation.operator === "coordinates") {
+      return subsetCoordinateMatrix(operation.target, operation.index, context);
+    }
     if (operation.target.type === "environment") {
       if (operation.operator !== "[[") {
         throw new RTypeMismatchError("NRT3306", "Environment extraction requires [[ or $.");
@@ -2094,10 +2648,21 @@ export class Evaluator {
       const binding = operation.target.bindings.get(environmentSubscriptName(operation.index));
       return binding === undefined ? R_NULL : this.#force(binding, context);
     }
+    if (operation.target.type === "null") return R_NULL;
     if (operation.target.type === "expression") {
       return operation.operator === "["
         ? subsetExpression(operation.target, operation.index, context)
         : extractExpressionElement(operation.target, operation.index, context, operation.exact);
+    }
+    if (operation.target.type === "language" || operation.target.type === "formula") {
+      const language = formulaAsLanguage(operation.target);
+      if (operation.operator !== "[") {
+        return extractLanguageElement(language, operation.index, context, operation.exact);
+      }
+      const rebuilt = subsetLanguage(language, operation.index, context);
+      return operation.target.type === "formula" && rebuilt.type === "language"
+        ? restoreFormulaAfterLanguageReplacement(operation.target, rebuilt)
+        : rebuilt;
     }
     if (!isVector(operation.target) && operation.target.type !== "pairlist") {
       throw new RTypeMismatchError(
@@ -2216,6 +2781,15 @@ export class Evaluator {
     context: EvaluationContext,
     sourceExpression?: AstNode,
   ): Promise<RValue> {
+    if (operation.operator === "@") {
+      return replaceS4Slot(
+        operation.target,
+        operation.member,
+        replacement,
+        context,
+        this.#builtinState,
+      );
+    }
     if (operation.operator === "$") {
       return this.#replaceMemberValue(
         operation.target,
@@ -2225,6 +2799,19 @@ export class Evaluator {
         context,
         sourceExpression,
       );
+    }
+    if (operation.operator === "dimensions") {
+      return replaceDimensions(
+        operation.target,
+        operation.indices,
+        operation.elementReplacement && operation.target.type === "list"
+          ? listValue([replacement])
+          : replacement,
+        context,
+      );
+    }
+    if (operation.operator === "coordinates") {
+      return replaceCoordinateMatrix(operation.target, operation.index, replacement, context);
     }
     if (operation.target.type === "environment") {
       if (operation.operator !== "[[") {
@@ -2255,6 +2842,16 @@ export class Evaluator {
       return operation.operator === "["
         ? replaceExpressionSubset(operation.target, operation.index, replacement, context)
         : replaceExpressionElement(operation.target, operation.index, replacement, context);
+    }
+    if (operation.target.type === "language" || operation.target.type === "formula") {
+      const language = formulaAsLanguage(operation.target);
+      const rebuilt =
+        operation.operator === "["
+          ? replaceLanguageSubset(language, operation.index, replacement, context)
+          : replaceLanguageElement(language, operation.index, replacement, context);
+      return operation.target.type === "formula" && rebuilt.type === "language"
+        ? restoreFormulaAfterLanguageReplacement(operation.target, rebuilt)
+        : rebuilt;
     }
     if (!isVector(operation.target) && operation.target.type !== "pairlist") {
       throw new RTypeMismatchError(
@@ -2551,6 +3148,16 @@ export class Evaluator {
     environment: REnvironment,
     context: EvaluationContext,
   ): Promise<EvaluationResult> {
+    if (node.callee.kind === "Identifier" && node.callee.name === "(") {
+      const argument = node.arguments[0];
+      if (node.arguments.length !== 1 || argument === undefined || argument.name !== undefined) {
+        throw new REvaluationError("NRE2102", "'(' requires one unnamed argument.", {
+          span: node.span,
+        });
+      }
+      const result = await this.#evaluateNode(argument.value, environment, context);
+      return { value: result.value, visible: true };
+    }
     if (
       node.callee.kind === "Identifier" &&
       ["<-", "=", "<<-", "->", "->>"].includes(node.callee.name)
@@ -3045,7 +3652,7 @@ export class Evaluator {
           namespaceEnvironment: (name) =>
             this.#packages.has(name)
               ? this.#packages.get(name)?.namespace
-              : this.#staticNamespaces.get(name),
+              : this.#staticNamespaceEnvironment(name),
           namespaceExports: async (name) => this.#namespaceExports(name, context),
           namespaceName: (environment) => this.#namespaceName(environment),
           namespaceBinding: async (name, binding) => this.#namespaceBinding(name, binding, context),
@@ -3107,6 +3714,40 @@ export class Evaluator {
             methodFrame === undefined && callable.definition.s3Method !== undefined
               ? this.#nextDirectBuiltinMethod(callable.definition, args, call, generic, context)
               : this.#nextS3Method(generic, context),
+          collectGarbage: async (reset, full) => this.#collectGarbage(reset, full, context),
+          registerEnvironmentFinalizer: (environment, finalizer, onExit) => {
+            this.#registerEnvironmentFinalizer(environment, finalizer, onExit, context);
+          },
+          currentArgumentCount: () => {
+            const frame = this.#closureCallFrames.at(-1);
+            return frame === undefined ? undefined : (frame.nargs ?? frame.arguments.length);
+          },
+          evaluateSource: async (value, environment) =>
+            this.#evaluateLanguageValueInSourceScope(value, environment, context),
+          attachSearchEnvironment: (environment, name, position) =>
+            this.#attachUserSearchEnvironment(environment, name, position),
+          detachSearchEnvironment: (identifier) => this.#detachSearchEnvironment(identifier),
+          matchBuiltinCall: (parameters, expandDots) => {
+            if (call === undefined) {
+              throw new REvaluationError(
+                "NRE2217",
+                "Call matching requires a builtin call originating from R syntax.",
+              );
+            }
+            return matchCallExpression(
+              parameters.map((name) => ({ name, span: call.span })),
+              call,
+              args.map((argument): CallArgument => {
+                const value = promiseCallAst(argument.promise, call.span);
+                return {
+                  ...(argument.name === undefined ? {} : { name: argument.name }),
+                  value,
+                  span: argument.span ?? value.span,
+                };
+              }),
+              expandDots,
+            );
+          },
         });
         const result = {
           value,
@@ -3745,7 +4386,7 @@ export class Evaluator {
           frame,
           ".GenericDefEnv",
           methodFrame.genericEnvironment === this.#baseEnvironment
-            ? this.#baseNamespace
+            ? this.#baseNamespaceEnvironment
             : this.#s3TopEnvironment(
                 methodFrame.genericEnvironment,
                 methodFrame.classPolicy === "use-method" ? () => context.checkpoint() : undefined,
@@ -3872,6 +4513,134 @@ export class Evaluator {
       frame.exitHandlers.push(handler);
     } else {
       frame.exitHandlers.unshift(handler);
+    }
+  }
+
+  async #evaluateLanguageValueInFunctionScope(
+    value: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+    frameEnvironment: REnvironment = environment,
+  ): Promise<EvaluationResult> {
+    const functionTarget = Symbol("scoped evaluation");
+    const functionFrame: FunctionControlFrame = {
+      kind: "function",
+      target: functionTarget,
+      environment: frameEnvironment,
+      exitHandlers: [],
+    };
+    this.#controlFrames.push(functionFrame);
+    try {
+      let result: EvaluationResult | undefined;
+      let failed = false;
+      let failure: unknown;
+      try {
+        result = await this.#evaluateLanguageValueResult(value, environment, context);
+      } catch (error) {
+        if (error instanceof ReturnSignal && error.target === functionTarget) {
+          result = error.result;
+        } else {
+          failed = true;
+          failure = error;
+        }
+      }
+      try {
+        for (const handler of functionFrame.exitHandlers) {
+          await this.#evaluateNode(handler.expression, handler.environment, context);
+        }
+      } catch (error) {
+        failed = true;
+        failure = error;
+      }
+      if (failed) throw failure;
+      if (result === undefined) {
+        throw new REvaluationError("NRE2140", "A scoped evaluation completed without a result.");
+      }
+      return result;
+    } finally {
+      this.#controlFrames.pop();
+    }
+  }
+
+  async #evaluateLanguageValueInSourceScope(
+    value: RValue,
+    environment: REnvironment,
+    context: EvaluationContext,
+  ): Promise<EvaluationResult> {
+    const sourceEnvironment = createEnvironment(environment);
+    const intermediateEnvironments = [
+      sourceEnvironment,
+      createEnvironment(sourceEnvironment),
+      createEnvironment(sourceEnvironment),
+      environment,
+    ];
+    const frameSpecs = [
+      { name: "source", parameters: ["file", "local"] as const, bindings: [] as const },
+      { name: "withVisible", parameters: ["x"] as const, bindings: [["x", value]] as const },
+      {
+        name: "eval",
+        parameters: ["expr", "envir", "enclos"] as const,
+        bindings: [
+          ["expr", value],
+          ["envir", environment],
+          ["enclos", this.#baseEnvironment],
+        ] as const,
+      },
+      {
+        name: "eval",
+        parameters: ["expr", "envir", "enclos"] as const,
+        bindings: [
+          ["expr", value],
+          ["envir", environment],
+          ["enclos", this.#baseEnvironment],
+        ] as const,
+      },
+    ] as const;
+    const calls = frameSpecs.map(({ name }): CallExpressionNode => ({
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name, span: SYNTHETIC_SOURCE_SPAN },
+      arguments: Object.freeze([]),
+      span: SYNTHETIC_SOURCE_SPAN,
+    }));
+    const frames = calls.map((call, index): ClosureCallFrame => {
+      const frameEnvironment = intermediateEnvironments[index] ?? environment;
+      const spec = frameSpecs[index]!;
+      const matched = new Map<string, RPromise>();
+      for (const [name, binding] of spec.bindings) {
+        const promise = createForcedPromise(binding, frameEnvironment);
+        setBinding(frameEnvironment, name, promise);
+        matched.set(name, promise);
+      }
+      const closure: RClosure = {
+        type: "closure",
+        parameters: spec.parameters.map((name) => ({ name, span: SYNTHETIC_SOURCE_SPAN })),
+        body: { kind: "NullLiteral", span: SYNTHETIC_SOURCE_SPAN },
+        environment:
+          index === 0 ? environment : (intermediateEnvironments[index - 1] ?? environment),
+        attributes: new Map(),
+      };
+      return {
+        arguments: [],
+        functionTarget: Symbol("function"),
+        matchedByPosition: new Map(),
+        environment: frameEnvironment,
+        callerEnvironment:
+          index === 0 ? environment : (intermediateEnvironments[index - 1] ?? environment),
+        closure,
+        matched,
+        call,
+      };
+    });
+    this.#closureCallFrames.push(...frames);
+    try {
+      return await this.#evaluateLanguageValueInFunctionScope(
+        value,
+        environment,
+        context,
+        sourceEnvironment,
+      );
+    } finally {
+      this.#closureCallFrames.splice(this.#closureCallFrames.length - frames.length, frames.length);
     }
   }
 
@@ -4059,7 +4828,7 @@ export class Evaluator {
   ): Promise<FunctionControlFrame> {
     const caller =
       callerEnvironment ?? this.#callFrames.at(-1)?.environment ?? this.#globalEnvironment;
-    const environment = createEnvironment(this.#baseNamespace);
+    const environment = createEnvironment(this.#baseNamespaceEnvironment);
     const parameters = callable.definition.formals ?? [];
     const names = parameters.map((parameter) => parameter.name);
     const options = { checkWork: () => context.checkpoint() };
@@ -4103,7 +4872,7 @@ export class Evaluator {
         environment,
         ".GenericDefEnv",
         methodFrame.genericEnvironment === this.#baseEnvironment
-          ? this.#baseNamespace
+          ? this.#baseNamespaceEnvironment
           : methodFrame.genericEnvironment,
       );
     }
@@ -4237,7 +5006,7 @@ export class Evaluator {
     ) {
       checkWork?.();
       if (current === this.#globalEnvironment || current === this.#baseEnvironment) return current;
-      if (this.#namespaceNames.has(current)) return current;
+      if (this.#namespaceName(current) !== undefined) return current;
       const nameAttribute = current.attributes.get("name");
       const name =
         this.#searchEnvironmentNames.get(current.id) ??
@@ -4263,7 +5032,10 @@ export class Evaluator {
     context: EvaluationContext,
     genericPackage?: string,
   ): Promise<void> {
-    if (genericPackage === undefined && PRIMITIVE_S3_GENERICS.has(generic)) {
+    if (
+      genericPackage === undefined &&
+      (PRIMITIVE_S3_GENERICS.has(generic) || IMPLICIT_S3_GROUP_GENERICS.has(generic))
+    ) {
       this.#setRegisteredS3Method(
         this.#s3RegistrationKey(this.#baseEnvironment, generic, className),
         method,
@@ -4372,6 +5144,40 @@ export class Evaluator {
     return result.value;
   }
 
+  #isS3GenericNamespaceLoaded(packageName: string): boolean {
+    return (
+      packageName === "base" ||
+      this.#builtinPackageNamespaces.has(packageName) ||
+      this.#staticPackages.has(packageName) ||
+      this.#packages.get(packageName)?.namespace !== undefined
+    );
+  }
+
+  #deferS3Method(registration: DeferredS3MethodRegistration): void {
+    const pending = this.#deferredS3Methods.get(registration.genericPackage) ?? [];
+    pending.push(registration);
+    this.#deferredS3Methods.set(registration.genericPackage, pending);
+  }
+
+  async #registerDeferredS3Methods(
+    genericPackage: string,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const pending = this.#deferredS3Methods.get(genericPackage);
+    if (pending === undefined) return;
+    for (const registration of pending) {
+      await this.#registerS3Method(
+        registration.generic,
+        registration.className,
+        registration.method,
+        this.#packages.get(registration.ownerPackage)?.namespace ?? this.#baseNamespaceEnvironment,
+        context,
+        genericPackage,
+      );
+    }
+    this.#deferredS3Methods.delete(genericPackage);
+  }
+
   async #loadPackage(
     name: string,
     attach: boolean,
@@ -4386,52 +5192,46 @@ export class Evaluator {
     const record = this.#packages.get(name);
     if (record === undefined) {
       if (REGISTERED_NAMESPACE_EXPORTS.has(name)) {
-        const namespace = this.#staticNamespaces.get(name);
-        if (namespace === undefined)
-          throw new REvaluationError("NRE2221", "Missing static namespace.");
-        const loaded: {
-          name: string;
-          version: string;
-          namespace: REnvironment;
-          record: RuntimePackageRecord;
-        } = {
+        const staticPackage = this.#staticPackages.get(name);
+        if (attach && !this.#searchPath.includes(`package:${name}`)) {
+          this.#searchPath = [
+            this.#searchPath[0] ?? ".GlobalEnv",
+            `package:${name}`,
+            ...this.#searchPath.slice(1),
+          ];
+          this.#invalidateSearchEnvironments();
+          this.#rebuildAttachedSearchBindings();
+        }
+        return {
           name,
           version: "4.6.1",
-          namespace,
+          namespace: this.#staticNamespaceEnvironment(name),
           record: {
             definition: {
               name,
               version: "4.6.1",
+              lazyData: false,
               descriptionFields: corePackageDescriptionFields(name),
               resourceTextEncoding: "utf8",
               dependencies: [],
               imports: [],
               exports: await this.#namespaceExports(name, context),
               exportPatterns: [],
+              classExports: [],
               methodExports: [],
               s3Methods: [],
               programs: [],
-              textResources: [],
-              resources: [],
+              textResources: staticPackage?.definition.textResources ?? [],
+              resources: staticPackage?.definition.resources ?? [],
             },
-            namespace,
+            namespace: this.#staticNamespaceEnvironment(name),
+            dataEnvironment: undefined,
             exportNames: undefined,
             loading: false,
-            attached: this.#searchPath.includes(`package:${name}`),
+            loadingData: new Set(),
+            attached: true,
           },
         };
-        if (attach && !loaded.record.attached) {
-          this.#searchPath.splice(1, 0, `package:${name}`);
-          this.#attachSearchEnvironment(name);
-          loaded.record.attached = true;
-          try {
-            await this.#invokeUserPackageHooks(loaded.record, "attach", context);
-          } catch (error) {
-            this.#removeSearchEnvironment(`package:${name}`);
-            throw error;
-          }
-        }
-        return loaded;
       }
       throw new REvaluationError("NRE2221", `There is no installed package called '${name}'.`, {
         details: { package: name },
@@ -4477,63 +5277,37 @@ export class Evaluator {
             );
           }
         }
-        const importsEnvironment = createEnvironment(this.#baseNamespace, true);
-        const importOrigins = new Map<string, string>();
+        const sourceDependsEnvironment = await this.#packageSourceDependsEnvironment(
+          record,
+          context,
+        );
+        const importsEnvironment = createEnvironment(
+          sourceDependsEnvironment ?? this.#baseNamespaceEnvironment,
+          true,
+        );
         for (const import_ of record.definition.imports) {
           context.checkpoint();
           const dependency = await this.#loadPackage(import_.package, false, context, libraryPaths);
-          const exportedNames = await this.#namespaceExports(import_.package, context);
-          const names = import_.names ?? exportedNames;
+          const names = import_.names ?? [
+            ...(await this.#namespaceExports(import_.package, context)),
+            ...(CORE_NAMESPACE_FULL_IMPORT_INTERNALS.get(import_.package) ?? []),
+          ];
           context.allocate(names.length);
-          for (const [index, importedName] of names.entries()) {
-            if (import_.names === undefined && import_.except?.includes(importedName)) continue;
-            const binding = exportedNames.includes(importedName)
-              ? lookupBinding(dependency.namespace, importedName)
-              : undefined;
+          for (const importedName of names) {
+            const binding = lookupBinding(dependency.namespace, importedName);
             if (binding === undefined) {
               throw new REvaluationError(
                 "NRE2223",
                 `Package '${name}' imports missing binding '${importedName}' from '${import_.package}'.`,
               );
             }
-            const localName = import_.localNames?.[index] ?? importedName;
-            const previous = importsEnvironment.bindings.get(localName);
-            if (previous !== undefined && localName === importedName) {
-              const identical = this.#baseEnvironment.bindings.get("identical");
-              if (identical === undefined)
-                throw new REvaluationError("NRE2223", "Missing identical primitive.");
-              const equal = await this.#invokeCallable(
-                await this.#force(identical, context),
-                [
-                  {
-                    promise: createForcedPromise(
-                      await this.#force(previous, context),
-                      this.#globalEnvironment,
-                    ),
-                  },
-                  {
-                    promise: createForcedPromise(
-                      await this.#force(binding, context),
-                      this.#globalEnvironment,
-                    ),
-                  },
-                ],
-                context,
-              );
-              if (equal.type !== "logical" || equal.values[0] !== 1)
-                await this.#packageLifecycleWarning(
-                  `replacing previous import '${importOrigins.get(localName)}::${localName}' by '${import_.package}::${localName}' when loading '${name}'`,
-                  context,
-                );
-            }
-            setBinding(importsEnvironment, localName, binding);
-            importOrigins.set(localName, import_.package);
+            setBinding(importsEnvironment, importedName, binding);
           }
         }
         const namespace = createEnvironment(importsEnvironment, true);
-        this.#namespaceNames.set(namespace, name);
         record.namespace = namespace;
         const registeredMethodIndexes = new Set<number>();
+        const deferredMethods: DeferredS3MethodRegistration[] = [];
         const registerAvailableS3Methods = async (requireAll: boolean): Promise<void> => {
           for (const [index, method] of record.definition.s3Methods.entries()) {
             if (registeredMethodIndexes.has(index)) continue;
@@ -4550,11 +5324,26 @@ export class Evaluator {
             if (
               method.genericPackage === undefined &&
               !PRIMITIVE_S3_GENERICS.has(method.generic) &&
+              !IMPLICIT_S3_GROUP_GENERICS.has(method.generic) &&
               lookupBinding(namespace, method.generic) === undefined
             ) {
               if (requireAll) {
                 throw new REvaluationError("NRE2001", `object '${method.generic}' not found`);
               }
+              continue;
+            }
+            if (
+              method.genericPackage !== undefined &&
+              !this.#isS3GenericNamespaceLoaded(method.genericPackage)
+            ) {
+              deferredMethods.push({
+                ownerPackage: name,
+                genericPackage: method.genericPackage,
+                generic: method.generic,
+                className: method.class,
+                method: binding,
+              });
+              registeredMethodIndexes.add(index);
               continue;
             }
             await this.#registerS3Method(
@@ -4587,6 +5376,12 @@ export class Evaluator {
             }
           }
         } finally {
+          // DESCRIPTION Depends packages are visible while package sources are
+          // installed/evaluated, but they are not lexical namespace imports.
+          // Remove that temporary lookup layer before .onLoad and later calls.
+          if (sourceDependsEnvironment !== undefined) {
+            setParentEnvironment(importsEnvironment, this.#baseNamespaceEnvironment);
+          }
           if (hadSourceDirectory) {
             this.#builtinState.set(
               PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
@@ -4596,17 +5391,32 @@ export class Evaluator {
             this.#builtinState.delete(PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY);
           }
         }
-        record.exportNames = resolveRuntimePackageExportNames(record, namespace);
+        await registerAvailableS3Methods(true);
+        await this.#invokePackageHook(record, ".onLoad", context);
+        // Explicit exports may be imported bindings or may be installed by
+        // .onLoad. Validate only after the namespace lifecycle hook completes.
         for (const exportedName of record.definition.exports) {
-          if (namespace.bindings.get(exportedName) === undefined) {
+          if (lookupBinding(namespace, exportedName) === undefined) {
             throw new REvaluationError(
               "NRE2224",
               `Package '${name}' exports missing binding '${exportedName}'.`,
             );
           }
         }
-        await registerAvailableS3Methods(true);
-        await this.#invokePackageHook(record, ".onLoad", context);
+        for (const className of record.definition.classExports) {
+          const exportedName = `.__C__${className}`;
+          if (namespace.bindings.get(exportedName) === undefined) {
+            throw new REvaluationError(
+              "NRE2224",
+              `Package '${name}' exports missing S4 class '${className}'.`,
+            );
+          }
+        }
+        // exportPattern() applies to the completed namespace, including bindings
+        // intentionally installed by .onLoad (often through delayedAssign()).
+        record.exportNames = resolveRuntimePackageExportNames(record, namespace);
+        await this.#registerDeferredS3Methods(name, context);
+        for (const registration of deferredMethods) this.#deferS3Method(registration);
       } catch (error) {
         for (const [key, previous] of replacedMethods) {
           if (previous === undefined) this.#registeredS3Methods.delete(key);
@@ -4623,16 +5433,22 @@ export class Evaluator {
         record.loading = false;
       }
       if (registrationStackInvariantFailed) {
-        throw new Error("Internal S3 registration transaction stack invariant failed.");
+        throw new Error();
       }
       if (loadFailed) throw loadError;
-      await this.#invokeUserPackageHooks(record, "onLoad", context);
     }
     const namespace = record.namespace;
     if (namespace === undefined) {
       throw new REvaluationError("NRE2226", `Package '${name}' did not create a namespace.`);
     }
     if (attach && !record.attached) {
+      for (const dependency of record.definition.dependencies) {
+        if (dependency.kind === "Depends") {
+          await this.#loadPackage(dependency.package, true, context, libraryPaths);
+        }
+      }
+      this.#loadPackageLazyData(record, context);
+      await this.#invokePackageHook(record, ".onAttach", context);
       const exportNames = runtimePackageExportNames(record);
       context.allocate(exportNames.length);
       this.#searchPath = [
@@ -4641,28 +5457,8 @@ export class Evaluator {
         ...this.#searchPath.slice(1).filter((entry) => entry !== `package:${name}`),
       ];
       this.#attachSearchEnvironment(name);
+      this.#rebuildAttachedSearchBindings();
       record.attached = true;
-      try {
-        await this.#invokePackageHook(record, ".onAttach", context);
-        await this.#invokeUserPackageHooks(record, "attach", context);
-      } catch (error) {
-        // The namespace remains loaded, but a failed attachment must not stay searchable.
-        // Preserve other packages attached by the hook while restoring any masked exports.
-        record.attached = false;
-        const entry = `package:${name}`;
-        this.#searchPath = this.#searchPath.filter((item) => item !== entry);
-        const removedEnvironment = this.#searchEnvironments.get(entry);
-        if (removedEnvironment !== undefined) {
-          if (this.#globalEnvironment.parent === removedEnvironment)
-            this.#globalEnvironment.parent = removedEnvironment.parent;
-          for (const environment of this.#searchEnvironments.values()) {
-            if (environment.parent === removedEnvironment)
-              environment.parent = removedEnvironment.parent;
-          }
-          this.#searchEnvironments.delete(entry);
-        }
-        throw error;
-      }
     }
     return { name, version: record.definition.version, namespace, record };
   }
@@ -4855,6 +5651,47 @@ export class Evaluator {
     record.exportNames = undefined;
   }
 
+  async #packageSourceDependsEnvironment(
+    record: RuntimePackageRecord,
+    context: EvaluationContext,
+  ): Promise<REnvironment | undefined> {
+    const attachmentOrder: string[] = [];
+    const active = new Set<string>();
+    const appendWithDependencies = (name: string): void => {
+      if (active.has(name)) return;
+      active.add(name);
+      const dependencyRecord = this.#packages.get(name);
+      for (const dependency of dependencyRecord?.definition.dependencies ?? []) {
+        if (dependency.kind === "Depends") appendWithDependencies(dependency.package);
+      }
+      active.delete(name);
+      attachmentOrder.push(name);
+    };
+    for (const dependency of record.definition.dependencies) {
+      if (dependency.kind === "Depends") appendWithDependencies(dependency.package);
+    }
+    if (attachmentOrder.length === 0) return undefined;
+
+    const environment = createEnvironment(this.#baseNamespaceEnvironment, true);
+    for (const name of attachmentOrder) {
+      context.checkpoint();
+      const dependency = this.#packages.get(name);
+      const namespace =
+        dependency?.namespace ?? this.#staticPackages.get(name)?.namespace ?? undefined;
+      if (namespace === undefined) continue;
+      const exportNames = await this.#namespaceExports(name, context);
+      context.allocate(exportNames.length);
+      for (const exportName of exportNames) {
+        const binding =
+          dependency === undefined
+            ? namespace.bindings.get(exportName)
+            : runtimePackageExportBinding(dependency, exportName);
+        if (binding !== undefined) setBinding(environment, exportName, binding);
+      }
+    }
+    return environment;
+  }
+
   async #loadPackageSysdata(
     record: RuntimePackageRecord,
     namespace: REnvironment,
@@ -4871,16 +5708,121 @@ export class Evaluator {
     }
     const archive = archives[0];
     if (archive === undefined) return;
-    const bytes = decodeRBase64Resource(archive.data, context);
-    const workspace = await decodeRWorkspaceFile(bytes, context, {
-      global: this.#globalEnvironment,
-      base: this.#baseEnvironment,
-      baseNamespace: this.#baseNamespace,
-      empty: this.#emptyEnvironment,
-    });
+    const bytes = decodeRBase64Resource(
+      archive.data,
+      context,
+      context.limits.maxPackageResourceBytes,
+    );
+    const workspace = await decodeRWorkspaceFile(
+      bytes,
+      context,
+      {
+        global: this.#globalEnvironment,
+        base: this.#baseEnvironment,
+        baseNamespace: this.#baseNamespaceEnvironment,
+        empty: this.#emptyEnvironment,
+      },
+      context.limits.maxPackageResourceBytes,
+    );
     for (const entry of workspace.entries) {
       context.checkpoint();
       setBinding(namespace, entry.name, entry.value);
+    }
+  }
+
+  #loadPackageLazyData(
+    record: RuntimePackageRecord,
+    context: EvaluationContext,
+  ): REnvironment | undefined {
+    if (record.definition.lazyData !== true) return undefined;
+    if (record.dataEnvironment !== undefined) return record.dataEnvironment;
+    const datasets = runtimePackageDatasets(record);
+    const environment = createEnvironment(this.#baseNamespaceEnvironment, true);
+    record.dataEnvironment = environment;
+    context.allocate(datasets.length);
+    for (const dataset of datasets) {
+      setBinding(environment, dataset.name, {
+        type: "promise",
+        expression: null,
+        environment,
+        packageData: {
+          package: record.definition.name,
+          dataset: dataset.name,
+          ...(dataset.resource === dataset.name ? {} : { resource: dataset.resource }),
+        },
+        missing: false,
+        state: "unforced",
+        value: undefined,
+      });
+    }
+    return environment;
+  }
+
+  async #loadPackageDataset(
+    record: RuntimePackageRecord,
+    dataset: string,
+    resource: string,
+    promise: RPromise,
+    context: EvaluationContext,
+  ): Promise<RValue> {
+    const environment = record.dataEnvironment;
+    if (environment === undefined) {
+      throw new REvaluationError(
+        "NRE2250",
+        `Package '${record.definition.name}' has no LazyData environment.`,
+      );
+    }
+    if (record.loadingData.has(dataset)) {
+      throw new REvaluationError(
+        "NRE2250",
+        `Package LazyData cycle while loading '${record.definition.name}::${dataset}'.`,
+      );
+    }
+    const dataBinding = this.#builtinPackageNamespaces.get("utils")?.bindings.get("data");
+    if (dataBinding === undefined) {
+      throw new REvaluationError(
+        "NRE2255",
+        `Package '${record.definition.name}' LazyData requires the utils::data runtime binding.`,
+      );
+    }
+    record.loadingData.add(dataset);
+    try {
+      const data = await this.#force(dataBinding, context);
+      await this.#invokeCallable(
+        data,
+        [
+          {
+            name: "list",
+            promise: createForcedPromise(characterVector([resource]), environment),
+          },
+          {
+            name: "package",
+            promise: createForcedPromise(characterVector([record.definition.name]), environment),
+          },
+          {
+            name: "envir",
+            promise: createForcedPromise(environment, environment),
+          },
+        ],
+        context,
+        undefined,
+        environment,
+      );
+      const loaded = environment.bindings.get(dataset);
+      if (loaded === undefined || loaded === promise) {
+        throw new REvaluationError(
+          "NRE2250",
+          `Package data set '${record.definition.name}::${dataset}' did not create a matching binding.`,
+        );
+      }
+      const value = await this.#force(loaded, context);
+      if (record.attached) {
+        this.#attachSearchEnvironment(record.definition.name);
+        this.#rebuildAttachedSearchBindings();
+      }
+      return value;
+    } finally {
+      record.loadingData.delete(dataset);
     }
   }
 
@@ -4925,7 +5867,17 @@ export class Evaluator {
   }
 
   #namespaceName(environment: REnvironment): string | undefined {
-    return this.#namespaceNames.get(environment);
+    for (const [name, record] of this.#staticPackages) {
+      if (record.namespace === environment) return name;
+    }
+    for (const [name, namespace] of this.#builtinPackageNamespaces) {
+      if (namespace === environment) return name;
+    }
+    if (environment === this.#baseNamespaceEnvironment) return "base";
+    for (const [name, record] of this.#packages) {
+      if (record.namespace === environment) return name;
+    }
+    return undefined;
   }
 
   async #namespaceBinding(
@@ -4936,11 +5888,7 @@ export class Evaluator {
     const staticExports = this.#staticNamespaceExports(name);
     if (staticExports !== undefined) {
       if (!this.#staticNamespaceOwnsBinding(name, bindingName)) return undefined;
-      const namespaceEnvironment = this.#staticNamespaces.get(name);
-      const binding =
-        namespaceEnvironment === undefined
-          ? undefined
-          : lookupBinding(namespaceEnvironment, bindingName);
+      const binding = this.#staticNamespaceEnvironment(name).bindings.get(bindingName);
       if (binding === undefined) return undefined;
       return this.#force(binding, context);
     }
@@ -4952,7 +5900,9 @@ export class Evaluator {
       });
     }
     if (record.namespace === undefined) await this.#loadPackage(name, false, context);
-    const binding = record.namespace?.bindings.get(bindingName);
+    const binding =
+      record.namespace?.bindings.get(bindingName) ??
+      this.#loadPackageLazyData(record, context)?.bindings.get(bindingName);
     if (binding === undefined) return undefined;
     return this.#force(binding, context);
   }
@@ -4999,7 +5949,7 @@ export class Evaluator {
       return undefined;
     }
     return {
-      fields: record.definition.descriptionFields,
+      fields: installedPureRDescriptionFields(record.definition.descriptionFields),
       file: `${NATIVR_PACKAGE_LIBRARY_PATH}/${encodeURIComponent(name)}/DESCRIPTION`,
     };
   }
@@ -5023,22 +5973,26 @@ export class Evaluator {
     if (this.#staticNamespaceExports(name) !== undefined) {
       if (!(libraryPaths ?? this.#libraryPaths).includes(NATIVR_SYSTEM_LIBRARY_PATH))
         return undefined;
-      const resources = this.#systemPackageResources.get(name);
+      const definition = this.#staticPackages.get(name)?.definition;
+      const metadata = CORE_PACKAGE_METADATA_PATHS.includes(normalizedPath);
       if (
         normalizedPath.length > 0 &&
-        ![...(resources?.keys() ?? [])].some(
-          (path) => path === normalizedPath || path.startsWith(`${normalizedPath}/`),
-        )
+        !metadata &&
+        (definition === undefined ||
+          ![...definition.textResources, ...definition.resources].some(
+            (resource) =>
+              resource.path === normalizedPath || resource.path.startsWith(`${normalizedPath}/`),
+          ))
       ) {
         return undefined;
       }
+      const encodedPath = normalizedPath
+        .split("/")
+        .filter((part) => part.length > 0)
+        .map((part) => encodeURIComponent(part))
+        .join("/");
       const root = `nativr://package/${encodeURIComponent(name)}`;
-      return normalizedPath.length === 0
-        ? root
-        : `${root}/${normalizedPath
-            .split("/")
-            .map((part) => encodeURIComponent(part))
-            .join("/")}`;
+      return encodedPath.length === 0 ? root : `${root}/${encodedPath}`;
     }
     const record = this.#packages.get(name);
     if (record === undefined) return undefined;
@@ -5073,8 +6027,16 @@ export class Evaluator {
   #packageResourcePaths(name: string, prefix: string): readonly string[] | undefined {
     const normalizedPrefix = prefix.replace(/^\/+|\/+$/gu, "");
     if (this.#staticNamespaceExports(name) !== undefined) {
+      const definition = this.#staticPackages.get(name)?.definition;
       return Object.freeze(
-        [...(this.#systemPackageResources.get(name)?.keys() ?? [])]
+        [
+          ...CORE_PACKAGE_METADATA_PATHS,
+          ...(definition === undefined
+            ? []
+            : [...definition.textResources, ...definition.resources].map(
+                (resource) => resource.path,
+              )),
+        ]
           .filter(
             (path) =>
               normalizedPrefix.length === 0 ||
@@ -5107,13 +6069,42 @@ export class Evaluator {
         readonly textEncoding: "utf8" | "latin1";
       }
     | undefined {
+    const runtimePrefix = "nativr://runtime/";
+    if (path.startsWith(runtimePrefix)) {
+      const resource = this.#runtimeTextResources.get(path.slice(runtimePrefix.length));
+      return resource === undefined
+        ? undefined
+        : { encoding: "text", data: resource.text, textEncoding: "utf8" };
+    }
     const resolved = parsePackageVirtualPath(path);
     if (resolved === undefined || resolved.resourcePath.length === 0) return undefined;
-    const systemResource = this.#systemPackageResources
-      .get(resolved.name)
-      ?.get(resolved.resourcePath);
-    if (systemResource !== undefined) {
-      return { encoding: "text", data: systemResource, textEncoding: "utf8" };
+    const staticExports = this.#staticNamespaceExports(resolved.name);
+    if (staticExports !== undefined) {
+      const exportNames =
+        staticExports === "all"
+          ? [...this.#staticNamespaceEnvironment(resolved.name).bindings.keys()]
+          : [...staticExports];
+      const metadata = corePackageMetadataText(resolved.name, resolved.resourcePath, exportNames);
+      if (metadata !== undefined) {
+        return { encoding: "text", data: metadata, textEncoding: "utf8" };
+      }
+    }
+    const staticDefinition = this.#staticPackages.get(resolved.name)?.definition;
+    if (staticDefinition !== undefined) {
+      const text = staticDefinition.textResources.find(
+        (resource) => resource.path === resolved.resourcePath,
+      );
+      if (text !== undefined) return { encoding: "text", data: text.text, textEncoding: "utf8" };
+      const binary = staticDefinition.resources.find(
+        (resource) => resource.path === resolved.resourcePath,
+      );
+      return binary === undefined
+        ? undefined
+        : {
+            encoding: "base64",
+            data: binary.data,
+            textEncoding: staticDefinition.resourceTextEncoding,
+          };
     }
     const record = this.#packages.get(resolved.name);
     if (record === undefined) return undefined;
@@ -5138,28 +6129,53 @@ export class Evaluator {
   #packageName(environment: REnvironment): string | undefined {
     let current: REnvironment | null = environment;
     while (current !== null) {
-      if (current === this.#globalEnvironment) {
+      if (current === this.#globalEnvironment || current === this.#attachedPackagesEnvironment) {
         return undefined;
       }
-      const namespaceName = this.#namespaceNames.get(current);
-      if (namespaceName !== undefined) return namespaceName;
+      for (const [name, record] of this.#packages) {
+        if (record.namespace === current || record.dataEnvironment === current) return name;
+      }
+      for (const [name, record] of this.#staticPackages) {
+        if (record.namespace === current) return name;
+      }
+      for (const [name, namespace] of this.#builtinPackageNamespaces) {
+        if (namespace === current) return name;
+      }
       const searchName = this.#searchEnvironmentNames.get(current.id);
       if (searchName?.startsWith("package:")) return searchName.slice("package:".length);
-      if (current === this.#baseEnvironment) return "base";
+      if (current === this.#baseEnvironment || current === this.#baseNamespaceEnvironment) {
+        return "base";
+      }
       current = current.parent;
     }
     return undefined;
   }
 
   #registeredNamespaceExportNames(name: string, exports: ReadonlySet<string> | "all"): string[] {
-    if (exports !== "all") return [...exports];
+    const staticExports = this.#staticPackages.get(name)?.definition.exports ?? [];
+    if (exports !== "all") return [...new Set([...exports, ...staticExports])];
     const names = this.#builtins
-      .filter((definition) => definition.metadata.package === name && definition.exported !== false)
+      .filter((definition) => definition.package === name)
       .map((definition) => definition.name);
-    if (name === "base") names.push(...BASE_NAMESPACE_CONSTANTS);
-    if (name === "grDevices") names.push("colours");
-    if (name === "graphics") names.push("plot");
-    return [...new Set(names)];
+    if (name === "base") {
+      names.push(
+        "pi",
+        "letters",
+        "LETTERS",
+        "month.abb",
+        "month.name",
+        "T",
+        "F",
+        ".Machine",
+        ".Platform",
+        ".leap.seconds",
+        ".LC.categories",
+        ".Library",
+        ".Library.site",
+        ".BaseNamespaceEnv",
+      );
+    }
+    return [...new Set([...names, ...staticExports])];
   }
 
   #staticNamespaceExports(name: string): ReadonlySet<string> | "all" | undefined {
@@ -5169,6 +6185,7 @@ export class Evaluator {
 
   #staticNamespaceOwnsBinding(name: string, bindingName: string): boolean {
     return (
+      this.#staticPackages.get(name)?.definition.exports.includes(bindingName) === true ||
       this.#builtins.some(
         (definition) => definition.package === name && definition.name === bindingName,
       ) ||
@@ -5176,6 +6193,112 @@ export class Evaluator {
       (name === "grDevices" && bindingName === "colours") ||
       (name === "graphics" && bindingName === "plot")
     );
+  }
+
+  #staticNamespaceEnvironment(name: string): REnvironment {
+    return (
+      this.#staticPackages.get(name)?.namespace ??
+      this.#builtinPackageNamespaces.get(name) ??
+      this.#baseNamespaceEnvironment
+    );
+  }
+
+  #rebuildAttachedSearchBindings(): void {
+    this.#attachedPackagesEnvironment.bindings.clear();
+    for (let index = this.#searchPath.length - 1; index >= 0; index -= 1) {
+      const entry = this.#searchPath[index];
+      if (entry === undefined || entry === ".GlobalEnv" || entry === "package:base") continue;
+      const user = this.#userSearchEnvironments.get(entry);
+      if (user !== undefined) {
+        for (const [name, binding] of user.bindings) {
+          setBinding(this.#attachedPackagesEnvironment, name, binding);
+        }
+        continue;
+      }
+      if (!entry.startsWith("package:")) continue;
+      const packageName = entry.slice("package:".length);
+      const staticExports = this.#staticNamespaceExports(packageName);
+      if (staticExports !== undefined) {
+        const source = this.#staticNamespaceEnvironment(packageName);
+        for (const name of this.#registeredNamespaceExportNames(packageName, staticExports)) {
+          const binding = source.bindings.get(name);
+          if (binding !== undefined) setBinding(this.#attachedPackagesEnvironment, name, binding);
+        }
+        continue;
+      }
+      const record = this.#packages.get(packageName);
+      if (record?.namespace === undefined) continue;
+      for (const name of runtimePackageExportNames(record)) {
+        const binding = runtimePackageExportBinding(record, name);
+        if (binding !== undefined) setBinding(this.#attachedPackagesEnvironment, name, binding);
+      }
+      for (const [name, binding] of record.dataEnvironment?.bindings ?? []) {
+        setBinding(this.#attachedPackagesEnvironment, name, binding);
+      }
+    }
+  }
+
+  #attachUserSearchEnvironment(
+    environment: REnvironment,
+    name: string,
+    position: number,
+  ): REnvironment {
+    if (name.length === 0) {
+      throw new REvaluationError("NRE2264", `invalid attach name '${name}'`);
+    }
+    if (this.#searchPath.includes(name)) {
+      throw new REvaluationError("NRE2264", `'${name}' is already on the search path`);
+    }
+    const normalizedPosition = Math.trunc(position);
+    if (
+      !Number.isFinite(normalizedPosition) ||
+      normalizedPosition < 2 ||
+      normalizedPosition > this.#searchPath.length
+    ) {
+      throw new REvaluationError("NRE2264", "invalid 'pos' argument");
+    }
+    const attached = createEnvironment(this.#emptyEnvironment, true);
+    for (const [bindingName, binding] of environment.bindings) {
+      setBinding(attached, bindingName, binding);
+    }
+    for (const [attributeName, attribute] of environment.attributes) {
+      attached.attributes.set(attributeName, attribute);
+    }
+    attached.attributes.set("name", characterVector([name]));
+    this.#userSearchEnvironments.set(name, attached);
+    this.#searchPath.splice(normalizedPosition - 1, 0, name);
+    this.#invalidateSearchEnvironments(true);
+    this.#rebuildAttachedSearchBindings();
+    return attached;
+  }
+
+  #detachSearchEnvironment(identifier: number | string): string {
+    const index =
+      typeof identifier === "number"
+        ? Math.trunc(identifier) - 1
+        : this.#searchPath.indexOf(identifier);
+    if (index < 1 || index >= this.#searchPath.length - 1) {
+      throw new REvaluationError("NRE2265", "invalid 'name' argument");
+    }
+    const entry = this.#searchPath[index] ?? "";
+    this.#searchPath.splice(index, 1);
+    this.#userSearchEnvironments.delete(entry);
+    if (entry.startsWith("package:")) {
+      const record = this.#packages.get(entry.slice("package:".length));
+      if (record !== undefined) record.attached = false;
+    }
+    this.#invalidateSearchEnvironments(true);
+    this.#rebuildAttachedSearchBindings();
+    return entry;
+  }
+
+  #attachedUserSearchBinding(name: string): RBinding | undefined {
+    for (const entry of this.#searchPath) {
+      const environment = this.#userSearchEnvironments.get(entry);
+      const binding = environment?.bindings.get(name);
+      if (binding !== undefined) return binding;
+    }
+    return undefined;
   }
 
   #staticNamespaceNames(): readonly string[] {
@@ -5196,25 +6319,19 @@ export class Evaluator {
         : (this.#searchEnvironments.get(parentEntry) ?? this.#baseEnvironment);
     const environment = createEnvironment(parent, true);
     const record = this.#packages.get(name);
-    const staticExports = this.#staticNamespaceExports(name);
-    const source =
-      staticExports === undefined ? record?.namespace : this.#staticNamespaces.get(name);
-    const exportNames =
-      staticExports === undefined
-        ? record === undefined
-          ? []
-          : runtimePackageExportNames(record)
-        : this.#registeredNamespaceExportNames(name, staticExports);
-    if (source !== undefined) {
-      for (const exportedName of exportNames) {
-        const binding = lookupBinding(source, exportedName);
+    if (record?.namespace !== undefined) {
+      for (const exportedName of runtimePackageExportNames(record)) {
+        const binding = runtimePackageExportBinding(record, exportedName);
         if (binding !== undefined) setBinding(environment, exportedName, binding);
+      }
+      for (const [bindingName, binding] of record.dataEnvironment?.bindings ?? []) {
+        setBinding(environment, bindingName, binding);
       }
     }
     const entry = `package:${name}`;
+    environment.attributes.set("name", characterVector([entry]));
     this.#searchEnvironments.set(entry, environment);
     this.#searchEnvironmentNames.set(environment.id, entry);
-    this.#globalEnvironment.parent = environment;
   }
 
   #searchEnvironment(identifier: number | string): REnvironment | undefined {
@@ -5230,18 +6347,22 @@ export class Evaluator {
     }
     if (entry === undefined) return undefined;
     if (entry === ".GlobalEnv") return this.#globalEnvironment;
+    const user = this.#userSearchEnvironments.get(entry);
+    if (user !== undefined) return user;
     this.#ensureSearchEnvironments();
     return this.#searchEnvironments.get(entry);
   }
 
   #environmentName(environment: REnvironment): string | undefined {
     if (environment === this.#globalEnvironment) return "R_GlobalEnv";
-    if (environment === this.#baseEnvironment) return "base";
+    if (environment === this.#baseEnvironment || environment === this.#baseNamespaceEnvironment) {
+      return "base";
+    }
     if (environment === this.#emptyEnvironment) return "R_EmptyEnv";
-    const namespaceName = this.#namespaceNames.get(environment);
-    if (namespaceName !== undefined) return namespaceName;
-    for (const [name, namespace] of this.#staticNamespaces) {
-      if (name !== "base" && namespace.parent === environment) return `imports:${name}`;
+    const namespace = this.#namespaceName(environment);
+    if (namespace !== undefined) return namespace;
+    for (const [name, candidate] of this.#userSearchEnvironments) {
+      if (candidate === environment) return name;
     }
     this.#ensureSearchEnvironments();
     return this.#searchEnvironmentNames.get(environment.id);
@@ -5260,12 +6381,16 @@ export class Evaluator {
         continue;
       }
       const environment = createEnvironment(parent, true);
+      const user = this.#userSearchEnvironments.get(entry);
+      if (user !== undefined) {
+        for (const [name, binding] of user.bindings) setBinding(environment, name, binding);
+      }
       if (entry.startsWith("package:")) {
         const name = entry.slice("package:".length);
         const staticExports = this.#staticNamespaceExports(name);
         const record = this.#packages.get(name);
         const source =
-          staticExports === undefined ? record?.namespace : this.#staticNamespaces.get(name);
+          staticExports === undefined ? record?.namespace : this.#staticNamespaceEnvironment(name);
         const exports =
           staticExports === undefined
             ? record === undefined
@@ -5274,16 +6399,26 @@ export class Evaluator {
             : this.#registeredNamespaceExportNames(name, staticExports);
         if (source !== undefined) {
           for (const exportedName of exports) {
-            const binding = lookupBinding(source, exportedName);
+            const binding =
+              staticExports === undefined
+                ? record === undefined
+                  ? undefined
+                  : runtimePackageExportBinding(record, exportedName)
+                : source.bindings.get(exportedName);
             if (binding !== undefined) setBinding(environment, exportedName, binding);
           }
         }
+        if (record !== undefined) {
+          for (const [bindingName, binding] of record.dataEnvironment?.bindings ?? []) {
+            setBinding(environment, bindingName, binding);
+          }
+        }
+        environment.attributes.set("name", characterVector([entry]));
       }
       this.#searchEnvironments.set(entry, environment);
       this.#searchEnvironmentNames.set(environment.id, entry === "package:base" ? "base" : entry);
       parent = environment;
     }
-    this.#globalEnvironment.parent = parent;
   }
 
   async #dispatchS3IfPresentResult(
@@ -5733,9 +6868,48 @@ export class Evaluator {
       return this.#invokeCallable(binding.callable, [], context);
     }
     if (binding.type !== "promise") return binding;
-    return forcePromise(binding, async (expression, environment) =>
+    const packageData = binding.packageData;
+    if (packageData !== undefined) {
+      if (binding.state === "forced") {
+        if (binding.value === undefined) {
+          throw new REvaluationError("NRE2011", "A forced promise has no memoized value.");
+        }
+        this.#invalidateMutableVectorOwnership(binding.value);
+        return binding.value;
+      }
+      if (binding.state === "forcing") {
+        throw new REvaluationError("NRE2010", "Promise is already under evaluation.");
+      }
+      const record = this.#packages.get(packageData.package);
+      if (record === undefined) {
+        throw new REvaluationError(
+          "NRE2221",
+          `There is no installed package called '${packageData.package}'.`,
+        );
+      }
+      binding.state = "forcing";
+      try {
+        const value = await this.#loadPackageDataset(
+          record,
+          packageData.dataset,
+          packageData.resource ?? packageData.dataset,
+          binding,
+          context,
+        );
+        binding.value = value;
+        binding.state = "forced";
+        this.#invalidateMutableVectorOwnership(value);
+        return value;
+      } catch (error) {
+        binding.state = "unforced";
+        throw error;
+      }
+    }
+    const value = await forcePromise(binding, async (expression, environment) =>
       this.#evaluateValue(expression, environment, context),
     );
+    this.#invalidateMutableVectorOwnership(value);
+    return value;
   }
 
   async #assignBinding(
@@ -5743,12 +6917,28 @@ export class Evaluator {
     name: string,
     value: RValue,
     context: EvaluationContext,
+    claimMutableVector = false,
   ): Promise<void> {
     const existing = environment.bindings.get(name);
     if (existing?.type !== "active-binding") {
+      if (existing !== undefined && existing.type !== "promise") {
+        const owner = this.#mutableVectorOwners.get(existing);
+        if (owner?.environment === environment && owner.name === name && existing !== value) {
+          this.#mutableVectorOwners.delete(existing);
+        }
+      }
+      if (!claimMutableVector) this.#invalidateMutableVectorOwnership(value);
       setBinding(environment, name, value);
+      if (
+        claimMutableVector &&
+        this.#closureCallFrames.some((frame) => frame.environment === environment) &&
+        mutableAtomicVector(value)
+      ) {
+        this.#mutableVectorOwners.set(value, { environment, name });
+      }
       return;
     }
+    this.#invalidateMutableVectorOwnership(value);
     if (environment.lockedBindings.has(name)) {
       throw new REvaluationError("NRE2012", `Cannot change locked binding '${name}'.`);
     }
@@ -5761,12 +6951,20 @@ export class Evaluator {
     );
   }
 
+  #invalidateMutableVectorOwnership(value: RValue): void {
+    this.#mutableVectorOwners.delete(value);
+  }
+
   async #forceDetailed(promise: RPromise, context: EvaluationContext): Promise<EvaluationResult> {
     if (promise.state === "forced") {
       if (promise.value === undefined) {
         throw new REvaluationError("NRE2011", "A forced promise has no memoized value.");
       }
+      this.#invalidateMutableVectorOwnership(promise.value);
       return { value: promise.value, visible: true };
+    }
+    if (promise.packageData !== undefined) {
+      return { value: await this.#force(promise, context), visible: true };
     }
     if (promise.state === "forcing") {
       throw new REvaluationError("NRE2010", "Promise is already under evaluation.");
@@ -5785,6 +6983,7 @@ export class Evaluator {
       const result = await this.#evaluateNode(promise.expression, promise.environment, context);
       promise.value = result.value;
       promise.state = "forced";
+      this.#invalidateMutableVectorOwnership(result.value);
       return result;
     } catch (error) {
       promise.state = "unforced";
@@ -5897,7 +7096,7 @@ export class Evaluator {
       if (current.bindings.has(name)) {
         if (
           current === this.#baseEnvironment ||
-          current === this.#baseNamespace ||
+          current === this.#baseNamespaceEnvironment ||
           current === this.#emptyEnvironment
         ) {
           throw new REvaluationError(
@@ -5918,21 +7117,7 @@ export class Evaluator {
     full: boolean,
     context: EvaluationContext,
   ): RuntimeMemoryStatistics {
-    const census = censusRuntimeMemory(
-      [
-        this.#globalEnvironment,
-        this.#builtinState,
-        this.#staticNamespaces,
-        this.#controlFrames,
-        this.#closureCallFrames,
-        this.#callFrames,
-        this.#evaluationOrigins,
-        this.#activeGlobalCallingHandlers,
-        this.#registeredS3Methods,
-        ...[...this.#packages.values()].map((record) => record.namespace),
-      ],
-      () => context.checkpoint(),
-    );
+    const census = censusRuntimeMemory(this.#runtimeMemoryRoots(), () => context.checkpoint());
     this.#memoryCollections += 1;
     if (full) this.#memoryFullCollections += 1;
     this.#memoryMaxUsed = reset
@@ -5962,47 +7147,139 @@ export class Evaluator {
     });
   }
 
-  #installBuiltinS3Methods(): void {
-    for (const definition of this.#builtins) {
-      const method = definition.s3Method;
-      if (method === undefined) continue;
-      const binding = this.#staticNamespaces.get(definition.package)?.bindings.get(definition.name);
-      if (binding !== undefined)
-        this.#registeredS3Methods.set(
-          this.#s3RegistrationKey(this.#baseEnvironment, method.generic, method.className),
-          binding,
-        );
-    }
+  async #collectGarbage(
+    reset: boolean,
+    full: boolean,
+    context: EvaluationContext,
+  ): Promise<RuntimeMemoryStatistics> {
+    const reachable = censusRuntimeMemory(this.#runtimeMemoryRoots(), () =>
+      context.checkpoint(),
+    ).reachableEnvironmentIds;
+    await this.#runEnvironmentFinalizers(false, reachable, context);
+    return this.#memoryStatistics(reset, full, context);
   }
-  #installBuiltins(): void {
-    this.#installGlobalEnvironmentBinding();
-    for (const definition of this.#builtins) {
-      const builtin: RBuiltin = { type: "builtin", definition };
-      const environment =
-        definition.package === "base"
-          ? this.#baseEnvironment
-          : this.#staticNamespaces.get(definition.package);
-      if (environment !== undefined) setBinding(environment, definition.name, builtin);
+
+  #registerEnvironmentFinalizer(
+    environment: REnvironment,
+    finalizer: RClosure,
+    onExit: boolean,
+    context: EvaluationContext,
+  ): void {
+    context.checkpoint();
+    if (this.#environmentFinalizers.length >= this.#limits.maxVectorLength) {
+      throw new RResourceLimitError("NRL4011", "Environment finalizer registry limit exceeded.", {
+        details: { maxVectorLength: this.#limits.maxVectorLength },
+      });
     }
-    this.#installBuiltinS3Methods();
-    const graphicsDeviceNamespace = this.#staticNamespaces.get("grDevices");
-    const colors = graphicsDeviceNamespace?.bindings.get("colors");
-    if (colors !== undefined && graphicsDeviceNamespace !== undefined)
-      setBinding(graphicsDeviceNamespace, "colours", colors);
-    for (const [name, exports] of REGISTERED_NAMESPACE_EXPORTS) {
-      if (CORE_R_PACKAGE_NAMES.has(name) || exports === "all") continue;
-      const namespace = this.#staticNamespaces.get(name);
-      if (namespace === undefined) continue;
-      for (const member of exports) {
-        const binding = this.#baseEnvironment.bindings.get(member);
-        if (binding !== undefined) namespace.bindings.set(member, binding);
+    this.#environmentFinalizers.push({ environment, finalizer, onExit });
+  }
+
+  async #runEnvironmentFinalizers(
+    sessionExit: boolean,
+    reachableEnvironmentIds: ReadonlySet<number> | undefined,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const selected = new Set<RegisteredEnvironmentFinalizer>();
+    for (const registration of this.#environmentFinalizers) {
+      if (
+        (sessionExit && registration.onExit) ||
+        (!sessionExit && !reachableEnvironmentIds?.has(registration.environment.id))
+      ) {
+        selected.add(registration);
       }
     }
+    if (selected.size === 0) return;
+
+    for (let index = this.#environmentFinalizers.length - 1; index >= 0; index -= 1) {
+      const registration = this.#environmentFinalizers[index];
+      if (registration !== undefined && selected.has(registration)) {
+        this.#environmentFinalizers.splice(index, 1);
+      }
+    }
+    const registrations = [...selected];
+    for (let index = registrations.length - 1; index >= 0; index -= 1) {
+      const registration = registrations[index];
+      if (registration === undefined) continue;
+      context.checkpoint();
+      try {
+        await this.#invokeCallable(
+          registration.finalizer,
+          [
+            {
+              promise: createForcedPromise(registration.environment, this.#globalEnvironment),
+            },
+          ],
+          context,
+          undefined,
+          this.#globalEnvironment,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        context.writeOutput({ stream: "stderr", text: `Error in finalizer: ${message}\n` });
+      }
+    }
+  }
+
+  #runtimeMemoryRoots(): readonly unknown[] {
+    return [
+      this.#globalEnvironment,
+      this.#baseNamespaceEnvironment,
+      this.#builtinState,
+      this.#controlFrames,
+      this.#closureCallFrames,
+      this.#activeGlobalCallingHandlers,
+      this.#registeredS3Methods,
+      ...[...this.#packages.values()].map((record) => record.namespace),
+      ...[...this.#packages.values()].map((record) => record.dataEnvironment),
+      ...[...this.#staticPackages.values()].map((record) => record.namespace),
+      ...this.#builtinPackageNamespaces.values(),
+    ];
+  }
+
+  #lifecycleContext(): EvaluationContext {
+    return new EvaluationContext(this.#limits, { cancelled: false }, () =>
+      runtimeOutputRouter(this.#builtinState),
+    );
+  }
+
+  #installBuiltins(): void {
+    for (const definition of this.#builtins) {
+      const builtin: RBuiltin = {
+        type: "builtin",
+        definition,
+        ...(definition.attributes === undefined
+          ? {}
+          : { attributes: new Map(definition.attributes) }),
+      };
+      const packageName = definition.package;
+      const environment =
+        packageName === "base"
+          ? this.#baseEnvironment
+          : this.#builtinPackageNamespaces.get(packageName);
+      if (environment === undefined) {
+        throw new REvaluationError(
+          "NRE2254",
+          `Builtin package namespace '${packageName}' is not registered.`,
+        );
+      }
+      setBinding(environment, definition.name, builtin);
+    }
+    const grDevices = this.#builtinPackageNamespaces.get("grDevices");
+    const colors = grDevices?.bindings.get("colors");
+    if (colors !== undefined && grDevices !== undefined) setBinding(grDevices, "colours", colors);
+    const stats = this.#builtinPackageNamespaces.get("stats");
+    const optimize = stats?.bindings.get("optimize");
+    if (optimize !== undefined && stats !== undefined) setBinding(stats, "optimise", optimize);
     const listObjects = this.#baseEnvironment.bindings.get("ls");
     if (listObjects !== undefined) setBinding(this.#baseEnvironment, "objects", listObjects);
     setBinding(this.#baseEnvironment, "pi", doubleVector([Math.PI]));
+    this.#baseEnvironment.lockedBindings.add("pi");
     setBinding(this.#baseEnvironment, "T", logicalVector([1]));
     setBinding(this.#baseEnvironment, "F", logicalVector([0]));
+    setBinding(this.#baseEnvironment, ".GlobalEnv", this.#globalEnvironment);
+    this.#baseEnvironment.lockedBindings.add(".GlobalEnv");
+    setBinding(this.#baseEnvironment, ".BaseNamespaceEnv", this.#baseNamespaceEnvironment);
+    this.#baseEnvironment.lockedBindings.add(".BaseNamespaceEnv");
     setBinding(
       this.#baseEnvironment,
       "letters",
@@ -6013,10 +7290,170 @@ export class Evaluator {
       "LETTERS",
       characterVector(Array.from({ length: 26 }, (_, index) => String.fromCharCode(65 + index))),
     );
+    setBinding(
+      this.#baseEnvironment,
+      "month.abb",
+      characterVector([
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ]),
+    );
+    setBinding(
+      this.#baseEnvironment,
+      "month.name",
+      characterVector([
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ]),
+    );
     setBinding(this.#baseEnvironment, ".Machine", machineConstants());
     setBinding(this.#baseEnvironment, ".Platform", platformConstants());
+    setBinding(
+      this.#baseEnvironment,
+      ".leap.seconds",
+      withAttribute(
+        withClasses(
+          doubleVector([
+            78796800, 94694400, 126230400, 157766400, 189302400, 220924800, 252460800, 283996800,
+            315532800, 362793600, 394329600, 425865600, 489024000, 567993600, 631152000, 662688000,
+            709948800, 741484800, 773020800, 820454400, 867715200, 915148800, 1136073600,
+            1230768000, 1341100800, 1435708800, 1483228800,
+          ]),
+          ["POSIXct", "POSIXt"],
+        ),
+        "tzone",
+        characterVector(["GMT"]),
+      ),
+    );
+    const version = rVersionValue();
+    setBinding(this.#baseEnvironment, "R.version", version);
+    setBinding(this.#baseEnvironment, "version", version);
+    this.#baseEnvironment.lockedBindings.add("R.version");
+    this.#baseEnvironment.lockedBindings.add("version");
     setBinding(this.#baseEnvironment, ".Library", characterVector([NATIVR_SYSTEM_LIBRARY_PATH]));
     setBinding(this.#baseEnvironment, ".Library.site", characterVector([]));
+    const knownS3Generics = [
+      "Math",
+      "Ops",
+      "Summary",
+      "Complex",
+      "matrixOps",
+      "as.character",
+      "as.data.frame",
+      "as.environment",
+      "as.matrix",
+      "as.vector",
+      "cbind",
+      "labels",
+      "print",
+      "rbind",
+      "rep",
+      "seq",
+      "seq.int",
+      "plot",
+      "sequence",
+      "solve",
+      "summary",
+      "t",
+      "edit",
+      "str",
+      "contour",
+      "hist",
+      "identify",
+      "image",
+      "lines",
+      "pairs",
+      "points",
+      "text",
+      "add1",
+      "AIC",
+      "anova",
+      "biplot",
+      "coef",
+      "confint",
+      "deviance",
+      "df.residual",
+      "drop1",
+      "extractAIC",
+      "fitted",
+      "formula",
+      "logLik",
+      "model.frame",
+      "model.matrix",
+      "predict",
+      "profile",
+      "qqnorm",
+      "residuals",
+      "se.contrast",
+      "terms",
+      "update",
+      "vcov",
+    ];
+    setBinding(
+      this.#baseEnvironment,
+      ".knownS3Generics",
+      withNames(characterVector(knownS3Generics.map(() => "base")), knownS3Generics),
+    );
+    setBinding(
+      this.#baseEnvironment,
+      ".S3PrimitiveGenerics",
+      characterVector([
+        "anyNA",
+        "as.character",
+        "as.complex",
+        "as.double",
+        "as.environment",
+        "as.integer",
+        "as.logical",
+        "as.call",
+        "as.numeric",
+        "as.raw",
+        "c",
+        "dim",
+        "dim<-",
+        "dimnames",
+        "dimnames<-",
+        "is.array",
+        "is.finite",
+        "is.infinite",
+        "is.matrix",
+        "is.na",
+        "is.nan",
+        "is.numeric",
+        "length",
+        "length<-",
+        "levels<-",
+        "log2",
+        "log10",
+        "names",
+        "names<-",
+        "rep",
+        "seq.int",
+        "xtfrm",
+      ]),
+    );
+    setBinding(this.#baseEnvironment, ".sys.timezone", characterVector([""], [1]));
+    this.#baseEnvironment.lockedBindings.add(".sys.timezone");
     setBinding(
       this.#baseEnvironment,
       ".LC.categories",
@@ -6034,10 +7471,39 @@ export class Evaluator {
     );
   }
 
-  #installGlobalEnvironmentBinding(): void {
-    // Session reset replaces the global environment, including this locked base binding.
-    this.#baseEnvironment.bindings.set(".GlobalEnv", this.#globalEnvironment);
-    this.#baseEnvironment.lockedBindings.add(".GlobalEnv");
+  #installBuiltinS3Methods(): void {
+    const genericNames = ["Ops", "$", ...this.#builtins.map(({ name }) => name)].sort(
+      (left, right) => right.length - left.length,
+    );
+    for (const definition of this.#builtins) {
+      const generic = genericNames.find((candidate) => definition.name.startsWith(`${candidate}.`));
+      if (generic === undefined) continue;
+      const className = definition.name.slice(generic.length + 1);
+      const packageName = definition.package;
+      const namespace =
+        packageName === "base"
+          ? this.#baseEnvironment
+          : this.#builtinPackageNamespaces.get(packageName);
+      const method = namespace?.bindings.get(definition.name);
+      if (method === undefined) continue;
+      this.#setRegisteredS3Method(
+        this.#s3RegistrationKey(this.#baseEnvironment, generic, className),
+        method,
+      );
+    }
+  }
+
+  #syncBaseNamespaceBindings(): void {
+    this.#baseNamespaceEnvironment.locked = false;
+    this.#baseNamespaceEnvironment.bindings.clear();
+    this.#baseNamespaceEnvironment.lockedBindings.clear();
+    for (const [name, binding] of this.#baseEnvironment.bindings) {
+      this.#baseNamespaceEnvironment.bindings.set(name, binding);
+    }
+    for (const name of this.#baseEnvironment.lockedBindings) {
+      this.#baseNamespaceEnvironment.lockedBindings.add(name);
+    }
+    this.#baseNamespaceEnvironment.locked = this.#baseEnvironment.locked;
   }
 
   #nearestLoopTarget(
@@ -6407,6 +7873,7 @@ function promiseCallAst(promise: RPromise, fallbackSpan: SourceSpan): AstNode {
       span: fallbackSpan,
     };
   }
+  if (promise.value !== undefined) return languageValueAst(promise.value);
   throw new RUnsupportedFeatureError(
     "NRU6130",
     "match.call() cannot yet reconstruct a call argument supplied only as a host runtime value.",
@@ -6488,9 +7955,12 @@ function isCoordinateMatrixSubscript(target: RValue, index: RValue | undefined):
   ) {
     return false;
   }
+  const targetDimensions = isDataFrame(target) ? [0, 0] : vectorDimensions(target);
+  const indexDimensions = vectorDimensions(index);
   return (
-    (isDataFrame(target) || vectorDimensions(target) !== undefined) &&
-    vectorDimensions(index)?.length === 2
+    targetDimensions !== undefined &&
+    indexDimensions?.length === 2 &&
+    indexDimensions[1] === targetDimensions.length
   );
 }
 
@@ -6503,7 +7973,95 @@ function validateBindingName(name: string): void {
 function staticName(node: AstNode, role: string): string {
   if (node.kind === "Identifier") return node.name;
   if (node.kind === "StringLiteral") return node.value;
+  if (node.kind === "UnsupportedExpression" && node.feature === "dots") return "...";
   throw new RTypeMismatchError("NRT3116", `A ${role} must be a static name.`, { span: node.span });
+}
+
+function s4SlotPosition(
+  target: RValue,
+  name: string,
+): { readonly target: RList; readonly index: number } {
+  if (target.type !== "list" || target.s4 !== true) {
+    throw new RTypeMismatchError("NRT3360", "The @ operator requires an S4 object.", {
+      details: {
+        type: target.type,
+        classes: objectClasses(target) ?? [],
+        s4: "s4" in target && target.s4 === true,
+      },
+    });
+  }
+  const names = target.attributes.get("names");
+  const index = names?.type === "character" ? names.values.indexOf(name) : -1;
+  if (index < 0) {
+    const className = objectClasses(target)?.[0] ?? "S4";
+    throw new REvaluationError(
+      "NRE2260",
+      `No slot of name '${name}' for this object of class '${className}'.`,
+    );
+  }
+  return { target, index };
+}
+
+function extractS4Slot(target: RValue, name: string, context: EvaluationContext): RValue {
+  if (isVector(target) && target.type !== "list" && target.s4 === true) {
+    context.checkpoint();
+    if (name === ".Data") {
+      const attributes = new Map<string, RValue>();
+      for (const structural of ["names", "dim", "dimnames", "tsp"]) {
+        const value = target.attributes.get(structural);
+        if (value !== undefined) attributes.set(structural, value);
+      }
+      return { ...target, attributes, s4: false };
+    }
+    const value = target.attributes.get(name);
+    if (value !== undefined) return value;
+    const className = objectClasses(target)?.[0] ?? "S4";
+    throw new REvaluationError(
+      "NRE2260",
+      `No slot of name '${name}' for this object of class '${className}'.`,
+    );
+  }
+  const resolved = s4SlotPosition(target, name);
+  context.checkpoint();
+  return resolved.target.values[resolved.index] ?? R_NULL;
+}
+
+function replaceS4Slot(
+  target: RValue,
+  name: string,
+  replacement: RValue,
+  context: EvaluationContext,
+  state: ReadonlyMap<string, unknown>,
+): RValue {
+  const validator = state.get(S4_SLOT_REPLACEMENT_VALIDATOR_STATE_KEY) as
+    S4SlotReplacementValidator | undefined;
+  if (validator !== undefined) validator(target, name, replacement, "@");
+  else if (replacement.type === "null") {
+    throw new RTypeMismatchError("NRT3361", "An S4 slot cannot be removed with NULL.");
+  }
+  if (isVector(target) && target.type !== "list" && target.s4 === true) {
+    context.checkpoint();
+    if (name === ".Data") {
+      if (!isVector(replacement)) {
+        throw new RTypeMismatchError("NRT3361", "The .Data slot requires a vector value.");
+      }
+      const attributes = new Map(replacement.attributes);
+      for (const [attributeName, value] of target.attributes) {
+        if (!["names", "dim", "dimnames", "tsp"].includes(attributeName)) {
+          attributes.set(attributeName, value);
+        }
+      }
+      return { ...replacement, attributes, s4: true };
+    }
+    const attributes = new Map(target.attributes);
+    attributes.set(name, replacement);
+    return { ...target, attributes };
+  }
+  const resolved = s4SlotPosition(target, name);
+  const values = [...resolved.target.values];
+  values[resolved.index] = replacement;
+  context.allocate(values.length);
+  return { ...resolved.target, values: Object.freeze(values) };
 }
 
 function environmentSubscriptName(value: RValue): string {
@@ -6521,12 +8079,27 @@ function environmentSubscriptName(value: RValue): string {
   return value.values[0] ?? "";
 }
 
-function scalarLogicalState(value: RValue, operator: string): boolean | undefined {
+function scalarLogicalState(
+  value: RValue,
+  operator: string,
+  span?: SourceSpan,
+): boolean | undefined {
+  if (
+    (operator === "&&" || operator === "||") &&
+    isAtomic(value) &&
+    value.type !== "character" &&
+    value.length === 0
+  ) {
+    return undefined;
+  }
   if (!isAtomic(value) || value.type === "character" || value.length !== 1) {
     throw new RTypeMismatchError(
       "NRT3113",
       `Operator '${operator}' requires one logical or numeric value on each side.`,
-      { details: { type: value.type, ...("length" in value ? { length: value.length } : {}) } },
+      {
+        ...(span === undefined ? {} : { span }),
+        details: { type: value.type, ...("length" in value ? { length: value.length } : {}) },
+      },
     );
   }
   if (isMissing(value, 0)) return undefined;
@@ -6610,6 +8183,7 @@ function estimateOutputBytes(value: RValue): number {
     case "closure":
     case "dots":
     case "environment":
+    case "externalptr":
       return 64;
   }
 }
@@ -6626,11 +8200,84 @@ function normalizeFormula(
   collectFormulaVariables(node.right, variables);
   return {
     type: "formula",
+    expression: node,
     ...(response === undefined ? {} : { response }),
     terms: [...new Set(state.terms)],
     variables: [...variables],
     intercept: state.intercept,
     environment,
+    attributes: new Map<string, RValue>([
+      ["class", characterVector(["formula"])],
+      [".Environment", environment],
+    ]),
+  };
+}
+
+function formulaAsLanguage(value: RLanguage | RFormula): RLanguage {
+  if (value.type === "language") return value;
+  return {
+    type: "language",
+    expression: value.expression ?? legacyFormulaExpression(value),
+    attributes: value.attributes ?? new Map(),
+  };
+}
+
+function restoreFormulaAfterLanguageReplacement(
+  original: RFormula,
+  rebuilt: RLanguage | typeof R_NULL,
+): RValue {
+  if (
+    rebuilt.type !== "language" ||
+    rebuilt.expression.kind !== "FormulaExpression" ||
+    original.environment === null
+  ) {
+    return rebuilt;
+  }
+  const normalized = normalizeFormula(rebuilt.expression, original.environment);
+  if (normalized.type !== "formula") throw new Error();
+  return {
+    ...normalized,
+    ...(original.attributes === undefined ? {} : { attributes: original.attributes }),
+  };
+}
+
+function legacyFormulaExpression(
+  value: RFormula,
+): Extract<AstNode, { readonly kind: "FormulaExpression" }> {
+  const terms = value.terms.map((name): AstNode => ({
+    kind: "Identifier",
+    name,
+    span: SYNTHETIC_SOURCE_SPAN,
+  }));
+  let right: AstNode =
+    terms[0] ??
+    ({
+      kind: "IntegerLiteral",
+      value: value.intercept ? 1 : 0,
+      span: SYNTHETIC_SOURCE_SPAN,
+    } satisfies AstNode);
+  for (const term of terms.slice(1)) {
+    right = {
+      kind: "BinaryExpression",
+      operator: "+",
+      left: right,
+      right: term,
+      span: SYNTHETIC_SOURCE_SPAN,
+    };
+  }
+  return {
+    kind: "FormulaExpression",
+    ...(value.response === undefined
+      ? {}
+      : {
+          left: {
+            kind: "Identifier" as const,
+            name: value.response,
+            span: SYNTHETIC_SOURCE_SPAN,
+          },
+        }),
+    right,
+    span: SYNTHETIC_SOURCE_SPAN,
   };
 }
 
@@ -6639,6 +8286,25 @@ function collectFormulaTerms(
   state: { intercept: boolean; terms: string[] },
   sign: 1 | -1,
 ): void {
+  const parenthesized = parenthesizedFormulaBody(node);
+  if (parenthesized !== undefined) {
+    collectFormulaTerms(parenthesized, state, sign);
+    return;
+  }
+  if (node.kind === "ConstantExpression") {
+    collectFormulaTerms(node.display, state, sign);
+    return;
+  }
+  if (node.kind === "NullLiteral") return;
+  if (
+    node.kind === "UnaryExpression" &&
+    (node.operator === "+" || node.operator === "-") &&
+    (node.operand.kind === "DoubleLiteral" || node.operand.kind === "IntegerLiteral") &&
+    (node.operand.value === 0 || node.operand.value === 1)
+  ) {
+    collectFormulaTerms(node.operand, state, node.operator === "-" ? (sign === 1 ? -1 : 1) : sign);
+    return;
+  }
   if (
     (node.kind === "DoubleLiteral" || node.kind === "IntegerLiteral") &&
     (node.value === 0 || node.value === 1)
@@ -6655,43 +8321,51 @@ function collectFormulaTerms(
     return;
   }
   if (node.kind === "BinaryExpression" && node.operator === "*") {
-    const left = expandedFormulaTerms(node.left);
-    const right = expandedFormulaTerms(node.right);
-    updateFormulaTerms(state, [...left, ...right], sign);
-    updateFormulaTerms(
-      state,
-      left.flatMap((leftTerm) => right.map((rightTerm) => `${leftTerm}:${rightTerm}`)),
-      sign,
-    );
+    updateFormulaTerms(state, expandedFormulaTerms(node), sign);
     return;
   }
   if (node.kind === "BinaryExpression" && node.operator === ":") {
-    const left = expandedFormulaTerms(node.left);
-    const right = expandedFormulaTerms(node.right);
-    updateFormulaTerms(
-      state,
-      left.flatMap((leftTerm) => right.map((rightTerm) => `${leftTerm}:${rightTerm}`)),
-      sign,
-    );
+    updateFormulaTerms(state, expandedFormulaTerms(node), sign);
     return;
   }
   if (node.kind === "BinaryExpression" && node.operator === "/") {
-    const left = expandedFormulaTerms(node.left);
-    const right = expandedFormulaTerms(node.right);
-    updateFormulaTerms(state, left, sign);
-    updateFormulaTerms(
-      state,
-      left.flatMap((leftTerm) => right.map((rightTerm) => `${leftTerm}:${rightTerm}`)),
-      sign,
-    );
+    updateFormulaTerms(state, expandedFormulaTerms(node), sign);
     return;
   }
   updateFormulaTerms(state, [formulaLabel(node)], sign);
 }
 
 function expandedFormulaTerms(node: AstNode): string[] {
+  const parenthesized = parenthesizedFormulaBody(node);
+  if (parenthesized !== undefined) return expandedFormulaTerms(parenthesized);
   if (node.kind === "BinaryExpression" && node.operator === "+") {
     return [...expandedFormulaTerms(node.left), ...expandedFormulaTerms(node.right)];
+  }
+  if (node.kind === "BinaryExpression" && node.operator === "*") {
+    const left = expandedFormulaTerms(node.left);
+    const right = expandedFormulaTerms(node.right);
+    return [
+      ...new Set([
+        ...left,
+        ...right,
+        ...left.flatMap((leftTerm) => right.map((rightTerm) => `${leftTerm}:${rightTerm}`)),
+      ]),
+    ].sort((leftTerm, rightTerm) => leftTerm.split(":").length - rightTerm.split(":").length);
+  }
+  if (node.kind === "BinaryExpression" && node.operator === ":") {
+    const left = expandedFormulaTerms(node.left);
+    const right = expandedFormulaTerms(node.right);
+    return left.flatMap((leftTerm) => right.map((rightTerm) => `${leftTerm}:${rightTerm}`));
+  }
+  if (node.kind === "BinaryExpression" && node.operator === "/") {
+    const left = expandedFormulaTerms(node.left);
+    const right = expandedFormulaTerms(node.right);
+    return [
+      ...new Set([
+        ...left,
+        ...left.flatMap((leftTerm) => right.map((rightTerm) => `${leftTerm}:${rightTerm}`)),
+      ]),
+    ];
   }
   return [formulaLabel(node)];
 }
@@ -6712,6 +8386,8 @@ function formulaLabel(node: AstNode): string {
     case "DoubleLiteral":
     case "IntegerLiteral":
       return String(node.value);
+    case "ComplexLiteral":
+      return `${String(node.imaginary)}i`;
     case "StringLiteral":
       return JSON.stringify(node.value);
     case "LogicalLiteral":
@@ -6724,7 +8400,17 @@ function formulaLabel(node: AstNode): string {
       return `${node.operator}${formulaLabel(node.operand)}`;
     case "BinaryExpression":
       return `${formulaLabel(node.left)} ${node.operator} ${formulaLabel(node.right)}`;
-    case "CallExpression":
+    case "CallExpression": {
+      const parenthesizedArgument = node.arguments[0];
+      if (
+        node.callee.kind === "Identifier" &&
+        node.callee.name === "(" &&
+        node.arguments.length === 1 &&
+        parenthesizedArgument !== undefined &&
+        parenthesizedArgument.name === undefined
+      ) {
+        return `(${formulaLabel(parenthesizedArgument.value)})`;
+      }
       return `${formulaLabel(node.callee)}(${node.arguments
         .map((argument) =>
           argument.name === undefined
@@ -6732,6 +8418,7 @@ function formulaLabel(node: AstNode): string {
             : `${argument.name} = ${formulaLabel(argument.value)}`,
         )
         .join(", ")})`;
+    }
     case "SubsetExpression": {
       if (node.operator === "$" || node.operator === "@") {
         return `${formulaLabel(node.target)}${node.operator}${formulaLabel(
@@ -6744,13 +8431,56 @@ function formulaLabel(node: AstNode): string {
     }
     case "NamespaceExpression":
       return `${formulaLabel(node.namespace)}${node.operator}${formulaLabel(node.member)}`;
+    case "FormulaExpression":
+      return node.left === undefined
+        ? `~ ${formulaLabel(node.right)}`
+        : `${formulaLabel(node.left)} ~ ${formulaLabel(node.right)}`;
+    case "PipeExpression":
+      return `${formulaLabel(node.left)} ${node.operator} ${formulaLabel(node.right)}`;
+    case "ConstantExpression":
+      return formulaLabel(node.display);
+    case "Program":
+    case "Block":
+    case "AssignmentExpression":
+    case "ReplacementExpression":
+    case "FunctionExpression":
+    case "IfExpression":
+    case "ForExpression":
+    case "WhileExpression":
+    case "RepeatExpression":
+    case "BreakExpression":
+    case "NextExpression":
+    case "ReturnExpression":
+      return deparseAst(node);
+    case "UnsupportedExpression":
+      if (node.feature === "missing argument") return "";
+      throw unsupported(`formula language form (${node.feature})`, node.span);
     default:
-      throw unsupported("formula language form", node.span);
+      return assertNever(node);
   }
+}
+
+function parenthesizedFormulaBody(node: AstNode): AstNode | undefined {
+  const argument = node.kind === "CallExpression" ? node.arguments[0] : undefined;
+  if (
+    node.kind !== "CallExpression" ||
+    node.callee.kind !== "Identifier" ||
+    node.callee.name !== "(" ||
+    node.arguments.length !== 1 ||
+    argument === undefined ||
+    argument.name !== undefined
+  ) {
+    return undefined;
+  }
+  return argument.value;
 }
 
 function collectFormulaVariables(node: AstNode, output: Set<string>): void {
   switch (node.kind) {
+    case "Program":
+    case "Block":
+      for (const expression of node.body) collectFormulaVariables(expression, output);
+      return;
     case "Identifier":
       if (node.name !== ".") output.add(node.name);
       return;
@@ -6761,8 +8491,52 @@ function collectFormulaVariables(node: AstNode, output: Set<string>): void {
       collectFormulaVariables(node.left, output);
       collectFormulaVariables(node.right, output);
       return;
+    case "AssignmentExpression":
+      if (node.target.name !== ".") output.add(node.target.name);
+      collectFormulaVariables(node.value, output);
+      return;
+    case "ReplacementExpression":
+      collectFormulaVariables(node.target, output);
+      collectFormulaVariables(node.value, output);
+      return;
     case "CallExpression":
       for (const argument of node.arguments) collectFormulaVariables(argument.value, output);
+      return;
+    case "FunctionExpression":
+      for (const parameter of node.parameters) {
+        if (parameter.name !== "." && parameter.name !== "...") output.add(parameter.name);
+        if (parameter.defaultValue !== undefined) {
+          collectFormulaVariables(parameter.defaultValue, output);
+        }
+      }
+      collectFormulaVariables(node.body, output);
+      return;
+    case "IfExpression":
+      collectFormulaVariables(node.condition, output);
+      collectFormulaVariables(node.consequence, output);
+      if (node.alternative !== undefined) collectFormulaVariables(node.alternative, output);
+      return;
+    case "ForExpression":
+      if (node.variable.kind === "Identifier" && node.variable.name !== ".") {
+        output.add(node.variable.name);
+      } else {
+        collectFormulaVariables(node.variable, output);
+      }
+      collectFormulaVariables(node.sequence, output);
+      collectFormulaVariables(node.body, output);
+      return;
+    case "WhileExpression":
+      collectFormulaVariables(node.condition, output);
+      collectFormulaVariables(node.body, output);
+      return;
+    case "RepeatExpression":
+      collectFormulaVariables(node.body, output);
+      return;
+    case "ReturnExpression":
+      if (node.value !== undefined) collectFormulaVariables(node.value, output);
+      return;
+    case "BreakExpression":
+    case "NextExpression":
       return;
     case "SubsetExpression":
       collectFormulaVariables(node.target, output);
@@ -6772,14 +8546,29 @@ function collectFormulaVariables(node: AstNode, output: Set<string>): void {
       return;
     case "NamespaceExpression":
     case "DoubleLiteral":
+    case "ComplexLiteral":
     case "IntegerLiteral":
     case "StringLiteral":
     case "LogicalLiteral":
     case "NullLiteral":
     case "MissingLiteral":
       return;
+    case "FormulaExpression":
+      if (node.left !== undefined) collectFormulaVariables(node.left, output);
+      collectFormulaVariables(node.right, output);
+      return;
+    case "PipeExpression":
+      collectFormulaVariables(node.left, output);
+      collectFormulaVariables(node.right, output);
+      return;
+    case "ConstantExpression":
+      collectFormulaVariables(node.display, output);
+      return;
+    case "UnsupportedExpression":
+      if (node.feature === "missing argument") return;
+      throw unsupported(`formula variable language form (${node.feature})`, node.span);
     default:
-      throw unsupported("formula variable language form", node.span);
+      return assertNever(node);
   }
 }
 
@@ -6787,4 +8576,138 @@ function memoryReportingTrigger(used: number, previous: number): number {
   if (previous >= used) return previous;
   const target = Math.max(1_024, Math.ceil(used * 1.5));
   return Math.min(Number.MAX_SAFE_INTEGER, Math.ceil(target / 1_024) * 1_024);
+}
+
+function matchCallExpression(
+  parameters: readonly FunctionParameter[],
+  call: CallExpressionNode,
+  sourceArguments: readonly CallArgument[],
+  expandDots: boolean,
+): RLanguage {
+  const dotsIndex = parameters.findIndex((parameter) => parameter.name === "...");
+  const hasDots = dotsIndex >= 0;
+  const regularParameters = parameters.filter((parameter) => parameter.name !== "...");
+  const positionalParameters = hasDots ? parameters.slice(0, dotsIndex) : regularParameters;
+  const partialParameters = positionalParameters;
+  const matched = new Map<string, CallArgument>();
+  const matchedArgumentIndexes = new Set<number>();
+
+  for (const [argumentIndex, argument] of sourceArguments.entries()) {
+    if (argument.name === undefined) continue;
+    const parameter = regularParameters.find((candidate) => candidate.name === argument.name);
+    if (parameter === undefined) continue;
+    if (matched.has(parameter.name)) {
+      throw new REvaluationError(
+        "NRE2004",
+        `Formal argument '${parameter.name}' matched by multiple actual arguments.`,
+        { span: argument.span },
+      );
+    }
+    matched.set(parameter.name, argument);
+    matchedArgumentIndexes.add(argumentIndex);
+  }
+
+  for (const [argumentIndex, argument] of sourceArguments.entries()) {
+    if (argument.name === undefined || matchedArgumentIndexes.has(argumentIndex)) continue;
+    const candidates = partialParameters.filter((parameter) =>
+      parameter.name.startsWith(argument.name ?? ""),
+    );
+    if (candidates.length > 1) {
+      throw new REvaluationError(
+        "NRE2007",
+        `Argument '${argument.name}' matches multiple formal arguments.`,
+        { span: argument.span },
+      );
+    }
+    const parameter = candidates[0];
+    if (parameter === undefined) continue;
+    if (matched.has(parameter.name)) {
+      throw new REvaluationError(
+        "NRE2004",
+        `Formal argument '${parameter.name}' matched by multiple actual arguments.`,
+        { span: argument.span },
+      );
+    }
+    matched.set(parameter.name, argument);
+    matchedArgumentIndexes.add(argumentIndex);
+  }
+
+  let positionalIndex = 0;
+  for (const [argumentIndex, argument] of sourceArguments.entries()) {
+    if (argument.name !== undefined) continue;
+    while (
+      positionalIndex < positionalParameters.length &&
+      matched.has(positionalParameters[positionalIndex]?.name ?? "")
+    ) {
+      positionalIndex += 1;
+    }
+    const parameter = positionalParameters[positionalIndex];
+    if (parameter === undefined) {
+      if (hasDots) continue;
+      throw new REvaluationError("NRE2005", "Unused positional argument.", {
+        span: argument.span,
+      });
+    }
+    matched.set(parameter.name, argument);
+    matchedArgumentIndexes.add(argumentIndex);
+    positionalIndex += 1;
+  }
+
+  if (!hasDots) {
+    const unused = sourceArguments.find(
+      (argument, argumentIndex) => !matchedArgumentIndexes.has(argumentIndex),
+    );
+    if (unused !== undefined) {
+      throw new REvaluationError(
+        "NRE2005",
+        unused.name === undefined
+          ? "Unused positional argument."
+          : `Unused argument '${unused.name}'.`,
+        { span: unused.span },
+      );
+    }
+  }
+
+  const arguments_: CallArgument[] = [];
+  for (const parameter of parameters) {
+    if (parameter.name !== "...") {
+      const argument = matched.get(parameter.name);
+      if (argument === undefined) continue;
+      arguments_.push({ name: parameter.name, value: argument.value, span: argument.span });
+      continue;
+    }
+    const entries = sourceArguments.filter(
+      (_argument, argumentIndex) => !matchedArgumentIndexes.has(argumentIndex),
+    );
+    if (entries.length === 0) continue;
+    if (expandDots) {
+      arguments_.push(...entries);
+      continue;
+    }
+    const values = entries.map((entry) => quoteLanguageAst(entry.value));
+    const names = entries.map((entry) => entry.name ?? "");
+    const pairlist = pairlistValue(values, names);
+    const display: CallExpressionNode = {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "pairlist", span: parameter.span },
+      arguments: entries,
+      span: parameter.span,
+    };
+    arguments_.push({
+      name: "...",
+      value: {
+        kind: "ConstantExpression",
+        value: pairlist,
+        display,
+        span: parameter.span,
+      },
+      span: parameter.span,
+    });
+  }
+
+  return {
+    type: "language",
+    attributes: new Map(),
+    expression: { ...call, arguments: Object.freeze(arguments_) },
+  };
 }

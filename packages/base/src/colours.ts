@@ -100,7 +100,9 @@ export const R_DEFAULT_PALETTE: readonly RColour[] = Object.freeze([
 ]);
 
 export function namedRColour(name: string): RColour | undefined {
-  const index = R_COLOUR_INDEX.get(name.toLowerCase());
+  // GNU R treats ASCII spaces in named colours as insignificant, including
+  // leading, trailing, and repeated spaces. Other whitespace remains invalid.
+  const index = R_COLOUR_INDEX.get(name.toLowerCase().replaceAll(" ", ""));
   if (index === undefined) return undefined;
   const offset = index * 6;
   return [

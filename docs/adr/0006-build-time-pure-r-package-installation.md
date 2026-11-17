@@ -31,12 +31,14 @@ flowchart LR
 ```
 
 `@nativr/package-tools` accepts arbitrary standard source-package input. It rejects unsafe archive
-paths, links, native/JVM code, host install hooks, `LinkingTo`, `useDynLib`, and namespace forms the
-loader cannot yet represent. It preserves package-owned source, license metadata, data, and `inst/`
-resources in a JSON-serializable artifact with SHA-256 integrity. Packaging records a deterministic
-source-platform variant, applies standard Collate ordering, and decodes portable UTF-8 or Latin-1
-metadata and R sources. XDR/gzip `data/*.rda` and `R/sysdata.rda` remain unchanged package assets;
-the independent runtime decoder loads them into data targets or the package namespace.
+paths, links, native compilation, host install hooks, `LinkingTo`, `useDynLib`, and namespace forms
+the loader cannot yet represent. JVM sources and archives may be retained as inert immutable assets
+but are never compiled, loaded, or executed. It preserves package-owned source, license metadata,
+data, and `inst/` resources in a JSON-serializable artifact with SHA-256 integrity. Packaging
+records a deterministic source-platform variant, applies standard Collate ordering, and decodes
+portable UTF-8 or Latin-1 metadata and R sources. XDR/gzip `data/*.rda` and `R/sysdata.rda` remain
+unchanged package assets; the independent runtime decoder loads them into data targets or the
+package namespace.
 
 Source packages remain the canonical input. Already-installed package trees often contain
 `.rdx`/`.rdb` lazy-load databases and bytecode instead of the portable R sources. A future
@@ -44,14 +46,19 @@ installed-library importer may decode that documented object-store surface, but 
 to avoid per-function rewrites when a source tarball is available, and it cannot bypass missing
 runtime language or core API semantics.
 
-The resolver follows required `Depends` and `Imports`, treats `Suggests` as optional by default,
-checks package-version constraints, produces dependency-first bundles and a lock, and leaves the
-runtime network-free. Repository-provided source digests are checked when present, and runtime
-namespace loading independently checks version constraints again.
+The resolver follows required `Depends` and `Imports` and treats `Suggests` as optional by default.
+Applications may explicitly select a bounded subset of names encountered through declared `Suggests`
+edges or opt into the complete Suggested closure. Selected and all-Suggests modes are mutually
+exclusive; undeclared names fail rather than becoming undeclared roots. Lock format v2 records the
+optional-dependency mode and sorted selected names alongside dependency-first bundles. Every
+admitted optional package passes the same archive, license, native-code, hook, namespace, version,
+and resource audit as a required package. Repository-provided source digests are checked when
+present, and runtime namespace loading independently checks version constraints again.
 
 Admission and execution compatibility are separate. `packaging: "ready"` means the install surface
-is safe to represent; `execution: "unchecked"` remains until actual namespace loading and
-package-specific executable tests pass.
+is safe to represent; `execution: "unchecked"` remains until actual namespace loading and executable
+package evidence passes. P7 evidence uses an artifact-derived generic check plan over a minimal
+reset/evaluate executor; the package tool does not depend on or branch inside the runtime.
 
 The compatibility investment is therefore foundation-first: implement Base R and recommended package
 semantics once, then execute package-owned R closures unchanged. A future browser-facing
@@ -70,3 +77,13 @@ runtime parser and table layer; XDR/gzip `.rda` data and `R/sysdata.rda` use the
 serialization codec. Installed `.rdx`/`.rdb` lazy databases, broader serialized object types,
 broader NAMESPACE/S4 support, package tests, and native Wasm adapters remain explicit later layers
 rather than hidden installer side effects.
+
+Top-level package tests, documentation coverage, examples, normalized saved-output comparison, and
+prebuilt vignette discovery are now explicit generic package-check stages. Source-only vignette
+building, host-only checks, and any semantic output mismatch remain ordered blockers instead of
+being hidden by successful packaging or script evaluation.
+
+GNU R batch-session `.Rout.save` files that identify a specific R version, Foundation copyright, and
+host platform are classified as explicitly not applicable rather than emulated. Their retained test
+scripts still run as ordinary package checks. Portable saved-output resources remain exact
+normalized comparisons, preserving stronger evidence wherever the reference is browser-admissible.

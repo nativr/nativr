@@ -16,22 +16,18 @@
 <text x="60" y="60" class="title">Highest-reach missing GNU R callables</text>
 <text x="60" y="94" class="subtitle">97 analyzable manuals; ranked by download-weighted package reach</text>
 <text x="60" y="122" class="legend">Red means the callable is absent from NativR builtins and evaluator-native callable language forms; behavioral completeness is stricter than availability.</text>
-<line x1="250" y1="152" x2="250" y2="287" stroke="#e2e8f0"/><text x="250" y="142" text-anchor="middle" class="tick">0.0%</text>
-<line x1="448.75" y1="152" x2="448.75" y2="287" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">0.3%</text>
-<line x1="647.5" y1="152" x2="647.5" y2="287" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">0.5%</text>
-<line x1="846.25" y1="152" x2="846.25" y2="287" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">0.8%</text>
-<line x1="1045" y1="152" x2="1045" y2="287" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">1.0%</text>
+<line x1="250" y1="152" x2="250" y2="244" stroke="#e2e8f0"/><text x="250" y="142" text-anchor="middle" class="tick">0.0%</text>
+<line x1="448.75" y1="152" x2="448.75" y2="244" stroke="#e2e8f0"/><text x="448.75" y="142" text-anchor="middle" class="tick">0.3%</text>
+<line x1="647.5" y1="152" x2="647.5" y2="244" stroke="#e2e8f0"/><text x="647.5" y="142" text-anchor="middle" class="tick">0.5%</text>
+<line x1="846.25" y1="152" x2="846.25" y2="244" stroke="#e2e8f0"/><text x="846.25" y="142" text-anchor="middle" class="tick">0.8%</text>
+<line x1="1045" y1="152" x2="1045" y2="244" stroke="#e2e8f0"/><text x="1045" y="142" text-anchor="middle" class="tick">1.0%</text>
 <text x="234" y="186" text-anchor="end" class="label">tracemem</text>
 <rect x="250" y="170" width="543.1" height="20" rx="3" fill="#dc2626"/>
 <text x="801.1" y="185" class="value">0.7%</text>
 <text x="250" y="206" class="meta">1 packages; 2 observed calls</text>
-<text x="234" y="229" text-anchor="end" class="label">update.packages</text>
-<rect x="250" y="213" width="543.1" height="20" rx="3" fill="#dc2626"/>
-<text x="801.1" y="228" class="value">0.7%</text>
+<text x="234" y="229" text-anchor="end" class="label">x11</text>
+<rect x="250" y="213" width="471.0" height="20" rx="3" fill="#dc2626"/>
+<text x="729.0" y="228" class="value">0.6%</text>
 <text x="250" y="249" class="meta">1 packages; 1 observed calls</text>
-<text x="234" y="272" text-anchor="end" class="label">x11</text>
-<rect x="250" y="256" width="471.0" height="20" rx="3" fill="#dc2626"/>
-<text x="729.0" y="271" class="value">0.6%</text>
-<text x="250" y="292" class="meta">1 packages; 1 observed calls</text>
 <text x="60" y="1072" class="note">Named-call syntax only; operators and indirect calls are measured elsewhere. Counts are aggregate observations, and no example source is retained.</text>
 </svg>

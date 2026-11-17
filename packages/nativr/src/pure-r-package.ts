@@ -1,6 +1,11 @@
 import type { AstNode, ProgramNode } from "@nativr/ast";
 import type { PureRPackageBundle } from "@nativr/protocol";
-import { REvaluationError, RResourceLimitError, RUnsupportedFeatureError } from "@nativr/runtime";
+import {
+  isCanonicalBase64,
+  REvaluationError,
+  RResourceLimitError,
+  RUnsupportedFeatureError,
+} from "@nativr/runtime";
 import type {
   RuntimeLimits,
   RuntimePackageDefinition,
@@ -10,8 +15,8 @@ import type {
 } from "@nativr/runtime";
 
 const PACKAGE_NAME = /^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])?$/u;
-const CANONICAL_BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u;
-const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const PACKAGE_DATASETS_RESOURCE_PATH = ".nativr/datasets-v1.json";
+const PACKAGE_DATA_RESOURCE = /^data\/([^/]+)\.(?:r|rdata|rda|tab|txt|csv)(?:\.gz)?$/iu;
 
 export function compilePureRPackages(
   bundles: readonly PureRPackageBundle[],
@@ -44,11 +49,14 @@ export function compilePureRPackages(
         `Package '${name}' declares LinkingTo and is not a source-only pure-R bundle.`,
       );
     }
-    const namespace = parseNamespace(bundle.namespace, name, parse);
+    const namespace = parseNamespace(bundle.namespace, name);
     const dependencyRequirements = [
-      ...parseDependencies(description.get("Depends")),
-      ...parseDependencies(description.get("Imports")),
-      ...namespace.imports.map<RuntimePackageDependency>((entry) => ({ package: entry.package })),
+      ...parseDependencies(description.get("Depends"), "Depends"),
+      ...parseDependencies(description.get("Imports"), "Imports"),
+      ...namespace.imports.map<RuntimePackageDependency>((entry) => ({
+        package: entry.package,
+        kind: "Imports",
+      })),
     ].filter((dependency) => dependency.package !== "R" && dependency.package !== name);
     const dependencies = Object.freeze(
       dependencyRequirements.filter(
@@ -102,9 +110,11 @@ export function compilePureRPackages(
         seenResourcePaths.add(resource.path);
         return Object.freeze({ path: resource.path, data: resource.data });
       });
+    const datasets = parsePackageDatasets(resources, name);
     return {
       name,
       version,
+      lazyData: descriptionLogicalFlag(description.get("LazyData"), "LazyData", name),
       descriptionFields: Object.freeze(
         [...description].map(([fieldName, value]) => Object.freeze({ name: fieldName, value })),
       ),
@@ -113,13 +123,95 @@ export function compilePureRPackages(
       imports: namespace.imports,
       exports: namespace.exports,
       exportPatterns: namespace.exportPatterns,
+      classExports: namespace.classExports,
       methodExports: namespace.methodExports,
       s3Methods: namespace.s3Methods,
       programs: Object.freeze(programs),
       textResources,
       resources: Object.freeze(resources),
+      ...(datasets.length === 0 ? {} : { datasets }),
     };
   });
+}
+
+function parsePackageDatasets(
+  resources: readonly { readonly path: string; readonly data: string }[],
+  packageName: string,
+): readonly { readonly name: string; readonly resource: string }[] {
+  const manifest = resources.find((resource) => resource.path === PACKAGE_DATASETS_RESOURCE_PATH);
+  if (manifest === undefined) return [];
+  let value: unknown;
+  try {
+    const binary = globalThis.atob(manifest.data);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as unknown;
+  } catch (error) {
+    throw new REvaluationError(
+      "NRE2231",
+      `Package '${packageName}' contains a malformed LazyData manifest.`,
+      { cause: error },
+    );
+  }
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("format" in value) ||
+    value.format !== "nativr-package-datasets" ||
+    !("formatVersion" in value) ||
+    value.formatVersion !== 1 ||
+    !("datasets" in value) ||
+    !Array.isArray(value.datasets)
+  ) {
+    throw new REvaluationError(
+      "NRE2231",
+      `Package '${packageName}' contains an invalid LazyData manifest.`,
+    );
+  }
+  const availableResources = new Set(
+    resources.flatMap((resource) => {
+      const basename = PACKAGE_DATA_RESOURCE.exec(resource.path)?.[1];
+      return basename === undefined ? [] : [basename];
+    }),
+  );
+  const names = new Set<string>();
+  const datasets = value.datasets.map((entry: unknown) => {
+    if (
+      typeof entry !== "object" ||
+      entry === null ||
+      !("name" in entry) ||
+      typeof entry.name !== "string" ||
+      entry.name.length === 0 ||
+      entry.name.includes("/") ||
+      entry.name.includes("\\") ||
+      !("resource" in entry) ||
+      typeof entry.resource !== "string" ||
+      !availableResources.has(entry.resource) ||
+      names.has(entry.name)
+    ) {
+      throw new REvaluationError(
+        "NRE2231",
+        `Package '${packageName}' contains an invalid LazyData manifest entry.`,
+      );
+    }
+    names.add(entry.name);
+    return Object.freeze({ name: entry.name, resource: entry.resource });
+  });
+  return Object.freeze(datasets);
+}
+
+function descriptionLogicalFlag(
+  value: string | undefined,
+  field: string,
+  packageName: string,
+): boolean {
+  if (value === undefined) return false;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "yes" || normalized === "true") return true;
+  if (normalized === "no" || normalized === "false") return false;
+  throw new REvaluationError(
+    "NRE2229",
+    `Package '${packageName}' DESCRIPTION has invalid ${field} value '${value.trim()}'.`,
+  );
 }
 
 function packageTextEncoding(value: string | undefined, packageName: string): "utf8" | "latin1" {
@@ -131,19 +223,8 @@ function packageTextEncoding(value: string | undefined, packageName: string): "u
   );
 }
 
-function isCanonicalBase64(value: string): boolean {
-  if (!CANONICAL_BASE64.test(value)) return false;
-  if (value.endsWith("==")) {
-    return BASE64_ALPHABET.indexOf(value[value.length - 3] ?? "") % 16 === 0;
-  }
-  if (value.endsWith("=")) {
-    return BASE64_ALPHABET.indexOf(value[value.length - 2] ?? "") % 4 === 0;
-  }
-  return true;
-}
-
 function isPackageSourcePath(value: string): boolean {
-  if (!value.startsWith("R/") || !/\.[Rr]$/u.test(value) || value.includes("\\")) return false;
+  if (!value.startsWith("R/") || !/\.[RSqrs]$/u.test(value) || value.includes("\\")) return false;
   const parts = value.split("/");
   return parts.every(
     (part) =>
@@ -254,7 +335,10 @@ function requiredDescriptionField(fields: ReadonlyMap<string, string>, name: str
   return value;
 }
 
-function parseDependencies(value: string | undefined): readonly RuntimePackageDependency[] {
+function parseDependencies(
+  value: string | undefined,
+  kind: "Depends" | "Imports",
+): readonly RuntimePackageDependency[] {
   if (value === undefined || value.trim().length === 0) return [];
   return value.split(",").map((entry) => {
     const match =
@@ -268,6 +352,7 @@ function parseDependencies(value: string | undefined): readonly RuntimePackageDe
     const version = match[3];
     return {
       package: match[1],
+      kind,
       ...(operator === undefined || version === undefined
         ? {}
         : { constraint: { operator, version } }),
@@ -278,60 +363,24 @@ function parseDependencies(value: string | undefined): readonly RuntimePackageDe
 function parseNamespace(
   source: string,
   packageName: string,
-  parse: (source: string) => ProgramNode,
 ): {
   readonly imports: readonly RuntimePackageImport[];
   readonly exports: readonly string[];
   readonly exportPatterns: readonly string[];
+  readonly classExports: readonly string[];
   readonly methodExports: readonly string[];
   readonly s3Methods: readonly RuntimeS3Method[];
 } {
   const normalized = stripNamespaceComments(source);
-  const imports: RuntimePackageImport[] = [];
+  const imports = new Map<string, Set<string> | undefined>();
+  const methodImports = new Map<string, Set<string>>();
   const exports: string[] = [];
   const exportPatterns: string[] = [];
+  const classExports: string[] = [];
   const methodExports: string[] = [];
   const s3Methods: RuntimeS3Method[] = [];
   for (const directive of scanNamespaceDirectives(normalized, packageName)) {
     const name = directive.name;
-    if (name === "import") {
-      const call = parse(`import(${directive.argumentsSource})`).body[0];
-      if (call?.kind !== "CallExpression")
-        throw namespaceError(packageName, "has invalid import syntax");
-      const except = new Set<string>();
-      const dependencies: string[] = [];
-      let hasExcept = false;
-      for (const argument of call.arguments) {
-        if (argument.name === "except" && !hasExcept) {
-          hasExcept = true;
-          for (const value of namespaceImportExclusions(argument.value, packageName))
-            except.add(value);
-        } else dependencies.push(namespaceImportName(argument.value, packageName));
-      }
-      for (const dependency of dependencies)
-        imports.push({ package: dependency, except: Object.freeze([...except]) });
-      continue;
-    }
-    if (name === "importFrom") {
-      const call = parse(`importFrom(${directive.argumentsSource})`).body[0];
-      if (call?.kind !== "CallExpression" || call.arguments.length < 2)
-        throw namespaceError(packageName, "importFrom requires a package and bindings");
-      const dependency = namespaceImportName(call.arguments[0]!.value, packageName);
-      const names = call.arguments
-        .slice(1)
-        .map((argument) => namespaceImportName(argument.value, packageName));
-      const localNames = call.arguments
-        .slice(1)
-        .map((argument, index) => argument.name ?? names[index]!);
-      if (new Set(localNames).size !== localNames.length)
-        throw namespaceError(packageName, "importFrom contains duplicate local binding names");
-      imports.push({
-        package: dependency,
-        names: Object.freeze(names),
-        localNames: Object.freeze(localNames),
-      });
-      continue;
-    }
     const arguments_ =
       name === "exportPattern"
         ? [parseNamespacePattern(directive.argumentsSource, packageName)]
@@ -346,9 +395,38 @@ function parseNamespace(
         }
         exportPatterns.push(arguments_[0] ?? "");
         break;
+      case "exportClasses":
+        classExports.push(...arguments_);
+        break;
       case "exportMethods":
         methodExports.push(...arguments_);
         break;
+      case "import":
+        for (const dependency of arguments_) imports.set(dependency, undefined);
+        break;
+      case "importFrom": {
+        const dependency = arguments_[0];
+        if (dependency === undefined || arguments_.length < 2) {
+          throw namespaceError(packageName, "importFrom requires a package and bindings");
+        }
+        const existing = imports.get(dependency);
+        if (existing !== undefined || !imports.has(dependency)) {
+          const selected = existing ?? new Set<string>();
+          for (const imported of arguments_.slice(1)) selected.add(imported);
+          imports.set(dependency, selected);
+        }
+        break;
+      }
+      case "importMethodsFrom": {
+        const dependency = arguments_[0];
+        if (dependency === undefined || arguments_.length < 2) {
+          throw namespaceError(packageName, "importMethodsFrom requires a package and methods");
+        }
+        const selected = methodImports.get(dependency) ?? new Set<string>();
+        for (const imported of arguments_.slice(1)) selected.add(imported);
+        methodImports.set(dependency, selected);
+        break;
+      }
       case "S3method": {
         const qualifiedGeneric = arguments_[0];
         const className = arguments_[1];
@@ -358,8 +436,9 @@ function parseNamespace(
         const separator = qualifiedGeneric.indexOf("::");
         const genericPackage = separator < 0 ? undefined : qualifiedGeneric.slice(0, separator);
         const separatorLength = qualifiedGeneric.startsWith(":::", separator) ? 3 : 2;
-        const generic =
-          separator < 0 ? qualifiedGeneric : qualifiedGeneric.slice(separator + separatorLength);
+        const generic = unquoteNamespaceSymbol(
+          separator < 0 ? qualifiedGeneric : qualifiedGeneric.slice(separator + separatorLength),
+        );
         if (
           generic.length === 0 ||
           (genericPackage !== undefined && !PACKAGE_NAME.test(genericPackage))
@@ -387,9 +466,25 @@ function parseNamespace(
     }
   }
   return {
-    imports: Object.freeze(imports),
+    imports: Object.freeze(
+      [...new Set([...imports.keys(), ...methodImports.keys()])].map((package_) => {
+        const hasBindingImport = imports.has(package_);
+        const names = imports.get(package_);
+        const methodNames = methodImports.get(package_);
+        return {
+          package: package_,
+          ...(!hasBindingImport
+            ? { names: Object.freeze([]) }
+            : names === undefined
+              ? {}
+              : { names: Object.freeze([...names]) }),
+          ...(methodNames === undefined ? {} : { methodNames: Object.freeze([...methodNames]) }),
+        };
+      }),
+    ),
     exports: Object.freeze([...new Set(exports)]),
     exportPatterns: Object.freeze([...new Set(exportPatterns)]),
+    classExports: Object.freeze([...new Set(classExports)]),
     methodExports: Object.freeze([...new Set(methodExports)]),
     s3Methods: Object.freeze(s3Methods),
   };
@@ -522,6 +617,14 @@ function parseNamespaceArguments(source: string, packageName: string): readonly 
     }
     return value;
   });
+}
+
+function unquoteNamespaceSymbol(value: string): string {
+  if (value.length < 2) return value;
+  const quote = value[0];
+  return (quote === "`" || quote === "'" || quote === '"') && value.at(-1) === quote
+    ? value.slice(1, -1)
+    : value;
 }
 
 function stripNamespaceComments(source: string): string {

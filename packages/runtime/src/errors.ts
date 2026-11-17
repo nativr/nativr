@@ -1,5 +1,5 @@
 import type { AstNode, CallExpressionNode, SourceSpan } from "@nativr/ast";
-import type { RList } from "./values.js";
+import type { RList, RValue } from "./values.js";
 
 // Internal language origins include operator/control syntax and an explicit top-level NULL.
 // Keep this outside the public error instance's serializable fields and existing direct-call API.
@@ -68,6 +68,21 @@ export class RSignalledConditionError extends REvaluationError {
     public readonly condition: RList,
   ) {
     super("NRE2300", message);
+  }
+}
+
+/** A catchable R condition raised with stop(condition), retaining its original S3 classes. */
+export class RConditionError extends REvaluationError {
+  public readonly condition: RValue;
+
+  public constructor(
+    code: string,
+    message: string,
+    condition: RValue,
+    options: NativRErrorOptions = {},
+  ) {
+    super(code, message, options);
+    this.condition = condition;
   }
 }
 

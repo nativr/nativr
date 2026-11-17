@@ -27,8 +27,7 @@ export {
   replaceExpressionElement,
   replaceExpressionMember,
 } from "./expression-subset.js";
-export { translatePosixCharacterClasses } from "./regex.js";
-export { logicalCondition, parseLogicalString } from "./logical-condition.js";
+export { isCanonicalBase64 } from "./base64.js";
 export {
   createEnvironment,
   createForcedPromise,
@@ -47,6 +46,7 @@ export {
   errorConditionClasses,
   recordErrorConditionCall,
   recordErrorConditionClasses,
+  RConditionError,
   REvaluationError,
   RSignalledConditionError,
   RParseError,
@@ -56,7 +56,7 @@ export {
   RUnsupportedFeatureError,
 } from "./errors.js";
 export type { NativRErrorOptions } from "./errors.js";
-export { Evaluator } from "./evaluator.js";
+export { coreBuiltinPackageName, Evaluator } from "./evaluator.js";
 export type {
   DetailedEvaluationResult,
   EvaluationOptions,
@@ -68,7 +68,8 @@ export type {
   RuntimePackageImport,
   RuntimePackageResource,
   RuntimePackageTextResource,
-  RuntimeSystemPackageTextResource,
+  RuntimeBuiltinBinding,
+  RuntimeStaticPackageDefinition,
   RuntimeS3Method,
 } from "./evaluator.js";
 export {
@@ -78,11 +79,21 @@ export {
   languageValueEntries,
   languageValueLength,
   languageValueNames,
+  deparseSourceAst,
+  deparseSourceLinesAst,
+  languageEntries,
+  languageFromEntries,
+  languageValueAst,
+  quoteLanguageAst,
 } from "./language.js";
 export { deparseAstLines, deparseClosureLines } from "./language-deparse.js";
 export type { DeparseLinesOptions } from "./language-deparse.js";
 export { censusRuntimeMemory, estimateRObjectSize } from "./memory.js";
 export { makeUniqueNames } from "./unique-names.js";
+export { translatePosixCharacterClasses } from "./regex.js";
+export { normalizePosixCharacterClasses } from "./regex.js";
+
+export { logicalCondition, parseLogicalString } from "./logical-condition.js";
 export {
   compressGzipBytes,
   decodeRBase64Resource,
@@ -137,10 +148,13 @@ export {
   NATIVR_SYSTEM_LIBRARY_PATH,
   PACKAGE_SOURCE_EVALUATION_DIRECTORY_STATE_KEY,
   BASE_OPTIONS_STATE_KEY,
+  SOURCE_REFERENCE_CONTEXT_STATE_KEY,
+  S4_SLOT_REPLACEMENT_VALIDATOR_STATE_KEY,
   objectAttributes,
   objectClasses,
   pairlistValue,
   rawVector,
+  rVersionValue,
   R_NULL,
   vectorClasses,
   vectorDimensions,
@@ -153,9 +167,16 @@ export {
   withoutClasses,
   functionDebugRegistry,
   FUNCTION_DEBUG_STATE_KEY,
+  CONDITION_HANDLER_SEQUENCE_STATE_KEY,
+  DYNAMIC_CALLING_HANDLERS_STATE_KEY,
+  EXITING_HANDLER_STACK_STATE_KEY,
+  ExitingHandlerJump,
   GLOBAL_CALLING_HANDLERS_STATE_KEY,
   USER_HOOKS_STATE_KEY,
   OUTPUT_ROUTER_STATE_KEY,
+  RESTART_FRAME_COUNTER_STATE_KEY,
+  RESTART_STACK_STATE_KEY,
+  RestartJump,
   runtimeOutputRouter,
   HOST_ELEMENTARY_MATH,
 } from "./values.js";
@@ -198,6 +219,7 @@ export type {
   RDots,
   REnvironment,
   RExpression,
+  RExternalPointer,
   RFormula,
   RFactorLevel,
   RFunctionDebugMetadata,
@@ -235,8 +257,11 @@ export type {
   RuntimeMemoryAreaStatistics,
   RuntimeMemoryStatistics,
   RuntimeOperators,
+  ExitingConditionHandlerFrame,
+  RestartFrame,
   RValue,
   RVector,
   RVectorBase,
   RWarning,
+  S4SlotReplacementValidator,
 } from "./values.js";

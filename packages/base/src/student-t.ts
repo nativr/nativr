@@ -38,6 +38,171 @@ export function studentTProbability(
   return lowerTail === value > 0 ? 1 - tail : tail;
 }
 
+/** Non-central chi-square probability from its Poisson mixture of central chi-square laws. */
+export function noncentralChiSquareProbability(
+  value: number,
+  degreesOfFreedom: number,
+  noncentrality: number,
+  lowerTail: boolean,
+  checkpoint?: () => void,
+): number {
+  if (
+    Number.isNaN(value) ||
+    Number.isNaN(degreesOfFreedom) ||
+    Number.isNaN(noncentrality) ||
+    degreesOfFreedom < 0 ||
+    noncentrality < 0
+  ) {
+    return Number.NaN;
+  }
+  if (noncentrality === 0) {
+    if (value <= 0) return lowerTail ? 0 : 1;
+    if (value === Number.POSITIVE_INFINITY) return lowerTail ? 1 : 0;
+    if (degreesOfFreedom === 0) return lowerTail ? 1 : 0;
+    if (!Number.isFinite(degreesOfFreedom)) return Number.NaN;
+    return regularizedGammaProbability(value / 2, degreesOfFreedom / 2, lowerTail);
+  }
+  if (!Number.isFinite(noncentrality) || !Number.isFinite(degreesOfFreedom)) return Number.NaN;
+  if (value < 0) return lowerTail ? 0 : 1;
+  if (value === Number.POSITIVE_INFINITY) return lowerTail ? 1 : 0;
+  return poissonMixtureProbability(
+    noncentrality / 2,
+    (index) => {
+      const degree = degreesOfFreedom + 2 * index;
+      if (value === 0 && degree === 0) return lowerTail ? 1 : 0;
+      if (value <= 0) return lowerTail ? 0 : 1;
+      return regularizedGammaProbability(value / 2, degree / 2, lowerTail);
+    },
+    checkpoint,
+  );
+}
+
+/** Non-central chi-square density from the same bounded Poisson mixture. */
+export function noncentralChiSquareDensity(
+  value: number,
+  degreesOfFreedom: number,
+  noncentrality: number,
+  checkpoint?: () => void,
+): number {
+  if (
+    Number.isNaN(value) ||
+    Number.isNaN(degreesOfFreedom) ||
+    Number.isNaN(noncentrality) ||
+    degreesOfFreedom < 0 ||
+    noncentrality < 0 ||
+    !Number.isFinite(noncentrality)
+  ) {
+    return Number.NaN;
+  }
+  if (value < 0 || value === Number.POSITIVE_INFINITY) return 0;
+  if (!Number.isFinite(degreesOfFreedom)) return Number.NaN;
+  return poissonMixtureValue(
+    noncentrality / 2,
+    (index) => centralChiSquareDensity(value, degreesOfFreedom + 2 * index),
+    checkpoint,
+  );
+}
+
+/** Non-central F probability from the non-central beta Poisson mixture. */
+export function noncentralFProbability(
+  value: number,
+  numeratorDegrees: number,
+  denominatorDegrees: number,
+  noncentrality: number,
+  lowerTail: boolean,
+  checkpoint?: () => void,
+): number {
+  if (
+    Number.isNaN(value) ||
+    Number.isNaN(numeratorDegrees) ||
+    Number.isNaN(denominatorDegrees) ||
+    Number.isNaN(noncentrality) ||
+    numeratorDegrees <= 0 ||
+    denominatorDegrees <= 0 ||
+    noncentrality < 0
+  ) {
+    return Number.NaN;
+  }
+  if (value <= 0) return lowerTail ? 0 : 1;
+  if (value === Number.POSITIVE_INFINITY) return lowerTail ? 1 : 0;
+  if (!Number.isFinite(noncentrality) || numeratorDegrees === Number.POSITIVE_INFINITY) {
+    return Number.NaN;
+  }
+  if (denominatorDegrees === Number.POSITIVE_INFINITY) {
+    return noncentralChiSquareProbability(
+      value * numeratorDegrees,
+      numeratorDegrees,
+      noncentrality,
+      lowerTail,
+      checkpoint,
+    );
+  }
+  const ratio = (value * numeratorDegrees) / denominatorDegrees;
+  const betaArgument = ratio === Number.POSITIVE_INFINITY ? 1 : ratio / (1 + ratio);
+  return poissonMixtureProbability(
+    noncentrality / 2,
+    (index) =>
+      lowerTail
+        ? regularizedBeta(betaArgument, numeratorDegrees / 2 + index, denominatorDegrees / 2)
+        : regularizedBeta(1 - betaArgument, denominatorDegrees / 2, numeratorDegrees / 2 + index),
+    checkpoint,
+  );
+}
+
+function poissonMixtureProbability(
+  mean: number,
+  component: (index: number) => number,
+  checkpoint?: () => void,
+): number {
+  return clampProbability(poissonMixtureValue(mean, component, checkpoint));
+}
+
+function poissonMixtureValue(
+  mean: number,
+  component: (index: number) => number,
+  checkpoint?: () => void,
+): number {
+  if (mean === 0) return component(0);
+  const mode = Math.floor(mean);
+  const modeWeight = Math.exp(-mean + mode * Math.log(mean) - logGamma(mode + 1));
+  let probability = modeWeight * component(mode);
+  let mass = modeWeight;
+  let lowerIndex = mode;
+  let upperIndex = mode;
+  let lowerWeight = modeWeight;
+  let upperWeight = modeWeight;
+  const maximum = Math.max(100, Math.ceil(18 * Math.sqrt(mean + 1) + 50));
+  for (let step = 1; step <= maximum; step += 1) {
+    checkpoint?.();
+    if (lowerIndex > 0) {
+      lowerWeight *= lowerIndex / mean;
+      lowerIndex -= 1;
+      mass += lowerWeight;
+      probability += lowerWeight * component(lowerIndex);
+    } else {
+      lowerWeight = 0;
+    }
+    upperIndex += 1;
+    upperWeight *= mean / upperIndex;
+    mass += upperWeight;
+    probability += upperWeight * component(upperIndex);
+    if (mass >= 1 - 8 * Number.EPSILON && lowerWeight + upperWeight < 8 * Number.EPSILON) break;
+  }
+  return probability;
+}
+
+function centralChiSquareDensity(value: number, degreesOfFreedom: number): number {
+  if (value === 0) {
+    if (degreesOfFreedom < 2) return Number.POSITIVE_INFINITY;
+    if (degreesOfFreedom === 2) return 0.5;
+    return 0;
+  }
+  if (degreesOfFreedom === 0) return 0;
+  const shape = degreesOfFreedom / 2;
+  const logDensity = (shape - 1) * Math.log(value) - value / 2 - shape * Math.LN2 - logGamma(shape);
+  return Math.exp(logDensity);
+}
+
 /**
  * Central Student-t quantile from a lower-tail probability.
  *
@@ -166,6 +331,60 @@ export function normalProbability(
   return lowerTail ? lower : upper;
 }
 
+function polynomial(coefficients: readonly number[], value: number): number {
+  return coefficients.reduce((result, coefficient) => result * value + coefficient, 0);
+}
+
+/** Regularized incomplete-gamma probability evaluated in the requested tail. */
+export function regularizedGammaProbability(
+  value: number,
+  alpha: number,
+  lowerTail: boolean,
+): number {
+  if (Number.isNaN(value) || Number.isNaN(alpha) || alpha <= 0) return Number.NaN;
+  if (value <= 0) return lowerTail ? 0 : 1;
+  if (value === Number.POSITIVE_INFINITY) return lowerTail ? 1 : 0;
+  if (lowerTail && value < alpha + 1) return regularizedGammaSeries(alpha, value);
+  const upper = regularizedGammaQ(alpha, value);
+  return lowerTail ? clampProbability(1 - upper) : upper;
+}
+
+function regularizedGammaQ(alpha: number, value: number): number {
+  if (value <= 0) return 1;
+  if (value < alpha + 1) return 1 - regularizedGammaSeries(alpha, value);
+  const minimum = 1e-300;
+  let b = value + 1 - alpha;
+  let c = 1 / minimum;
+  let d = 1 / b;
+  let result = d;
+  for (let iteration = 1; iteration <= 300; iteration += 1) {
+    const numerator = -iteration * (iteration - alpha);
+    b += 2;
+    d = numerator * d + b;
+    if (Math.abs(d) < minimum) d = minimum;
+    c = b + numerator / c;
+    if (Math.abs(c) < minimum) c = minimum;
+    d = 1 / d;
+    const delta = d * c;
+    result *= delta;
+    if (Math.abs(delta - 1) <= 4 * Number.EPSILON) break;
+  }
+  return clampProbability(Math.exp(-value + alpha * Math.log(value) - logGamma(alpha)) * result);
+}
+
+function regularizedGammaSeries(alpha: number, value: number): number {
+  let term = 1 / alpha;
+  let sum = term;
+  let denominator = alpha;
+  for (let iteration = 1; iteration <= 300; iteration += 1) {
+    denominator += 1;
+    term *= value / denominator;
+    sum += term;
+    if (Math.abs(term) <= Math.abs(sum) * 4 * Number.EPSILON) break;
+  }
+  return clampProbability(sum * Math.exp(-value + alpha * Math.log(value) - logGamma(alpha)));
+}
+
 /** Standard-normal lower-tail quantile (AS 241) for a probability in [0, 1]. */
 export function normalQuantile(
   probability: number,
@@ -174,7 +393,7 @@ export function normalQuantile(
   return as241Quantile(probability, undefined, math);
 }
 
-function logGamma(value: number): number {
+export function logGamma(value: number): number {
   if (value < 0.5) {
     return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * value)) - logGamma(1 - value);
   }

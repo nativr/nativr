@@ -112,7 +112,7 @@ workerScope.addEventListener("message", (event: MessageEvent<unknown>) => {
 async function handleRequest(request: WorkerRequest): Promise<void> {
   try {
     if (request.kind === "init") {
-      host?.dispose();
+      await host?.dispose();
       debug = request.debug;
       host = await RuntimeHost.create(
         request.assets,
@@ -127,7 +127,6 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         request.readline === true ? requestReadline : undefined,
         request.url === true ? requestUrl : undefined,
         request.socket === true ? requestSocket : undefined,
-        request.systemPackageResources,
       );
       postSuccess(request.id, { kind: "ready" });
       return;
@@ -210,11 +209,11 @@ async function handleRequest(request: WorkerRequest): Promise<void> {
         postSuccess(request.id, { kind: "capabilities", value: runtime.capabilities() });
         return;
       case "reset":
-        runtime.reset();
+        await runtime.reset();
         postSuccess(request.id, { kind: "void" });
         return;
       case "dispose":
-        runtime.dispose();
+        await runtime.dispose();
         host = undefined;
         postSuccess(request.id, { kind: "void" });
         setTimeout(() => workerScope.close(), 0);

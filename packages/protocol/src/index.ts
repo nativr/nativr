@@ -73,6 +73,7 @@ export interface ProtocolRuntimeLimits {
   readonly maxSteps: number;
   readonly maxCallDepth: number;
   readonly maxVectorLength: number;
+  readonly maxAllocatedElements: number;
   readonly maxOutputBytes: number;
   readonly maxPackageResourceBytes: number;
 }
@@ -89,7 +90,7 @@ export interface PureRPackageResource {
 export interface PureRPackageBundle {
   /** Original package DESCRIPTION in DCF syntax. */
   readonly description: string;
-  /** Original package NAMESPACE declarations. */
+  /** Audited NAMESPACE declarations after deterministic source-platform selection. */
   readonly namespace: string;
   /** Audited R source files in deterministic package-relative order. */
   readonly rSources: readonly {
@@ -134,6 +135,8 @@ export interface PublicRWarning {
   readonly message: string;
   readonly span?: PublicSourceSpan;
   readonly call?: string;
+  /** GNU R condition classes in dispatch order. */
+  readonly classes?: readonly string[];
 }
 
 /** Text emitted by an evaluation across inline and Worker hosts. */
@@ -280,6 +283,8 @@ export type PublicGraphicsEvent =
       readonly kind: "window";
       readonly xlim: readonly [number, number];
       readonly ylim: readonly [number, number];
+      /** Optional normalized device region: left, right, bottom, top. */
+      readonly viewport?: readonly [number, number, number, number];
     }
   | {
       readonly kind: "raster";
@@ -305,6 +310,8 @@ export type PublicGraphicsEvent =
         /** `solid` or an even-length hexadecimal dash sequence. */
         readonly lineType: string;
         readonly lineWidth: number;
+        /** Resolved R `lend` style for the open segment endpoints. */
+        readonly lineCap?: "round" | "butt" | "square";
       }[];
     }
   | {
@@ -358,6 +365,14 @@ export type PublicGraphicsEvent =
         readonly lineType: string;
         readonly lineWidth: number;
         readonly fillRule: "nonzero" | "evenodd";
+        /** Optional line-density shading, expressed in physical lines per inch. */
+        readonly hatch?: {
+          /** CSS-compatible #RRGGBBAA hatch-line color. */
+          readonly color: string;
+          readonly density: number;
+          /** Counter-clockwise line angle in degrees. */
+          readonly angle: number;
+        };
       }[];
     }
   | {
@@ -403,11 +418,19 @@ export type PublicGraphicsEvent =
               | "center";
             readonly inset: readonly [number, number];
           }
-        | { readonly kind: "coordinates"; readonly x: number; readonly y: number };
+        | {
+            readonly kind: "coordinates";
+            readonly x: number;
+            readonly y: number;
+            readonly xJust: number;
+            readonly yJust: number;
+          };
       readonly entries: readonly {
         readonly label: string;
         readonly textColor: string;
         readonly color: string;
+        readonly fill?: string;
+        readonly border?: string;
         readonly lineType?: string;
         readonly lineWidth?: number;
         readonly pointSymbol?: string;
@@ -461,6 +484,10 @@ export interface CapabilityManifest {
       readonly name: string;
       readonly compatibility: "api" | "shape" | "numeric" | "behavioral";
     }[];
+    readonly bindings?: readonly {
+      readonly name: string;
+      readonly compatibility: "api" | "shape" | "numeric" | "behavioral";
+    }[];
   }[];
   readonly backends: readonly string[];
 }
@@ -484,12 +511,6 @@ export interface InitRequest extends ProtocolEnvelope {
   };
   readonly limits?: Partial<ProtocolRuntimeLimits>;
   readonly packages?: readonly PureRPackageBundle[];
-  /** Immutable resources for registered core packages, supplied by the facade. */
-  readonly systemPackageResources?: readonly {
-    readonly package: string;
-    readonly path: string;
-    readonly text: string;
-  }[];
   readonly environmentVariables?: Readonly<Record<string, string>>;
   /** Explicit executable names and resolved paths available to base::Sys.which(). */
   readonly executablePaths?: Readonly<Record<string, string>>;
@@ -727,15 +748,6 @@ export function isWorkerRequest(value: unknown): value is WorkerRequest {
           typeof value.assets.elementaryWasm === "string") &&
         (value.packages === undefined ||
           (Array.isArray(value.packages) && value.packages.every(isPureRPackageBundle))) &&
-        (value.systemPackageResources === undefined ||
-          (Array.isArray(value.systemPackageResources) &&
-            value.systemPackageResources.every(
-              (resource) =>
-                isRecord(resource) &&
-                typeof resource.package === "string" &&
-                typeof resource.path === "string" &&
-                typeof resource.text === "string",
-            ))) &&
         (value.environmentVariables === undefined ||
           isEnvironmentVariableRecord(value.environmentVariables)) &&
         (value.executablePaths === undefined || isExecutablePathRecord(value.executablePaths)) &&

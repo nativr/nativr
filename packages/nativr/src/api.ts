@@ -47,7 +47,6 @@ import {
 } from "./conversion.js";
 import type { JsInputValue, JsValue } from "./conversion.js";
 import type { RuntimeHost } from "./runtime-host.js";
-import irisData from "./datasets/iris.txt?raw";
 
 export type {
   PublicBrowseEvent,
@@ -190,10 +189,6 @@ interface ResolvedAssets {
   readonly elementaryWasm?: URL;
 }
 
-const STANDARD_SYSTEM_PACKAGE_RESOURCES = Object.freeze([
-  Object.freeze({ package: "datasets", path: "data/iris.txt", text: irisData }),
-]);
-
 let nextSessionProcessId = 1;
 
 function allocateSessionProcessId(): number {
@@ -289,7 +284,6 @@ export async function createR(options: CreateROptions = {}): Promise<NativRSessi
               request,
               sessionOptions.limits?.maxOutputBytes ?? DEFAULT_RUNTIME_LIMITS.maxOutputBytes,
             ),
-      STANDARD_SYSTEM_PACKAGE_RESOURCES,
     );
     return new InlineSession(host, sessionOptions, sessionProcessId);
   }
@@ -310,7 +304,12 @@ function resolveRuntimeLimits(
   if (selected === undefined) {
     throw new NativRError("NRS5009", `Unknown runtime profile '${String(profile)}'.`);
   }
-  return Object.freeze({ ...selected, ...overrides });
+  const maxAllocatedElements =
+    overrides?.maxAllocatedElements ??
+    (overrides?.maxVectorLength === undefined
+      ? selected.maxAllocatedElements
+      : overrides.maxVectorLength * 10);
+  return Object.freeze({ ...selected, ...overrides, maxAllocatedElements });
 }
 
 function snapshotEnvironmentVariables(
@@ -974,11 +973,15 @@ class InlineSession implements NativRSession {
     return this.#enqueue(async () => {
       let cleanupError: Error | undefined;
       try {
-        await closeSocketSession(this.#options, this.#sessionProcessId);
+        await this.#host.reset();
       } catch (error) {
         cleanupError = error instanceof Error ? error : new NativRError("NRE2256", String(error));
       }
-      this.#host.reset();
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } catch (error) {
+        cleanupError ??= error instanceof Error ? error : new NativRError("NRE2256", String(error));
+      }
       if (cleanupError !== undefined) throw cleanupError;
     });
   }
@@ -994,9 +997,9 @@ class InlineSession implements NativRSession {
       this.#disposed = true;
       await this.#queue.catch(() => undefined);
       try {
-        await closeSocketSession(this.#options, this.#sessionProcessId);
+        await this.#host.dispose();
       } finally {
-        this.#host.dispose();
+        await closeSocketSession(this.#options, this.#sessionProcessId);
       }
     }
   }
@@ -1144,12 +1147,16 @@ class WorkerSession implements NativRSession {
     return this.#enqueue(async () => {
       let cleanupError: Error | undefined;
       try {
-        await closeSocketSession(this.#options, this.#sessionProcessId);
+        const payload = await this.#request({ kind: "reset" });
+        if (payload.kind !== "void") throw protocolPayloadError("void", payload.kind);
       } catch (error) {
         cleanupError = error instanceof Error ? error : new NativRError("NRE2256", String(error));
       }
-      const payload = await this.#request({ kind: "reset" });
-      if (payload.kind !== "void") throw protocolPayloadError("void", payload.kind);
+      try {
+        await closeSocketSession(this.#options, this.#sessionProcessId);
+      } catch (error) {
+        cleanupError ??= error instanceof Error ? error : new NativRError("NRE2256", String(error));
+      }
       if (cleanupError !== undefined) throw cleanupError;
     });
   }
@@ -1167,10 +1174,11 @@ class WorkerSession implements NativRSession {
     if (this.#disposed) return;
     this.#disposed = true;
     try {
-      await closeSocketSession(this.#options, this.#sessionProcessId);
       await this.#request({ kind: "dispose" });
     } catch {
       // Termination below remains authoritative when the Worker is already unhealthy.
+    } finally {
+      await closeSocketSession(this.#options, this.#sessionProcessId).catch(() => undefined);
     }
     this.#rejectPending(new RRuntimeDisposedError("NRS5001", "The session was disposed."));
     this.#worker.terminate();
@@ -1190,7 +1198,6 @@ class WorkerSession implements NativRSession {
         },
         ...(this.#options.limits === undefined ? {} : { limits: this.#options.limits }),
         ...(this.#options.packages === undefined ? {} : { packages: this.#options.packages }),
-        systemPackageResources: STANDARD_SYSTEM_PACKAGE_RESOURCES,
         ...(this.#options.environmentVariables === undefined
           ? {}
           : { environmentVariables: this.#options.environmentVariables }),

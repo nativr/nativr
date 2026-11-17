@@ -2,23 +2,24 @@ import type { AstNode } from "@nativr/ast";
 import { describe, expect, it } from "vitest";
 
 import {
-  DEFAULT_RUNTIME_LIMITS,
-  Evaluator,
-  EvaluationContext,
-  REvaluationError,
-  RResourceLimitError,
+  characterVector,
+  complexVector,
   createEnvironment,
   createPromise,
-  complexVector,
+  DEFAULT_RUNTIME_LIMITS,
   deparseAst,
+  deparseSourceLinesAst,
   doubleVector,
   estimateRObjectSize,
+  EvaluationContext,
+  Evaluator,
   forcePromise,
   integerVector,
-  characterVector,
   listValue,
   lookupBinding,
   pairlistValue,
+  REvaluationError,
+  RResourceLimitError,
   setBinding,
   withNames,
 } from "../src/index.js";
@@ -31,49 +32,6 @@ const span = {
 const expression: AstNode = { kind: "DoubleLiteral", value: 1, span };
 
 describe("runtime foundations", () => {
-  it("bounds and validates browser-supplied core package resources", () => {
-    const construct = (options: ConstructorParameters<typeof Evaluator>[2]) =>
-      new Evaluator({} as RuntimeOperators, [], options);
-    expect(() =>
-      construct({
-        systemPackageResources: [{ package: "datasets", path: "data/example.txt", text: "x" }],
-      }),
-    ).not.toThrow();
-    for (const resource of [
-      { package: "datasets", path: "data/../escape.txt", text: "x" },
-      { package: "datasets", path: "data/\u007f.txt", text: "x" },
-      { package: "unknown", path: "data/example.txt", text: "x" },
-      { package: "datasets", path: "data/example.txt", text: 1 as unknown as string },
-    ]) {
-      expect(() => construct({ systemPackageResources: [resource] })).toThrowError(
-        REvaluationError,
-      );
-    }
-    expect(() =>
-      construct({
-        systemPackageResources: [
-          { package: "datasets", path: "data/example.txt", text: "x" },
-          { package: "datasets", path: "data/example.txt", text: "y" },
-        ],
-      }),
-    ).toThrowError(REvaluationError);
-    expect(() =>
-      construct({
-        limits: { maxVectorLength: 1 },
-        systemPackageResources: [
-          { package: "datasets", path: "data/example.txt", text: "x" },
-          { package: "stats", path: "data/example.txt", text: "y" },
-        ],
-      }),
-    ).toThrowError(RResourceLimitError);
-    expect(() =>
-      construct({
-        limits: { maxPackageResourceBytes: 3 },
-        systemPackageResources: [{ package: "datasets", path: "data/example.txt", text: "x" }],
-      }),
-    ).toThrowError(RResourceLimitError);
-  });
-
   it("estimates GNU R-shaped 64-bit object storage without measuring the host heap", () => {
     const size = (value: Parameters<typeof estimateRObjectSize>[0]) =>
       estimateRObjectSize(value, () => undefined);
@@ -251,6 +209,16 @@ describe("runtime foundations", () => {
       ],
       [
         {
+          kind: "BinaryExpression",
+          operator: ":",
+          left: number(1),
+          right: identifier("x"),
+          span,
+        },
+        "1:x",
+      ],
+      [
+        {
           kind: "AssignmentExpression",
           operator: "<-",
           target: identifier("x") as Extract<AstNode, { kind: "Identifier" }>,
@@ -393,5 +361,187 @@ describe("runtime foundations", () => {
     for (const [node, expected] of cases) {
       expect(deparseAst(node)).toBe(expected);
     }
+  });
+});
+
+describe("runtime foundations", () => {
+  it("deparses a custom infix call with a braced operand using GNU-shaped block lines", () => {
+    const block: AstNode = {
+      kind: "Block",
+      body: [{ kind: "Identifier", name: "raw", span }],
+      span,
+    };
+    const infix: AstNode = {
+      kind: "CallExpression",
+      callee: { kind: "Identifier", name: "%when%", span },
+      arguments: [
+        {
+          value: {
+            kind: "CallExpression",
+            callee: { kind: "Identifier", name: "describe", span },
+            arguments: [
+              { value: { kind: "Identifier", name: "fn", span } },
+              { value: { kind: "Identifier", name: "idx", span } },
+              {
+                name: "raw",
+                value: { kind: "LogicalLiteral", value: false, span },
+              },
+            ],
+            span,
+          },
+        },
+        { value: block },
+      ],
+      span,
+    };
+
+    expect(deparseSourceLinesAst(infix)).toEqual([
+      "describe(fn, idx, raw = FALSE) %when% {",
+      "    raw",
+      "}",
+    ]);
+  });
+
+  it("estimates GNU R-shaped 64-bit object storage without measuring the host heap", () => {
+    const size = (value: Parameters<typeof estimateRObjectSize>[0]) =>
+      estimateRObjectSize(value, () => undefined);
+    expect(size(integerVector([]))).toBe(48);
+    expect(size(integerVector([1, 2, 3]))).toBe(64);
+    expect(size(doubleVector(Array.from({ length: 9 }, () => 0)))).toBe(176);
+    expect(size(characterVector(["a", "a"]))).toBe(120);
+    expect(size(characterVector(["a", "b"]))).toBe(176);
+    expect(size(characterVector([""], [1]))).toBe(56);
+
+    const shared = doubleVector(Array.from({ length: 10 }, () => 0));
+    expect(size(listValue([shared, shared]))).toBe(416);
+    expect(size(withNames(integerVector([1, 2, 3]), ["a", "b", "c"]))).toBe(424);
+    expect(size(pairlistValue([integerVector([1]), doubleVector([2])], ["a", "b"]))).toBe(336);
+
+    const environment = createEnvironment(null);
+    setBinding(environment, "payload", doubleVector(Array.from({ length: 1_000 }, () => 0)));
+    expect(size(environment)).toBe(56);
+    expect(
+      size({
+        type: "closure",
+        parameters: [{ name: "x", span }],
+        body: {
+          kind: "BinaryExpression",
+          operator: "+",
+          left: { kind: "Identifier", name: "x", span },
+          right: { kind: "DoubleLiteral", value: 1, span },
+          span,
+        },
+        environment,
+      }),
+    ).toBe(560);
+  });
+
+  it("validates missing-mask invariants", () => {
+    expect(() => doubleVector([1, 2], [1])).toThrow(/missing mask/u);
+    expect(doubleVector([1, Number.NaN], [1, 0]).missing).toEqual(new Uint8Array([1, 0]));
+  });
+
+  it("validates parallel complex storage", () => {
+    expect(() => complexVector([1, 2], [3])).toThrow(/must match/u);
+    expect(complexVector([1], [2], [1])).toMatchObject({
+      type: "complex",
+      real: new Float64Array([1]),
+      imaginary: new Float64Array([2]),
+      missing: new Uint8Array([1]),
+    });
+  });
+
+  it("resolves lexical environments with shadowing", () => {
+    const parent = createEnvironment(null);
+    const child = createEnvironment(parent);
+    setBinding(parent, "x", integerVector([1]));
+    setBinding(child, "x", integerVector([2]));
+    expect(lookupBinding(child, "x")).toMatchObject({
+      type: "integer",
+      values: new Int32Array([2]),
+    });
+  });
+
+  it("forces and memoizes a promise once", async () => {
+    const environment = createEnvironment(null);
+    const promise = createPromise(expression, environment);
+    let calls = 0;
+    const evaluate = () => {
+      calls += 1;
+      return Promise.resolve(doubleVector([42]));
+    };
+    await expect(forcePromise(promise, evaluate)).resolves.toMatchObject({ type: "double" });
+    await expect(forcePromise(promise, evaluate)).resolves.toMatchObject({ type: "double" });
+    expect(calls).toBe(1);
+  });
+
+  it("detects recursive promise forcing", async () => {
+    const environment = createEnvironment(null);
+    const promise = createPromise(expression, environment);
+    await expect(
+      forcePromise(promise, () => forcePromise(promise, () => Promise.resolve(doubleVector([1])))),
+    ).rejects.toBeInstanceOf(REvaluationError);
+  });
+
+  it("enforces step and vector limits", () => {
+    const context = new EvaluationContext(
+      {
+        maxSteps: 1,
+        maxCallDepth: 1,
+        maxVectorLength: 2,
+        maxAllocatedElements: 3,
+        maxOutputBytes: 100,
+        maxPackageResourceBytes: 100,
+      },
+      { cancelled: false },
+    );
+    context.checkpoint();
+    expect(() => context.checkpoint()).toThrow(RResourceLimitError);
+    expect(() => context.allocate(3)).toThrow(RResourceLimitError);
+
+    const allocationContext = new EvaluationContext(
+      {
+        maxSteps: 10,
+        maxCallDepth: 1,
+        maxVectorLength: 2,
+        maxAllocatedElements: 3,
+        maxOutputBytes: 100,
+        maxPackageResourceBytes: 100,
+      },
+      { cancelled: false },
+    );
+    allocationContext.allocate(2);
+    allocationContext.allocate(1);
+    expect(() => allocationContext.allocate(1)).toThrow(RResourceLimitError);
+  });
+
+  it("captures selected output streams with nesting and independent size bounds", () => {
+    const context = new EvaluationContext(
+      {
+        maxSteps: 100,
+        maxCallDepth: 10,
+        maxVectorLength: 100,
+        maxAllocatedElements: 1_000,
+        maxOutputBytes: 10,
+        maxPackageResourceBytes: 100,
+      },
+      { cancelled: false },
+    );
+    context.beginOutputCapture(["stdout"]);
+    context.writeOutput({ stream: "stdout", text: "outer" });
+    context.beginOutputCapture(["message"]);
+    context.writeOutput({ stream: "stdout", text: "more" });
+    context.writeOutput({ stream: "message", text: "note" });
+    expect(context.endOutputCapture()).toEqual([{ stream: "message", text: "note" }]);
+    expect(context.endOutputCapture()).toEqual([
+      { stream: "stdout", text: "outer" },
+      { stream: "stdout", text: "more" },
+    ]);
+    expect(context.output).toEqual([]);
+    context.beginOutputCapture(["stdout"]);
+    expect(() => context.writeOutput({ stream: "stdout", text: "12345678901" })).toThrow(
+      RResourceLimitError,
+    );
+    expect(context.endOutputCapture()).toEqual([]);
   });
 });

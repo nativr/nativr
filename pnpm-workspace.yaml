@@ -10,3 +10,6 @@ allowBuilds:
   "@parcel/watcher": true
   esbuild: true
   tree-sitter-cli: true
+
+patchedDependencies:
+  "@digitaldefiance/bzip2-wasm@1.1.1": patches/@digitaldefiance__bzip2-wasm@1.1.1.patch

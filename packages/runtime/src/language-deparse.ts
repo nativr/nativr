@@ -280,7 +280,8 @@ class SyntaxRenderer {
         return;
       case "ForExpression":
         this.#write("for (");
-        this.#name(node.variable.name, node.variable);
+        if (node.variable.kind === "Identifier") this.#name(node.variable.name, node.variable);
+        else this.render(node.variable, indent, inBlock);
         this.#write(" in ");
         this.render(node.sequence, indent, inBlock);
         this.#write(") ");

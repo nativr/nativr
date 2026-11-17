@@ -1,0 +1,32 @@
+diff --git a/index.js b/index.js
+index deca80eb4c87601fab485f37cf3b0fa8560b55e8..a6d74535a403d9d5e00821053acb2cc67b877e98 100644
+--- a/index.js
++++ b/index.js
+@@ -20,17 +20,25 @@ class BZip2 {
+             return;
+         }
+ 
++        let wasmPath;
++
+         // check if node
+         // http://philiplassen.com/2021/08/11/node-es6-emscripten.html
+         if (typeof process !== 'undefined') {
+             const { dirname } = await import/* webpackIgnore: true */('path');
+             const { createRequire } = await import(/* webpackIgnore: true */'module');
++            const { fileURLToPath } = await import(/* webpackIgnore: true */'url');
+ 
+-            globalThis.__dirname = dirname(import.meta.url);
++            globalThis.__dirname = dirname(fileURLToPath(import.meta.url));
+             globalThis.require = createRequire(import.meta.url);
++            wasmPath = `file://${fileURLToPath(
++                new URL('./bzip2-1.0.8/bzip2.wasm', import.meta.url)
++            ).replaceAll('\\', '/')}`;
+         }
+ 
+-        this.wasmModule = await loadBZip2WASM();
++        this.wasmModule = await loadBZip2WASM(
++            wasmPath ? { locateFile: () => wasmPath } : undefined
++        );
+     }
+ 
+     ensureInitialized() {

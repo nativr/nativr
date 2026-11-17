@@ -114,6 +114,16 @@ export async function matchBuiltinArguments(
     : matchArguments(invocation.arguments, parameters, options);
 }
 
+/** Match an already-selected argument list against one callable's ordinary formals. */
+export function matchBuiltinCallArguments(
+  arguments_: readonly BuiltinCallArgument[],
+  parameters: readonly string[],
+): MatchedBuiltinArguments {
+  return matchArguments(arguments_, parameters, {
+    codes: { duplicate: "NRE2102", ambiguous: "NRE2104", unused: "NRE2101" },
+  });
+}
+
 /** Match exact-only trailing formals after ellipsis, such as those on system.file. */
 export function matchLeadingDotsArguments(
   invocation: BuiltinInvocation,

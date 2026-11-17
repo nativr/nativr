@@ -1,9 +1,15 @@
 import {
+  baseBuiltinBindings,
   baseBuiltins,
+  BOX_OPTIMIZATION_BACKEND_STATE_KEY,
   ENVIRONMENT_VARIABLES_STATE_KEY,
   EXECUTABLE_PATHS_STATE_KEY,
+  initializeBaseEnvironment,
   jsReferenceOperators,
+  preloadBaseRuntimeAssets,
+  SYMMETRIC_EIGEN_BACKEND_STATE_KEY,
 } from "@nativr/base";
+import type { BoxOptimizationBackend } from "@nativr/base";
 import { createParser } from "@nativr/parser";
 import type { NativRParser, ParserAssets } from "@nativr/parser";
 import { DEFAULT_RUNTIME_LIMITS, Evaluator, RParseError } from "@nativr/runtime";
@@ -18,7 +24,6 @@ import type {
   RUrlRequest,
   RUrlResult,
   RuntimeLimits,
-  RuntimeSystemPackageTextResource,
   RValue,
 } from "@nativr/runtime";
 import type { ProgramNode } from "@nativr/ast";
@@ -76,19 +81,33 @@ export class RuntimeHost {
     readline?: (prompt: string) => Promise<string> | string,
     urlRequest?: (request: RUrlRequest) => Promise<RUrlResult> | RUrlResult,
     socketRequest?: (request: RSocketRequest) => Promise<RSocketResult> | RSocketResult,
-    systemPackageResources: readonly RuntimeSystemPackageTextResource[] = [],
   ): Promise<RuntimeHost> {
     // One instance per session, verified against its pinned digest before the parser starts.
-    const elementary =
+    // Core package definitions contain browser-owned data/resources but no evaluator behavior.
+    const [elementary, parser, , corePackages] = await Promise.all([
       assets.elementaryWasm === undefined
-        ? undefined
-        : await loadElementaryModule(assets.elementaryWasm);
-    const parser = await createParser({
-      treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
-      rGrammarWasm: assets.rGrammarWasm,
-    });
+        ? Promise.resolve(undefined)
+        : loadElementaryModule(assets.elementaryWasm),
+      createParser({
+        treeSitterRuntimeWasm: assets.treeSitterRuntimeWasm,
+        rGrammarWasm: assets.rGrammarWasm,
+      }),
+      preloadBaseRuntimeAssets(),
+      import("@nativr/base/core-packages"),
+    ]);
     try {
-      const effectiveLimits = { ...DEFAULT_RUNTIME_LIMITS, ...limits };
+      const effectiveLimits = {
+        ...DEFAULT_RUNTIME_LIMITS,
+        ...limits,
+        maxAllocatedElements:
+          limits?.maxAllocatedElements ??
+          (limits?.maxVectorLength === undefined
+            ? DEFAULT_RUNTIME_LIMITS.maxAllocatedElements
+            : limits.maxVectorLength * 10),
+      };
+      const { createLapackDsyevrBackend } = await import("./lapack-dsyevr.js");
+      const symmetricEigenBackend = await createLapackDsyevrBackend();
+      const boxOptimizationBackend = createLazyLbfgsbBackend();
       const packageDefinitions = compilePureRPackages(
         packages,
         (source) => parseProgram(parser, source),
@@ -103,7 +122,9 @@ export class RuntimeHost {
         parseSourceDetailed: (source, maxExpressions, work) =>
           parser.parseDetailed(source, maxExpressions, work),
         packages: packageDefinitions,
-        systemPackageResources,
+        staticPackages: corePackages.corePackageDefinitions,
+        builtinBindings: baseBuiltinBindings,
+        runtimeTextResources: corePackages.coreRuntimeTextResources,
         nativeModules,
         ...(systemCommand === undefined ? {} : { systemCommand }),
         ...(nativeCall === undefined
@@ -124,8 +145,12 @@ export class RuntimeHost {
         initializeBuiltinState: (state) => {
           state.set(ENVIRONMENT_VARIABLES_STATE_KEY, new Map(Object.entries(environmentVariables)));
           state.set(EXECUTABLE_PATHS_STATE_KEY, new Map(Object.entries(executablePaths)));
+          state.set(SYMMETRIC_EIGEN_BACKEND_STATE_KEY, symmetricEigenBackend);
+          state.set(BOX_OPTIMIZATION_BACKEND_STATE_KEY, boxOptimizationBackend);
         },
+        initializeBaseEnvironment,
       });
+      await evaluator.initialize();
       return new RuntimeHost(parser, evaluator, elementary);
     } catch (error) {
       parser.dispose();
@@ -162,18 +187,34 @@ export class RuntimeHost {
     return CAPABILITIES;
   }
 
-  public reset(): void {
-    this.#evaluator.reset();
+  public reset(): Promise<void> {
+    return this.#evaluator.reset();
   }
 
   public interrupt(): void {
     this.#evaluator.interrupt();
   }
 
-  public dispose(): void {
-    this.#evaluator.dispose();
-    this.#parser.dispose();
+  public async dispose(): Promise<void> {
+    try {
+      await this.#evaluator.dispose();
+    } finally {
+      this.#parser.dispose();
+    }
   }
+}
+
+function createLazyLbfgsbBackend(): BoxOptimizationBackend {
+  let backend: Promise<BoxOptimizationBackend> | undefined;
+  return {
+    implementation: "lbfgsb-2.1-wasm",
+    async minimize(initial, lower, upper, evaluate, options) {
+      const loaded = await (backend ??= import("./lbfgsb.js").then(({ createLbfgsbBackend }) =>
+        createLbfgsbBackend(),
+      ));
+      return loaded.minimize(initial, lower, upper, evaluate, options);
+    },
+  };
 }
 
 function parseProgram(parser: NativRParser, source: string, maxExpressions?: number): ProgramNode {

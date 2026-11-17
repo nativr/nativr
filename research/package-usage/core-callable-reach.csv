@@ -409,7 +409,7 @@ rank,callable,nativr_available,packages,source_packages,occurrences,package_reac
 408,representation,true,1,data.table,1,1.0,0.7
 409,trunc,true,1,data.table,1,1.0,0.7
 410,type.convert,true,1,data.table,1,1.0,0.7
-411,update.packages,false,1,data.table,1,1.0,0.7
+411,update.packages,true,1,data.table,1,1.0,0.7
 412,family,true,1,distributional,1,1.0,0.7
 413,glob2rx,true,1,rprojroot,1,1.0,0.7
 414,as.raster,true,1,ragg,1,1.0,0.7

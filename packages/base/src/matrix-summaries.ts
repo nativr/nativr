@@ -29,7 +29,7 @@ import type {
 import { matchBuiltinArguments } from "./arguments.js";
 
 export interface MatrixSummaryBuiltinSpec {
-  readonly name: "colSums" | "rowMeans" | "colMeans";
+  readonly name: "rowSums" | "colSums" | "rowMeans" | "colMeans";
   readonly parameters: readonly string[];
   readonly compatibility: "behavioral";
   readonly implementation: (invocation: BuiltinInvocation) => Promise<RValue>;
@@ -49,6 +49,12 @@ interface ColumnSummaryInput {
 }
 
 export const MATRIX_SUMMARY_BUILTIN_SPECS: readonly MatrixSummaryBuiltinSpec[] = [
+  {
+    name: "rowSums",
+    parameters: ["x", "na.rm", "dims"],
+    compatibility: "behavioral",
+    implementation: (invocation) => builtinMatrixSummary(invocation, "row", "sum"),
+  },
   {
     name: "colSums",
     parameters: ["x", "na.rm", "dims"],
@@ -74,7 +80,14 @@ async function builtinMatrixSummary(
   direction: "row" | "column",
   operation: "sum" | "mean",
 ): Promise<RValue> {
-  const call = operation === "sum" ? "colSums" : direction === "row" ? "rowMeans" : "colMeans";
+  const call =
+    operation === "sum"
+      ? direction === "row"
+        ? "rowSums"
+        : "colSums"
+      : direction === "row"
+        ? "rowMeans"
+        : "colMeans";
   const { matched } = await matchBuiltinArguments(invocation, ["x", "na.rm", "dims"]);
   const inputArgument = requiredArgument(matched.get("x"), call);
   const value = await invocation.force(inputArgument.promise);

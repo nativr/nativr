@@ -52,7 +52,12 @@ export function normalizeProgram(
   }
 
   return {
-    ast: { kind: "Program", body, span: mapper.span(root.startIndex, root.endIndex) },
+    ast: {
+      kind: "Program",
+      body,
+      span: mapper.span(root.startIndex, root.endIndex),
+      parseData: normalizeParseData(root, mapper, source),
+    },
     diagnostics,
   };
 }
@@ -147,6 +152,82 @@ function normalizationChildren(node: Node, work?: ParseWorkCallbacks): readonly 
   }
 }
 
+function normalizeParseData(root: Node, mapper: Utf8SourceMap, source: string) {
+  const output: {
+    id: number;
+    parent: number;
+    type: string;
+    parentType?: string;
+    terminal: boolean;
+    text: string;
+    span: SourceSpan;
+  }[] = [];
+  let nextId = 1;
+  const addTerminal = (text: string, start: number, parent: number, parentType: string): void => {
+    output.push({
+      id: nextId++,
+      parent,
+      type: text,
+      parentType,
+      terminal: true,
+      text,
+      span: mapper.span(start, start + text.length),
+    });
+  };
+  const addGapTerminals = (
+    start: number,
+    end: number,
+    parent: number,
+    parentType: string,
+  ): void => {
+    for (let offset = source.indexOf(";", start); offset >= 0 && offset < end;) {
+      addTerminal(";", offset, parent, parentType);
+      offset = source.indexOf(";", offset + 1);
+    }
+  };
+  type Task =
+    | { node: Node; parent: number; parentType?: string }
+    | { start: number; end: number; parent: number; parentType: string };
+  const pending: Task[] = [];
+  const topLevel = root.children;
+  for (let index = topLevel.length - 1; index >= 0; index--) {
+    pending.push({ node: topLevel[index]!, parent: 0, parentType: root.type });
+  }
+  while (pending.length > 0) {
+    const task = pending.pop()!;
+    if (!("node" in task)) {
+      addGapTerminals(task.start, task.end, task.parent, task.parentType);
+      continue;
+    }
+    const { node, parent, parentType } = task;
+    const id = nextId++;
+    const terminal = node.childCount === 0 || node.type === "string";
+    output.push({
+      id,
+      parent,
+      type: node.type,
+      ...(parentType === undefined ? {} : { parentType }),
+      terminal,
+      text: source.slice(node.startIndex, node.endIndex),
+      span: mapper.span(node.startIndex, node.endIndex),
+    });
+    if (node.type === "string") continue;
+    // tree-sitter-r treats explicit semicolons as separators rather than concrete children.
+    // Recover them from gaps between owned nodes so getParseData() can expose the terminal
+    // token, including the enclosing expression parent used by source-transforming packages.
+    const ordered: Task[] = [];
+    let cursor = node.startIndex;
+    for (const child of node.children) {
+      ordered.push({ start: cursor, end: child.startIndex, parent: id, parentType: node.type });
+      ordered.push({ node: child, parent: id, parentType: node.type });
+      cursor = child.endIndex;
+    }
+    ordered.push({ start: cursor, end: node.endIndex, parent: id, parentType: node.type });
+    for (let index = ordered.length - 1; index >= 0; index--) pending.push(ordered[index]!);
+  }
+  return Object.freeze(output);
+}
+
 function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
   const session = normalizationSessions.get(mapper);
   if (session !== undefined) {
@@ -215,7 +296,7 @@ function normalizeNode(node: Node, mapper: Utf8SourceMap): AstNode {
     case "for_statement":
       return {
         kind: "ForExpression",
-        variable: normalizeIdentifier(requiredField(node, "variable"), mapper),
+        variable: normalizeNode(requiredField(node, "variable"), mapper),
         sequence: normalizeNode(requiredField(node, "sequence"), mapper),
         body: normalizeNode(requiredField(node, "body"), mapper),
         span,
@@ -369,7 +450,14 @@ function assignmentIdentifier(node: AstNode): IdentifierNode | undefined {
 }
 
 function normalizeCall(node: Node, mapper: Utf8SourceMap, span: SourceSpan): AstNode {
-  const callee = normalizeNode(requiredField(node, "function"), mapper);
+  const parsedCallee = normalizeNode(requiredField(node, "function"), mapper);
+  // GNU R canonicalizes a character-literal call head to a symbol in the language object.
+  // This keeps `"f"(x)` executable while making quote/as.list/identical observe the same call
+  // representation as `f(x)`.
+  const callee =
+    parsedCallee.kind === "StringLiteral"
+      ? ({ kind: "Identifier", name: parsedCallee.value, span: parsedCallee.span } as const)
+      : parsedCallee;
   const args = normalizeArguments(requiredField(node, "arguments"), mapper);
   if (
     callee.kind === "Identifier" &&
@@ -476,6 +564,7 @@ function normalizeFunction(node: Node, mapper: Utf8SourceMap, span: SourceSpan):
     });
   return {
     kind: "FunctionExpression",
+    ...(requiredField(node, "name").text === "\\" ? { syntax: "lambda" as const } : {}),
     parameters,
     body: normalizeNode(requiredField(node, "body"), mapper),
     span,
@@ -491,14 +580,6 @@ function normalizeIf(node: Node, mapper: Utf8SourceMap, span: SourceSpan): AstNo
     span,
   };
   return alternative === null ? base : { ...base, alternative: normalizeNode(alternative, mapper) };
-}
-
-function normalizeIdentifier(node: Node, mapper: Utf8SourceMap): IdentifierNode {
-  const normalized = normalizeNode(node, mapper);
-  if (normalized.kind !== "Identifier") {
-    throw new Error(`Expected identifier, received ${normalized.kind}`);
-  }
-  return normalized;
 }
 
 function requiredField(node: Node, field: string): Node {

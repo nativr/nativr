@@ -1,9 +1,9 @@
 import type { AstNode } from "@nativr/ast";
 
-import { REvaluationError, RTypeMismatchError } from "./errors.js";
+import { REvaluationError, RTypeMismatchError, RUnsupportedFeatureError } from "./errors.js";
 import { makeUniqueNames } from "./unique-names.js";
+import { languageEntries, languageValueAst, quoteLanguageAst } from "./language.js";
 import {
-  R_NULL,
   characterBytesAt,
   characterBytesFromValue,
   characterEncodingAt,
@@ -14,8 +14,8 @@ import {
   dataFrameValue,
   doubleVector,
   expressionValue,
-  factorLevels,
   factorLabelAt,
+  factorLevels,
   hasAutomaticRowSequence,
   integerVector,
   isAtomic,
@@ -26,10 +26,13 @@ import {
   listValue,
   logicalVector,
   missingValue,
+  R_NULL,
   rawVector,
-  vectorNames,
-  vectorDimensions,
+  registerVectorStorageCapacity,
   vectorClasses,
+  vectorDimensions,
+  vectorNames,
+  vectorStorageCapacity,
   withAttribute,
   withClasses,
   withDimensions,
@@ -41,6 +44,7 @@ import type {
   RCharacterVector,
   RComplexVector,
   RDoubleVector,
+  RExpression,
   RIntegerVector,
   RList,
   RLogicalVector,
@@ -324,6 +328,11 @@ export function extractVectorElement(
   ) {
     let current: RValue = target;
     for (let offset = 0; offset < index.length; offset += 1) {
+      const subscript = scalarSubscript(index, offset);
+      if (current.type === "language") {
+        current = extractVectorElement(languageEntries(current), subscript, context, exact);
+        continue;
+      }
       if (
         current.type !== "list" &&
         current.type !== "pairlist" &&
@@ -334,7 +343,7 @@ export function extractVectorElement(
           "Recursive [[ extraction reached a non-vector value before the final subscript.",
         );
       }
-      current = extractVectorElement(current, scalarSubscript(index, offset), context, exact);
+      current = extractVectorElement(current, subscript, context, exact);
     }
     return current;
   }
@@ -557,6 +566,27 @@ export function replaceVectorElement(
   replacement: RValue,
   context: OperatorContext,
 ): IndexableValue {
+  if (
+    (target.type === "list" || target.type === "pairlist") &&
+    (index.type === "integer" || index.type === "double" || index.type === "character") &&
+    index.length > 1
+  ) {
+    const head = scalarSubscript(index, 0);
+    const tail = subsetVector(
+      index,
+      integerVector(Array.from({ length: index.length - 1 }, (_, offset) => offset + 2)),
+      context,
+    );
+    const nested = extractVectorElement(target, head, context, true);
+    if (!isVector(nested) && nested.type !== "pairlist") {
+      throw new RTypeMismatchError(
+        "NRT3312",
+        "Recursive [[ replacement reached a non-vector value before the final subscript.",
+      );
+    }
+    const updated = replaceVectorElement(nested, tail, replacement, context);
+    return replaceVectorElement(target, head, updated, context);
+  }
   if (target.type === "list" && isDataFrame(target))
     return replaceDataFrameColumns(target, index, replacement, context, true);
   const selection = resolveElementReplacement(target, index);
@@ -674,6 +704,22 @@ export function prepareListMemberTarget(
             ? "..."
             : target.type;
   throw new RTypeMismatchError("NRT3304", `object of type '${type}' is not subsettable`);
+}
+
+function expressionList(expression: RExpression): RList {
+  const values = Object.freeze(expression.values.map(quoteLanguageAst));
+  return {
+    type: "list",
+    values,
+    length: values.length,
+    attributes: new Map(expression.attributes ?? []),
+  };
+}
+
+function expressionFromList(entries: RList): RExpression {
+  const attributes = new Map(entries.attributes);
+  const values = Object.freeze(entries.values.map(languageValueAst));
+  return { type: "expression", values, length: values.length, attributes };
 }
 
 /** Replace one exact member, or append an unnamed member when its name is omitted.
@@ -1312,7 +1358,7 @@ function replaceDataFrameCoordinates(
       context,
     );
   }
-  return cloneList(target, values, vectorNames(target));
+  return dataFrameReplacementResult(cloneList(target, values, vectorNames(target)));
 }
 
 function arrayDimensionNames(
@@ -1468,6 +1514,34 @@ function sortedRowOrder(names: readonly string[], context: OperatorContext): rea
     const b = names[right]!;
     return a < b ? -1 : a > b ? 1 : left - right;
   });
+}
+
+function subsetExpressionRows(
+  expression: RExpression,
+  selectedRows: readonly SelectedIndex[],
+  context: OperatorContext,
+): RExpression {
+  if (selectedRows.some((row) => row === undefined || expression.values[row] === undefined)) {
+    throw new RUnsupportedFeatureError(
+      "NRU6184",
+      "Missing or out-of-range data-frame rows for expression columns are not implemented.",
+    );
+  }
+  const values = Object.freeze(selectedRows.map((row) => expression.values[row as number]!));
+  const attributes = new Map(expression.attributes ?? []);
+  const sourceReferences = attributes.get("srcref");
+  if (sourceReferences?.type === "list" && sourceReferences.length === expression.values.length) {
+    attributes.set(
+      "srcref",
+      subsetVector(
+        sourceReferences,
+        integerVector(selectedRows.map((row) => (row as number) + 1)),
+        context,
+      ),
+    );
+  }
+  context.allocate(values.length);
+  return { type: "expression", values, length: values.length, attributes };
 }
 
 function replaceDataFrameColumns(
@@ -1995,6 +2069,181 @@ function subsetAtomic(
   return names === undefined ? value : withExactNames(value, names);
 }
 
+function exactNamesEqual(
+  first: readonly string[] | undefined,
+  second: readonly string[] | undefined,
+): boolean {
+  if (first === undefined || second === undefined) return first === second;
+  return first.length === second.length && first.every((name, index) => name === second[index]);
+}
+
+function ownedGrowthCapacity(
+  target: AtomicVector,
+  resultLength: number,
+  context: OperatorContext,
+): number {
+  const current = vectorStorageCapacity(target);
+  if (current >= resultLength) return current;
+  const doubled = Math.max(16, current * 2, resultLength);
+  const capacity = Math.min(context.limits.maxVectorLength, doubled);
+  context.allocate(capacity);
+  return capacity;
+}
+
+function growOwnedAtomic(
+  target: AtomicVector,
+  selected: readonly number[],
+  replacement: AtomicVector,
+  resultLength: number,
+  names: readonly string[] | undefined,
+  context: OperatorContext,
+): AtomicVector | undefined {
+  if (
+    resultLength <= target.length ||
+    target === replacement ||
+    target.type !== replacement.type ||
+    target.type === "character" ||
+    target.type === "raw" ||
+    target.s4 === true ||
+    target.attributes.size !== 0 ||
+    names !== undefined ||
+    selected.some((position) => position < 0 || position >= resultLength)
+  ) {
+    return undefined;
+  }
+
+  const oldCapacity = vectorStorageCapacity(target);
+  const capacity = ownedGrowthCapacity(target, resultLength, context);
+  const reusableMissing =
+    target.missing !== undefined &&
+    target.missing.byteOffset === 0 &&
+    target.missing.buffer.byteLength >= capacity;
+  const missingStorage = reusableMissing
+    ? new Uint8Array(target.missing.buffer, 0, capacity)
+    : new Uint8Array(capacity);
+  if (!reusableMissing && target.missing !== undefined) missingStorage.set(target.missing);
+  missingStorage.fill(1, target.length, resultLength);
+
+  let output: AtomicVector;
+  switch (target.type) {
+    case "logical": {
+      if (replacement.type !== "logical") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.values.byteOffset === 0 &&
+        target.values.buffer.byteLength >= capacity;
+      const storage = reusable
+        ? new Uint8Array(target.values.buffer, 0, capacity)
+        : new Uint8Array(capacity);
+      if (!reusable) storage.set(target.values);
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        storage[destination] = replacement.values[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "logical",
+        values: storage.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+    case "integer": {
+      if (replacement.type !== "integer") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.values.byteOffset === 0 &&
+        target.values.buffer.byteLength >= capacity * Int32Array.BYTES_PER_ELEMENT;
+      const storage = reusable
+        ? new Int32Array(target.values.buffer, 0, capacity)
+        : new Int32Array(capacity);
+      if (!reusable) storage.set(target.values);
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        storage[destination] = replacement.values[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "integer",
+        values: storage.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+    case "double": {
+      if (replacement.type !== "double") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.values.byteOffset === 0 &&
+        target.values.buffer.byteLength >= capacity * Float64Array.BYTES_PER_ELEMENT;
+      const storage = reusable
+        ? new Float64Array(target.values.buffer, 0, capacity)
+        : new Float64Array(capacity);
+      if (!reusable) storage.set(target.values);
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        storage[destination] = replacement.values[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "double",
+        values: storage.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+    case "complex": {
+      if (replacement.type !== "complex") return undefined;
+      const reusable =
+        oldCapacity >= capacity &&
+        target.real.byteOffset === 0 &&
+        target.imaginary.byteOffset === 0 &&
+        target.real.buffer.byteLength >= capacity * Float64Array.BYTES_PER_ELEMENT &&
+        target.imaginary.buffer.byteLength >= capacity * Float64Array.BYTES_PER_ELEMENT;
+      const real = reusable
+        ? new Float64Array(target.real.buffer, 0, capacity)
+        : new Float64Array(capacity);
+      const imaginary = reusable
+        ? new Float64Array(target.imaginary.buffer, 0, capacity)
+        : new Float64Array(capacity);
+      if (!reusable) {
+        real.set(target.real);
+        imaginary.set(target.imaginary);
+      }
+      for (let index = 0; index < selected.length; index += 1) {
+        const destination = selected[index] ?? 0;
+        const source = index % replacement.length;
+        real[destination] = replacement.real[source] ?? 0;
+        imaginary[destination] = replacement.imaginary[source] ?? 0;
+        missingStorage[destination] = isMissing(replacement, source) ? 1 : 0;
+        context.checkpoint();
+      }
+      output = {
+        type: "complex",
+        real: real.subarray(0, resultLength),
+        imaginary: imaginary.subarray(0, resultLength),
+        missing: missingStorage.subarray(0, resultLength),
+        length: resultLength,
+        attributes: target.attributes,
+      };
+      break;
+    }
+  }
+  return registerVectorStorageCapacity(output, capacity);
+}
+
 function replaceAtomic(
   target: AtomicVector,
   selected: readonly number[],
@@ -2002,8 +2251,65 @@ function replaceAtomic(
   resultLength: number,
   names: readonly string[] | undefined,
   context: OperatorContext,
+  mutateOwned = false,
 ): AtomicVector {
   const type = commonAtomicType(target, replacement);
+  if (mutateOwned && type === target.type) {
+    const grown = growOwnedAtomic(target, selected, replacement, resultLength, names, context);
+    if (grown !== undefined) return grown;
+  }
+  if (
+    mutateOwned &&
+    target !== replacement &&
+    resultLength === target.length &&
+    type === target.type &&
+    replacement.type === target.type &&
+    selected.every((position) => position >= 0 && position < target.length) &&
+    target.s4 !== true &&
+    target.attributes.size === 0 &&
+    names === undefined &&
+    exactNamesEqual(names, vectorNames(target)) &&
+    (replacement.missing === undefined || target.missing !== undefined) &&
+    target.type !== "character"
+  ) {
+    for (let index = 0; index < selected.length; index += 1) {
+      const destination = selected[index] ?? 0;
+      const source = index % replacement.length;
+      if (target.missing !== undefined) {
+        target.missing[destination] = isMissing(replacement, source) ? 1 : 0;
+      }
+      switch (target.type) {
+        case "logical":
+          if (replacement.type === "logical") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "integer":
+          if (replacement.type === "integer") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "double":
+          if (replacement.type === "double") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "raw":
+          if (replacement.type === "raw") {
+            target.values[destination] = replacement.values[source] ?? 0;
+          }
+          break;
+        case "complex":
+          if (replacement.type === "complex") {
+            target.real[destination] = replacement.real[source] ?? 0;
+            target.imaginary[destination] = replacement.imaginary[source] ?? 0;
+          }
+          break;
+      }
+      context.checkpoint();
+    }
+    return target;
+  }
   const missing = new Uint8Array(resultLength);
   for (let index = 0; index < target.length; index += 1) {
     if (isMissing(target, index)) missing[index] = 1;
@@ -2092,7 +2398,8 @@ function replaceAtomic(
     }
     output = logicalVector(values, compactMask(missing));
   }
-  return { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  const attributed = { ...output, attributes: replacementAttributes(target, resultLength, names) };
+  return target.s4 === true ? { ...attributed, s4: true } : attributed;
 }
 
 function replaceFactor(
@@ -2147,7 +2454,8 @@ function replaceFactor(
     attributes.delete("class");
     attributes.set("class", classes);
   }
-  return { ...output, attributes };
+  const attributed = { ...output, attributes };
+  return target.s4 === true ? { ...attributed, s4: true } : attributed;
 }
 
 function commonAtomicType(left: AtomicVector, right: AtomicVector): AtomicVector["type"] {
@@ -2302,6 +2610,15 @@ function cloneList(
   names: readonly string[] | undefined,
 ): RList {
   return cloneListLike(target, values, names);
+}
+
+function dataFrameReplacementResult(value: RList): RList {
+  const classes = value.attributes.get("class");
+  if (classes === undefined) return value;
+  const attributes = new Map(value.attributes);
+  attributes.delete("class");
+  attributes.set("class", classes);
+  return { ...value, attributes };
 }
 
 function cloneAsList(

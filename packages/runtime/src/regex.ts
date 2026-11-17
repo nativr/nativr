@@ -1,4 +1,4 @@
-/** Independent C-locale POSIX bracket-class translation shared by browser regex consumers. */
+﻿/** Independent C-locale POSIX bracket-class translation shared by browser regex consumers. */
 const POSIX_PATTERN_CLASSES: Readonly<Record<string, string>> = Object.freeze({
   alnum: "A-Za-z0-9",
   alpha: "A-Za-z",
@@ -60,3 +60,5 @@ export function translatePosixCharacterClasses(pattern: string): string {
   }
   return translated;
 }
+
+export const normalizePosixCharacterClasses = translatePosixCharacterClasses;

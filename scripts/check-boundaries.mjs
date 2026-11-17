@@ -17,6 +17,7 @@ const rules = new Map([
       "@nativr/parser",
       "@nativr/runtime",
       "@nativr/base",
+      "@nativr/base/core-packages",
       "@nativr/protocol",
     ]),
   ],
