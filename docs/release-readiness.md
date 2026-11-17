@@ -1,6 +1,6 @@
 # Release readiness
 
-Last assessed 2026-11-16 at semantic checkpoint **0.405.0**, with browser verification open. The
+Last assessed 2026-11-17 at semantic checkpoint **0.405.0**, including browser verification. The
 latest complete 24-package checkpoint is **0.397.0**. Canonical counts are generated in
 [compatibility/status.json](../compatibility/status.json). The full compatibility target remains the
 five completion criteria in [gnu-r-compatibility.md](gnu-r-compatibility.md).
@@ -12,19 +12,19 @@ The supported scope is the Worker-first browser API and executable subset in
 CSP-safe and network-free; host access requires explicit capabilities. No general package or GNU R
 compatibility claim follows from this preview.
 
-| Gate                               | Latest evidence                                                                                                                                | Status         |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Production check                   | Profile 0.405: 4,009 unit tests pass, 96 opt-in tests skipped; production/test/config types, build and bundle audit pass                       | Passed         |
-| Conformance                        | Profile 0.405: 1,556 checked-in, 1,483 live GNU R and 462 recursive cases pass; 55 NativR-only live exclusions; 179 bindings have causal links | Passed         |
-| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                   | Passed         |
-| Browser e2e                        | Last pass: 0.402, 12/12 on Windows. At 0.405 pinned browser binaries are missing; download approval is pending                                 | Open for 0.405 |
-| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                             | Passed         |
-| Fixed bundle limits                | Profile 0.405: client 18.4/150 KiB gzip; Worker 507.5/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary 311.2/384 KiB raw                   | Passed         |
-| CI and publication                 | Local work only; no pushed CI result for this increment; publication/bootstrap remains a maintainer action                                     | Open           |
+| Gate                               | Latest evidence                                                                                                                                | Status |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Production check                   | Profile 0.405: 4,009 unit tests pass, 96 opt-in tests skipped; production/test/config types, build and bundle audit pass                       | Passed |
+| Conformance                        | Profile 0.405: 1,556 checked-in, 1,483 live GNU R and 462 recursive cases pass; 55 NativR-only live exclusions; 179 bindings have causal links | Passed |
+| Native metadata/signature fixtures | 71 owned Rd/S4 tests pass at 0.360, including native severity, signature and method fixtures                                                   | Passed |
+| Browser e2e                        | Profile 0.405: 12/12 on Windows across Chromium, Firefox and WebKit, serial, with stable input digests                                         | Passed |
+| Packed consumer                    | Profile 0.388: offline strict declaration check, browser consumer build and package-tools CLI pass                                             | Passed |
+| Fixed bundle limits                | Profile 0.405: client 18.4/150 KiB gzip; Worker 507.5/512 KiB gzip; parser 671.9/1,536 KiB raw; elementary 311.2/384 KiB raw                   | Passed |
+| CI and publication                 | Branch pushed for review; only the authorship check runs remotely; publication/bootstrap remains a maintainer action                           | Open   |
 
 **Readiness:** release verification is incomplete. Repeated Windows workload timings are recorded;
 broader workload coverage, latency acceptance budgets, the declared OS matrix, CI and release
-packaging remain open. The approved roadmap does not authorize push or publication.
+packaging remain open. Publication remains unauthorized.
 
 ## B. Full browser-admissible GNU R 4.6.1 compatibility
 
@@ -34,7 +34,7 @@ packaging remain open. The approved roadmap does not authorize push or publicati
 | Callable evidence/exclusions                     | 798/2,522 distinct names overlap; 179 bindings have recursive causal links. Name overlap is inventory, not a completion percentage                                                                                                                 | Not met                      |
 | Broad corpus evidence                            | Full 24-package checkpoint at 0.397; selected four-package refresh at 0.405: 1 P7, 1 P6, 10 P5, 11 P4, 1 P3. No selected package tier changed. Formula remains the untouched P0 holdout                                                            | Not met                      |
 | Platform verification                            | Correctly rounded elementary Wasm is shipped and used in sessions, including complex functions since 0.355. Windows oracle evidence remains advisory pending the separately authorized RFC-0007 Linux gate; browser/OS coverage remains incomplete | Not met                      |
-| Agreement among ledger, capabilities and reports | Generated profile 0.405 status reflects semantic evidence; browser and overall release verification remain open                                                                                                                                    | Partial checkpoint agreement |
+| Agreement among ledger, capabilities and reports | Generated profile 0.405 status reflects semantic and browser evidence; overall release verification remains open                                                                                                                                   | Partial checkpoint agreement |
 
 There is no defensible completion date or percentage yet. Finishing requires semantic-domain
 closure, broad package evidence and platform verification. See the maintained

@@ -38,7 +38,7 @@ against the runtime capability source after a build.
 
 ## Exact boundaries
 
-### Data-frame row-label repair (profile 0.405, browser verification pending)
+### Data-frame row-label repair (profile 0.405)
 
 Row-indexed `[` on data frames repairs duplicated, missing and out-of-range row labels with the
 shared `make.unique` algorithm, including reserved suffixes, literal `"NA"` labels, empty labels,
@@ -62,9 +62,9 @@ failing baseline (three passed, fourteen failed at 0.404); separate adjuncts and
 not inherit that baseline credit. Recursive associations are limited to `base::attr` and
 `base::make.unique`, whose shadow controls intercept the graphs; `[` itself is not shadowable and
 receives no causal credit. The production check, all three conformance suites and four cached
-package checks pass. Browser execution remains blocked by missing pinned binaries; download approval
-is pending. See the
-[semantic checkpoint](../compatibility/platform-evidence/data-frame-row-labels-windows-0.405.0.json).
+package checks pass. All twelve Chromium, Firefox and WebKit browser tests pass on Windows. See the
+[semantic checkpoint](../compatibility/platform-evidence/data-frame-row-labels-windows-0.405.0.json)
+and the [browser checkpoint](../compatibility/platform-evidence/browser-windows-0.405.0.json).
 
 ### Source metadata accessors (profile 0.404, browser verification pending)
 

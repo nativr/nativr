@@ -2856,8 +2856,11 @@ observations against 0.404. Tiers are unchanged: evaluate P4, withr P4, abind P7
 One withr wall-clock timezone example became nonrepeatable in the native oracle repeat; its outcome
 and comparison are unchanged. The full 24-package checkpoint remains 0.397; Formula is untouched.
 
-Pinned browser binaries are still missing, so no browser result is added; the last passing browser
-checkpoint remains 0.402. Download approval is pending.
+After the pinned Playwright 1.62 browsers were installed, the
+[browser checkpoint](../compatibility/platform-evidence/browser-windows-0.405.0.json) passes 12/12
+serially on Windows across Chromium, Firefox and WebKit, with stable input digests. The branch
+history was rewritten to remove AI attribution trailers; recorded commits and evidence digests were
+remapped consistently.
 
 Next measurable work: compact `c(NA, -n)` row-name storage with `.row_names_info`, `dput` and
 `structure()` parity; deparse of integer ranges; the C-locale non-ASCII generated-suffix
